@@ -1,0 +1,1190 @@
+{
+  "$defs": {
+    "Approval": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_display_name": {
+          "title": "Actor Display Name",
+          "type": "string"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "approved_at": {
+          "title": "Approved At",
+          "type": "string"
+        },
+        "source_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        }
+      },
+      "required": [
+        "actor_id",
+        "approved_at",
+        "source_reference"
+      ],
+      "title": "Approval",
+      "type": "object"
+    },
+    "ArgMatchesAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_pointer": {
+          "title": "Argument Pointer",
+          "type": "string"
+        },
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "arg_matches",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "call_selection": {
+          "enum": [
+            "FIRST",
+            "LAST",
+            "EVERY"
+          ],
+          "title": "Call Selection",
+          "type": "string"
+        },
+        "matcher": {
+          "discriminator": {
+            "mapping": {
+              "EXACT_JSON": "#/$defs/ExactJsonMatcher",
+              "STRING_REGEX": "#/$defs/StringRegexMatcher"
+            },
+            "propertyName": "matcher_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ExactJsonMatcher"
+            },
+            {
+              "$ref": "#/$defs/StringRegexMatcher"
+            }
+          ],
+          "title": "Matcher"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name",
+        "argument_pointer",
+        "call_selection",
+        "matcher"
+      ],
+      "title": "ArgMatchesAssertion",
+      "type": "object"
+    },
+    "AssertionEvidenceRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "discriminator": {
+            "mapping": {
+              "arg_matches": "#/$defs/ArgMatchesAssertion",
+              "no_loop": "#/$defs/NoLoopAssertion",
+              "no_unbacked_claim": "#/$defs/NoUnbackedClaimAssertion",
+              "output_matches": "#/$defs/OutputMatchesAssertion",
+              "terminal_state": "#/$defs/TerminalStateAssertion",
+              "tool_called": "#/$defs/ToolCalledAssertion",
+              "tool_called_before": "#/$defs/ToolCalledBeforeAssertion",
+              "tool_not_called": "#/$defs/ToolNotCalledAssertion"
+            },
+            "propertyName": "assertion_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ToolCalledAssertion"
+            },
+            {
+              "$ref": "#/$defs/ToolNotCalledAssertion"
+            },
+            {
+              "$ref": "#/$defs/ToolCalledBeforeAssertion"
+            },
+            {
+              "$ref": "#/$defs/ArgMatchesAssertion"
+            },
+            {
+              "$ref": "#/$defs/NoLoopAssertion"
+            },
+            {
+              "$ref": "#/$defs/NoUnbackedClaimAssertion"
+            },
+            {
+              "$ref": "#/$defs/OutputMatchesAssertion"
+            },
+            {
+              "$ref": "#/$defs/TerminalStateAssertion"
+            }
+          ],
+          "title": "Assertion"
+        },
+        "minimum_trials": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Minimum Trials",
+          "type": "integer"
+        },
+        "required_observation": {
+          "$ref": "#/$defs/ObservationScope"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_kind": {
+          "const": "TRIANA_ASSERTION",
+          "title": "Requirement Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "requirement_kind",
+        "required_observation",
+        "minimum_trials",
+        "assertion"
+      ],
+      "title": "AssertionEvidenceRequirement",
+      "type": "object"
+    },
+    "BehaviorStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "statement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Statement Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id",
+        "text"
+      ],
+      "title": "BehaviorStatement",
+      "type": "object"
+    },
+    "EvaluatorEvidenceRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evaluator_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Evaluator Id",
+          "type": "string"
+        },
+        "evaluator_version": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Evaluator Version",
+          "type": "string"
+        },
+        "minimum_trials": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Minimum Trials",
+          "type": "integer"
+        },
+        "required_observation": {
+          "$ref": "#/$defs/ObservationScope"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_kind": {
+          "const": "CUSTOMER_EVALUATOR",
+          "title": "Requirement Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "requirement_kind",
+        "required_observation",
+        "minimum_trials",
+        "evaluator_id",
+        "evaluator_version",
+        "check_id"
+      ],
+      "title": "EvaluatorEvidenceRequirement",
+      "type": "object"
+    },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "locator": {
+          "discriminator": {
+            "mapping": {
+              "HTTPS": "#/$defs/HttpsLocator",
+              "OPAQUE": "#/$defs/OpaqueLocator"
+            },
+            "propertyName": "locator_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/OpaqueLocator"
+            },
+            {
+              "$ref": "#/$defs/HttpsLocator"
+            }
+          ],
+          "title": "Locator"
+        },
+        "reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Reference Id",
+          "type": "string"
+        },
+        "reference_kind": {
+          "enum": [
+            "TRACE",
+            "TOOL_EVENT",
+            "ASSERTION",
+            "EVALUATOR",
+            "FIXTURE",
+            "POLICY",
+            "APPROVAL",
+            "GITHUB",
+            "OTHER"
+          ],
+          "title": "Reference Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference_id",
+        "reference_kind",
+        "content_hash"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "ExactJsonMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Expected Hash",
+          "type": "string"
+        },
+        "expected_value_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "matcher_kind": {
+          "const": "EXACT_JSON",
+          "title": "Matcher Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "expected_hash"
+      ],
+      "title": "ExactJsonMatcher",
+      "type": "object"
+    },
+    "FixtureContract": {
+      "additionalProperties": false,
+      "properties": {
+        "fixture_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fixture Fingerprint",
+          "type": "string"
+        },
+        "fixture_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Fixture Id",
+          "type": "string"
+        },
+        "fixture_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Fixture Version",
+          "type": "integer"
+        },
+        "reset_policy_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Reset Policy Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fixture_id",
+        "fixture_version",
+        "fixture_fingerprint",
+        "reset_policy_hash"
+      ],
+      "title": "FixtureContract",
+      "type": "object"
+    },
+    "HttpsLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "HTTPS",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "url"
+      ],
+      "title": "HttpsLocator",
+      "type": "object"
+    },
+    "JsonSchemaMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "matcher_kind": {
+          "const": "JSON_SCHEMA",
+          "title": "Matcher Kind",
+          "type": "string"
+        },
+        "schema_draft": {
+          "const": "2020-12",
+          "title": "Schema Draft",
+          "type": "string"
+        },
+        "schema_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Schema Hash",
+          "type": "string"
+        },
+        "schema_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "schema_draft",
+        "schema_hash",
+        "schema_reference"
+      ],
+      "title": "JsonSchemaMatcher",
+      "type": "object"
+    },
+    "NeedsFixtureQualification": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "qualification_state": {
+          "const": "NEEDS_FIXTURE",
+          "title": "Qualification State",
+          "type": "string"
+        },
+        "reason_code": {
+          "const": "FIXTURE_REQUIRED",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "qualification_state",
+        "reason_code",
+        "explanation_reference"
+      ],
+      "title": "NeedsFixtureQualification",
+      "type": "object"
+    },
+    "NoHandoffRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "handoff_kind": {
+          "const": "NONE",
+          "title": "Handoff Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "handoff_kind"
+      ],
+      "title": "NoHandoffRequirement",
+      "type": "object"
+    },
+    "NoLoopAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "no_loop",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "maximum_consecutive_calls": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Maximum Consecutive Calls",
+          "type": "integer"
+        },
+        "signature": {
+          "enum": [
+            "TOOL_NAME",
+            "TOOL_NAME_AND_ARGUMENT_HASH"
+          ],
+          "title": "Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "signature",
+        "maximum_consecutive_calls"
+      ],
+      "title": "NoLoopAssertion",
+      "type": "object"
+    },
+    "NoUnbackedClaimAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "no_unbacked_claim",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "claim_group_name": {
+          "const": "claim",
+          "title": "Claim Group Name",
+          "type": "string"
+        },
+        "normalization": {
+          "enum": [
+            "EXACT_STRING",
+            "ASCII_CASEFOLD_TRIM"
+          ],
+          "title": "Normalization",
+          "type": "string"
+        },
+        "output_pattern": {
+          "title": "Output Pattern",
+          "type": "string"
+        },
+        "pattern_flags": {
+          "items": {
+            "enum": [
+              "ASCII",
+              "IGNORE_CASE",
+              "MULTILINE"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Pattern Flags",
+          "type": "array"
+        },
+        "regex_engine": {
+          "const": "PYTHON_RE_3_13",
+          "title": "Regex Engine",
+          "type": "string"
+        },
+        "support_must_precede_claim": {
+          "const": true,
+          "title": "Support Must Precede Claim",
+          "type": "boolean"
+        },
+        "support_result_pointer": {
+          "title": "Support Result Pointer",
+          "type": "string"
+        },
+        "supporting_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Supporting Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "regex_engine",
+        "output_pattern",
+        "pattern_flags",
+        "claim_group_name",
+        "supporting_tool_name",
+        "support_result_pointer",
+        "normalization",
+        "support_must_precede_claim"
+      ],
+      "title": "NoUnbackedClaimAssertion",
+      "type": "object"
+    },
+    "NotYetQualification": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "qualification_state": {
+          "const": "NOT_YET",
+          "title": "Qualification State",
+          "type": "string"
+        },
+        "reason_code": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "qualification_state",
+        "reason_code",
+        "explanation_reference"
+      ],
+      "title": "NotYetQualification",
+      "type": "object"
+    },
+    "ObservationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "enum": [
+              "CONVERSATION_TURNS",
+              "MODEL_OUTPUT",
+              "TOOL_DISPATCH",
+              "TOOL_ARGUMENTS",
+              "TOOL_RESULTS",
+              "TERMINAL_STATE",
+              "ESCALATION_HANDOFF",
+              "TIMING",
+              "COST"
+            ],
+            "type": "string"
+          },
+          "maxItems": 9,
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "capabilities"
+      ],
+      "title": "ObservationScope",
+      "type": "object"
+    },
+    "OpaqueLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "OPAQUE",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "token": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "token"
+      ],
+      "title": "OpaqueLocator",
+      "type": "object"
+    },
+    "OutputMatchesAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "output_matches",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "matcher": {
+          "discriminator": {
+            "mapping": {
+              "JSON_SCHEMA": "#/$defs/JsonSchemaMatcher",
+              "STRING_REGEX": "#/$defs/StringRegexMatcher"
+            },
+            "propertyName": "matcher_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StringRegexMatcher"
+            },
+            {
+              "$ref": "#/$defs/JsonSchemaMatcher"
+            }
+          ],
+          "title": "Matcher"
+        },
+        "target": {
+          "const": "FINAL_ASSISTANT_MESSAGE",
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "target",
+        "matcher"
+      ],
+      "title": "OutputMatchesAssertion",
+      "type": "object"
+    },
+    "ReadyQualification": {
+      "additionalProperties": false,
+      "properties": {
+        "qualification_state": {
+          "const": "READY",
+          "title": "Qualification State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "qualification_state"
+      ],
+      "title": "ReadyQualification",
+      "type": "object"
+    },
+    "ReleaseObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_alternatives": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "title": "Allowed Alternatives",
+          "type": "array"
+        },
+        "applicability_conditions": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Applicability Conditions",
+          "type": "array"
+        },
+        "expected_behavior": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Expected Behavior",
+          "type": "array"
+        },
+        "handoff_requirement": {
+          "discriminator": {
+            "mapping": {
+              "NONE": "#/$defs/NoHandoffRequirement",
+              "REQUIRED": "#/$defs/RequiredHandoff"
+            },
+            "propertyName": "handoff_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NoHandoffRequirement"
+            },
+            {
+              "$ref": "#/$defs/RequiredHandoff"
+            }
+          ],
+          "title": "Handoff Requirement"
+        },
+        "obligation_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Obligation Id",
+          "type": "string"
+        },
+        "obligation_statement": {
+          "$ref": "#/$defs/BehaviorStatement"
+        },
+        "owner_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Owner Actor Id",
+          "type": "string"
+        },
+        "policy_context_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "prohibited_behavior": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "title": "Prohibited Behavior",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        }
+      },
+      "required": [
+        "obligation_id",
+        "obligation_statement",
+        "source_reference",
+        "severity",
+        "owner_actor_id",
+        "applicability_conditions",
+        "expected_behavior",
+        "prohibited_behavior",
+        "allowed_alternatives",
+        "handoff_requirement"
+      ],
+      "title": "ReleaseObligation",
+      "type": "object"
+    },
+    "ReplayInput": {
+      "additionalProperties": false,
+      "properties": {
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/ReplayMessage"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Messages",
+          "type": "array"
+        }
+      },
+      "required": [
+        "messages"
+      ],
+      "title": "ReplayInput",
+      "type": "object"
+    },
+    "ReplayMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "message_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "USER",
+            "ASSISTANT",
+            "SYSTEM_VISIBLE"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message_id",
+        "role",
+        "content"
+      ],
+      "title": "ReplayMessage",
+      "type": "object"
+    },
+    "RequiredHandoff": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Destination Ref",
+          "type": "string"
+        },
+        "handoff_kind": {
+          "const": "REQUIRED",
+          "title": "Handoff Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "handoff_kind"
+      ],
+      "title": "RequiredHandoff",
+      "type": "object"
+    },
+    "StringRegexMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "flags": {
+          "items": {
+            "enum": [
+              "ASCII",
+              "IGNORE_CASE",
+              "MULTILINE"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Flags",
+          "type": "array"
+        },
+        "matcher_kind": {
+          "const": "STRING_REGEX",
+          "title": "Matcher Kind",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "regex_engine": {
+          "const": "PYTHON_RE_3_13",
+          "title": "Regex Engine",
+          "type": "string"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "regex_engine",
+        "pattern",
+        "flags"
+      ],
+      "title": "StringRegexMatcher",
+      "type": "object"
+    },
+    "TerminalStateAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "terminal_state",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "expected_state": {
+          "const": "NO_ERROR",
+          "title": "Expected State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "expected_state"
+      ],
+      "title": "TerminalStateAssertion",
+      "type": "object"
+    },
+    "ToolCalledAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_called",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name"
+      ],
+      "title": "ToolCalledAssertion",
+      "type": "object"
+    },
+    "ToolCalledBeforeAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "after_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "After Tool Name",
+          "type": "string"
+        },
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_called_before",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "before_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Before Tool Name",
+          "type": "string"
+        },
+        "occurrence_rule": {
+          "const": "FIRST_SUCCESSFUL_DISPATCH",
+          "title": "Occurrence Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "before_tool_name",
+        "after_tool_name",
+        "occurrence_rule"
+      ],
+      "title": "ToolCalledBeforeAssertion",
+      "type": "object"
+    },
+    "ToolNotCalledAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_not_called",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name"
+      ],
+      "title": "ToolNotCalledAssertion",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.triana.invalid/v1/protected_case.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval": {
+      "$ref": "#/$defs/Approval"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_version": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Case Version",
+      "type": "string"
+    },
+    "contract_kind": {
+      "const": "protected_case",
+      "title": "Contract Kind",
+      "type": "string"
+    },
+    "evidence_requirements": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "CUSTOMER_EVALUATOR": "#/$defs/EvaluatorEvidenceRequirement",
+            "TRIANA_ASSERTION": "#/$defs/AssertionEvidenceRequirement"
+          },
+          "propertyName": "requirement_kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/AssertionEvidenceRequirement"
+          },
+          {
+            "$ref": "#/$defs/EvaluatorEvidenceRequirement"
+          }
+        ]
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Evidence Requirements",
+      "type": "array"
+    },
+    "fixture_contract": {
+      "$ref": "#/$defs/FixtureContract"
+    },
+    "qualification": {
+      "discriminator": {
+        "mapping": {
+          "NEEDS_FIXTURE": "#/$defs/NeedsFixtureQualification",
+          "NOT_YET": "#/$defs/NotYetQualification",
+          "READY": "#/$defs/ReadyQualification"
+        },
+        "propertyName": "qualification_state"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ReadyQualification"
+        },
+        {
+          "$ref": "#/$defs/NeedsFixtureQualification"
+        },
+        {
+          "$ref": "#/$defs/NotYetQualification"
+        }
+      ],
+      "title": "Qualification"
+    },
+    "release_obligation": {
+      "$ref": "#/$defs/ReleaseObligation"
+    },
+    "replay_input": {
+      "$ref": "#/$defs/ReplayInput"
+    },
+    "risk_name": {
+      "title": "Risk Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceReference"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Source Evidence",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract_kind",
+    "schema_version",
+    "case_id",
+    "risk_name",
+    "source_evidence",
+    "replay_input",
+    "fixture_contract",
+    "release_obligation",
+    "evidence_requirements",
+    "approval",
+    "qualification",
+    "case_version"
+  ],
+  "title": "ProtectedCase",
+  "type": "object"
+}

@@ -1,5 +1,5 @@
-"""Versioned Triana wire contracts.
+"""Versioned Triana wire contracts."""
 
-Contract models are intentionally absent until the independent acceptance
-contract has been authored and frozen.
-"""
+from triana.contracts.models import DOCUMENT_MODELS, PublicDocument
+
+__all__ = ["DOCUMENT_MODELS", "PublicDocument"]

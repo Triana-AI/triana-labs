@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "locator": {
+          "discriminator": {
+            "mapping": {
+              "HTTPS": "#/$defs/HttpsLocator",
+              "OPAQUE": "#/$defs/OpaqueLocator"
+            },
+            "propertyName": "locator_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/OpaqueLocator"
+            },
+            {
+              "$ref": "#/$defs/HttpsLocator"
+            }
+          ],
+          "title": "Locator"
+        },
+        "reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Reference Id",
+          "type": "string"
+        },
+        "reference_kind": {
+          "enum": [
+            "TRACE",
+            "TOOL_EVENT",
+            "ASSERTION",
+            "EVALUATOR",
+            "FIXTURE",
+            "POLICY",
+            "APPROVAL",
+            "GITHUB",
+            "OTHER"
+          ],
+          "title": "Reference Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference_id",
+        "reference_kind",
+        "content_hash"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "HttpsLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "HTTPS",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "url"
+      ],
+      "title": "HttpsLocator",
+      "type": "object"
+    },
+    "OpaqueLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "OPAQUE",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "token": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "token"
+      ],
+      "title": "OpaqueLocator",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.triana.invalid/v1/decision_attestation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_display_name": {
+      "title": "Actor Display Name",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "attestation_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Attestation Hash",
+      "type": "string"
+    },
+    "attestation_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Attestation Id",
+      "type": "string"
+    },
+    "contract_kind": {
+      "const": "decision_attestation",
+      "title": "Contract Kind",
+      "type": "string"
+    },
+    "decided_at": {
+      "title": "Decided At",
+      "type": "string"
+    },
+    "decision_type": {
+      "enum": [
+        "APPROVE",
+        "HOLD",
+        "APPROVE_WITH_EXCEPTION"
+      ],
+      "title": "Decision Type",
+      "type": "string"
+    },
+    "exception_rationale_reference": {
+      "$ref": "#/$defs/EvidenceReference"
+    },
+    "release_record_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Release Record Hash",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_reference": {
+      "$ref": "#/$defs/EvidenceReference"
+    }
+  },
+  "required": [
+    "contract_kind",
+    "schema_version",
+    "attestation_id",
+    "release_record_hash",
+    "decision_type",
+    "actor_id",
+    "decided_at",
+    "source_reference",
+    "attestation_hash"
+  ],
+  "title": "DecisionAttestation",
+  "type": "object"
+}

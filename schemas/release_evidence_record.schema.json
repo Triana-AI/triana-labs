@@ -1,0 +1,2171 @@
+{
+  "$defs": {
+    "AppendChainLink": {
+      "additionalProperties": false,
+      "properties": {
+        "link_kind": {
+          "const": "APPEND",
+          "title": "Link Kind",
+          "type": "string"
+        },
+        "previous_record_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Previous Record Hash",
+          "type": "string"
+        },
+        "supersedes_record_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Supersedes Record Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "link_kind",
+        "previous_record_hash"
+      ],
+      "title": "AppendChainLink",
+      "type": "object"
+    },
+    "ApprovedBaseline": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "baseline_kind": {
+          "const": "APPROVED",
+          "title": "Baseline Kind",
+          "type": "string"
+        },
+        "code_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Code Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "baseline_kind",
+        "code_ref",
+        "approval_reference"
+      ],
+      "title": "ApprovedBaseline",
+      "type": "object"
+    },
+    "ArgMatchesAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_pointer": {
+          "title": "Argument Pointer",
+          "type": "string"
+        },
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "arg_matches",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "call_selection": {
+          "enum": [
+            "FIRST",
+            "LAST",
+            "EVERY"
+          ],
+          "title": "Call Selection",
+          "type": "string"
+        },
+        "matcher": {
+          "discriminator": {
+            "mapping": {
+              "EXACT_JSON": "#/$defs/ExactJsonMatcher",
+              "STRING_REGEX": "#/$defs/StringRegexMatcher"
+            },
+            "propertyName": "matcher_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ExactJsonMatcher"
+            },
+            {
+              "$ref": "#/$defs/StringRegexMatcher"
+            }
+          ],
+          "title": "Matcher"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name",
+        "argument_pointer",
+        "call_selection",
+        "matcher"
+      ],
+      "title": "ArgMatchesAssertion",
+      "type": "object"
+    },
+    "AssertionEvidenceRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "discriminator": {
+            "mapping": {
+              "arg_matches": "#/$defs/ArgMatchesAssertion",
+              "no_loop": "#/$defs/NoLoopAssertion",
+              "no_unbacked_claim": "#/$defs/NoUnbackedClaimAssertion",
+              "output_matches": "#/$defs/OutputMatchesAssertion",
+              "terminal_state": "#/$defs/TerminalStateAssertion",
+              "tool_called": "#/$defs/ToolCalledAssertion",
+              "tool_called_before": "#/$defs/ToolCalledBeforeAssertion",
+              "tool_not_called": "#/$defs/ToolNotCalledAssertion"
+            },
+            "propertyName": "assertion_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ToolCalledAssertion"
+            },
+            {
+              "$ref": "#/$defs/ToolNotCalledAssertion"
+            },
+            {
+              "$ref": "#/$defs/ToolCalledBeforeAssertion"
+            },
+            {
+              "$ref": "#/$defs/ArgMatchesAssertion"
+            },
+            {
+              "$ref": "#/$defs/NoLoopAssertion"
+            },
+            {
+              "$ref": "#/$defs/NoUnbackedClaimAssertion"
+            },
+            {
+              "$ref": "#/$defs/OutputMatchesAssertion"
+            },
+            {
+              "$ref": "#/$defs/TerminalStateAssertion"
+            }
+          ],
+          "title": "Assertion"
+        },
+        "minimum_trials": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Minimum Trials",
+          "type": "integer"
+        },
+        "required_observation": {
+          "$ref": "#/$defs/ObservationScope"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_kind": {
+          "const": "TRIANA_ASSERTION",
+          "title": "Requirement Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "requirement_kind",
+        "required_observation",
+        "minimum_trials",
+        "assertion"
+      ],
+      "title": "AssertionEvidenceRequirement",
+      "type": "object"
+    },
+    "AssertionGapScope": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "scope_kind": {
+          "const": "ASSERTION",
+          "title": "Scope Kind",
+          "type": "string"
+        },
+        "trial_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trial Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_kind",
+        "trial_id",
+        "assertion_id"
+      ],
+      "title": "AssertionGapScope",
+      "type": "object"
+    },
+    "AssertionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "evidence_references": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "maxItems": 100,
+          "title": "Evidence References",
+          "type": "array"
+        },
+        "execution_index": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Execution Index",
+          "type": "integer"
+        },
+        "gap_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "reason_code": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "result_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNEVALUABLE"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "requirement_id",
+        "assertion_id",
+        "assertion_version",
+        "execution_index",
+        "status",
+        "reason_code",
+        "evidence_references",
+        "gap_ids"
+      ],
+      "title": "AssertionResult",
+      "type": "object"
+    },
+    "BehaviorStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "statement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Statement Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id",
+        "text"
+      ],
+      "title": "BehaviorStatement",
+      "type": "object"
+    },
+    "CandidateExecutionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_execution_contract": {
+          "$ref": "#/$defs/ExecutionContract"
+        },
+        "execution_binding_kind": {
+          "const": "CANDIDATE_ONLY",
+          "title": "Execution Binding Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_binding_kind",
+        "candidate_execution_contract"
+      ],
+      "title": "CandidateExecutionBinding",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "$ref": "#/$defs/SideSummary"
+        },
+        "candidate": {
+          "$ref": "#/$defs/SideSummary"
+        },
+        "comparison_status": {
+          "enum": [
+            "COMPARABLE",
+            "FIRST_OBSERVATION",
+            "MOVED",
+            "INSUFFICIENT_EVIDENCE"
+          ],
+          "title": "Comparison Status",
+          "type": "string"
+        },
+        "movement": {
+          "pattern": "^(?:-1\\.000000|-0\\.(?!000000)[0-9]{6}|0\\.[0-9]{6}|1\\.000000)$",
+          "title": "Movement",
+          "type": "string"
+        },
+        "reason_codes": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Reason Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "comparison_status",
+        "candidate",
+        "reason_codes"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "CustomerEvaluatorResult": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evaluator_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Evaluator Id",
+          "type": "string"
+        },
+        "evaluator_version": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Evaluator Version",
+          "type": "string"
+        },
+        "evidence_references": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "maxItems": 100,
+          "title": "Evidence References",
+          "type": "array"
+        },
+        "gap_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "result_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "score": {
+          "title": "Score",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNEVALUABLE"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "requirement_id",
+        "check_id",
+        "evaluator_id",
+        "evaluator_version",
+        "status",
+        "evidence_references",
+        "gap_ids"
+      ],
+      "title": "CustomerEvaluatorResult",
+      "type": "object"
+    },
+    "EvaluatorEvidenceRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evaluator_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Evaluator Id",
+          "type": "string"
+        },
+        "evaluator_version": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Evaluator Version",
+          "type": "string"
+        },
+        "minimum_trials": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Minimum Trials",
+          "type": "integer"
+        },
+        "required_observation": {
+          "$ref": "#/$defs/ObservationScope"
+        },
+        "requirement_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_kind": {
+          "const": "CUSTOMER_EVALUATOR",
+          "title": "Requirement Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "requirement_kind",
+        "required_observation",
+        "minimum_trials",
+        "evaluator_id",
+        "evaluator_version",
+        "check_id"
+      ],
+      "title": "EvaluatorEvidenceRequirement",
+      "type": "object"
+    },
+    "EvaluatorGapScope": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evaluator_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Evaluator Id",
+          "type": "string"
+        },
+        "scope_kind": {
+          "const": "EVALUATOR",
+          "title": "Scope Kind",
+          "type": "string"
+        },
+        "trial_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trial Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_kind",
+        "trial_id",
+        "evaluator_id",
+        "check_id"
+      ],
+      "title": "EvaluatorGapScope",
+      "type": "object"
+    },
+    "EvidenceGap": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_references": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "maxItems": 100,
+          "title": "Evidence References",
+          "type": "array"
+        },
+        "gap_code": {
+          "enum": [
+            "MISSING_APPROVED_BASELINE",
+            "EXECUTION_CONTRACT_MISMATCH",
+            "MISSING_OBSERVATION",
+            "NEGATIVE_ASSERTION_UNEVALUABLE",
+            "EVALUATOR_TIMEOUT",
+            "EVALUATOR_ERROR",
+            "EVALUATOR_REFUSAL",
+            "EVALUATOR_SCHEMA_INVALID",
+            "INSUFFICIENT_TRIALS",
+            "FIXTURE_REQUIRED"
+          ],
+          "title": "Gap Code",
+          "type": "string"
+        },
+        "gap_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Gap Id",
+          "type": "string"
+        },
+        "reason_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "scope": {
+          "discriminator": {
+            "mapping": {
+              "ASSERTION": "#/$defs/AssertionGapScope",
+              "EVALUATOR": "#/$defs/EvaluatorGapScope",
+              "RECORD": "#/$defs/RecordGapScope",
+              "TRIAL": "#/$defs/TrialGapScope"
+            },
+            "propertyName": "scope_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/RecordGapScope"
+            },
+            {
+              "$ref": "#/$defs/TrialGapScope"
+            },
+            {
+              "$ref": "#/$defs/AssertionGapScope"
+            },
+            {
+              "$ref": "#/$defs/EvaluatorGapScope"
+            }
+          ],
+          "title": "Scope"
+        },
+        "stage": {
+          "enum": [
+            "QUALIFICATION",
+            "EXECUTION",
+            "ASSERTION",
+            "EVALUATOR",
+            "COMPARISON"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gap_id",
+        "gap_code",
+        "stage",
+        "scope",
+        "reason_reference",
+        "evidence_references"
+      ],
+      "title": "EvidenceGap",
+      "type": "object"
+    },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "locator": {
+          "discriminator": {
+            "mapping": {
+              "HTTPS": "#/$defs/HttpsLocator",
+              "OPAQUE": "#/$defs/OpaqueLocator"
+            },
+            "propertyName": "locator_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/OpaqueLocator"
+            },
+            {
+              "$ref": "#/$defs/HttpsLocator"
+            }
+          ],
+          "title": "Locator"
+        },
+        "reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Reference Id",
+          "type": "string"
+        },
+        "reference_kind": {
+          "enum": [
+            "TRACE",
+            "TOOL_EVENT",
+            "ASSERTION",
+            "EVALUATOR",
+            "FIXTURE",
+            "POLICY",
+            "APPROVAL",
+            "GITHUB",
+            "OTHER"
+          ],
+          "title": "Reference Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference_id",
+        "reference_kind",
+        "content_hash"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "ExactJsonMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Expected Hash",
+          "type": "string"
+        },
+        "expected_value_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "matcher_kind": {
+          "const": "EXACT_JSON",
+          "title": "Matcher Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "expected_hash"
+      ],
+      "title": "ExactJsonMatcher",
+      "type": "object"
+    },
+    "ExecutionContract": {
+      "additionalProperties": false,
+      "properties": {
+        "command_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Command Hash",
+          "type": "string"
+        },
+        "configuration_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Configuration Fingerprint",
+          "type": "string"
+        },
+        "contract_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Contract Version",
+          "type": "integer"
+        },
+        "declared_trial_count": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Declared Trial Count",
+          "type": "integer"
+        },
+        "execution_contract_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Execution Contract Hash",
+          "type": "string"
+        },
+        "fixture_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fixture Fingerprint",
+          "type": "string"
+        },
+        "observation_scope": {
+          "$ref": "#/$defs/ObservationScope"
+        },
+        "randomization_policy": {
+          "discriminator": {
+            "mapping": {
+              "NONE": "#/$defs/NoExecutionRandomization",
+              "SEEDED": "#/$defs/SeededExecutionRandomization"
+            },
+            "propertyName": "randomization_policy_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NoExecutionRandomization"
+            },
+            {
+              "$ref": "#/$defs/SeededExecutionRandomization"
+            }
+          ],
+          "title": "Randomization Policy"
+        },
+        "reset_policy_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Reset Policy Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_version",
+        "command_hash",
+        "fixture_fingerprint",
+        "configuration_fingerprint",
+        "reset_policy_hash",
+        "observation_scope",
+        "randomization_policy",
+        "declared_trial_count",
+        "execution_contract_hash"
+      ],
+      "title": "ExecutionContract",
+      "type": "object"
+    },
+    "GenesisChainLink": {
+      "additionalProperties": false,
+      "properties": {
+        "link_kind": {
+          "const": "GENESIS",
+          "title": "Link Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "link_kind"
+      ],
+      "title": "GenesisChainLink",
+      "type": "object"
+    },
+    "HttpsLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "HTTPS",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "url"
+      ],
+      "title": "HttpsLocator",
+      "type": "object"
+    },
+    "JsonSchemaMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "matcher_kind": {
+          "const": "JSON_SCHEMA",
+          "title": "Matcher Kind",
+          "type": "string"
+        },
+        "schema_draft": {
+          "const": "2020-12",
+          "title": "Schema Draft",
+          "type": "string"
+        },
+        "schema_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Schema Hash",
+          "type": "string"
+        },
+        "schema_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "schema_draft",
+        "schema_hash",
+        "schema_reference"
+      ],
+      "title": "JsonSchemaMatcher",
+      "type": "object"
+    },
+    "MatchedExecutionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_binding_kind": {
+          "const": "MATCHED",
+          "title": "Execution Binding Kind",
+          "type": "string"
+        },
+        "execution_contract": {
+          "$ref": "#/$defs/ExecutionContract"
+        }
+      },
+      "required": [
+        "execution_binding_kind",
+        "execution_contract"
+      ],
+      "title": "MatchedExecutionBinding",
+      "type": "object"
+    },
+    "MismatchedExecutionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_execution_contract": {
+          "$ref": "#/$defs/ExecutionContract"
+        },
+        "candidate_execution_contract": {
+          "$ref": "#/$defs/ExecutionContract"
+        },
+        "execution_binding_kind": {
+          "const": "MISMATCHED",
+          "title": "Execution Binding Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_binding_kind",
+        "baseline_execution_contract",
+        "candidate_execution_contract"
+      ],
+      "title": "MismatchedExecutionBinding",
+      "type": "object"
+    },
+    "MissingBaseline": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_kind": {
+          "const": "MISSING",
+          "title": "Baseline Kind",
+          "type": "string"
+        },
+        "reason_code": {
+          "const": "MISSING_APPROVED_BASELINE",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "baseline_kind",
+        "reason_code"
+      ],
+      "title": "MissingBaseline",
+      "type": "object"
+    },
+    "NoExecutionRandomization": {
+      "additionalProperties": false,
+      "properties": {
+        "randomization_policy_kind": {
+          "const": "NONE",
+          "title": "Randomization Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "randomization_policy_kind"
+      ],
+      "title": "NoExecutionRandomization",
+      "type": "object"
+    },
+    "NoHandoffRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "handoff_kind": {
+          "const": "NONE",
+          "title": "Handoff Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "handoff_kind"
+      ],
+      "title": "NoHandoffRequirement",
+      "type": "object"
+    },
+    "NoLoopAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "no_loop",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "maximum_consecutive_calls": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Maximum Consecutive Calls",
+          "type": "integer"
+        },
+        "signature": {
+          "enum": [
+            "TOOL_NAME",
+            "TOOL_NAME_AND_ARGUMENT_HASH"
+          ],
+          "title": "Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "signature",
+        "maximum_consecutive_calls"
+      ],
+      "title": "NoLoopAssertion",
+      "type": "object"
+    },
+    "NoTrialRandomization": {
+      "additionalProperties": false,
+      "properties": {
+        "randomization_kind": {
+          "const": "NONE",
+          "title": "Randomization Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "randomization_kind"
+      ],
+      "title": "NoTrialRandomization",
+      "type": "object"
+    },
+    "NoUnbackedClaimAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "no_unbacked_claim",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "claim_group_name": {
+          "const": "claim",
+          "title": "Claim Group Name",
+          "type": "string"
+        },
+        "normalization": {
+          "enum": [
+            "EXACT_STRING",
+            "ASCII_CASEFOLD_TRIM"
+          ],
+          "title": "Normalization",
+          "type": "string"
+        },
+        "output_pattern": {
+          "title": "Output Pattern",
+          "type": "string"
+        },
+        "pattern_flags": {
+          "items": {
+            "enum": [
+              "ASCII",
+              "IGNORE_CASE",
+              "MULTILINE"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Pattern Flags",
+          "type": "array"
+        },
+        "regex_engine": {
+          "const": "PYTHON_RE_3_13",
+          "title": "Regex Engine",
+          "type": "string"
+        },
+        "support_must_precede_claim": {
+          "const": true,
+          "title": "Support Must Precede Claim",
+          "type": "boolean"
+        },
+        "support_result_pointer": {
+          "title": "Support Result Pointer",
+          "type": "string"
+        },
+        "supporting_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Supporting Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "regex_engine",
+        "output_pattern",
+        "pattern_flags",
+        "claim_group_name",
+        "supporting_tool_name",
+        "support_result_pointer",
+        "normalization",
+        "support_must_precede_claim"
+      ],
+      "title": "NoUnbackedClaimAssertion",
+      "type": "object"
+    },
+    "ObservationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "enum": [
+              "CONVERSATION_TURNS",
+              "MODEL_OUTPUT",
+              "TOOL_DISPATCH",
+              "TOOL_ARGUMENTS",
+              "TOOL_RESULTS",
+              "TERMINAL_STATE",
+              "ESCALATION_HANDOFF",
+              "TIMING",
+              "COST"
+            ],
+            "type": "string"
+          },
+          "maxItems": 9,
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "capabilities"
+      ],
+      "title": "ObservationScope",
+      "type": "object"
+    },
+    "OpaqueLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "locator_kind": {
+          "const": "OPAQUE",
+          "title": "Locator Kind",
+          "type": "string"
+        },
+        "token": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locator_kind",
+        "token"
+      ],
+      "title": "OpaqueLocator",
+      "type": "object"
+    },
+    "OutputMatchesAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "output_matches",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "matcher": {
+          "discriminator": {
+            "mapping": {
+              "JSON_SCHEMA": "#/$defs/JsonSchemaMatcher",
+              "STRING_REGEX": "#/$defs/StringRegexMatcher"
+            },
+            "propertyName": "matcher_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StringRegexMatcher"
+            },
+            {
+              "$ref": "#/$defs/JsonSchemaMatcher"
+            }
+          ],
+          "title": "Matcher"
+        },
+        "target": {
+          "const": "FINAL_ASSISTANT_MESSAGE",
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "target",
+        "matcher"
+      ],
+      "title": "OutputMatchesAssertion",
+      "type": "object"
+    },
+    "PolicyEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "input_evidence_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Input Evidence Hash",
+          "type": "string"
+        },
+        "policy_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Policy Hash",
+          "type": "string"
+        },
+        "policy_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Policy Version",
+          "type": "integer"
+        },
+        "reason_codes": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "recommendation": {
+          "enum": [
+            "PASS",
+            "REVIEW",
+            "BLOCK"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        },
+        "rule_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Rule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "policy_version",
+        "policy_hash",
+        "rule_id",
+        "input_evidence_hash",
+        "reason_codes",
+        "recommendation"
+      ],
+      "title": "PolicyEvaluation",
+      "type": "object"
+    },
+    "RecordGapScope": {
+      "additionalProperties": false,
+      "properties": {
+        "scope_kind": {
+          "const": "RECORD",
+          "title": "Scope Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_kind"
+      ],
+      "title": "RecordGapScope",
+      "type": "object"
+    },
+    "ReleaseChange": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "discriminator": {
+            "mapping": {
+              "APPROVED": "#/$defs/ApprovedBaseline",
+              "MISSING": "#/$defs/MissingBaseline"
+            },
+            "propertyName": "baseline_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ApprovedBaseline"
+            },
+            {
+              "$ref": "#/$defs/MissingBaseline"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "candidate_code_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Candidate Code Ref",
+          "type": "string"
+        },
+        "change_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Change Id",
+          "type": "string"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/ReleaseChangeComponent"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "declaration_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "unresolved_difference_references": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "maxItems": 100,
+          "title": "Unresolved Difference References",
+          "type": "array"
+        }
+      },
+      "required": [
+        "change_id",
+        "declaration_reference",
+        "candidate_code_ref",
+        "baseline",
+        "components",
+        "unresolved_difference_references"
+      ],
+      "title": "ReleaseChange",
+      "type": "object"
+    },
+    "ReleaseChangeComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Baseline Fingerprint",
+          "type": "string"
+        },
+        "candidate_fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Candidate Fingerprint",
+          "type": "string"
+        },
+        "component_kind": {
+          "enum": [
+            "AGENT_CODE",
+            "MODEL",
+            "PROMPT",
+            "TOOLING",
+            "RUNTIME",
+            "CONFIGURATION",
+            "FIXTURE",
+            "EVALUATOR"
+          ],
+          "title": "Component Kind",
+          "type": "string"
+        },
+        "declared_state": {
+          "enum": [
+            "CHANGED",
+            "UNCHANGED",
+            "UNKNOWN"
+          ],
+          "title": "Declared State",
+          "type": "string"
+        },
+        "difference_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Difference Reference Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_kind",
+        "candidate_fingerprint",
+        "declared_state"
+      ],
+      "title": "ReleaseChangeComponent",
+      "type": "object"
+    },
+    "ReleaseObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_alternatives": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "title": "Allowed Alternatives",
+          "type": "array"
+        },
+        "applicability_conditions": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Applicability Conditions",
+          "type": "array"
+        },
+        "expected_behavior": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Expected Behavior",
+          "type": "array"
+        },
+        "handoff_requirement": {
+          "discriminator": {
+            "mapping": {
+              "NONE": "#/$defs/NoHandoffRequirement",
+              "REQUIRED": "#/$defs/RequiredHandoff"
+            },
+            "propertyName": "handoff_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NoHandoffRequirement"
+            },
+            {
+              "$ref": "#/$defs/RequiredHandoff"
+            }
+          ],
+          "title": "Handoff Requirement"
+        },
+        "obligation_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Obligation Id",
+          "type": "string"
+        },
+        "obligation_statement": {
+          "$ref": "#/$defs/BehaviorStatement"
+        },
+        "owner_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Owner Actor Id",
+          "type": "string"
+        },
+        "policy_context_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "prohibited_behavior": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStatement"
+          },
+          "maxItems": 100,
+          "title": "Prohibited Behavior",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        }
+      },
+      "required": [
+        "obligation_id",
+        "obligation_statement",
+        "source_reference",
+        "severity",
+        "owner_actor_id",
+        "applicability_conditions",
+        "expected_behavior",
+        "prohibited_behavior",
+        "allowed_alternatives",
+        "handoff_requirement"
+      ],
+      "title": "ReleaseObligation",
+      "type": "object"
+    },
+    "RequiredHandoff": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Destination Ref",
+          "type": "string"
+        },
+        "handoff_kind": {
+          "const": "REQUIRED",
+          "title": "Handoff Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "handoff_kind"
+      ],
+      "title": "RequiredHandoff",
+      "type": "object"
+    },
+    "RuntimeComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "component_kind": {
+          "enum": [
+            "AGENT_CODE",
+            "MODEL",
+            "PROMPT",
+            "TOOLING",
+            "RUNTIME",
+            "CONFIGURATION",
+            "FIXTURE",
+            "EVALUATOR"
+          ],
+          "title": "Component Kind",
+          "type": "string"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_kind",
+        "fingerprint"
+      ],
+      "title": "RuntimeComponent",
+      "type": "object"
+    },
+    "RuntimeFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/RuntimeComponent"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "runtime_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Runtime Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "components",
+        "runtime_hash"
+      ],
+      "title": "RuntimeFingerprint",
+      "type": "object"
+    },
+    "SeededExecutionRandomization": {
+      "additionalProperties": false,
+      "properties": {
+        "generator": {
+          "title": "Generator",
+          "type": "string"
+        },
+        "generator_version": {
+          "title": "Generator Version",
+          "type": "string"
+        },
+        "randomization_policy_kind": {
+          "const": "SEEDED",
+          "title": "Randomization Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "randomization_policy_kind",
+        "generator",
+        "generator_version"
+      ],
+      "title": "SeededExecutionRandomization",
+      "type": "object"
+    },
+    "SeededTrialRandomization": {
+      "additionalProperties": false,
+      "properties": {
+        "generator": {
+          "title": "Generator",
+          "type": "string"
+        },
+        "generator_version": {
+          "title": "Generator Version",
+          "type": "string"
+        },
+        "randomization_kind": {
+          "const": "SEEDED",
+          "title": "Randomization Kind",
+          "type": "string"
+        },
+        "seed": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Seed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "randomization_kind",
+        "seed",
+        "generator",
+        "generator_version"
+      ],
+      "title": "SeededTrialRandomization",
+      "type": "object"
+    },
+    "SideSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluable_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Evaluable Count",
+          "type": "integer"
+        },
+        "pass_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Pass Count",
+          "type": "integer"
+        },
+        "pass_rate": {
+          "pattern": "^(?:0\\.[0-9]{6}|1\\.000000)$",
+          "title": "Pass Rate",
+          "type": "string"
+        },
+        "trial_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Trial Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trial_count",
+        "evaluable_count",
+        "pass_count",
+        "pass_rate"
+      ],
+      "title": "SideSummary",
+      "type": "object"
+    },
+    "StringRegexMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "flags": {
+          "items": {
+            "enum": [
+              "ASCII",
+              "IGNORE_CASE",
+              "MULTILINE"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Flags",
+          "type": "array"
+        },
+        "matcher_kind": {
+          "const": "STRING_REGEX",
+          "title": "Matcher Kind",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "regex_engine": {
+          "const": "PYTHON_RE_3_13",
+          "title": "Regex Engine",
+          "type": "string"
+        }
+      },
+      "required": [
+        "matcher_kind",
+        "regex_engine",
+        "pattern",
+        "flags"
+      ],
+      "title": "StringRegexMatcher",
+      "type": "object"
+    },
+    "TerminalStateAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "terminal_state",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "expected_state": {
+          "const": "NO_ERROR",
+          "title": "Expected State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "expected_state"
+      ],
+      "title": "TerminalStateAssertion",
+      "type": "object"
+    },
+    "ToolCalledAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_called",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name"
+      ],
+      "title": "ToolCalledAssertion",
+      "type": "object"
+    },
+    "ToolCalledBeforeAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "after_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "After Tool Name",
+          "type": "string"
+        },
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_called_before",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "before_tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Before Tool Name",
+          "type": "string"
+        },
+        "occurrence_rule": {
+          "const": "FIRST_SUCCESSFUL_DISPATCH",
+          "title": "Occurrence Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "before_tool_name",
+        "after_tool_name",
+        "occurrence_rule"
+      ],
+      "title": "ToolCalledBeforeAssertion",
+      "type": "object"
+    },
+    "ToolNotCalledAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "assertion_kind": {
+          "const": "tool_not_called",
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "assertion_version": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Assertion Version",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "assertion_version",
+        "assertion_kind",
+        "tool_name"
+      ],
+      "title": "ToolNotCalledAssertion",
+      "type": "object"
+    },
+    "TrialGapScope": {
+      "additionalProperties": false,
+      "properties": {
+        "scope_kind": {
+          "const": "TRIAL",
+          "title": "Scope Kind",
+          "type": "string"
+        },
+        "trial_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trial Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_kind",
+        "trial_id"
+      ],
+      "title": "TrialGapScope",
+      "type": "object"
+    },
+    "TrialResult": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_results": {
+          "items": {
+            "$ref": "#/$defs/AssertionResult"
+          },
+          "maxItems": 1000,
+          "title": "Assertion Results",
+          "type": "array"
+        },
+        "case_version": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Case Version",
+          "type": "string"
+        },
+        "code_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Code Ref",
+          "type": "string"
+        },
+        "customer_evaluator_results": {
+          "items": {
+            "$ref": "#/$defs/CustomerEvaluatorResult"
+          },
+          "maxItems": 1000,
+          "title": "Customer Evaluator Results",
+          "type": "array"
+        },
+        "end_to_end_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNEVALUABLE"
+          ],
+          "title": "End To End Status",
+          "type": "string"
+        },
+        "execution_contract_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Execution Contract Hash",
+          "type": "string"
+        },
+        "execution_status": {
+          "enum": [
+            "COMPLETED",
+            "ERROR",
+            "TIMEOUT",
+            "REFUSED"
+          ],
+          "title": "Execution Status",
+          "type": "string"
+        },
+        "gaps": {
+          "items": {
+            "$ref": "#/$defs/EvidenceGap"
+          },
+          "maxItems": 1000,
+          "title": "Gaps",
+          "type": "array"
+        },
+        "randomization": {
+          "discriminator": {
+            "mapping": {
+              "NONE": "#/$defs/NoTrialRandomization",
+              "SEEDED": "#/$defs/SeededTrialRandomization"
+            },
+            "propertyName": "randomization_kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NoTrialRandomization"
+            },
+            {
+              "$ref": "#/$defs/SeededTrialRandomization"
+            }
+          ],
+          "title": "Randomization"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "runtime_fingerprint": {
+          "$ref": "#/$defs/RuntimeFingerprint"
+        },
+        "side": {
+          "enum": [
+            "BASELINE",
+            "CANDIDATE"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "trace_reference": {
+          "$ref": "#/$defs/EvidenceReference"
+        },
+        "trial_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trial Id",
+          "type": "string"
+        },
+        "trial_index": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Trial Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trial_id",
+        "run_id",
+        "case_version",
+        "side",
+        "trial_index",
+        "code_ref",
+        "execution_contract_hash",
+        "runtime_fingerprint",
+        "randomization",
+        "execution_status",
+        "assertion_results",
+        "customer_evaluator_results",
+        "gaps",
+        "end_to_end_status"
+      ],
+      "title": "TrialResult",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.triana.invalid/v1/release_evidence_record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "chain_link": {
+      "discriminator": {
+        "mapping": {
+          "APPEND": "#/$defs/AppendChainLink",
+          "GENESIS": "#/$defs/GenesisChainLink"
+        },
+        "propertyName": "link_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GenesisChainLink"
+        },
+        {
+          "$ref": "#/$defs/AppendChainLink"
+        }
+      ],
+      "title": "Chain Link"
+    },
+    "comparison": {
+      "$ref": "#/$defs/Comparison"
+    },
+    "contract_kind": {
+      "const": "release_evidence_record",
+      "title": "Contract Kind",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_record_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Current Record Hash",
+      "type": "string"
+    },
+    "evidence_requirements": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "CUSTOMER_EVALUATOR": "#/$defs/EvaluatorEvidenceRequirement",
+            "TRIANA_ASSERTION": "#/$defs/AssertionEvidenceRequirement"
+          },
+          "propertyName": "requirement_kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/AssertionEvidenceRequirement"
+          },
+          {
+            "$ref": "#/$defs/EvaluatorEvidenceRequirement"
+          }
+        ]
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Evidence Requirements",
+      "type": "array"
+    },
+    "evidence_strength": {
+      "enum": [
+        "SUFFICIENT",
+        "LIMITED",
+        "INSUFFICIENT"
+      ],
+      "title": "Evidence Strength",
+      "type": "string"
+    },
+    "execution_contracts": {
+      "discriminator": {
+        "mapping": {
+          "CANDIDATE_ONLY": "#/$defs/CandidateExecutionBinding",
+          "MATCHED": "#/$defs/MatchedExecutionBinding",
+          "MISMATCHED": "#/$defs/MismatchedExecutionBinding"
+        },
+        "propertyName": "execution_binding_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/MatchedExecutionBinding"
+        },
+        {
+          "$ref": "#/$defs/CandidateExecutionBinding"
+        },
+        {
+          "$ref": "#/$defs/MismatchedExecutionBinding"
+        }
+      ],
+      "title": "Execution Contracts"
+    },
+    "policy_evaluation": {
+      "$ref": "#/$defs/PolicyEvaluation"
+    },
+    "pr_reference": {
+      "$ref": "#/$defs/EvidenceReference"
+    },
+    "project_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "protected_case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Protected Case Id",
+      "type": "string"
+    },
+    "protected_case_version": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Protected Case Version",
+      "type": "string"
+    },
+    "recommendation": {
+      "enum": [
+        "PASS",
+        "REVIEW",
+        "BLOCK"
+      ],
+      "title": "Recommendation",
+      "type": "string"
+    },
+    "record_gaps": {
+      "items": {
+        "$ref": "#/$defs/EvidenceGap"
+      },
+      "maxItems": 1000,
+      "title": "Record Gaps",
+      "type": "array"
+    },
+    "release_change": {
+      "$ref": "#/$defs/ReleaseChange"
+    },
+    "release_obligation": {
+      "$ref": "#/$defs/ReleaseObligation"
+    },
+    "release_stream_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Release Stream Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "seal_state": {
+      "enum": [
+        "UNSIGNED",
+        "SEALED"
+      ],
+      "title": "Seal State",
+      "type": "string"
+    },
+    "trials": {
+      "items": {
+        "$ref": "#/$defs/TrialResult"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Trials",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract_kind",
+    "schema_version",
+    "seal_state",
+    "project_id",
+    "release_stream_id",
+    "run_id",
+    "created_at",
+    "release_change",
+    "protected_case_id",
+    "protected_case_version",
+    "release_obligation",
+    "evidence_requirements",
+    "execution_contracts",
+    "trials",
+    "comparison",
+    "evidence_strength",
+    "record_gaps",
+    "policy_evaluation",
+    "recommendation",
+    "chain_link"
+  ],
+  "title": "ReleaseEvidenceRecord",
+  "type": "object"
+}

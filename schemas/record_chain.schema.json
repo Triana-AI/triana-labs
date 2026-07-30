@@ -1,0 +1,106 @@
+{
+  "$defs": {
+    "RecordChainEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "link_kind": {
+          "enum": [
+            "GENESIS",
+            "APPEND"
+          ],
+          "title": "Link Kind",
+          "type": "string"
+        },
+        "position": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Position",
+          "type": "integer"
+        },
+        "previous_record_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Previous Record Hash",
+          "type": "string"
+        },
+        "record_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Record Hash",
+          "type": "string"
+        },
+        "supersedes_record_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Supersedes Record Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "position",
+        "record_hash",
+        "link_kind"
+      ],
+      "title": "RecordChainEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.triana.invalid/v1/record_chain.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "chain_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Chain Hash",
+      "type": "string"
+    },
+    "chain_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Chain Id",
+      "type": "string"
+    },
+    "contract_kind": {
+      "const": "record_chain",
+      "title": "Contract Kind",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/RecordChainEntry"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Entries",
+      "type": "array"
+    },
+    "head_record_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Head Record Hash",
+      "type": "string"
+    },
+    "project_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "release_stream_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Release Stream Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "contract_kind",
+    "schema_version",
+    "chain_id",
+    "project_id",
+    "release_stream_id",
+    "entries",
+    "head_record_hash",
+    "chain_hash"
+  ],
+  "title": "RecordChain",
+  "type": "object"
+}

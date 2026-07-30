@@ -1,0 +1,601 @@
+{
+  "$defs": {
+    "AssistantMessageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "ASSISTANT_MESSAGE",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "is_final": {
+          "title": "Is Final",
+          "type": "boolean"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "content",
+        "is_final"
+      ],
+      "title": "AssistantMessageEvent",
+      "type": "object"
+    },
+    "HandoffEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Destination Ref",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "HANDOFF",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "handoff_kind": {
+          "enum": [
+            "HUMAN",
+            "AGENT",
+            "QUEUE"
+          ],
+          "title": "Handoff Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "REQUESTED",
+            "ACCEPTED",
+            "REJECTED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "handoff_kind",
+        "destination_ref",
+        "outcome"
+      ],
+      "title": "HandoffEvent",
+      "type": "object"
+    },
+    "ModelObservationEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "cost_amount": {
+          "title": "Cost Amount",
+          "type": "string"
+        },
+        "cost_currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Cost Currency",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "MODEL_OBSERVATION",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "latency_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Model Ref",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "output": {
+          "title": "Output",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "model_ref",
+        "output"
+      ],
+      "title": "ModelObservationEvent",
+      "type": "object"
+    },
+    "ObservationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "enum": [
+              "CONVERSATION_TURNS",
+              "MODEL_OUTPUT",
+              "TOOL_DISPATCH",
+              "TOOL_ARGUMENTS",
+              "TOOL_RESULTS",
+              "TERMINAL_STATE",
+              "ESCALATION_HANDOFF",
+              "TIMING",
+              "COST"
+            ],
+            "type": "string"
+          },
+          "maxItems": 9,
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "capabilities"
+      ],
+      "title": "ObservationScope",
+      "type": "object"
+    },
+    "SystemMessageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "SYSTEM_VISIBLE_MESSAGE",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "content"
+      ],
+      "title": "SystemMessageEvent",
+      "type": "object"
+    },
+    "TerminalEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "TERMINAL",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "reason_code": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "terminal_state": {
+          "enum": [
+            "SUCCESS",
+            "ERROR",
+            "ABORTED"
+          ],
+          "title": "Terminal State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "terminal_state"
+      ],
+      "title": "TerminalEvent",
+      "type": "object"
+    },
+    "ToolCallEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "title": "Arguments"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "TOOL_CALL",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "tool_name",
+        "arguments"
+      ],
+      "title": "ToolCallEvent",
+      "type": "object"
+    },
+    "ToolResultEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "error_code": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+          "title": "Error Code",
+          "type": "string"
+        },
+        "error_message": {
+          "title": "Error Message",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "TOOL_RESULT",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result"
+        },
+        "result_state": {
+          "enum": [
+            "SUCCEEDED",
+            "ERROR"
+          ],
+          "title": "Result State",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "tool_call_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Tool Call Event Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "tool_call_event_id",
+        "result_state"
+      ],
+      "title": "ToolResultEvent",
+      "type": "object"
+    },
+    "TraceSource": {
+      "additionalProperties": false,
+      "properties": {
+        "source_export_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Source Export Hash",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "LANGFUSE",
+            "JSONL",
+            "OTEL",
+            "OTHER"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "source_trace_id": {
+          "title": "Source Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "source_trace_id",
+        "source_export_hash"
+      ],
+      "title": "TraceSource",
+      "type": "object"
+    },
+    "UserMessageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_kind": {
+          "const": "USER_MESSAGE",
+          "title": "Event Kind",
+          "type": "string"
+        },
+        "occurred_at": {
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "parent_event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+          "title": "Parent Event Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "event_kind",
+        "content"
+      ],
+      "title": "UserMessageEvent",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.triana.invalid/v1/normalized_trace.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "agent_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Agent Ref",
+      "type": "string"
+    },
+    "contract_kind": {
+      "const": "normalized_trace",
+      "title": "Contract Kind",
+      "type": "string"
+    },
+    "conversation_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "events": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "ASSISTANT_MESSAGE": "#/$defs/AssistantMessageEvent",
+            "HANDOFF": "#/$defs/HandoffEvent",
+            "MODEL_OBSERVATION": "#/$defs/ModelObservationEvent",
+            "SYSTEM_VISIBLE_MESSAGE": "#/$defs/SystemMessageEvent",
+            "TERMINAL": "#/$defs/TerminalEvent",
+            "TOOL_CALL": "#/$defs/ToolCallEvent",
+            "TOOL_RESULT": "#/$defs/ToolResultEvent",
+            "USER_MESSAGE": "#/$defs/UserMessageEvent"
+          },
+          "propertyName": "event_kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/UserMessageEvent"
+          },
+          {
+            "$ref": "#/$defs/AssistantMessageEvent"
+          },
+          {
+            "$ref": "#/$defs/SystemMessageEvent"
+          },
+          {
+            "$ref": "#/$defs/ModelObservationEvent"
+          },
+          {
+            "$ref": "#/$defs/ToolCallEvent"
+          },
+          {
+            "$ref": "#/$defs/ToolResultEvent"
+          },
+          {
+            "$ref": "#/$defs/HandoffEvent"
+          },
+          {
+            "$ref": "#/$defs/TerminalEvent"
+          }
+        ]
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    },
+    "observation_scope": {
+      "$ref": "#/$defs/ObservationScope"
+    },
+    "privacy_class": {
+      "const": "LOCAL_SENSITIVE",
+      "title": "Privacy Class",
+      "type": "string"
+    },
+    "release_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Release Ref",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/TraceSource"
+    },
+    "thread_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Thread Id",
+      "type": "string"
+    },
+    "trace_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Trace Hash",
+      "type": "string"
+    },
+    "trace_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "title": "Trace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_kind",
+    "schema_version",
+    "privacy_class",
+    "trace_id",
+    "source",
+    "conversation_id",
+    "observation_scope",
+    "events",
+    "trace_hash"
+  ],
+  "title": "NormalizedTrace",
+  "type": "object"
+}
