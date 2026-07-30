@@ -1,0 +1,50 @@
+{
+  "decision_attestation.complete": {
+    "canonical_sha256": "sha256:35c5ede5087279ad9d61a8cad0e1787cfe2692a24304f0e1ba78c56da832eb7a",
+    "self_identity": "sha256:8c8fa506e4bd27518249430d24a395c6d4be96c17db3385422f978aea2fbfc5b"
+  },
+  "decision_attestation.minimal": {
+    "canonical_sha256": "sha256:ba55b36ba37498ffbf808c934759b4c1bcb60477067b21fd3ba6670f728802a8",
+    "self_identity": "sha256:c37b8e4e6cdfeea8d6ef9f5e720dbae63c5841427faea2be9fbfffbdc1402154"
+  },
+  "normalized_trace.complete": {
+    "canonical_sha256": "sha256:ed879e44785cbf4b6bf7c4ea150a915012ffcdd2d3c72fd0eab7bed9b5569eb7",
+    "self_identity": "sha256:2a18ebd93ec9294f51ae637b6eab301b8eb90c97ab71f76d6d15bdc45805eabb"
+  },
+  "normalized_trace.minimal": {
+    "canonical_sha256": "sha256:71b6179aecff2da76cd255c5dd883400945c6e7ab719415344048c7a144b44de",
+    "self_identity": "sha256:3ea01a0db6a1de617a0a450a741e5e5d0e0b0d64efb4f2a122f9540b5cb4d19b"
+  },
+  "protected_case.complete": {
+    "canonical_sha256": "sha256:5ceb1829ddca9e9d2aca18a30fb3c0f4ef1d2719023c9ac48c6d8e13106bd3c5",
+    "self_identity": "sha256:6f664ab834a6b20924499031627f9f70ec779f2f0d4dd3cb67654af9e2b75811"
+  },
+  "protected_case.minimal": {
+    "canonical_sha256": "sha256:a6f1a88f003e497dd625d6409c0227e70875fcac57725769b3a12e7f1b1921d2",
+    "self_identity": "sha256:2df287e0bd31c1971d543609e9ed28e7b7f00f9953106063e49ef2662883e806"
+  },
+  "record_chain.complete": {
+    "canonical_sha256": "sha256:f87aa2630b0d49505e116931c79535e041ce337734c5be956b55599a3d49747a",
+    "self_identity": "sha256:1bc48e4f1220f5008d83070fc1206eed7dc6f1a77b38e422692ad4a3755011b5"
+  },
+  "record_chain.minimal": {
+    "canonical_sha256": "sha256:ac426ca2b17e2844d14a689f824dd022501a50ed507f9eaa2c8ae82f0a353a71",
+    "self_identity": "sha256:fa21e2a5d1e76ec51858bb8d648aa943bb230aef047cd36c8751b34dba207c84"
+  },
+  "release_evidence_record.sealed_complete": {
+    "canonical_sha256": "sha256:c7878736e50c1eefc0a6ac30f88a2c126bd2b8817b3ba52b094de9c3be0c6d1a",
+    "self_identity": "sha256:8356586e1e9f5047298f7345dd92f4829bdd495951ec57094b0cd8b2b082f5e0"
+  },
+  "release_evidence_record.sealed_minimal": {
+    "canonical_sha256": "sha256:da4e0dee3116d4d35089ac05a5a687a3fb7255645c1ceaeee8b76fbc708a1602",
+    "self_identity": "sha256:eb1efa2a4ea5c6e2aa93e86d54f617a5a4943d751e786aad2d8ef74b501b00b2"
+  },
+  "release_evidence_record.unsigned_complete": {
+    "canonical_sha256": "sha256:fcad98d5fd3695dc82286a8d4448a98c89a3a10ff49f3d8c8eafa6b03f50a27f",
+    "self_identity": null
+  },
+  "release_evidence_record.unsigned_minimal": {
+    "canonical_sha256": "sha256:8eb52e9c2bef2fab4f307b79366b5643996c4c2e157f3983de1577fdb6b15ba7",
+    "self_identity": null
+  }
+}

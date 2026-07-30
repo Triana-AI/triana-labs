@@ -1,0 +1,17 @@
+{
+  "fixture_universe_hash": "sha256:5c89669b9c8024870291524994fd8ac9f7a477fef93c0e8210db370519c3e6b3",
+  "hypothesis_version": "6.163.1",
+  "profile": "slice0a",
+  "seed": 2026073001,
+  "reproduction_blob_policy": "present_only_on_failure",
+  "property_tests": [
+    {
+      "test_node_id": "tests/acceptance/test_properties.py::test_set_normalization_is_permutation_invariant",
+      "outcome": "PASS"
+    },
+    {
+      "test_node_id": "tests/acceptance/test_properties.py::test_canonicalization_is_idempotent",
+      "outcome": "PASS"
+    }
+  ]
+}

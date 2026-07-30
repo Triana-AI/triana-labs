@@ -1,0 +1,1 @@
+{"a":1,"escaped":"line\nbreak","z":"é"}
