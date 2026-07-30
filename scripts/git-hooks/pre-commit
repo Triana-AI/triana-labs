@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+"$root/scripts/verify-decision-memory.sh"
+"$root/scripts/verify-governance.sh" --staged

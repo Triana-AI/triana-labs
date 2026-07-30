@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/verify-governance.sh --working-tree",
+            "timeout": 30,
+            "statusMessage": "Verifying Triana governance..."
+          }
+        ]
+      }
+    ]
+  }
+}

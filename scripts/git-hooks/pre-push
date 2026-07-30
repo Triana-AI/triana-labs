@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_ref:$remote_ref" in
+    refs/heads/main:*|refs/heads/master:*|*:refs/heads/main|*:refs/heads/master)
+      printf 'pre-push: direct pushes involving a protected branch are prohibited; use a topic branch and pull request\n' >&2
+      exit 1
+      ;;
+  esac
+done
+
+"$root/scripts/verify-decision-memory.sh"
+"$root/scripts/verify-governance.sh" --working-tree

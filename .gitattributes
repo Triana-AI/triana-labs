@@ -1,0 +1,2 @@
+# Historical research is preserved byte-for-byte under the provenance allowlist.
+internal/research/** -whitespace

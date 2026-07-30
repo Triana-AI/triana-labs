@@ -13,3 +13,12 @@ coverage/
 __pycache__/
 *.pyc
 *.log
+
+# Local decision journal. The committed ground truth is
+# internal/DECISION_LOG.md; see docs/ENGINEERING.md.
+.decision-memory/
+
+# Tool-local state. Shared instructions are committed in AGENTS.md and
+# CLAUDE.md.
+.claude/settings.local.json
+.codex/

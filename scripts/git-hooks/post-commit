@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+[ "$branch" = "HEAD" ] && branch=detached
+safe_branch=$(printf '%s' "$branch" | tr '/ ' '--')
+memory_dir="$root/.decision-memory"
+memory_file="$memory_dir/$(date +%Y-%m-%d)-$safe_branch.md"
+short_hash=$(git log -1 --format=%h)
+subject=$(git log -1 --format=%s)
+
+mkdir -p "$memory_dir"
+
+if [ -f "$memory_file" ] && grep -q "^## $short_hash — " "$memory_file"; then
+  exit 0
+fi
+
+{
+  printf '\n## %s — %s\n\n' "$short_hash" "$subject"
+  printf '%s\n' '- Why: TODO'
+  printf '%s\n' '- Evidence: TODO'
+  printf '%s\n' '- Trace: TODO'
+} >>"$memory_file"
+
+printf 'decision-memory: complete the entry for %s in %s before the next commit or push\n' "$short_hash" "$memory_file"
