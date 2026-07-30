@@ -1,18 +1,17 @@
 # Active implementation slice
 
-Status: **APPROVED AND FROZEN — AWAITING EXECUTION START**
+Status: **READY_FOR_TEST_AUTHOR**
 
-No test-author or implementation-author agent may start until the orchestrator
-presents the final frozen plan to Akarsh and Akarsh explicitly starts
-execution.
+The owner started execution on 2026-07-30. The implementation author created
+only the approved reproducible `NOT_IMPLEMENTED` scaffold. The independent test
+author may now edit only the frozen test-owned paths.
 
 ## Identity
 
 - Slice ID: `0A-contract-kernel`
 - Working interpretation: the first implementation slice, not Phase 1
   acquisition
-- Canonical base commit: unresolved; current governance/product documentation
-  is still uncommitted on `main`
+- Canonical RED base commit: `f08b30c`
 - Orchestrator: primary Codex agent
 - Test author: separate agent, assigned only after approval
 - Implementation author: different agent, assigned only after test freeze
@@ -611,19 +610,22 @@ bytes, expected digests, seeds, or adversarial cases.
 
 ## Commands
 
-Exact command spellings will be recorded by the orchestrator when the approved
-scaffold is created; their required roles and acceptance behavior are frozen
-below.
+Exact commands:
 
-Required command roles:
-
+- lock: `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv lock --check`
+- sync:
+  `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv sync --locked --all-groups`
 - governance: `./scripts/verify-governance.sh --working-tree`
-- RED: one black-box acceptance command
-- fast: format/lint/type plus focused tests
-- full: governance plus complete tests, determinism, tamper, redaction, build,
-  and package
-- reproduce: one fixture-to-canonical-bytes-and-hash command
-- container parity: same reproduction inside the pinned container
+- format: `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked ruff format --check src tests`
+- lint: `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked ruff check src tests`
+- type: `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked mypy src`
+- RED/acceptance:
+  `UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked pytest tests/acceptance -q`
+- full verification will combine governance, format, lint, type, complete tests,
+  deterministic repeatability, tamper, redaction, build, package, and
+  container parity after the test author freezes their artifact set.
+- reproduce will invoke the installed `triana` CLI over the frozen golden
+  fixture selected by the test author.
 
 ## Test freeze requirements
 
