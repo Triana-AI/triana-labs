@@ -32,9 +32,10 @@ read:
 
 1. `docs/PRODUCT.md`
 2. `docs/ARCHITECTURE.md`
-3. `internal/WORKING_MEMORY.md`
-4. `docs/PROVENANCE.md`
-5. `internal/DECISION_LOG.md`
+3. `docs/CONTRACTS.md`
+4. `internal/WORKING_MEMORY.md`
+5. `docs/PROVENANCE.md`
+6. `internal/DECISION_LOG.md`
 
 The frozen V1 is a constraint, not a brainstorm. Discussion and customer
 requests do not change it. A successor decision requires observed evidence and

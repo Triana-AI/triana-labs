@@ -6,7 +6,7 @@ not grant a license to redistribute its implementation.
 ## Start here
 
 1. Read `AGENTS.md`.
-2. Read `docs/PRODUCT.md` and `docs/ARCHITECTURE.md`.
+2. Read `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/CONTRACTS.md`.
 3. Read `internal/DECISION_LOG.md`, `docs/ENGINEERING.md`, and
    `internal/WORKING_MEMORY.md`.
 4. Read `docs/PROVENANCE.md` before bringing in any external material.

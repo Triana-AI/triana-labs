@@ -1,10 +1,21 @@
 # Active implementation slice
 
-Status: **READY_FOR_TEST_AUTHOR**
+Status: **FINAL CONTRACT AUDIT PASSED — HANDOFF COMMIT PENDING**
 
 The owner started execution on 2026-07-30. The implementation author created
-only the approved reproducible `NOT_IMPLEMENTED` scaffold. The independent test
-author may now edit only the frozen test-owned paths.
+only the approved reproducible `NOT_IMPLEMENTED` scaffold. The first
+test-author audit correctly found that this packet did not yet freeze exact
+field-level wire semantics and made no edits. Akarsh approved the resulting
+field-level proposal and fixed-rate representation. The orchestrator must
+obtain a clean independent re-audit of `docs/CONTRACTS.md` before the test
+author may edit test-owned paths. The first re-audit found nine contradictions;
+Akarsh approved all nine corrections, the orchestrator applied them to
+`docs/CONTRACTS.md`, and no test files were created.
+
+The final independent no-edit audit passed after the four owner-approved
+protocol closures. The test author still may not edit until the orchestrator
+records the normative specification commit and changes this status to
+`READY_FOR_TEST_AUTHOR`.
 
 ## Identity
 
@@ -45,14 +56,21 @@ decisions.
 
 ### D2. Versioned contract package
 
-Four top-level contract families:
+Four core evidence families:
 
 1. `NormalizedTrace`
 2. `ProtectedCase`
 3. `ReleaseEvidenceRecord`
 4. `RecordChain`
 
-Nested typed values may include:
+One additional independently valid lifecycle document:
+
+5. `DecisionAttestation`
+
+The closed nested-type registry and exact field-level wire contract are
+normative in `docs/CONTRACTS.md`.
+
+Nested typed values include:
 
 - `ReleaseChange`
 - `ReleaseObligation`
@@ -68,7 +86,6 @@ Nested typed values may include:
 - `PolicyEvaluation`
 - `EvidenceReference`
 - `Approval`
-- `DecisionAttestation`
 
 Nested values are not services, database tables, or independently deployed
 systems.
@@ -244,6 +261,8 @@ IEEE-754 domain.
 - Store integer numerators and denominators where a rate is derived.
 - Reject unsafe integers, `-0`, non-finite values, and arbitrary protected
   floats.
+- Derived rates and movements use exactly six fractional digits with
+  round-half-even. Integer counts remain authoritative.
 
 ### D0A-07 — Unicode, timestamps, null, and optional fields — ACCEPTED
 

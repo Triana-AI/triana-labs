@@ -1,7 +1,11 @@
 # Architecture and trust contracts
 
-This document fixes the V1 boundaries without choosing a programming language
-or cloud architecture prematurely.
+This document fixes the V1 authority and system boundaries without choosing a
+cloud architecture prematurely. The accepted implementation split is Python
+for the deterministic core, CLI, backend APIs, integrations, and future
+AI-assisted packages, with TypeScript for the web UI and versioned JSON Schema
+as the enforced language boundary. `docs/CONTRACTS.md` owns the exact Slice 0A
+wire representation.
 
 ## Authority map
 
