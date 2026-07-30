@@ -143,6 +143,14 @@ def _record_evaluator_gap() -> JsonObject:
     return _record_gap_scope("EVALUATOR")
 
 
+def insufficient_without_baseline_record() -> JsonObject:
+    """Return the valid INSUFFICIENT_EVIDENCE arm with optional baseline absent."""
+    value = evaluator_gap_record(sealed=False)
+    del value["comparison"]["baseline"]
+    value["seal_state"] = "SEALED"
+    return with_self_hash(value, "release_evidence_record", "current_record_hash")
+
+
 TRACE = complete_trace
 TRACE_TOOL_ERROR = _trace_tool_error
 TRACE_TERMINAL_ERROR = _trace_terminal_error
@@ -156,6 +164,7 @@ RECORD = lambda: sealed_record(complete=True)
 RECORD_FIRST = sealed_record
 RECORD_MOVED = lambda: moved_record(sealed=True)
 RECORD_GAP = lambda: evaluator_gap_record(sealed=True)
+RECORD_GAP_NO_BASELINE = insufficient_without_baseline_record
 RECORD_TRIAL_GAP = _record_trial_gap
 RECORD_ASSERTION_GAP = _record_assertion_gap
 RECORD_EVALUATOR_GAP = _record_evaluator_gap
@@ -838,7 +847,6 @@ OBJECT_COVERAGE: tuple[ObjectCoverage, ...] = (
         "runtime_fingerprint",
         "randomization",
         "execution_status",
-        "trace_reference",
         "assertion_results",
         "customer_evaluator_results",
         "gaps",
@@ -974,8 +982,8 @@ OBJECT_COVERAGE: tuple[ObjectCoverage, ...] = (
             (
                 "comparison-insufficient",
                 "Comparison.INSUFFICIENT_EVIDENCE",
-                RECORD_GAP,
-                ("comparison_status", "candidate", "baseline", "reason_codes"),
+                RECORD_GAP_NO_BASELINE,
+                ("comparison_status", "candidate", "reason_codes"),
             ),
         )
     ),

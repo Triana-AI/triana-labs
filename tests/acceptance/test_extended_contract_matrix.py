@@ -17,7 +17,7 @@ from fixtures.factory import (
     sealed_record,
 )
 
-from acceptance.support import run_cli, write_json
+from acceptance.support import run_cli, write_json, write_raw_json
 
 
 def _parent(value: Any, path: tuple[str | int, ...]) -> tuple[Any, str | int]:
@@ -224,7 +224,7 @@ def test_required_field_removal_reports_exact_pointer(
     result = run_cli(
         "contracts",
         "validate",
-        str(write_json(tmp_path / f"{name}.json", document)),
+        str(write_raw_json(tmp_path / f"{name}.json", document)),
     )
     assert result.returncode == 4
     event = result.log_lines()[0]

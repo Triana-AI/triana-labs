@@ -8,7 +8,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fixtures.contract_coverage import RELEASE_RECORD_PROTECTED_FIELDS
+from fixtures.contract_coverage import (
+    RELEASE_RECORD_PROTECTED_FIELDS,
+    insufficient_without_baseline_record,
+)
 from fixtures.factory import (
     canonical_bytes,
     complete_trace,
@@ -20,7 +23,7 @@ from fixtures.factory import (
     with_self_hash,
 )
 
-from acceptance.support import run_cli, write_json
+from acceptance.support import run_cli, write_json, write_raw_json
 
 
 def _assign(value: Any, path: tuple[str | int, ...], replacement: Any) -> None:
@@ -379,6 +382,33 @@ def test_noncompleted_trial_cannot_report_pass(tmp_path: Path) -> None:
     )
     assert result.returncode == 5
     assert result.log_lines()[0]["code"] == "IMPOSSIBLE_STATE"
+
+
+def test_completed_trial_without_trace_is_impossible_state(tmp_path: Path) -> None:
+    record = sealed_record(complete=True)
+    del record["trials"][0]["trace_reference"]
+    result = run_cli(
+        "records",
+        "verify",
+        str(write_raw_json(tmp_path / "completed-without-trace.json", record)),
+    )
+    assert result.returncode == 5
+    event = result.log_lines()[0]
+    assert event["code"] == "IMPOSSIBLE_STATE"
+    assert event["json_pointer"] == "/trials/0/trace_reference"
+
+
+def test_insufficient_evidence_baseline_is_structurally_optional(
+    tmp_path: Path,
+) -> None:
+    record = insufficient_without_baseline_record()
+    result = run_cli(
+        "records",
+        "verify",
+        str(write_json(tmp_path / "insufficient-no-baseline.json", record)),
+    )
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["verified"] is True
 
 
 @pytest.mark.parametrize(

@@ -20,6 +20,8 @@ from fixtures.factory import (
     fixture_universe_hash,
 )
 
+from acceptance.support import write_raw_json
+
 
 def test_independent_canonical_oracle_matches_hand_authored_vector() -> None:
     fixtures = Path(__file__).parents[1] / "fixtures"
@@ -93,3 +95,21 @@ def test_contract_coverage_manifest_is_unique_resolvable_and_complete() -> None:
     assert set(RELEASE_RECORD_PROTECTED_FIELDS) == (
         set(record.required_fields) - {"current_record_hash"}
     ) | {"pr_reference"}
+
+
+def test_every_required_field_removal_serializes_without_fixture_oracle(
+    tmp_path: Path,
+) -> None:
+    """Prove all malformed missing-key fixtures reach the CLI serialization edge."""
+    for name, factory, path in required_path_cases():
+        document = factory()
+        parent = document
+        for part in path[:-1]:
+            parent = parent[part]
+        del parent[path[-1]]
+        destination = write_raw_json(tmp_path / f"{name}.json", document)
+        serialized = json.loads(destination.read_text())
+        serialized_parent = serialized
+        for part in path[:-1]:
+            serialized_parent = serialized_parent[part]
+        assert path[-1] not in serialized_parent

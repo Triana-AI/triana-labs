@@ -54,6 +54,27 @@ def write_json(path: Path, value: Any, *, pretty: bool = False) -> Path:
     return path
 
 
+def write_raw_json(path: Path, value: Any) -> Path:
+    """Write an invalid test document without applying domain normalization.
+
+    Negative schema cases can deliberately remove the stable key used by the
+    independent canonical oracle.  Sorting object keys here keeps the fixture
+    bytes deterministic while allowing the malformed document to reach the
+    public CLI unchanged.
+    """
+    path.write_text(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    return path
+
+
 def assert_terminal(
     result: CliResult,
     *,
