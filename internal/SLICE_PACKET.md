@@ -1,20 +1,20 @@
 # Active implementation slice
 
-Status: **READY_FOR_TEST_AUTHOR**
+Status: **READY_FOR_IMPLEMENTATION_AUTHOR**
 
-The owner started execution on 2026-07-30. The implementation author created
-only the approved reproducible `NOT_IMPLEMENTED` scaffold. The first
-test-author audit correctly found that this packet did not yet freeze exact
-field-level wire semantics and made no edits. Akarsh approved the resulting
-field-level proposal and fixed-rate representation. The orchestrator must
-obtain a clean independent re-audit of `docs/CONTRACTS.md` before the test
-author may edit test-owned paths. The first re-audit found nine contradictions;
-Akarsh approved all nine corrections, the orchestrator applied them to
-`docs/CONTRACTS.md`, and no test files were created.
+The owner started execution on 2026-07-30. The implementation author first
+created only the approved reproducible `NOT_IMPLEMENTED` scaffold. Independent
+test-author audits then forced the field-level protocol, nine corrections, and
+four final closures to be owner-approved before any fixture became ground
+truth.
 
-The final independent no-edit audit passed after the four owner-approved
-protocol closures. The test author may edit only `tests/acceptance/**` and
-`tests/fixtures/**` from this handoff.
+The independent test author subsequently created only
+`tests/acceptance/**` and `tests/fixtures/**`. The orchestrator reviewed the
+suite, returned two incomplete coverage passes to the test author, reproduced
+the final exhaustive manifest and behavioral RED result, matched every file
+hash, and froze the test-owned paths in commit `87476be`. The implementation
+author may now edit production-owned paths but may not edit the frozen tests or
+fixtures.
 
 ## Identity
 
@@ -23,9 +23,11 @@ protocol closures. The test author may edit only `tests/acceptance/**` and
   acquisition
 - Canonical RED base commit: `f08b30c`
 - Normative contract commit: `710bccd`
+- Frozen test commit: `87476be`
+- Frozen test evidence: `internal/SLICE_0A_TEST_FREEZE.json`
 - Orchestrator: primary Codex agent
-- Test author: separate agent, assigned only after approval
-- Implementation author: different agent, assigned only after test freeze
+- Test author: separate agent; completed and frozen
+- Implementation author: different agent; released only after this freeze
 
 ## Product outcome
 
@@ -658,6 +660,23 @@ Before the implementation author starts, the orchestrator must record:
 - proof no production-owned path was edited;
 - adversarial cases reserved for integration;
 - all reported ambiguities resolved by Akarsh.
+
+Freeze result:
+
+- 619 acceptance cases collected.
+- 607 cases fail only at the approved behavioral RED boundary.
+- 12 scaffold, oracle, manifest, property, and help cases pass.
+- The independent harness/property subset passes twice in fresh processes.
+- The manifest covers 85 closed object or union-arm boundaries, 397 required
+  or active-conditional paths, all five public kinds, and every
+  Release Evidence Record hash-preimage field.
+- Fixture universe:
+  `sha256:5c89669b9c8024870291524994fd8ac9f7a477fef93c0e8210db370519c3e6b3`.
+- `OUTPUT_WRITE_FAILED` and `LOG_REDACTION_FAILED` remain explicit
+  orchestrator-owned adversarial/unit cases because the public CLI exposes no
+  deterministic portable black-box injection hook.
+- The machine-readable counts, commands, hashes, and reservations are frozen
+  in `internal/SLICE_0A_TEST_FREEZE.json`.
 
 ## Slice exit gate
 

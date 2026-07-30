@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "slice_id": "0A-contract-kernel",
+  "frozen_test_commit": "87476be",
+  "normative_contract_commit": "710bccd",
+  "canonical_red_base_commit": "f08b30c",
+  "fixture_universe_hash": "sha256:5c89669b9c8024870291524994fd8ac9f7a477fef93c0e8210db370519c3e6b3",
+  "property_profile": {
+    "hypothesis_version": "6.163.1",
+    "profile": "slice0a",
+    "seed": 2026073001
+  },
+  "coverage": {
+    "collected": 619,
+    "behavioral_red": 607,
+    "passing_scaffold_and_harness": 12,
+    "closed_object_and_union_boundaries": 85,
+    "required_and_active_conditional_paths": 397,
+    "public_contract_kinds": 5,
+    "release_record_preimage_fields": 21
+  },
+  "commands": {
+    "acceptance_red": "UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked pytest tests/acceptance -q",
+    "format": "UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked ruff format --check src tests",
+    "lint": "UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked ruff check src tests",
+    "governance": "./scripts/verify-governance.sh --working-tree"
+  },
+  "reserved_orchestrator_cases": [
+    "OUTPUT_WRITE_FAILED",
+    "LOG_REDACTION_FAILED"
+  ],
+  "files": {
+    "tests/acceptance/__init__.py": "sha256:4c34873f6d1a79d21cf4206b9cb75faca8a66ed5c1415e711b3f1e343f5e43fd",
+    "tests/acceptance/conftest.py": "sha256:37ef7e9dd675cbeec8bf26e1f56dba5a5108f3d57532349ec54205acb72bebc6",
+    "tests/acceptance/support.py": "sha256:25754d72905b826fa1f17bb342cb816f45d60c5d386ac7a6fde33c90fe7b0c71",
+    "tests/acceptance/test_cli_failures_and_logs.py": "sha256:4a4b2f6877f272aa260d5ee20797abf6982e7fcedd83416f31726411c3837efc",
+    "tests/acceptance/test_contract_documents.py": "sha256:e16d16ddfede9a63174fe4e8a134f1a37ca75c2a0a8720417c5ab2a9fbf66ad0",
+    "tests/acceptance/test_extended_contract_matrix.py": "sha256:075a25d904d6a5746403350b31735da62fffaf0f8c40f80f681c9a86780b2778",
+    "tests/acceptance/test_extended_integrity.py": "sha256:4e0fc4485a7e847d9060bc8766b65c9d24e05ab44d1a6776448bbc62fa51f65b",
+    "tests/acceptance/test_extended_resources_and_logs.py": "sha256:4a2cd1b76e9f9018f69fbcc9d2fd635415f03f68741dc6de40eeaab93d6af847",
+    "tests/acceptance/test_harness.py": "sha256:cf5a7bbe059c8a824e51d7f00d736916b09fd6c51f9149da7ed3fd9948c526ed",
+    "tests/acceptance/test_properties.py": "sha256:2976fd19597431d262d057f44f85c38734e94329b6a20c2d64fded678acf4d7f",
+    "tests/acceptance/test_records.py": "sha256:c3fcd59014dde865de04833ff6d912863a5e7275a6636a9007f4998f48586a0e",
+    "tests/fixtures/__init__.py": "sha256:342585c6dafd055dead031e2b701f2eedc1dae0aa7dfed6c69a04049eded397e",
+    "tests/fixtures/contract_coverage.py": "sha256:6e49d4d72a178f4255c32965002018553858794b8be4ae25c01a05126a32c8bf",
+    "tests/fixtures/duplicate_keys.json": "sha256:a58d694043865170b97dda37973ae23b8b881585d01db807f92b960166261d0d",
+    "tests/fixtures/factory.py": "sha256:7d05f31c4a1e2efd48d9be8317fc2da7fb34f7b752b431b7ee19901a570b0113",
+    "tests/fixtures/goldens.json": "sha256:32239a857c488d6bd8608a1d6bbae00861309c1b0596ca714706c3e7a2830fca",
+    "tests/fixtures/jcs_expected.txt": "sha256:22f7654f41e64607481c655588f064a51c50d25989dccddee573fb8c26e7ef07",
+    "tests/fixtures/jcs_input.json": "sha256:870fb689a6bd08cc0e66c405f1999cd9b757ff37a613320703d17ae8832682f1",
+    "tests/fixtures/manifest.json": "sha256:a1213050cdb23a1247bad148b6e4424af60f806901d88eac27ad43799f2a4793"
+  }
+}
