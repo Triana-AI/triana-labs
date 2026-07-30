@@ -1,6 +1,6 @@
 # Active implementation slice
 
-Status: **FINAL CONTRACT AUDIT PASSED — HANDOFF COMMIT PENDING**
+Status: **READY_FOR_TEST_AUTHOR**
 
 The owner started execution on 2026-07-30. The implementation author created
 only the approved reproducible `NOT_IMPLEMENTED` scaffold. The first
@@ -13,9 +13,8 @@ Akarsh approved all nine corrections, the orchestrator applied them to
 `docs/CONTRACTS.md`, and no test files were created.
 
 The final independent no-edit audit passed after the four owner-approved
-protocol closures. The test author still may not edit until the orchestrator
-records the normative specification commit and changes this status to
-`READY_FOR_TEST_AUTHOR`.
+protocol closures. The test author may edit only `tests/acceptance/**` and
+`tests/fixtures/**` from this handoff.
 
 ## Identity
 
@@ -23,6 +22,7 @@ records the normative specification commit and changes this status to
 - Working interpretation: the first implementation slice, not Phase 1
   acquisition
 - Canonical RED base commit: `f08b30c`
+- Normative contract commit: `710bccd`
 - Orchestrator: primary Codex agent
 - Test author: separate agent, assigned only after approval
 - Implementation author: different agent, assigned only after test freeze
