@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!container-requirements.txt
+!dist/
+!dist/triana-0.0.0-py3-none-any.whl
