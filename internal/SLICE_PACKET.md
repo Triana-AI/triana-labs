@@ -12,9 +12,13 @@ The independent test author subsequently created only
 `tests/acceptance/**` and `tests/fixtures/**`. The orchestrator reviewed the
 suite, returned two incomplete coverage passes to the test author, reproduced
 the final exhaustive manifest and behavioral RED result, matched every file
-hash, and froze the test-owned paths in commit `87476be`. The implementation
-author may now edit production-owned paths but may not edit the frozen tests or
-fixtures.
+hash, and froze the test-owned paths in commit `87476be`. During implementation,
+three test-only defects were correctly returned to the test author: malformed
+stable-key inputs failed inside the fixture oracle, and two optional fields had
+been transcribed as required. The test author repaired and exhaustively audited
+those cases in `f01b08e`; the orchestrator then reproduced the corrected RED
+state from a clean export. The implementation author may edit production-owned
+paths but may not edit the corrected frozen tests or fixtures.
 
 ## Identity
 
@@ -23,7 +27,7 @@ fixtures.
   acquisition
 - Canonical RED base commit: `f08b30c`
 - Normative contract commit: `710bccd`
-- Frozen test commit: `87476be`
+- Frozen test commit: `f01b08e`
 - Frozen test evidence: `internal/SLICE_0A_TEST_FREEZE.json`
 - Orchestrator: primary Codex agent
 - Test author: separate agent; completed and frozen
@@ -663,11 +667,11 @@ Before the implementation author starts, the orchestrator must record:
 
 Freeze result:
 
-- 619 acceptance cases collected.
+- 620 acceptance cases collected.
 - 607 cases fail only at the approved behavioral RED boundary.
-- 12 scaffold, oracle, manifest, property, and help cases pass.
+- 13 scaffold, oracle, manifest, property, and help cases pass.
 - The independent harness/property subset passes twice in fresh processes.
-- The manifest covers 85 closed object or union-arm boundaries, 397 required
+- The manifest covers 85 closed object or union-arm boundaries, 395 required
   or active-conditional paths, all five public kinds, and every
   Release Evidence Record hash-preimage field.
 - Fixture universe:
