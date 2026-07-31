@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **FINAL MAPPING-ONLY NARROWING — TEST CORRECTION REQUIRED**
+Status: **FINAL MAPPING-ONLY ACCEPTANCE FROZEN — IMPLEMENTATION AUTHORIZED**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -450,6 +450,40 @@ The new aggregate SHA-256 over all four test-owned files is:
 This aggregate and commit are the only acceptance freeze authorized to judge
 the implementation correction. The implementation author may change only the
 same two example files and must not edit tests or fixtures.
+
+The freeze above is historical and superseded by the final mapping-only freeze
+below.
+
+### 9.3 Final mapping-only acceptance freeze
+
+The final corrected acceptance is frozen at commit `c39ae8e`, superseding the
+affected channel and publication expectations in `04d16e2`. It contains 28
+black-box cases and changes only the same two acceptance modules; both synthetic
+fixture files remain byte-identical.
+
+The independent test author and orchestrator each reproduced valid RED against
+the rejected implementation `5d90662`:
+
+```text
+20 failed, 8 passed
+```
+
+The failures are exhaustively attributable to stale nonfatal stderr events,
+stale four-field fatal events, the previously identified ignored-field and
+formatter-suppression behavior, and no unrelated setup or fixture failure. An
+OS-level file-size limit independently proves exit 7 removes only the adapter's
+new output and preserves a caller-owned sibling without adding a production
+test seam. The previous 118 tests remain green.
+
+The final aggregate SHA-256 over all four test-owned files is:
+
+```text
+99cf8455d81aebfb84c30beb9a672bb3f795bb30f67734fd39e11aba4dcde66c
+```
+
+Commit `c39ae8e` and this aggregate are the only acceptance freeze authorized
+to judge the final implementation. The implementation author may change only
+`examples/hrai_v2/adapter.py` and `examples/hrai_v2/README.md`.
 
 ## 10. Verification and immutable prior evidence
 
