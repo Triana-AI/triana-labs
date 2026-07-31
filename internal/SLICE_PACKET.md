@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **COMPLETE — IMPLEMENTATION `92f65a1`; 112 TESTS GREEN**
+Status: **LABS-01A READABILITY ENTRY GATE FROZEN; COMMENT-ONLY WORK**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -933,6 +933,73 @@ an empty target in the final check-to-rename interval. The implementation
 checks immediately before rename, never merges, preserves an existing
 non-empty target, and safely fails concurrent ordinary publication. No broader
 filesystem-locking or platform-specific syscall was added to this slice.
+
+## 18. LABS-01A code-reading documentation follow-up
+
+Date: 2026-07-31
+
+Base: `154ac99`
+
+Outcome: a human or coding agent can open `contracts/traces.py` and understand
+where an external adapter stops, where Triana begins, why validation is split
+into stages, which layer owns each invariant, and how accepted values flow to
+the five Observer artifacts without reconstructing the architecture from
+tests.
+
+The adapter interaction is documentation-only in this follow-up:
+
+```text
+external adapter owned by the customer/integration
+  -> emits one PreviewTrace JSON object per JSONL physical line
+  -> `triana traces observe` owns file/CLI behavior
+  -> `observer.observe` owns corpus accounting and publication
+  -> `contracts.parse_and_validate_line` owns byte/JSON boundary validation
+  -> `contracts.validate_trace` owns schema and trace invariants
+  -> normalized/rejected/profile/manifest artifacts
+  -> future Corpus Intelligence consumes eligible normalized traces
+```
+
+No external adapter package, SDK, import API, OTel mapping, real-trace support,
+redaction, Corpus Intelligence, case generation, or behavior change is
+authorized.
+
+Implementation-author comment budget:
+
+```text
+triana-labs/src/triana_labs/contracts/traces.py
+triana-labs/src/triana_labs/observer/observe.py
+triana-labs/src/triana_labs/observer/render.py
+triana-labs/src/triana_labs/cli.py
+```
+
+The author may enrich module docstrings, class/function docstrings, and
+comments explaining boundaries, authority, ordering, refusal, privacy,
+determinism, and non-obvious tradeoffs. It may not change executable AST,
+tests, fixtures, public behavior, dependencies, or any other path.
+
+Independent reviewer: the existing test-author agent reviews prose against
+the frozen LABS-01 contract and implementation after the author finishes. The
+reviewer does not edit production.
+
+Pre-change executable AST SHA-256 values (`ast.dump(...,
+include_attributes=False)`):
+
+```text
+contracts/traces.py  6c48355085dde7afdb8e0182e13355d2cbddcdd9e0df858948654cb48726e562
+observer/observe.py  14e396fa8d28febc60af16c38fbf2927e5490ccf2a9bd32b84bacc30fe3cb587
+observer/render.py   fbdcfebf59ee29bd89b81b730b2ff585b12c68a231330c86b13244bec817ffd3
+cli.py               e1e6e1ad4db84fd99170b3ec35dcdf9a0e2821fe2c280300474b2972efdd8237
+```
+
+Exit requires:
+
+- exact post-change AST hash equality for all four files;
+- no test, fixture, package, dependency, or artifact change;
+- independent prose review with no misleading adapter or authority claim;
+- Ruff, strict mypy, 112 tests, repeatability, build, and clean-wheel checks;
+- generated canonical artifact bytes identical to the retained LABS-01
+  evidence;
+- a small reading guide in the final handoff.
 
 ## 16. Structured uncertainty handoff
 
