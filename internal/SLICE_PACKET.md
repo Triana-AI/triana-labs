@@ -1,260 +1,800 @@
-# Active implementation slice — LABS-03 structural Corpus Intelligence
+# Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **COMPLETE — STRUCTURAL INTELLIGENCE SHIPPED WITH EXPLICIT SEMANTIC GAPS**
+Status: **FROZEN ENTRY CONTRACT — WORKERS NOT YET STARTED**
 
-Date: 2026-07-31
-Branch: `codex/labs-03-corpus-intelligence`
-Canonical base: `c993be3`
-Slice ID: `LABS-03-structural-corpus-intelligence`
+Date: 2026-08-01
+Branch: `codex/labs-04-semantic-eval`
+Canonical base: `83454e3`
+Slice ID: `LABS-04-grounded-case-factory`
+Owner: Akarsh
+Orchestrator: Codex
 
-## 1. Product outcome
+## 1. Product outcome and falsifiable claim
 
-Prove that the unchanged synthetic Trace Observer bundle is a usable input to
-the next canonical component. The new command derives deterministic,
-inspectable structural clusters with support, ambiguity, fidelity, lineage,
-and explicit gaps. It does not invent semantic personas, intents, distress,
-language, or turn-generation policy.
+Prove or falsify that Triana can convert a verified, authorized synthetic
+conversation-trace corpus into useful, inspectable designs for genuinely
+adaptive multi-turn simulations.
 
-This is the first bounded checkpoint inside plan milestone M1B. It is not full
-Corpus Intelligence and does not start Case Generator.
+The checkpoint produces proposed behavioral personas, intents, adaptive turn
+policies, and five proposed simulation cases. It does not execute an agent.
+The cases remain proposals until a human reviews them. If fewer than three
+distinct valid cases survive the deterministic gates, or the owner review does
+not clear the frozen usefulness rubric, the checkpoint fails and LABS-05
+multi-turn execution does not start.
 
 ```text
-PreviewTrace JSONL
-  -> triana traces observe
-  -> Observer manifest + normalized_traces.jsonl
-  -> triana corpus derive <manifest> --out <new-directory>
-  -> structural clusters + typed semantic gaps
+LABS-02 file adapter
+  -> LABS-01 Trace Observer
+  -> LABS-03 structural Corpus Intelligence
+  -> LABS-04 Grounded Case Factory
+       -> evidence-backed proposed personas
+       -> evidence-backed proposed intents
+       -> adaptive proposed turn policies
+       -> five proposed simulation cases
+       -> grounding, diversity, cost, lineage, and gap evidence
+  -X-> no target-agent execution
+  -X-> no panel run, behavioral verdict, or persistent memory
 ```
 
-## 2. Invocation and location
+This slice advances the active charter's
+`GENERATED_MULTI_TURN_SIMULATION` launch cut. It is the evidence gate before a
+runtime harness: Triana must not build machinery that executes generic,
+unsupported, repetitive, or unusable cases faster.
 
-```bash
-triana corpus derive <observer-output>/manifest.json \
-  --out <new-intelligence-directory>
+## 2. Invocation and exact input boundary
+
+The user-facing command is:
+
+```text
+triana cases generate <observer-manifest> \
+  --intelligence <intelligence-manifest> \
+  --config <case-factory-config.json> \
+  --out <new-directory>
 ```
 
-Execution is local and deterministic. The command performs no network access,
-provider call, model inference, redaction, hidden credential discovery, or
-environment-based configuration. Only Observer bundles labeled `SYNTHETIC`
-are accepted.
+The Observer manifest and intelligence manifest are both explicit inputs. The
+command verifies both complete bundles through the existing owners and proves
+that `intelligence_manifest.input_manifest_hash` equals the SHA-256 of the
+exact Observer manifest bytes. No path is inferred from a hash, working
+directory, environment, source ID, or sibling-name convention.
 
-## 3. Input contract
+The slice accepts only the already-supported `SYNTHETIC` privacy class. It does
+not add production, customer, public-corpus, Blitz, or `LOCAL_SENSITIVE`
+support. Source IDs, system-visible messages, tool arguments, tool results,
+terminal reasons, and opaque metadata do not enter provider-bound evidence.
 
-The input is a regular, non-symlink Observer `manifest.json`, at most 1 MiB,
-inside a regular local directory. It must be strict UTF-8 JSON with no BOM,
-duplicate key, non-finite number, or container depth above 32.
+Eligible semantic evidence is projected from validated traces as:
 
-The manifest has exactly the LABS-01 keys `accepted_count`, `artifact_kind`,
-`artifacts`, `case_generation_eligible_count`, `input_count`, `privacy_class`,
-`rejected_count`, and `schema_version`. Kind is `corpus_manifest`, schema
-version is 1, privacy is `SYNTHETIC`, and nonnegative safe-integer counts obey
-`input_count = accepted_count + rejected_count`. `artifacts` has exactly
-`corpus_profile.json`, `corpus_profile.md`, `normalized_traces.jsonl`, and
-`rejected_traces.jsonl`, with lowercase `sha256:<64 hex>` values.
+- user and assistant message content with trace ID and event sequence;
+- ordered safe tool names and result state, without arguments or results;
+- terminal state, without reason text;
+- LABS-03 structural cluster membership and mechanical eligibility;
+- explicit omission and gap records.
 
-LABS-03 hashes all four regular non-symlink sibling artifacts. Limits are 16
-MiB for each JSONL file, 1 MiB for each profile file, 1,000 normalized physical
-lines, and 1 MiB per normalized line. It parses every normalized line through
-the unchanged PreviewTrace validator, verifies accepted count and unique
-trace/source identities, and verifies `corpus_profile.json`.
+Only case-generation-eligible traces enter selection. Selection is input-order
+independent: sort clusters by cluster ID, take one trace per cluster in
+round-robin order, then take remaining traces by trace ID, stopping at 25
+traces or the provider-bound byte ceiling. A message event above 16,384 UTF-8
+bytes is omitted whole and creates `EVIDENCE_EVENT_TOO_LARGE`; it is never
+silently truncated. A trace with no remaining user content is excluded with
+`NO_USABLE_USER_EVIDENCE`. The complete provider request is limited to 100,000
+UTF-8 bytes before transmission.
 
-The profile has exactly `accepted_count`, `artifact_kind`,
-`case_generation_eligible_count`, `distress_analysis`, `event_kind_counts`,
-`input_count`, `language_analysis`, `rejected_count`,
-`rejection_code_counts`, `schema_version`, `terminal_state_counts`, and
-`tool_call_counts`. Its kind is `corpus_profile`, schema version is 1, its four
-corpus counts match the manifest, and both analyses are `NOT_EVALUATED`. Any
-sibling absence/symlink/nonregular file, hash/count/schema
-contradiction, invalid normalized trace, or duplicate identity is fatal
-`CORPUS_INTEGRITY_FAILED`. An accepted count of zero is fatal `EMPTY_CORPUS`.
-Source rejections are permitted when at least one accepted trace exists and
-become a typed derivation gap.
+The evidence projection is treated as untrusted data. It is serialized inside
+a closed JSON evidence field, receives no tools, cannot change system
+instructions, and cannot name credentials, endpoints, budgets, acceptance
+states, or output paths.
 
-The Observer remains the input-validation owner. LABS-03 does not accept raw
-PreviewTrace JSONL or an external source export directly.
+## 3. Frozen Azure provider experiment
 
-## 4. Exact deterministic clustering
+LABS-04 uses one Azure OpenAI deployment through the GA v1 chat-completions
+REST surface and strict structured outputs:
 
-Each accepted trace receives one structural fingerprint derived only from its
-validated ordered event shapes:
+```text
+provider_kind: AZURE_OPENAI
+api_surface: /openai/v1/chat/completions
+deployment: gpt-4.1-mini
+model_name: gpt-4.1-mini
+model_version: 2025-04-14
+response_format: json_schema, strict=true
+```
+
+The existing owner Azure subscription was inspected read-only on 2026-08-01.
+The selected deployment exists on the owner's Azure AI resource. `Luna` was
+not an observed Azure deployment. `gpt-5.6-terra` exists but was not selected:
+newer capability does not establish a lower price, and this checkpoint chooses
+the smaller deployed model with documented structured-output support.
+
+The config names, but never contains, credentials:
 
 ```json
 {
-  "assistant_message_count": 0,
-  "case_generation_eligible": false,
-  "terminal_state": "MISSING",
-  "tool_call_count": 0,
-  "tool_error_count": 0,
-  "tool_name_sequence": [],
-  "tool_result_count": 0,
-  "unmatched_tool_call_count": 0,
-  "user_message_count": 0
+  "artifact_kind": "case_factory_config",
+  "schema_version": 1,
+  "provider": {
+    "provider_kind": "AZURE_OPENAI",
+    "endpoint_env": "AZURE_OPENAI_ENDPOINT",
+    "api_key_env": "AZURE_OPENAI_API_KEY",
+    "allowed_endpoint_host": "<operator-approved-azure-host>",
+    "api_surface": "/openai/v1/chat/completions",
+    "deployment": "gpt-4.1-mini",
+    "model_name": "gpt-4.1-mini",
+    "model_version": "2025-04-14"
+  },
+  "authorization": {
+    "allow_provider_egress": true,
+    "privacy_classes": ["SYNTHETIC"],
+    "allowed_projection": "LABS04_SYNTHETIC_SEMANTIC_EVIDENCE_V1"
+  },
+  "generation": {
+    "candidate_count": 5,
+    "evidence_trace_limit": 25,
+    "seed": 2026080104
+  },
+  "budget": {
+    "max_calls": 6,
+    "normal_calls": 3,
+    "max_input_bytes_per_call": 100000,
+    "max_output_tokens_per_call": 4096,
+    "max_wall_clock_seconds": 600,
+    "request_timeout_seconds": 60,
+    "max_transport_retries_per_stage": 1,
+    "max_usd": "10.000000",
+    "conservative_input_usd_per_million_tokens": "10.000000",
+    "conservative_output_usd_per_million_tokens": "40.000000",
+    "pricing_source": "OPERATOR_CONSERVATIVE_BOUND"
+  }
 }
 ```
 
-`unmatched_tool_call_count` counts calls with no later result for the same
-call ID. `tool_error_count` counts error-state tool results. The terminal state
-is the one validated terminal value or `MISSING`.
+The endpoint environment value must be exact HTTPS with no userinfo, query, or
+fragment and must resolve to the configured host. The API key is read only from
+the named environment variable. No ambient credential or Azure CLI fallback is
+allowed. The smoke's exact existing resource host is supplied in a local,
+uncommitted config and represented portably only by its hash; the raw endpoint
+does not enter the repository.
 
-Traces with byte-identical canonical fingerprints share one cluster.
-`cluster_id` is `cluster-` plus the first 16 lowercase hex characters of the
-SHA-256 of the compact sorted-key fingerprint JSON bytes. Cluster members are
-sorted by trace ID and clusters by cluster ID, independent of input line order.
+The conservative preflight treats each UTF-8 input byte as one input token,
+uses the configured maximum output tokens, includes all six possible calls,
+and refuses before egress if its upper cost bound exceeds USD 10. Missing price
+information is never zero. Provider-reported usage and any available charged
+cost remain separate observed facts; the conservative estimate is never
+presented as an invoice.
 
-Each cluster contains exactly:
+Before every provider call the order is:
 
-- `cluster_id`;
-- the complete fingerprint;
-- `member_trace_ids`;
-- `support_count`;
-- `support_state: SINGLETON | SUPPORTED`;
-- `ambiguity_state: SEMANTICS_NOT_EVALUATED`;
-- `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`.
+```text
+verify input and explicit authorization
+  -> construct the allowlisted evidence projection
+  -> reject configured secret sentinels and credential-shaped content
+  -> validate exact endpoint and egress class
+  -> hash the exact provider-bound payload
+  -> reserve call, token, time, and USD budget
+  -> call Azure
+  -> validate finish reason and strict response
+  -> append metering and lineage
+```
 
-No system/user/assistant text, opaque argument/result value, error/reason text,
-or source trace ID enters cluster artifacts. Safe tool names and trace IDs are
-the only source-derived strings retained.
+No new runtime dependency is allowed. The production client uses the standard
+library HTTPS surface plus existing Pydantic validation. Tests use an internal
+transport boundary; there is no public test mode, environment bypass, or
+recorded credential.
 
-## 5. Exact output bundle
+## 4. Bounded semantic loop
+
+The experiment uses exactly three normal stages over the same evidence and
+schema:
+
+1. `PROPOSE`: produce five assets/cases. This output is the one-shot control.
+2. `CRITIQUE`: identify citation, support, invention, adaptability, and
+   duplication defects. The critique is advisory and creates no score or truth.
+3. `REVISE`: produce the final five proposed assets/cases using the evidence,
+   original proposal, and critique.
+
+Each stage permits at most one retry for a transport failure, HTTP 429, or HTTP
+5xx response. Schema failure, content filtering, refusal, length truncation,
+invalid citation, or semantic rejection is not transport-retried. Every retry
+has a new attempt ID; the failed attempt remains in `generation_attempts.jsonl`.
+
+The loop has no tools, retrieval service, agent framework, memory backend,
+sub-agent API, dynamic prompt rewriting, or model-selected evidence. It is a
+Triana-owned bounded orchestration over plain provider calls. The critic may
+improve a proposal but cannot evaluate the checkpoint or promote an asset.
+
+## 5. Authority and proposal states
+
+| Concern | Deterministic Triana code | Azure model | Human owner |
+|---|---|---|---|
+| Input membership, evidence selection, IDs, hashes | owns | none | none |
+| Support counts and citation existence | owns | supplies requested references | none |
+| Persona, intent, policy, scenario, rubric content | schema/validity only | proposes | reviews/corrects |
+| Semantic entailment of claim by citation | cannot prove | cannot approve | judges sample |
+| Duplicate arithmetic and effective N | owns | cannot override | judges usefulness |
+| Budget, endpoint, egress, attempts, lineage | owns | reports usage only | authorizes config |
+| Accepted truth or persistent ruling | storage absent | forbidden | not created in this slice |
+
+Every semantic asset and case is born `PROPOSED`. A valid citation proves that
+the cited evidence exists, not that the model interpreted it correctly.
+`VALID_CITATION` must never be rendered as `VALID_INTERPRETATION`.
+
+Closed support states are:
+
+```text
+SUPPORTED           two or more independent traces cited
+SINGLE_OBSERVATION  exactly one independent trace cited
+CONFLICTED          cited evidence contains declared material conflict
+INSUFFICIENT        no defensible semantic proposal
+GENERATED_VARIATION scenario material generated for coverage, not observed
+```
+
+Every retained grounding claim uses `SUPPORTED`, `SINGLE_OBSERVATION`, or
+`CONFLICTED` and has citations. `INSUFFICIENT` is a gap state, while
+`GENERATED_VARIATION` is a semantic-item basis with no grounding claim. A case
+must contain at least one observed citation-backed anchor. Generated variation
+can add a situation but cannot be counted as observed customer behavior.
+
+## 6. Exact portable artifact bundle
 
 `--out` must not exist and its immediate parent must be a real directory. A
-successful partial derivation is published atomically as:
+completed or completed-with-gaps run publishes atomically:
 
 ```text
 manifest.json
-clusters.json
-derivation_report.json
-personas/index.json
-intents/index.json
-turn_policies/index.json
+generation_attempts.jsonl
+evidence_index.json
+control_personas.jsonl
+control_intents.jsonl
+control_turn_policies.jsonl
+control_case_candidates.jsonl
+personas.jsonl
+intents.jsonl
+turn_policies.jsonl
+case_candidates.jsonl
+case_factory_eval.json
+human_review_template.json
 ```
 
-All JSON is compact, sorted-key UTF-8 with one LF. The fingerprint hash preimage
-uses that encoding without LF. The five non-manifest files carry schema version
-1, `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`, and the SHA-256 of the exact input
-manifest bytes including LF as `input_manifest_hash`. Timestamps and random
-values are absent.
+All JSON artifacts use compact sorted-key UTF-8 with one LF; JSONL has one such
+object per physical line. Artifact digests cover exact bytes. Paths,
+timestamps, random UUIDs, secrets, raw HTTP headers, raw provider responses,
+and Azure request IDs are excluded from portable identity. Provider response
+content appears only through validated portable proposal fields.
 
-The output `manifest.json` has exactly:
+Every semantic portable record contains `artifact_kind`, `schema_version: 1`,
+`input_manifest_hash`, `intelligence_manifest_hash`, `proposal_state` where
+semantic, `fidelity`, and `lineage`.
+
+### 6.0 Closed common field registry
+
+All objects are closed and reject unknown fields. JSON integers are strict and
+bounded to `0..9007199254740991`; booleans are not integers. Digests match
+`^sha256:[0-9a-f]{64}$`. Portable IDs match
+`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`. Safe codes match
+`^[A-Z][A-Z0-9_]{0,63}$`. Semantic text is UTF-8, permits LF but no other
+C0/C1 control, and is 1–4,096 bytes. Opening turns are 1–16,384 bytes. Labels
+are 1–256 bytes. Collections preserve order unless explicitly called sorted;
+duplicate stable IDs are invalid. `null` appears only in novelty companion
+fields, conditional attempt reason/response/provider-cost fields, and
+uncompleted human-review fields.
+
+`Lineage` has exactly:
 
 ```json
 {
-  "artifact_kind": "intelligence_manifest",
-  "artifacts": {
-    "clusters.json": "sha256:<digest>",
-    "derivation_report.json": "sha256:<digest>",
-    "intents/index.json": "sha256:<digest>",
-    "personas/index.json": "sha256:<digest>",
-    "turn_policies/index.json": "sha256:<digest>"
-  },
-  "cluster_count": 0,
-  "fidelity": "SYNTHETIC_OBSERVED_STRUCTURE",
-  "gap_count": 0,
-  "input_manifest_hash": "sha256:<digest>",
-  "outcome": "COMPLETED_WITH_GAPS",
-  "privacy_class": "SYNTHETIC",
-  "producing_component": "corpus_intelligence",
-  "producing_component_version": "<triana_labs version>",
-  "schema_version": 1,
-  "trace_count": 0
+  "provider_kind": "AZURE_OPENAI",
+  "endpoint_host_hash": "sha256:<digest>",
+  "deployment": "gpt-4.1-mini",
+  "model_name": "gpt-4.1-mini",
+  "model_version": "2025-04-14",
+  "prompt_pack_hash": "sha256:<digest>",
+  "provider_evidence_hash": "sha256:<digest>",
+  "stage": "PROPOSE",
+  "seed": 2026080104,
+  "attempt_ids": ["attempt-..."]
 }
 ```
 
-The five artifact digest values hash their exact bytes. `clusters.json` has
-exactly `artifact_kind: corpus_clusters`, `clusters`, `cluster_count`,
-`fidelity`, `input_manifest_hash`, `schema_version`, and `trace_count`.
+`stage` is `PROPOSE | REVISE`; the critique is not a semantic artifact.
+Attempt IDs are unique and ordered. `fidelity` is exactly
+`SYNTHETIC_CORPUS_GROUNDED`. `proposal_state` is exactly `PROPOSED`.
 
-Each asset index has exactly `artifact_kind`, `asset_kind`, `assets`,
-`derivation_state`, `fidelity`, `input_manifest_hash`, `reason_code`,
-`schema_version`, and `support_count`. It uses
-`artifact_kind: derived_asset_index`, one `asset_kind`
-from `PERSONA | INTENT | TURN_POLICY`, `derivation_state: NOT_DERIVED`, empty
-`assets`, support count zero, and reason
-`SEMANTIC_EVIDENCE_NOT_DERIVED`. These are explicit gaps, not placeholder
-assets.
+All semantic list elements use `SupportedText`:
 
-`derivation_report.json` has exactly `artifact_kind`, `cluster_count`,
-`fidelity`, `gap_codes`, `gap_count`, `input_count`, `input_manifest_hash`,
-`outcome`, `schema_version`, `singleton_cluster_count`,
-`source_rejection_count`, `supported_cluster_count`, and `trace_count`. Its kind
-is `corpus_derivation_report`, outcome is `COMPLETED_WITH_GAPS`, and it carries
-these sorted gap codes:
-
-```text
-DISTRESS_NOT_EVALUATED
-LANGUAGE_NOT_EVALUATED
-SEMANTIC_ASSETS_NOT_DERIVED
-SOURCE_REJECTIONS_PRESENT  # only when rejected_count > 0
+```json
+{
+  "text": "bounded semantic text",
+  "basis": "OBSERVED",
+  "claim_ids": ["claim-..."]
+}
 ```
 
-## 6. CLI, refusal, and partial behavior
+`basis` is `OBSERVED | GENERATED_VARIATION`. `OBSERVED` requires one or more
+unique claim IDs resolving within the same asset or case. Generated variation
+requires an empty claim list and never raises observed support. Lists of
+`SupportedText` are limited to 20 items; grounding claims and citations are
+limited to 100; cases are exactly five per valid provider proposal; personas,
+intents, and turn policies are each 1–10.
 
-- Completed structural derivation: exit 10, output exists, stdout has exactly
-  `cluster_count`, `gap_count`, `manifest_path`, `outcome`, and `trace_count`.
-  Stderr has exactly `cluster_count`, `command: corpus.derive`, nonnegative
-  `duration_ms`, `event_name: triana.corpus.derive.completed_with_gaps`,
-  `gap_count`, `outcome: COMPLETED_WITH_GAPS`, `reason_code: null`,
-  `service: triana-labs-cli`, current `service_version`, `severity: INFO`, and
-  `trace_count`. It has no path, trace ID, tool name, content, hash, or
-  exception.
-- `--help`: exit 0, human help on stdout, no terminal event.
-- Fatal refusal has empty stdout, no output, and exactly one stderr event with
-  `command: corpus.derive`, nonnegative `duration_ms`, `event_name:
-  triana.corpus.derive.rejected`, `outcome: REJECTED`, the closed `reason_code`,
-  service/version, and `severity: ERROR`. It has no counts or unsafe values.
-- Output write failure: exit 7. Unexpected failure: exit 70. Neither emits raw
-  values or a partial target.
-- Existing output is exit 2 and never overwritten or merged.
+`GroundingClaim` and `EvidenceCitation` use the exact shapes in section 6.1.
+Citation ID lists are unique and sorted by citation ID. A claim with
+`SUPPORTED` or `CONFLICTED` requires citations from at least two distinct
+trace IDs; `SINGLE_OBSERVATION` requires exactly one distinct trace ID;
+`INSUFFICIENT` is retained only as a gap and cannot back `OBSERVED` text.
 
-Closed fatal reasons:
+### 6.1 Evidence citation and claim
 
-```text
-CLI_USAGE_ERROR
-INPUT_READ_FAILED
-INPUT_TOO_LARGE
-MANIFEST_INVALID
-UNSUPPORTED_PRIVACY_CLASS
-CORPUS_INTEGRITY_FAILED
-EMPTY_CORPUS
-OUTPUT_ALREADY_EXISTS
-OUTPUT_PARENT_MISSING
-OUTPUT_WRITE_FAILED
-INTERNAL_INVARIANT_FAILED
+```json
+{
+  "citation_id": "citation-<digest-prefix>",
+  "trace_id": "trace-safe-id",
+  "event_sequences": [1, 2],
+  "evidence_hash": "sha256:<digest>",
+  "structural_cluster_id": "cluster-..."
+}
 ```
 
-Exact exit mapping:
+Event sequences are unique, ascending, and resolve only to projected evidence.
+The evidence hash covers the exact projected citation bytes, not the raw trace.
+
+```json
+{
+  "claim_id": "claim-<digest-prefix>",
+  "claim": "bounded proposed semantic text",
+  "support_state": "SUPPORTED",
+  "citation_ids": ["citation-..."]
+}
+```
+
+Claim and citation IDs are content-derived from schema-versioned canonical
+content. Equal semantic content has one identity; duplicate stable keys fail.
+
+### 6.2 Persona
+
+```json
+{
+  "artifact_kind": "persona_proposal",
+  "schema_version": 1,
+  "persona_id": "persona-<digest-prefix>",
+  "proposal_state": "PROPOSED",
+  "label": "bounded non-demographic label",
+  "behavioral_traits": [],
+  "communication_tendencies": [],
+  "constraints": [],
+  "grounding_claims": [],
+  "input_manifest_hash": "sha256:...",
+  "intelligence_manifest_hash": "sha256:...",
+  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
+  "lineage": {}
+}
+```
+
+Persona fields describe observable behavior. Demographic, protected, medical,
+or identity attributes are rejected unless they are explicitly present,
+relevant, allowed by the evidence contract, and cited. LABS-04's allowed
+projection does not authorize those fields, so the initial implementation
+rejects them.
+
+### 6.3 Intent
+
+```json
+{
+  "artifact_kind": "intent_proposal",
+  "schema_version": 1,
+  "intent_id": "intent-<digest-prefix>",
+  "proposal_state": "PROPOSED",
+  "goal": "bounded proposed text",
+  "known_constraints": [],
+  "observed_success_signals": [],
+  "observed_failure_or_abandonment_signals": [],
+  "grounding_claims": [],
+  "input_manifest_hash": "sha256:...",
+  "intelligence_manifest_hash": "sha256:...",
+  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
+  "lineage": {}
+}
+```
+
+An observed signal is not accepted success/failure truth. The UI/report layer
+does not exist here and no PASS/FAIL label is created.
+
+### 6.4 Adaptive turn policy
+
+```json
+{
+  "artifact_kind": "turn_policy_proposal",
+  "schema_version": 1,
+  "turn_policy_id": "turn-policy-<digest-prefix>",
+  "proposal_state": "PROPOSED",
+  "information_reveal_policy": [],
+  "reaction_rules": [],
+  "clarification_behavior": [],
+  "escalation_tendencies": [],
+  "stop_conditions": [],
+  "forbidden_inventions": [],
+  "grounding_claims": [],
+  "input_manifest_hash": "sha256:...",
+  "intelligence_manifest_hash": "sha256:...",
+  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
+  "lineage": {}
+}
+```
+
+The policy expresses how a simulated user may react to the future agent's
+behavior. A prewritten dialogue, fixed list of future turns, assistant text,
+tool call, or hidden target answer is schema-invalid.
+
+### 6.5 Simulation case candidate
+
+Each line of `case_candidates.jsonl` and
+`control_case_candidates.jsonl` has the exact wire shape below; the
+independent tester derives exact fixtures from the closed Pydantic/JSON Schema
+contract authored in the slice, not from production serialization output:
+
+```json
+{
+  "artifact_kind": "simulation_case_candidate",
+  "schema_version": 1,
+  "case_id": "case-<digest-prefix>",
+  "proposal_state": "PROPOSED",
+  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
+  "input_manifest_hash": "sha256:...",
+  "intelligence_manifest_hash": "sha256:...",
+  "persona_id": "persona-...",
+  "intent_id": "intent-...",
+  "turn_policy_id": "turn-policy-...",
+  "scenario": {
+    "opening_user_turn": "bounded text",
+    "known_facts": [],
+    "private_user_facts": [],
+    "unknowns": [],
+    "allowed_user_actions": [],
+    "tool_world_constraints": [],
+    "termination_conditions": [],
+    "expected_tool_names": [],
+    "stressor_codes": []
+  },
+  "grounding_claims": [],
+  "proposed_evaluation": {
+    "criteria": [],
+    "abstain_conditions": []
+  },
+  "novelty": {
+    "slot_key": "sha256:...",
+    "exact_duplicate_of": null,
+    "duplicate_cluster_id": null
+  },
+  "lineage": {},
+  "gaps": []
+}
+```
+
+References must resolve within the same output lane. Every known/private fact,
+constraint, termination condition, and proposed evaluation criterion is a
+claim reference or explicitly generated variation. `private_user_facts` means
+scenario facts withheld from the future agent, not private customer data.
+Control cases resolve only to `control_personas.jsonl`,
+`control_intents.jsonl`, and `control_turn_policies.jsonl`; revised cases
+resolve only to the unprefixed final asset files.
+
+Lineage contains provider kind, endpoint-host hash, deployment, model name and
+version, prompt-pack hash, provider-bound evidence hash, stage, seed, and
+attempt IDs. It contains no credential, raw endpoint, local path, or provider
+request ID.
+
+### 6.6a Attempt, manifest, evidence-index, and evaluation shapes
+
+Each `generation_attempts.jsonl` line has exactly:
+
+```json
+{
+  "artifact_kind": "case_factory_generation_attempt",
+  "schema_version": 1,
+  "attempt_id": "attempt-<digest-prefix>",
+  "stage": "PROPOSE",
+  "attempt_index": 0,
+  "status": "SUCCEEDED",
+  "reason_code": null,
+  "request_hash": "sha256:<digest>",
+  "response_hash": "sha256:<digest>",
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "provider_reported_cost_usd": null,
+  "conservative_cost_usd": "0.000000",
+  "deployment": "gpt-4.1-mini",
+  "model_name": "gpt-4.1-mini",
+  "model_version": "2025-04-14"
+}
+```
+
+`stage` is `PROPOSE | CRITIQUE | REVISE`. `status` is
+`SUCCEEDED | TRANSPORT_FAILED | PROVIDER_REFUSED | CONTENT_FILTERED |
+TRUNCATED | INVALID_RESPONSE | BUDGET_REFUSED`. Success requires response
+hash, token counts, and null reason. Failure requires one closed reason and
+permits a response hash only when safe response bytes existed. Missing
+provider-reported cost is null, never zero. Decimal USD strings have exactly
+six fractional digits, are nonnegative, and remain estimates unless explicitly
+provider-reported.
+
+`evidence_index.json` has exactly artifact kind
+`case_factory_evidence_index`, schema version, both input hashes,
+`selection_algorithm: LABS04_CLUSTER_ROUND_ROBIN_V1`, selected trace count,
+excluded trace count, projected byte count, an ordered `citations` list, and
+an ordered `gaps` list. Each gap has exactly `reason_code`, optional safe
+`trace_id`, and optional event sequence; it contains no omitted content.
+
+`manifest.json` has exactly artifact kind `case_factory_manifest`, schema
+version, both input hashes, privacy class `SYNTHETIC`, producing component and
+version, provider/model/deployment/prompt/evidence hashes, seed, outcome,
+attempt/valid/raw/distinct/duplicate/gap counts, conservative USD estimate,
+human review state, and an `artifacts` object mapping the other twelve exact
+relative paths to digests. Outcome is `COMPLETED | COMPLETED_WITH_GAPS`;
+human review state is `PENDING` at generation time.
+
+`case_factory_eval.json` has exactly artifact kind
+`case_factory_evaluation`, schema version, both input hashes, raw and effective
+N, duplicate algorithm/version/threshold and clusters, requested/valid/invalid
+case counts for control and revised lanes, citation-valid/invalid counts,
+support-state counts, attempt/call/token/conservative-cost counts, sorted gap
+codes, `machine_status: PASSED | FAILED`, and
+`human_review_state: PENDING`. Machine status passes only with at least three
+distinct valid revised cases, zero invalid retained citations, and no privacy,
+authorization, or budget violation.
+
+`human_review_template.json` has exactly artifact kind
+`case_factory_human_review`, schema version, evaluation-manifest hash,
+rubric version `LABS04_USEFULNESS_V1`, deterministic blind seed, ordered review
+items, and `review_state: PENDING`. Each review item contains a blind ID, the
+case content needed for review, citations needed for semantic inspection, six
+null integer scores, null critical-failure code, and null notes. It contains no
+lane, stage, model, attempt, or original case ID. A separate
+`blind_lineage` mapping in `case_factory_eval.json` resolves blind IDs after
+review; it is not included in the template.
+
+### 6.6 Diversity
+
+`slot_key` hashes persona ID, intent ID, turn-policy ID, source structural
+cluster IDs, sorted stressor codes, and ordered expected tool names. Two valid
+cases with the same slot key are exact slot duplicates and only the first by
+case ID counts toward effective N.
+
+Near-duplicate text uses Unicode casefolding, whitespace tokenization, and
+token-set Jaccard similarity over `opening_user_turn`, intent goal, and
+reaction-rule text. Similarity at or above `0.85` with the same expected tool
+path creates one duplicate cluster. Similar text with a different ordered
+expected tool path remains distinct. The raw cases remain in the attempt
+record, but duplicates do not increase effective distinct N. The report names
+the algorithm, version, threshold, cluster sizes, raw N, and effective N.
+
+## 7. Evaluation-first acceptance contract
+
+The independent acceptance suite is complete and valid RED before production
+implementation begins. It has three evidence lanes.
+
+### Lane A — deterministic contract and safety
+
+- strict config, input, portable artifact, citation, and reference schemas;
+- stable IDs, hashes, order independence, exact bytes, and fresh-process
+  repeatability;
+- Observer/intelligence integrity and lineage agreement;
+- endpoint, credential-name, authorization, secret-sentinel, and egress
+  refusals before a provider call;
+- conservative budget preflight and per-attempt reservation;
+- provider timeout, 429/5xx, content filter, refusal, length, malformed output,
+  schema error, and retry ledger behavior through a fake internal transport;
+- no unsafe value in terminal logs or portable lineage;
+- atomic publication, no overwrite, safe cleanup, and typed partial output;
+- source and clean-wheel parity, unchanged 188 tests, frozen acceptance
+  aggregates, and five unchanged Observer artifact hashes.
+
+### Lane B — grounding and diversity
+
+- every retained claim has valid citations or an explicit generated-variation
+  state;
+- support states match independent trace counts;
+- hallucinated IDs, wrong event ranges, circular references, and wrong cluster
+  membership are rejected;
+- no single observation is represented as supported population behavior;
+- static scripted dialogues and unresolved asset references are rejected;
+- exact and near duplicates remain visible but do not increase effective N;
+- similar language with different consequential tool paths remains distinct;
+- five requested cases produce at least three valid distinct cases or the run
+  cannot claim a usable case set;
+- model, deployment, prompt, evidence, or seed change creates new lineage;
+- the critic cannot create a score, acceptance state, or persistent truth.
+
+### Lane C — blind human usefulness review
+
+`human_review_template.json` presents paired one-shot and revised cases under
+deterministically shuffled blind IDs. Provider stage and ordering are hidden
+from the review items but recoverable through a separate lineage mapping.
+The owner scores 1–4 on:
+
+1. citation-grounded interpretation;
+2. realism of the user situation;
+3. readiness for genuinely adaptive multi-turn execution;
+4. distinctness from other cases;
+5. relevance to testing the target agent;
+6. absence of unjustified assumptions.
+
+Product-checkpoint pass requires:
+
+- no critical privacy, invalid-citation, or unsupported-invention failure;
+- at least three cases score 3 or 4 on grounding, simulation readiness, and
+  usefulness;
+- median distinctness at least 3;
+- at least 80% of inspected citations judged semantically supportive;
+- the reviewer can explain what each passing case tests and how its simulated
+  user should adapt.
+
+Automated tests and the live smoke can finish unattended. Until Akarsh supplies
+this review, the implementation slice may be mechanically green but the
+product checkpoint is `AWAITING_HUMAN_REVIEW`, not passed.
+
+## 8. Exact HRAI-50 smoke gate
+
+The required non-test smoke input is the existing tracked HRAI historical
+traffic corpus:
+
+```text
+source repository: /Users/akarshgajbhiye/Documents/hr_ai
+source commit: 728f6c5058efe40a16e2aecc9b528b3353f4df4f
+source path: experiments/historical_traffic_v0/out/run_50b/normalized_traces.jsonl
+source physical lines: 50
+source SHA-256: 62d0d188c05a34e346edfb0315b6348343037fcf25a94cf32d10384e5a9b6c61
+classification: SYNTHETIC_EXISTING_TRACE_CORPUS
+```
+
+The source is existing end-to-end trace data generated independently of the
+LABS-04 tests. It is synthetic, not production or real-user evidence. The
+smoke run reads it in place through the shipped LABS-02 adapter; no HRAI trace,
+prompt, output, or raw corpus is copied into Triana.
+
+The reproducible smoke sequence is:
+
+```text
+HRAI-50 normalized-trace-v2
+  -> shipped LABS-02 adapter with explicit SYNTHETIC attestation
+  -> shipped Trace Observer
+  -> shipped structural Corpus Intelligence
+  -> LABS-04 Grounded Case Factory through Azure gpt-4.1-mini
+```
+
+Smoke acceptance requires:
+
+- all 50 source lines are accounted for by the adapter;
+- every downstream accepted/rejected denominator is explicit;
+- the exact input and output hashes are retained in local evidence;
+- normal generation uses no more than three calls and total execution never
+  exceeds six calls or USD 10 conservative bound;
+- five final cases are requested and at least three valid distinct cases are
+  emitted;
+- every retained claim passes deterministic citation validation;
+- a blind human-review template is produced;
+- no raw HRAI data is committed or described as real-user/customer evidence;
+- an unfavorable, partial, repetitive, or weak result is preserved without
+  rerun-to-green.
+
+## 9. Closed failure, refusal, and partial behavior
+
+Preflight failure produces no provider call and no output target. Fatal failure
+after egress produces no success claim; completed provider attempts remain
+represented only when a safe partial bundle can be finalized.
+
+Closed reasons and exits:
 
 ```text
 2  CLI_USAGE_ERROR, INPUT_READ_FAILED, OUTPUT_ALREADY_EXISTS,
-   OUTPUT_PARENT_MISSING
-3  INPUT_TOO_LARGE
-4  MANIFEST_INVALID, UNSUPPORTED_PRIVACY_CLASS
-5  CORPUS_INTEGRITY_FAILED, EMPTY_CORPUS
+   OUTPUT_PARENT_MISSING, CONFIG_INVALID
+3  INPUT_TOO_LARGE, EVIDENCE_TOO_LARGE
+4  MANIFEST_INVALID, UNSUPPORTED_PRIVACY_CLASS,
+   PROVIDER_AUTHORIZATION_REFUSED, ENDPOINT_REFUSED,
+   SECRET_SENTINEL_DETECTED
+5  CORPUS_INTEGRITY_FAILED, INTELLIGENCE_MISMATCH,
+   NO_USABLE_SEMANTIC_EVIDENCE, NO_VALID_CASES
 7  OUTPUT_WRITE_FAILED
+8  PROVIDER_FAILED
+9  BUDGET_REFUSED, BUDGET_EXHAUSTED
 70 INTERNAL_INVARIANT_FAILED
 ```
 
-`MANIFEST_INVALID` covers manifest byte/JSON/depth/closed-schema failures.
-Oversized manifest or sibling artifacts use `INPUT_TOO_LARGE`. Once a valid
-manifest names a sibling, its missing/nonregular/symlink state is corpus
-integrity failure. Atomic write cleanup is tested on POSIX with an OS-level
-`RLIMIT_FSIZE` child limit and ignored `SIGXFSZ`; no production injection seam
-is added.
+Success with five valid revised cases and no gaps exits 0. A safe bundle with
+at least one valid case plus source/provider/schema/duplicate/budget gaps exits
+10 as `COMPLETED_WITH_GAPS`. Fewer than three distinct valid cases always
+carries `INSUFFICIENT_DISTINCT_CASES`; it may publish partial evidence but
+cannot pass the checkpoint. No invalid proposal is silently repaired, dropped
+from attempted denominators, or replaced under the same identity.
 
-## 7. Authority and non-goals
+One terminal JSON event is written to stderr with only service/version,
+command, outcome, duration, closed reason, attempted/valid/distinct counts,
+call count, and conservative USD estimate when those facts are complete. It
+contains no path, endpoint, trace/case ID, content, citation, tool name, prompt,
+provider response, exception, or credential.
 
-Deterministic code owns parsing, integrity, membership, fingerprints, IDs,
-support counts, ambiguity state, fidelity, lineage, serialization, hashes, and
-exit state. No LLM or human semantic ruling is used. A human has not accepted
-any cluster as a persona, intent, policy, failure, or product truth.
+## 10. Mandatory edge-case register
 
-Explicitly absent: real/local-sensitive input; redaction; provider egress;
-semantic labels; language/distress mining; Blitz/public corpus mining; persona,
-intent, or turn-policy generation; Case Generator; Panel Builder; runner; F1;
-report UI; SDK; OTel; hosted ingestion; changes to `triana-core` or LABS-01/02
-artifact bytes.
+The independent tester must encode every relevant row before valid RED.
 
-## 8. Change budget and serial roles
+### Input and integrity
+
+- empty, tiny, homogeneous, duplicate, and source-rejection corpora;
+- zero usable user turns and system/bot text misclassified as user evidence;
+- multilingual and code-switched text preserved without invented language
+  normalization;
+- malformed/tampered/stale manifests and artifacts, duplicate identities,
+  symlinks, nonregular files, invalid UTF-8, BOM, depth/size/line limits;
+- same trace ID with changed content and duplicate content under different IDs;
+- input reorder, fresh process repeat, seed change, and model/prompt change.
+
+### Grounding and semantics
+
+- hallucinated trace, event, cluster, asset, case, claim, and citation IDs;
+- citation to unprojected system text, tool arguments/results, or omitted text;
+- unsupported persona traits, demographic invention, and one trace presented
+  as representative population behavior;
+- persona/intent conflation, contradictory constraints, circular claims,
+  impossible scenario facts, and ambiguous/conflicting intent;
+- fixed future dialogue disguised as a turn policy;
+- case without an observed anchor or generated material mislabeled observed;
+- proposed rubric without abstain conditions or presented as accepted truth.
+
+### Injection, privacy, and egress
+
+- trace text instructing the model to ignore policy, reveal secrets, call
+  tools, change budgets, self-approve, or write files;
+- configured sentinels and credential-shaped content in every projected field;
+- missing egress consent, wrong privacy class, endpoint alias/redirect,
+  userinfo/query/fragment, HTTP, wrong host, missing/malformed key;
+- unsafe path, endpoint, prompt, evidence, header, exception, or response in
+  logs and artifacts;
+- hashing or call reservation before the provider-bound projection is safe.
+
+### Provider and budget
+
+- connection failure, timeout, TLS failure, 401/403, 429, 5xx, content filter,
+  provider refusal, truncated/length output, empty output, invalid JSON,
+  schema-invalid JSON, unknown fields, duplicate keys, and repeated response;
+- transport retry succeeds/fails, original attempt preserved, no semantic
+  retry, retry budget exhausted, and retry never exceeds six total calls;
+- missing price, conservative bound above cap, exact boundary, usage above
+  reservation, budget exhaustion between stages, and wall-clock exhaustion;
+- critic or reviser failure preserves the one-shot evidence without claiming
+  revised success.
+
+### Diversity, publication, and evaluation
+
+- exact semantic duplicate, exact slot duplicate, paraphrased duplicate,
+  renamed-persona duplicate, and lexical similarity with different tool path;
+- all five cases collapse to one cluster and partial effective N;
+- output exists, parent missing/symlinked, mid-write failure, cleanup failure,
+  user interrupt, and no portable timestamp/path entropy;
+- critic attempts to score or approve, blind mapping is reversible but hidden
+  from review items, missing human review remains pending, and no automated
+  result becomes human usefulness.
+
+## 11. Roles, immutable tests, and controlled parallel attack
+
+There are exactly two worker agents plus the Codex orchestrator.
+
+```text
+Codex freezes and commits this packet
+  -> independent test author writes the complete acceptance suite
+  -> Codex reproduces valid RED and freezes test commit + aggregate hashes
+  -> implementation author writes production without editing frozen tests
+       || independent tester uses an isolated worktree for read-only/fuzz/
+          mutation/adversarial attacks against the already-frozen contract
+  -> Codex integrates only contract-derived regressions and owns exit verdict
+```
+
+The acceptance-authoring and production-authoring roles remain serial. The
+parallel tester phase begins only after the RED freeze, uses an isolated
+worktree, and cannot change expected behavior or acceptance meaning. A newly
+found production violation receives a tester-authored regression before the
+implementation author fixes it. A genuine contract hole stops the slice and
+returns to the owner/orchestrator; it is not silently interpreted around. A
+test defect returns only to the tester, receives a new explicit freeze, and
+production pauses. The implementation author never edits a test or fixture.
+
+## 12. Change budget
 
 Orchestrator only:
 
@@ -262,105 +802,107 @@ Orchestrator only:
 internal/SLICE_PACKET.md
 internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
+internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md
+triana-labs/CHARTER.md
 docs/ARCHITECTURE.md
+docs/PROVENANCE.md
 README.md
 triana-labs/scripts/verify.sh
-triana-labs/tests/intelligence_adversarial/**
+triana-labs/tests/case_factory_adversarial/**
 ```
 
 Independent test author only:
 
 ```text
-triana-labs/tests/intelligence_acceptance/**
-triana-labs/tests/intelligence_fixtures/**
+triana-labs/tests/case_factory_acceptance/**
+triana-labs/tests/case_factory_fixtures/**
 ```
 
 Implementation author only after RED freeze:
 
 ```text
 triana-labs/src/triana_labs/cli.py
-triana-labs/src/triana_labs/intelligence/**
+triana-labs/src/triana_labs/case_factory/**
+triana-labs/schemas/case_factory/**
 ```
 
-No dependency, package metadata, lockfile, existing test/fixture, Observer,
-adapter example, `triana-core`, or suspended V1 change is allowed. Maximum
-scope expansion without orchestrator return is none.
+The implementation author may add no dependency. Existing Observer,
+intelligence, and adapter modules are read-only dependencies. Any discovered
+need to edit them stops the worker and returns to Codex.
 
-## 9. Independent acceptance
+Explicitly untouched:
 
-The test author independently creates synthetic Observer bundles and exact
-expected bytes without importing production derivation code. Minimum matrix:
+- `triana-core/**` and all five frozen contracts;
+- all LABS-01/02/03 production, test, fixture, and canonical artifact bytes;
+- package metadata, lockfile, CI stack, and unrelated formatting;
+- HRAI, Kairos, Kairos-AI, Agentagon, Blitz, public corpora, and raw data;
+- hosted ingestion, OTel, SDK, UI, runtime runner, memory, and comparison code.
 
-- exact structural fingerprints, clusters, IDs, ordering, counts, fidelity,
-  lineage, manifest hashes, and typed semantic gaps;
-- repeated-process byte determinism and line-order-independent memberships;
-- singleton and supported clusters, tool errors, unmatched calls, missing and
-  present terminal states, and case-generation eligibility;
-- no semantic/raw content leakage into any output or safe terminal event;
-- source-rejection gap and empty-corpus fatal refusal;
-- manifest/profile/normalized hash, count, schema, duplicate-ID, and trace
-  integrity failures;
-- manifest/artifact symlinks, missing/nonregular/oversize input, invalid JSON,
-  no-overwrite, atomic failure cleanup, and safe CLI errors;
-- unchanged Observer/adapter behavior, prior 151 tests, frozen acceptance
-  aggregates, and five canonical Observer hashes;
-- source and clean-wheel command parity.
+Maximum production scope is the CLI addition, one bounded `case_factory`
+package, and checked-in schemas. Maximum new production-file count is 14;
+maximum new production code is 1,500 normally formatted nonblank/noncomment
+lines. These are ceilings, not targets. Any new file or line beyond them stops
+the implementation author.
 
-Valid RED means new tests fail only because `triana corpus derive` and the
-`intelligence` package do not exist. The orchestrator freezes test commit and
-aggregate before implementation begins.
+## 13. Reproducible exit gate
 
-### 9.1 Frozen acceptance evidence
+The slice implementation is mechanically complete only when:
 
-Independent acceptance is frozen at commit `f731afe`. Its six test-owned files
-contain 33 black-box cases. The independent author and Codex each reproduced
-valid RED: all 33 fail solely because the command and packaged intelligence
-module are absent, while the previous 151 tests pass.
+- the independent RED commit and test aggregates are frozen before production;
+- all new acceptance and reserved adversarial cases pass unchanged;
+- all prior 188 tests pass and the five canonical Observer hashes are
+  byte-identical;
+- Ruff, strict mypy, package build, clean CPython 3.13.14 wheel install, source
+  and wheel CLI parity, secret scan, governance, and decision-memory pass;
+- fake-provider tests prove every refusal/partial/retry/budget state without
+  network access;
+- the authorized Azure/HRAI-50 smoke runs without exceeding three normal/six
+  total calls or the USD 10 conservative cap;
+- smoke artifacts retain every weak, duplicate, rejected, refused, and partial
+  state without rerun-to-green;
+- no raw HRAI data, secret, endpoint, absolute path, or provider payload enters
+  the repository;
+- actual changed files, dependencies, and line counts reconcile exactly with
+  this budget;
+- canonical docs, provenance, decision log, and local decision memory agree.
 
-The aggregate SHA-256 over sorted repository-relative `shasum -a 256` lines is:
+At that point the implementation may be `MECHANICALLY_GREEN`. The Grounded
+Case Factory product checkpoint becomes `PASSED` only after the owner completes
+the frozen blind review in section 7. Until then it is
+`AWAITING_HUMAN_REVIEW`, and LABS-05 does not start.
+
+Every worker and orchestrator returns:
 
 ```text
-2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae
+What changed:
+Why each changed file was necessary:
+Change-budget reconciliation:
+What was verified (exact commands and artifacts):
+What remains unverified:
+Assumptions made:
+Unexpected findings:
+Dependencies added and why:
+Out-of-scope problems deliberately left alone:
+Known risks or uncertainty:
+Human action still required:
 ```
 
-Commit `f731afe` and this aggregate are the only acceptance freeze authorized
-to judge implementation. Evidence root:
-`/private/tmp/labs03-test-author.Avnprb`.
+Use `none` explicitly. No unrun check is reported as passing.
 
-## 10. Reproducible exit gate
+## 14. Explicit non-goals
 
-LABS-03 exits only when independent RED is frozen; implementation changes only
-owned files; all new and prior tests pass; deterministic outputs match exact
-independent bytes; adversarial safety and no-network checks pass; source and
-clean-wheel commands match; the five Observer hashes and LABS-02 aggregates
-remain unchanged; the diff and dependency budget reconcile; canonical docs
-and decision log are current; and all non-goals remain absent.
+- target-agent invocation or genuinely multi-turn execution;
+- panel selection or execution, baseline/candidate comparison, F0/F1 labels,
+  regression, release, PASS/BLOCK, or accepted-behavior claims;
+- real-customer, production, Blitz, public, or local-sensitive trace support;
+- redaction as a general product surface;
+- DeepEval, Deep Agents, Hermes, OpenAI Agents SDK, generic provider SDK,
+  coding-agent integration, browser/voice/multi-agent support;
+- model judges, evaluator ensembles, automatic rubric approval, prompt/model
+  training, or autonomous optimization;
+- persistent, global, Mem0, managed, or cross-run memory;
+- HTML/UI/report dashboard, hosted ingestion, accounts, SaaS, SDK, or OTel;
+- changes to the frozen V1 contracts or suspended Release Review meaning.
 
-Every role reports: what changed; why each file was necessary; budget
-reconciliation; exact verification and artifacts; unverified work;
-assumptions; unexpected findings; dependencies; deliberately excluded
-problems; known risks; and human action required, using `none` explicitly.
-
-## 11. Completion evidence
-
-LABS-03 production is committed at `7cde8b5`; the orchestrator gate is
-`db91380`.
-
-- independent acceptance: 33 passing cases at frozen commit `f731afe`, test
-  aggregate `2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae`;
-- orchestrator-reserved boundary: four passing cases for real Observer handoff
-  with sockets blocked, output-parent symlink refusal, deep-manifest safe
-  refusal, and absence of semantic/provider dependencies;
-- full suite: 188 passing tests; Ruff and strict mypy pass;
-- final reproducible gate: `/private/tmp/triana-labs-verify.JjLqlV`, including
-  sdist/wheel build, clean install, source and installed-wheel byte parity, all
-  frozen acceptance aggregates, and all five unchanged Observer hashes;
-- actual output contains structural clusters and explicit NOT_DERIVED persona,
-  intent, turn-policy, language, and distress states;
-- dependencies, LABS-01/02 behavior, `triana-core`, real-data support,
-  redaction/egress, LLM/provider calls, Case Generator, and UI remain unchanged
-  or absent.
-
-The checkpoint proves the Observer bundle is usable by the next component. It
-does not complete semantic M1B Corpus Intelligence or establish customer
-grounding, persona realism, distress detection, or product demand.
+Nothing in this packet authorizes LABS-05. The next checkpoint is proposed only
+after human-reviewed LABS-04 evidence demonstrates usable case designs.

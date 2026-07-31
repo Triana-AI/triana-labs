@@ -37,6 +37,35 @@ slice packets only after owner discussion. All unchanged privacy, authority,
 provenance, test-first, change-budget, and typed-gap rules in this plan remain
 binding.
 
+### Frozen Checkpoint 1 — LABS-04 Grounded Case Factory
+
+The first launch checkpoint is now frozen in `internal/SLICE_PACKET.md`. It
+proves or falsifies the trace-to-simulation-design step only:
+
+```text
+verified synthetic Observer bundle + linked structural intelligence
+  -> deterministic provider-bound evidence projection
+  -> one-shot semantic proposal
+  -> bounded critique and one revision
+  -> deterministic citation/support/identity/diversity/budget gates
+  -> five proposed adaptive simulation cases and a blind review packet
+```
+
+LABS-04 uses the owner's existing Azure OpenAI `gpt-4.1-mini` deployment,
+model version `2025-04-14`, through strict structured outputs. Normal execution
+uses three calls, all retries are capped at six total calls, and a conservative
+USD 10 ceiling is enforced before and during egress. The non-test smoke corpus
+is the tracked 50-line HRAI historical-traffic export at source commit
+`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, labeled synthetic rather than
+real-user evidence.
+
+Mechanically green generation is not product passage. At least three distinct
+valid cases must survive deterministic gates and the owner must clear the
+frozen blind usefulness rubric. Until then the checkpoint is
+`AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn runtime,
+judges, memory, UI, real-data support, DeepEval, and generic agent frameworks
+remain unauthorized.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

@@ -37,6 +37,26 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
+LABS-04 is the next authorized, not-yet-implemented boundary:
+
+```text
+verified synthetic Observer + intelligence manifests
+  -> allowlisted semantic evidence projection
+  -> Azure OpenAI gpt-4.1-mini propose / critique / revise
+  -> deterministic citation, support, identity, duplicate, budget, and lineage gates
+  -> proposed personas, intents, adaptive turn policies, and five case candidates
+  -> blind human usefulness review
+```
+
+Only user/assistant text, safe tool names/result states, terminal state, and
+structural membership may enter the provider projection. System text, source
+IDs, tool arguments/results, terminal reasons, paths, secrets, and opaque
+metadata remain outside it. The provider has proposal authority only. A valid
+citation proves existence, not semantic entailment; all assets remain
+`PROPOSED` and a human review is required before the checkpoint can pass.
+LABS-04 adds no target-agent runner, persistent memory, model judge, generic
+agent framework, real-data path, or UI.
+
 ## Authority map
 
 ```text

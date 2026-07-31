@@ -48,6 +48,25 @@ reporting, global or managed memory, autonomous model/prompt training, coding
 and other universal-agent support, hosted ingestion, and a SaaS control plane.
 Those surfaces require later evidence and a new accepted checkpoint.
 
+### First launch checkpoint — Grounded Case Factory
+
+The owner froze LABS-04 on 2026-08-01 as the first checkpoint in this launch
+cut. It consumes only the shipped synthetic Observer and structural
+intelligence bundles and uses one explicitly authorized Azure OpenAI
+`gpt-4.1-mini` deployment to propose personas, intents, adaptive turn policies,
+and five simulation cases. Deterministic code owns evidence projection,
+citations, support, identities, duplicate arithmetic, budget, lineage, and
+publication. Model output remains `PROPOSED`; semantic usefulness requires a
+blind owner review. Fewer than three distinct valid cases or a failed review
+blocks multi-turn runtime work.
+
+The required smoke input is an existing 50-trace HRAI historical-traffic
+corpus labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or
+real-user evidence. LABS-04 does not expand the privacy boundary, execute the
+target agent, create memory, adopt an agent framework, or authorize LABS-05.
+The exact contract, USD 10 ceiling, edge cases, outputs, and independent
+test-first roles live in `internal/SLICE_PACKET.md`.
+
 ## Scope decisions (Akarsh, 2026-07-31)
 
 1. **User simulation is in scope.** The core intelligence layer is the

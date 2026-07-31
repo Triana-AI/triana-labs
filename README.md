@@ -1,10 +1,11 @@
 # Triana
 
-Triana Labs Preview is the active build surface. It takes production-derived
-traces, builds a grounded case panel, executes an explicit baseline and
-candidate against the same historical prefixes, continues post-divergence
-only through labeled simulation, and reports stable paired behavioral
-differences and explicit gaps. It does not decide whether to ship.
+Triana Labs Preview is the active build surface. Its immediate launch cut takes
+authorized conversational traces, derives grounded proposed user behaviors,
+builds distinct adaptive multi-turn simulation cases, runs them against one
+existing conversational/tool agent, and returns inspectable transcripts,
+coverage, cost, fidelity, and gaps. It does not yet compare baseline and
+candidate or decide whether to ship.
 
 Preview is CLI-first: a coding agent can perform the repository setup, while
 the human reviews a generated local HTML report backed by machine-readable
@@ -45,8 +46,8 @@ code from Akarsh's Kairos repositories only through the provenance process in
 9. [`docs/FOUNDER_CONTEXT.md`](docs/FOUNDER_CONTEXT.md) — historical wedge,
    competitive objection, and unresolved risks.
 10. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup and workflow.
-11. [`internal/SLICE_PACKET.md`](internal/SLICE_PACKET.md) — historical Slice
-    0A packet; it must be replaced before any Labs implementation worker starts.
+11. [`internal/SLICE_PACKET.md`](internal/SLICE_PACKET.md) — frozen live
+    LABS-04 Grounded Case Factory contract and implementation gate.
 
 Working product instruments:
 
@@ -64,29 +65,26 @@ which points to that shared source instead of duplicating rules.
 ## The active Labs loop
 
 ```text
-production-derived traces
+authorized conversational traces
         ↓
-redaction, authorization, and versioned PreviewTrace adaptation
+versioned PreviewTrace adaptation, observation, and structural intelligence
         ↓
-corpus-derived personas, intents, turn policies, and grounded case panel
+grounded proposed personas, intents, adaptive turn policies, and distinct cases
         ↓
-F0 shared-prefix baseline/candidate resampling with paired trials
+one existing conversational/tool agent through a bounded runner
         ↓
-labeled F1 simulated continuation after divergence
+genuinely adaptive multi-turn simulated-user conversations
         ↓
-typed outcomes, pass^3 stability, comparability, and explicit gaps
+inspectable transcripts, evaluation evidence, cost, fidelity, and gaps
         ↓
-divergence-first report with paired transcripts and fidelity
-        ↓
-human confirms meaning; a later run may reuse that ruling after M3.5
+human-reviewed local evidence may inform a later run
 ```
 
-The first value moment is:
+The immediate first value moment is:
 
-> Baseline reliably did A and candidate reliably did B under the same
-> historical prefix (pass^3 on both arms). Here is the first divergence, every
-> paired transcript, the evidence fidelity, and every gap. A human decides
-> what the difference means.
+> Here are several trace-grounded, genuinely adaptive situations your agent
+> was tested on, the complete conversations, what the evidence covers, what it
+> cost, and what Triana could not support. A human decides what is useful.
 
 ## Repository status
 
@@ -96,7 +94,9 @@ the Trace Observer, and structural Corpus Intelligence. The Observer validates
 and accounts for PreviewTrace JSONL. Corpus Intelligence verifies that bundle
 and derives deterministic structural clusters while preserving explicit gaps
 for semantics it cannot support. Labs still does not accept real/local-sensitive
-traces, generate cases, run agents, compare releases, or render HTML.
+traces, generate cases, run agents, compare releases, or render HTML. LABS-04
+is frozen but not implemented: it will add only synthetic grounded case-design
+proposals and their evaluation evidence before any runtime work begins.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.

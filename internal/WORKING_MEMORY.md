@@ -316,3 +316,29 @@ and charter/plan amendment supersede the discussion tree wherever they differ.
 Exact checkpoints, human-review workflow, judge calibration, runner protocol,
 provider/model, cost bounds, and report cut remain the active discussion before
 the next slice packet is frozen.
+
+## Frozen next slice — LABS-04 Grounded Case Factory
+
+Akarsh approved the first implementation checkpoint on 2026-08-01 and Codex
+froze it in `internal/SLICE_PACKET.md`. The slice consumes only verified
+synthetic Observer and LABS-03 bundles, projects at most 25 eligible traces
+through an explicit provider-safe evidence lane, and uses the existing Azure
+OpenAI `gpt-4.1-mini` deployment (`2025-04-14`) for one proposal, one critique,
+and one revision. It emits five proposed personas/intents/adaptive turn
+policies and case designs plus attempts, citations, lineage, diversity, cost,
+gaps, and a blind human-review template.
+
+The live smoke uses the pre-existing tracked HRAI 50-trace historical-traffic
+file at commit `728f6c5058efe40a16e2aecc9b528b3353f4df4f`, exact SHA-256
+`62d0d188c05a34e346edfb0315b6348343037fcf25a94cf32d10384e5a9b6c61`.
+It is labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`; it cannot support a production
+or real-user claim. The provider boundary has three normal/six absolute calls,
+a conservative USD 10 cap, strict named Azure egress, and no ambient
+credential discovery.
+
+Implementation has not started. The independent tester must first author and
+freeze valid RED. Production authorship follows serially; only then may the
+tester attack the frozen contract in an isolated parallel worktree. Mechanical
+GREEN may be produced unattended, but the product checkpoint remains
+`AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
+runtime, DeepEval, memory, UI, real-data support, or LABS-05 work is authorized.
