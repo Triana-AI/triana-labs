@@ -95,7 +95,11 @@ artifacts or logs. The receipt is not identity-bearing.
 - A UTF-8 BOM on the first line is rejected as `BOM_FORBIDDEN`.
 - Duplicate JSON object keys are rejected before schema validation.
 - JSON depth maximum: 32.
-- Arbitrary JSON floats, NaN, and Infinity are rejected.
+- Bare `NaN`, `Infinity`, and `-Infinity` tokens are not strict JSON and are
+  rejected as `MALFORMED_JSON`.
+- Finite fractional or exponent-form JSON numbers are syntactically valid but
+  outside the LABS-01 scalar contract and are rejected as
+  `SCHEMA_VALIDATION_FAILED`.
 
 Every physical input line is counted exactly once:
 
