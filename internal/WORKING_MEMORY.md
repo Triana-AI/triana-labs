@@ -137,14 +137,22 @@ The plan-first delivery decision is implemented in
 `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`. LABS-01 replaced the
 historical packet and shipped the first component at `92f65a1` under an
 independent 106-case acceptance freeze plus six orchestrator-reserved
-adversarial cases. The current packet records the exact edge cases, hashes,
-role handoffs, generated evidence, and exit gate.
+adversarial cases. LABS-01A made its boundaries human- and agent-readable at
+`42043ab`. LABS-01B made the code match those responsibilities at `c87a521`,
+with six additional independently authored architecture tests. The current
+packet records the exact edge cases, hashes, role handoffs, generated evidence,
+and exit gates.
 
 Current component checkpoint:
 
 ```text
 SYNTHETIC PreviewTrace JSONL
-  → strict Trace Observer
+  → cli.py
+  → observer/observe.py        orchestration and line accounting
+      → contracts/traces.py    one-trace parsing and validation
+      → observer/profile.py    deterministic corpus aggregation
+      → observer/publication.py
+          → observer/renderer.py
   → normalized_traces.jsonl
   → rejected_traces.jsonl
   → corpus_profile.json
@@ -153,14 +161,58 @@ SYNTHETIC PreviewTrace JSONL
 ```
 
 Observed canonical result: five physical lines, three accepted, two rejected,
-and two mechanically eligible for later case generation. The Observer does not
-derive language, distress, personas, intents, cases, execution, comparison, or
-findings. Real/local-sensitive traces remain refused.
+and two mechanically eligible for later case generation. All 118 tests pass;
+the five canonical artifact hashes are unchanged by the responsibility
+refactor. The Observer does not derive language, distress, personas, intents,
+cases, execution, comparison, or findings. Real/local-sensitive traces remain
+refused.
 
 No next implementation slice is authorized in this checkpoint. The next
-product discussion is the Corpus Intelligence input/output and quality
-contract; it must receive its own packet, independent test author, change
-budget, and owner review before code.
+product discussion is the first external adapter contract: one explicit source
+trace format, who owns its mapping, how an agent installs and invokes it, where
+the synthetic/privacy boundary sits, and how failures and provenance become
+strict `PreviewTrace` JSONL input. This discussion precedes Corpus Intelligence
+so that intelligence is not designed against a fictional ingestion path. It
+must not silently become a generic SDK, OTel integration, or real-data support.
+Any accepted implementation requires a new packet, independent test author,
+change budget, and owner review before code.
+
+Next-session handoff prompt:
+
+```text
+Continue Triana from main after the completed LABS-01 Trace Observer and its
+responsibility refactor.
+
+Read AGENTS.md, triana-labs/CHARTER.md, the current plan named by the charter,
+docs/PRODUCT.md, docs/ARCHITECTURE.md, docs/CONTRACTS.md,
+internal/WORKING_MEMORY.md, docs/PROVENANCE.md, the full
+internal/DECISION_LOG.md, docs/ENGINEERING.md, and internal/SLICE_PACKET.md.
+
+Ground truth: the synthetic-only Trace Observer is shipped and green at
+c87a521. Its adapter boundary is currently a file contract only: an external
+adapter must emit PreviewTrace JSONL, then `triana traces observe` validates and
+profiles it. There is no adapter SDK, supported real-trace path, Corpus
+Intelligence, Case Generator, or UI product yet. The suite has 118 passing
+tests and the five canonical artifact hashes are frozen.
+
+Start with product/technical discussion, not implementation and not a giant
+self-referential plan. Define the smallest shippable LABS-02 external-adapter
+checkpoint. Resolve only the material choices: one explicit source trace
+format, mapping ownership, invocation surface, install/run experience for a
+coding agent, synthetic/privacy boundary, refusal and partial-failure behavior,
+provenance, and the exact PreviewTrace JSONL output. Argue whether this should
+be a Triana-owned executable transform or a customer-owned adapter template.
+Do not invent generic SDK, OTel, hosted ingestion, or real-data support.
+
+First response: summarize the shipped boundary in at most 10 lines, propose
+the smallest useful adapter deliverable with concrete input/output, and surface
+only decisions that materially change it. Do not write repository files until
+I accept the checkpoint. After acceptance, freeze a new slice packet and use
+exactly two serial roles: an independent test author and an implementation
+author, with Codex orchestrating. Preserve all 118 tests and canonical hashes.
+Do not start Corpus Intelligence until the adapter output is demonstrably
+usable.
+```
 
 The frozen product component flow is:
 
