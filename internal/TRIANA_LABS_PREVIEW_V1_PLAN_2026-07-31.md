@@ -92,15 +92,31 @@ outcome := (
 - turn count and cost/latency move to aggregate context measures; they are
   not outcome fields.
 
-**Tier-1 stable flip** (k=3 per arm): all three valid baseline trials agree
-on outcome value O1 *at the field level under test*, all three valid
-candidate trials agree on O2, and O1 ≠ O2. Stability is judged per field —
-harmless tool-order variation cannot destabilize a unanimous commitment
-change. Anything short of 3/3-vs-3/3 (including every 2/1 split) is
-`unstable / weak evidence`, its own report section, never tier 1. Rationale:
-under a 90/10 A/A outcome distribution, a 2-of-3 rule fabricates ~11 false
-tier-1 findings per 200 cases; 3/3-vs-3/3 fabricates ~0.1. Fewer than three
-valid trials on either side → `insufficient trials`, a gap.
+**Tier-1 stable flip** (k=3 per arm), stated in pass^k/pass@k semantics
+(Akarsh, 2026-07-31; consistent with the 07-29 wedge decision "pass^k not
+pass@k"): baseline achieves **pass^3** on outcome value O1 *at the field
+level under test*, candidate achieves **pass^3** on O2, and O1 ≠ O2 — two
+reliability claims pointing at different behaviors. Stability is judged per
+field — harmless tool-order variation cannot destabilize a unanimous
+commitment change. Candidate failing pass^3 while the new behavior appears
+at **pass@3** is reported as a **reliability regression/change** on the
+weak-evidence shelf ("baseline reliably A; candidate only sometimes A"),
+with trial counts — its own report section, never tier 1. Rationale: under a
+90/10 A/A outcome distribution, a 2-of-3 rule fabricates ~11 false tier-1
+findings per 200 cases; pass^3-vs-pass^3 fabricates ~0.1. Fewer than three
+valid trials on either side → `insufficient trials`, a gap. Report rows
+print the semantics explicitly ("pass^3 both arms").
+
+**Standing DIY-agent benchmark (Akarsh, 2026-07-31).** Recurring success
+criterion for the tool itself: hand the raw job — two trace sets, "what
+changed?" — to a frontier coding agent (Claude Code or Codex) with no
+Triana. If the agent's answer matches the report's useful findings, the diff
+engine is commodity and the tool must improve where the agent structurally
+loses: reproducible k-trial execution, correct pass^k stability math,
+honest denominators, persistent rulings across runs, identical answers on
+identical inputs, and cost. Run this benchmark at every milestone exit;
+failure to beat the DIY agent on those axes is a kill signal, not a
+positioning problem.
 
 **Divergence localization is separate from outcome classification.** Both
 arms' event sequences are aligned on the shared recorded prefix; the
