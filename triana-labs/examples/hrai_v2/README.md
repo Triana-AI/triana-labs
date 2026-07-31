@@ -24,7 +24,9 @@ classify, or redact the input. Real data is unsupported. Do not use
 production-derived, customer, Blitz, local-sensitive, or otherwise private
 exports with this LABS-02 example.
 
-The adapter creates a new directory with `preview_traces.jsonl`, safe per-line
-rejections, and a manifest. It refuses to overwrite an existing directory.
-Partial mappings remain explicit and exit nonzero; rejected content is not
-echoed into the safe artifacts or terminal event.
+The adapter maps the entire input before creating a new directory containing
+`preview_traces.jsonl` and `rejected_source_traces.jsonl`. It refuses to
+overwrite an existing directory and removes only that new directory if a write
+fails. Consume the two files only after exit 0 or 10; this small reference does
+not promise atomic multi-file publication. Partial mappings remain explicit
+and exit nonzero, without echoing rejected content.
