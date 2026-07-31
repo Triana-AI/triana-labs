@@ -137,6 +137,23 @@ The adapter does not call `contracts/traces.py`; that module is Triana's
 internal per-line validation boundary. A general adapter package, OTel mapping,
 and real/local-sensitive trace path do not exist yet.
 
+LABS-02 includes one deliberately narrow reference transform for newly authored
+synthetic HRAI `normalized-trace-v2` JSONL:
+
+```bash
+python examples/hrai_v2/adapter.py synthetic-hrai-v2.jsonl \
+  --out /private/tmp/triana-adapted \
+  --data-class SYNTHETIC
+uv run --locked triana traces observe \
+  /private/tmp/triana-adapted/preview_traces.jsonl \
+  --out /private/tmp/triana-observed
+```
+
+The script is a copyable example, not an HRAI integration or supported adapter
+API. It refuses real/local-sensitive data by contract, performs no redaction or
+network access, and emits safe per-line rejections separately from accepted
+PreviewTrace JSONL.
+
 Use `./scripts/verify.sh` from `triana-labs/` to run governance, frozen-test
 integrity, formatting, lint, strict typing, all tests, deterministic
 repeatability, package builds, a clean CPython 3.13.14 wheel install, and

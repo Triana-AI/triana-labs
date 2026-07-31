@@ -139,9 +139,13 @@ historical packet and shipped the first component at `92f65a1` under an
 independent 106-case acceptance freeze plus six orchestrator-reserved
 adversarial cases. LABS-01A made its boundaries human- and agent-readable at
 `42043ab`. LABS-01B made the code match those responsibilities at `c87a521`,
-with six additional independently authored architecture tests. The current
-packet records the exact edge cases, hashes, role handoffs, generated evidence,
-and exit gates.
+with six additional independently authored architecture tests. LABS-02 then
+shipped one standalone, synthetic-only HRAI `normalized-trace-v2` reference
+mapping into PreviewTrace JSONL. It is exactly 200 counted adapter lines, uses
+only the standard library, and is accepted by both source and installed-wheel
+Observer commands. The complete suite has 151 passing tests and the five
+canonical Observer hashes remain frozen. The current packet records exact edge
+cases, hashes, role handoffs, generated evidence, and exit gates.
 
 Current component checkpoint:
 
@@ -167,15 +171,14 @@ refactor. The Observer does not derive language, distress, personas, intents,
 cases, execution, comparison, or findings. Real/local-sensitive traces remain
 refused.
 
-No next implementation slice is authorized in this checkpoint. The next
-product discussion is the first external adapter contract: one explicit source
-trace format, who owns its mapping, how an agent installs and invokes it, where
-the synthetic/privacy boundary sits, and how failures and provenance become
-strict `PreviewTrace` JSONL input. This discussion precedes Corpus Intelligence
-so that intelligence is not designed against a fictional ingestion path. It
-must not silently become a generic SDK, OTel integration, or real-data support.
-Any accepted implementation requires a new packet, independent test author,
-change budget, and owner review before code.
+No next implementation slice is authorized in this checkpoint. LABS-02 proves
+the mechanical file handoff for one newly authored synthetic source format; it
+does not prove that a stranger can adapt a customer system, that real traces
+are supported, or that the product is wanted. Corpus Intelligence remains
+unstarted. Any next product discussion must use the demonstrated PreviewTrace
+output rather than inventing a generic SDK, OTel integration, hosted ingestion,
+or real-data path. Any accepted implementation requires a new packet,
+independent test author, change budget, and owner review before code.
 
 Next-session handoff prompt:
 

@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **FINAL MAPPING-ONLY ACCEPTANCE FROZEN — IMPLEMENTATION AUTHORIZED**
+Status: **COMPLETE — LABS-02 MAPPING PROOF SHIPPED; CORPUS INTELLIGENCE NOT STARTED**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -583,3 +583,29 @@ Human action still required:
 - Corpus Intelligence, cases, panels, execution, comparison, reports, or UI;
 - any change to LABS-01, `triana-core`, frozen V1 contracts, dependencies, or
   canonical artifact bytes.
+
+## 14. Completion evidence
+
+LABS-02 completed on branch `codex/labs-02-reference-adapter` with production
+commits `c315ef0` and `ebf7417` and orchestrator gate commit `b1b917d`.
+
+- independent mapping-only acceptance: 28 passing cases at frozen test commit
+  `c39ae8e`, aggregate
+  `99cf8455d81aebfb84c30beb9a672bb3f795bb30f67734fd39e11aba4dcde66c`;
+- orchestrator-reserved adapter boundary: five passing cases covering blocked
+  network access, private-marker non-emission, non-regular and 16 MiB input
+  refusal, execution of a copied standalone script, and safe CLI refusal;
+- complete suite: 151 passing tests, including the prior 118 unchanged tests;
+- adapter size: exactly 200 nonblank/noncomment lines, normally formatted,
+  zero lines over 100 characters, standard library only;
+- final repository verification: GREEN at
+  `/private/tmp/triana-labs-verify.CcyH1H`, including Ruff, mypy, sdist/wheel,
+  clean install, source and installed-wheel Observer acceptance of adapter
+  output, and confirmation that the standalone example is not packaged;
+- all five frozen Observer artifact hashes remain exactly those in section 10;
+- no dependency, package/core contract, SDK, OTel, real-data path, hosted
+  ingestion, Corpus Intelligence, case generation, or UI change occurred.
+
+The checkpoint proves one clean, synthetic HRAI-v2 mapping can produce
+Observer-usable PreviewTrace JSONL within the M3.5 line ceiling. It does not
+prove stranger installation, customer trace compatibility, or product demand.
