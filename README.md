@@ -6,6 +6,11 @@ candidate against the same historical prefixes, continues post-divergence
 only through labeled simulation, and reports stable paired behavioral
 differences and explicit gaps. It does not decide whether to ship.
 
+Preview is CLI-first: a coding agent can perform the repository setup, while
+the human reviews a generated local HTML report backed by machine-readable
+evidence. Initial user acquisition is a bounded five-team design-partner
+cohort, not a hosted account or trace-upload product.
+
 The prior Release Review V1 is suspended, not deleted. Its implemented
 deterministic contract kernel remains shared infrastructure in `triana-core/`.
 

@@ -49,6 +49,13 @@ decisive exit is M3.5: a developer who did not build Triana must provide a
 trace export, configure baseline and candidate execution, and produce an
 honest report in under 90 minutes with at most 200 adapter lines (target 100).
 
+The primary product surface is a CLI designed for setup by the customer's
+coding agent; the human consumes a generated local HTML report backed by the
+same machine-readable artifact. Initial acquisition is a bounded application
+for five qualified design-partner teams, paced at one or two onboardings per
+week. A thin generated landing page is acceptable for that funnel, but hosted
+accounts, trace uploads, execution, and product dashboards are not.
+
 Internal HRAI success proves machinery and supplies a demo. It does not prove
 that another team has a recurring problem or that the adapter contract is
 usable.

@@ -44,7 +44,10 @@ The repository deliverable includes:
 11. tests, fixtures, reproducible evidence, installation documentation,
     privacy documentation, provenance entries, and a single local/CI gate;
 12. an external M3.5 installation record proving or falsifying the self-serve
-    claim before persistent rulings or promotion work begins.
+    claim before persistent rulings or promotion work begins;
+13. a deliberately thin acquisition page for a bounded five-team
+    design-partner cohort, with qualification rather than a generic product
+    account signup.
 
 M4 persistent rulings and ProtectedCase draft promotion are conditionally
 committed: they are built only after M3.5 passes. Hosted services, release
@@ -426,6 +429,29 @@ triana-labs preview report <run-manifest> --out <directory>
 triana-labs preview demo
 ```
 
+The CLI is the primary setup and execution surface. The human-facing product
+output is a generated local static HTML report backed by the same
+machine-readable report artifact. A hosted product dashboard, user account,
+trace-upload flow, and cloud execution are not required for Preview v1.
+
+Installation and integration are designed to be delegated to a coding agent.
+The repository therefore ships an agent-readable setup contract and a
+copyable task that instructs the coding agent to:
+
+- install without changing the customer's agent behavior;
+- adapt traces to PreviewTrace;
+- configure safe explicit baseline and candidate commands;
+- run the deterministic environment/authorization diagnostic;
+- stop on unclear reset safety, trace authorization, or provider egress;
+- keep the customer adapter within the M3.5 line budget.
+
+The CLI includes an initialization path that creates a minimal versioned
+configuration, adapter template, synthetic example, and exact validation
+command, plus a diagnostic path that reports trace validity, runner readiness,
+reset safety, provider authorization, projected maximum cost, and every
+blocker to the first report. Final command spelling is frozen in the relevant
+slice packet.
+
 The final spelling is frozen in the relevant slice packet. The interface
 obeys:
 
@@ -442,6 +468,35 @@ obeys:
   JSON before identity;
 - secrets are environment references or OS-secret-store references, never
   stored values in config or artifacts.
+
+### 8.1 Bounded acquisition
+
+Preview does not initially offer a generic “create account” funnel. The public
+acquisition surface is a small landing/application page for five
+design-partner teams. v0 or an equivalent UI generator may be used for this
+disposable marketing page or report mockups, but generated UI is not a source
+of product logic, evidence arithmetic, or contract authority.
+
+The page promises a concrete outcome: bring a trace export plus runnable
+baseline and candidate, and leave with a behavioral-difference report. It
+shows one report image, the three-step local workflow, exact qualification
+criteria, and one primary call to apply for the bounded cohort. A repository
+link becomes the secondary action when publication gates pass.
+
+The application captures:
+
+- conversational agent and tool-use shape;
+- available trace format;
+- whether baseline and candidate run safely from a checkout;
+- release frequency;
+- one recent change or failure worth comparing;
+- willingness to spend 60–90 minutes on an observed installation.
+
+The cohort is capped at five accepted teams and one or two onboardings per
+week. Selection excludes workflows requiring production credentials,
+unbounded side effects, or founder-written integrations. The measured funnel
+is application → qualified team → completed installation → report →
+would-use-again, not account creation.
 
 ## 9. Edge-case register
 
@@ -838,6 +893,8 @@ Outputs:
 - `triana-labs preview demo`;
 - install, quickstart, adapter, runner, privacy, report, and troubleshooting
   documentation;
+- agent-readable setup instructions and a copyable integration task;
+- initialization and deterministic diagnostic commands;
 - synthetic reference agent/config;
 - generated machine-readable and HTML demo artifacts;
 - single local/CI verification command;
@@ -846,6 +903,8 @@ Outputs:
 Acceptance:
 
 - clean clone to report is reproducible;
+- a coding agent can complete the documented setup without changing the
+  customer's agent behavior or silently crossing a safety boundary;
 - no secret, raw customer data, restricted source, or local absolute path is
   published;
 - local and CI gates are identical;
@@ -876,6 +935,11 @@ Measured protocol:
 9. ask whether it found a useful difference or credible no-difference;
 10. ask whether the existing process missed anything and whether they would
     use it for another release.
+
+The initial cohort is limited to five qualified teams and paced at one or two
+onboardings per week. The application funnel and cohort operations may use a
+thin landing page, but the installation and report remain local CLI
+experiences.
 
 Pass requires:
 
@@ -1046,6 +1110,7 @@ backlog items that can be offset by more features.
 ## 16. Explicit non-goals
 
 - hosted ingestion, storage, authentication, billing, or managed execution;
+- product accounts, hosted trace upload, or a hosted execution dashboard;
 - dashboards or generic observability;
 - general eval import, scorer authoring, or prompt management;
 - automatic ground truth, impact inference, release recommendation, or
