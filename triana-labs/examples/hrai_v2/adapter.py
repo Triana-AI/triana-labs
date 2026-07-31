@@ -6,7 +6,7 @@ import shutil
 import sys
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 Object = dict[str, Any]
 MAX_SAFE = 9_007_199_254_740_991
@@ -14,15 +14,19 @@ SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$")
 SCHEMA = "SOURCE_SCHEMA_VALIDATION_FAILED"
 MISMATCH = "SOURCE_TURN_EVENT_MISMATCH"
 TOP_FIELDS = "schema_version case_id session_id status system_prompt turns events"
-TRACE_FIELDS = (
-    "contract_kind events privacy_class schema_version source_trace_id trace_id"
-)
+TRACE_KEYS = "contract_kind events privacy_class schema_version source_trace_id "
+TRACE_KEYS += "trace_id"
 ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
 class Reject(Exception):
     def __init__(self, code: str, pointer: str = "") -> None:
         self.code, self.pointer = code, pointer
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, _: str) -> NoReturn:
+        raise SystemExit(fatal("CLI_USAGE_ERROR", 2))
 
 
 def record(names: str, *values: Any) -> Object:
@@ -126,14 +130,13 @@ def map_source(value: Any, seen: set[str]) -> Object:
         for call_index, call in enumerate(tool_calls, 1):
             mapped.extend(map_call(call, turn_number, call_index, pointer))
         final = index == len(turns) - 1
-        mapped.append(
-            event("ASSISTANT_MESSAGE", "content is_final", turn["content"], final)
-        )
+        fields = "content is_final"
+        mapped.append(event("ASSISTANT_MESSAGE", fields, turn["content"], final))
     require(len(mapped) <= 1_000, "/events", "MAPPED_TRACE_INVALID")
     for sequence, item in enumerate(mapped):
         item["sequence"] = sequence
     values = ("preview_trace", mapped, "SYNTHETIC", 1, session, session)
-    return record(TRACE_FIELDS, *values)
+    return record(TRACE_KEYS, *values)
 
 
 def compact(value: Any) -> bytes:
@@ -161,9 +164,8 @@ def fatal(code: str, exit_code: int) -> int:
 
 
 def read_input(source: Path) -> bytes:
+    require(not source.is_symlink() and source.is_file(), code="INPUT_READ_FAILED")
     try:
-        if source.is_symlink() or not source.is_file():
-            raise OSError
         with source.open("rb") as handle:
             payload = handle.read(16 * 1024 * 1024 + 1)
     except OSError as error:
@@ -173,7 +175,7 @@ def read_input(source: Path) -> bytes:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = Parser()
     parser.add_argument("input", nargs="?")
     parser.add_argument("--out")
     parser.add_argument("--data-class")
