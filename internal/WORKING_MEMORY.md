@@ -359,9 +359,12 @@ intelligence artifact byte/line ceilings. Production did not choose a value.
 The wire correction fixes 64-KiB config, 1-MiB manifest/report/index, 16-MiB
 cluster, and single-line canonical JSON ceilings while literally inheriting the
 unchanged Observer reader limits. The test author added 33 black-box cases
-without changing the original 109; Codex reproduced 142 collected, 140 intended
-RED failures, two unaffected passes, all 188 prior tests green, and corrected
-aggregate SHA-256
+without changing the original 109. The initially recorded 140/2 result was
+contaminated by the implementation author's untracked partial package in the
+shared worktree. After moving that partial tree outside the repository, both
+Codex and the implementation author reproduced the clean authoritative state:
+142 collected, 141 intended RED failures, one normative-schema pass, all 188
+prior tests green, and unchanged corrected aggregate SHA-256
 `0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`.
 Production is reauthorized only against that corrected immutable suite.
 Mechanical GREEN may later be produced unattended, but the product checkpoint

@@ -586,7 +586,12 @@ review found the missing resource ceilings. After the wire correction at
 `02b7801`, the independent author added 33 resource cases without changing the
 original 109. Codex independently reproduced the corrected suite before
 reauthorizing production: 142 cases collected, 140 expected behavioral RED
-failures, and two unaffected passes. All 188 prior tests passed unchanged.
+failures, and two unaffected passes. That evidence was contaminated by the
+implementation author's untracked partial package in the shared worktree. On
+clean commit `f280f98`, Codex and the implementation author independently
+reproduced the authoritative state: 142 collected, 141 expected behavioral RED
+failures, and one passing normative-schema check. All 188 prior tests passed
+unchanged.
 Ruff and format checks passed. The sorted concatenated test/fixture content
 SHA-256 is
 `0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`;
