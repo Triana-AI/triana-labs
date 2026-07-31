@@ -261,6 +261,9 @@ manifest hashes exact artifact bytes and has no self-hash.
   `UNSUPPORTED_DATA_CLASS`, exit 2, before reading input.
 - Input/path/resource failures are fatal exits 2 or 3; publication failure is
   7; internal invariant is 70. Fatal failure creates no target directory.
+- An already-existing output target is an output-path precondition refusal and
+  exits 2 before publication begins. Exit 7 is reserved for a failure while
+  creating, flushing, or atomically publishing a previously absent target.
 - Output is a private temporary sibling atomically renamed to a target that
   must not exist. It never overwrites or merges.
 - Every physical source line is counted exactly once:
