@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **FROZEN ENTRY CONTRACT — INDEPENDENT TEST AUTHOR REAUTHORIZED**
+Status: **FROZEN ENTRY CONTRACT — ORCHESTRATOR RED AUDIT CORRECTION**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -563,14 +563,17 @@ review; it is not included in the template.
 `slot_key` hashes persona ID, intent ID, turn-policy ID, source structural
 cluster IDs, sorted stressor codes, and ordered expected tool names. Two valid
 cases with the same slot key are exact slot duplicates and only the first by
-case ID counts toward effective N.
+case ID counts toward effective N. Source clusters are the union reachable
+through the case and its resolved persona, intent, and turn-policy claims.
 
 Near-duplicate text uses Unicode casefolding, whitespace tokenization, and
 token-set Jaccard similarity over `opening_user_turn`, intent goal, and
 reaction-rule text. Similarity at or above `0.85` with the same expected tool
 path creates one duplicate cluster. Similar text with a different ordered
 expected tool path remains distinct. The raw cases remain in the attempt
-record, but duplicates do not increase effective distinct N. The report names
+record, but duplicates do not increase effective distinct N. Exact-slot and
+near-text edges form separate per-lane graphs; mixed components are labeled
+explicitly. The report names
 the algorithm, version, threshold, cluster sizes, raw N, and effective N.
 
 ## 7. Evaluation-first acceptance contract

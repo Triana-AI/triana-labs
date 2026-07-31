@@ -296,7 +296,10 @@ supported text are ordered and limited to 20.
 `Lineage` has exactly `provider_kind,endpoint_host_hash,deployment,model_name,
 model_version,prompt_pack_hash,provider_evidence_hash,stage,seed,attempt_ids`.
 The fixed provider/model values come from config; stage is `PROPOSE | REVISE`;
-attempt IDs are unique in ledger order. The endpoint host hash is
+attempt IDs are unique in ledger order. Control lineage contains every PROPOSE
+attempt through its successful response, including a failed retry precursor.
+Revised lineage contains every PROPOSE, CRITIQUE, and REVISE attempt through
+the accepted revised response, including failed retry precursors. The endpoint host hash is
 `domain_hash("endpoint-host", allowed_endpoint_host)` and the prompt-pack hash
 is `domain_hash("prompt-pack", {"PROPOSE":<exact prompt>,"CRITIQUE":<exact
 prompt>,"REVISE":<exact prompt>,"proposal_schema":<canonical schema>,
@@ -709,6 +712,12 @@ Cluster IDs and stressors are sorted unique; tool names preserve order.
 `slot_key = domain_hash("case-slot", preimage)`. Same slot means an exact slot
 duplicate.
 
+`structural_cluster_ids` is the sorted unique union of cluster IDs from every
+citation referenced by the case's own grounding claims and by the grounding
+claims of its resolved persona, intent, and turn policy. Generated-variation
+items contribute none. An unresolvable citation already makes the record
+invalid and never enters this calculation.
+
 Near-duplicate text is the exact concatenation of opening turn text, LF, intent
 goal text, then each reaction-rule text preceded by LF. Apply Python Unicode
 `casefold()`, then `split()` on Unicode whitespace, then create a set of exact
@@ -717,10 +726,15 @@ size; two empty sets equal 1. Similarity is compared using exact integer
 arithmetic `100 * intersection >= 85 * union`, avoiding floats. Cases cluster
 when the condition holds and ordered expected tool names are equal.
 
-Build an undirected graph of near-duplicate pairs. Connected components of two
-or more are duplicate clusters. Cluster ID hashes the sorted case IDs. The
-lexicographically first case ID is representative; all raw cases remain, only
-representatives count toward effective N. Components and members sort by ID.
+Build an undirected graph independently inside each lane; control and revised
+cases never connect. Add an `EXACT_SLOT` edge for every same-slot pair and a
+`NEAR_TEXT` edge for every pair satisfying the text/tool rule. Connected
+components of two or more are duplicate clusters. Cluster ID hashes the sorted
+case IDs. The lexicographically first case ID is representative; all raw cases
+remain, only representatives count toward effective N. Components and members
+sort by ID. A component's `similarity_basis` is `EXACT_SLOT` when all its edges
+are exact-slot only, `NEAR_TEXT` when all are near-text only, and `MIXED` when
+both edge kinds occur (including two labels on the same pair).
 
 ## 12. Blind review algorithm and exact review keys
 
@@ -850,7 +864,8 @@ SafeInts. `gap_codes` is sorted unique SafeCodes. `support_state_counts` is a
 closed object with exactly `SUPPORTED,SINGLE_OBSERVATION,CONFLICTED`. Each
 duplicate cluster has exactly `duplicate_cluster_id,representative_case_id,
 member_case_ids,similarity_basis`; member IDs sort, and basis is
-`EXACT_SLOT | NEAR_TEXT`. Clusters sort by ID. Blind lineage uses section 12.
+`EXACT_SLOT | NEAR_TEXT | MIXED`. Clusters sort by ID. Blind lineage uses
+section 12.
 
 `human_review_template.json` has exactly `artifact_kind,schema_version,
 evaluation_manifest_hash,rubric_version,blind_seed,review_items,review_state`.
@@ -888,8 +903,9 @@ Count arithmetic is exact:
   counts from `SUCCEEDED` attempts only. Conservative cost totals every sent
   attempt's full reservation; a non-sent `BUDGET_REFUSED` attempt carries
   `0.000000`. No observed usage refunds it.
-- Evaluation duplicate clusters include both lanes. Case IDs make membership
-  unambiguous; components and members retain the ordering in section 11.
+- Evaluation duplicate clusters list components from both lane-isolated graphs.
+  Case IDs make membership unambiguous; components and members retain the
+  ordering in section 11.
 
 For a duplicate component, every member remains emitted and valid. Every
 member, including the representative, gets `duplicate_cluster_id`. Only an
