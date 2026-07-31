@@ -110,6 +110,10 @@ Source constraints:
 - `schema_version` is exactly `normalized-trace-v2`.
 - `case_id` and `session_id` are LABS-01 `SafeId`; `session_id` becomes both
   `trace_id` and `source_trace_id`.
+- A `session_id` already used by an earlier accepted source line rejects the
+  later line as `DUPLICATE_TRACE_ID`. Because both output identities derive
+  from the same source field, LABS-02 has no separately representable
+  duplicate-source-ID condition. Rejected lines do not reserve `session_id`.
 - `status` must be `COMPLETED`. `HARNESS_ERROR` or any other value is rejected,
   not translated into agent terminal behavior.
 - `system_prompt` is a closed object with one non-empty string field `text`.
@@ -219,7 +223,6 @@ UNSUPPORTED_SOURCE_SCHEMA_VERSION
 SOURCE_EXECUTION_INCOMPLETE
 SOURCE_TURN_EVENT_MISMATCH
 DUPLICATE_TRACE_ID
-DUPLICATE_SOURCE_TRACE_ID
 MAPPED_TRACE_INVALID
 ```
 
@@ -351,7 +354,8 @@ The test author independently creates source fixtures and expected
 - role/turn/event mismatch;
 - malformed/duplicate-key/invalid UTF-8/BOM/blank/depth/size cases, including
   accepted finite floats in ignored fields and rejected floats in mapped fields;
-- duplicate trace/source identities with rejected IDs not reserving identity;
+- duplicate accepted `session_id` as `DUPLICATE_TRACE_ID`, with rejected lines
+  not reserving the identity;
 - mixed partial success and exact accounting;
 - empty/all-rejected deterministic bundles;
 - mandatory synthetic attestation and no raw values in rejection/log output;
