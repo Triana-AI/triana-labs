@@ -98,6 +98,13 @@ Required fields are exactly `schema_version`, `case_id`, `session_id`,
 LABS-01 vocabulary. Any other top-level field rejects the source line. Ignored
 fields never enter output, logs, identities, or hashes.
 
+Recognized ignored fields are parsed only to enforce raw JSON resource and
+strict-syntax boundaries. They may contain any finite strict-JSON value,
+including finite floats used by HRAI for fields such as `usd`; non-finite
+`NaN`/`Infinity` tokens remain malformed JSON. A finite float is forbidden in
+every mapped field, including message content structure, tool `arguments`, and
+`result_summary`, because LABS-01 PreviewTrace cannot represent it.
+
 Source constraints:
 
 - `schema_version` is exactly `normalized-trace-v2`.
@@ -129,7 +136,8 @@ Source constraints:
 Raw file boundaries equal LABS-01: local regular non-symlink file, 16 MiB,
 1,000 physical lines, 1 MiB per line, LF/CRLF, optional final LF, strict UTF-8,
 no BOM, duplicate JSON keys rejected, maximum JSON depth 32, strict JSON with
-finite floats rejected by the mapping schema.
+non-finite numeric tokens rejected by the parser. Finite floats are accepted
+only within the recognized ignored source fields described above.
 
 ## 4. Exact mapping to PreviewTrace
 
@@ -341,7 +349,8 @@ The test author independently creates source fixtures and expected
 - missing tool summary retained as an unmatched call;
 - source harness error refused rather than mapped to terminal behavior;
 - role/turn/event mismatch;
-- malformed/duplicate-key/invalid UTF-8/BOM/blank/float/depth/size cases;
+- malformed/duplicate-key/invalid UTF-8/BOM/blank/depth/size cases, including
+  accepted finite floats in ignored fields and rejected floats in mapped fields;
 - duplicate trace/source identities with rejected IDs not reserving identity;
 - mixed partial success and exact accounting;
 - empty/all-rejected deterministic bundles;
