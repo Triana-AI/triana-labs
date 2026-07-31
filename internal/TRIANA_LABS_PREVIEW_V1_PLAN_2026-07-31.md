@@ -57,41 +57,76 @@ Frozen in the charter. Not repeated here.
 8. **No rerun-to-green.** Machinery acceptance on constructed nondeterministic
    fixtures; real-data milestones pass by reporting honestly.
 
-## OPEN BLOCKER — outcome and stability machinery (proposal, not accepted)
+## Outcome and stability machinery (v2 — hardened by Codex adversarial pass
+2026-07-31; awaiting Akarsh acceptance)
 
-**Outcome of a case** = typed tuple, compared field-by-field with declared
-precedence:
+**Execution validity comes first.** Each trial is classified before any
+comparison: `valid` (agent-origin behavior observed) or `invalid` with a
+typed cause (timeout, provider failure, harness failure, malformed trace).
+Invalid trials enter gap denominators only; they never form outcomes. A
+terminal-status "flip" caused by rate limits is a gap, not a finding.
+
+**Outcome of a case** = typed record over valid trials:
 
 ```text
 outcome := (
-  terminal_status,        # completed / errored / abandoned
-  commitment,             # domain-observable terminal action if the trace
-                          # declares one (e.g. persisted decision), else ⊥
-  tool_signature,         # ordered multiset of tool names, args excluded
-  turn_count_band,        # bucketed, not exact
+  commitment,           # domain-observable terminal action if the case
+                        # declares one (e.g. persisted decision), else ⊥
+  terminal_status,      # completed / abandoned (agent-origin only)
+  tool_name_sequence,   # ordered, duplicates preserved, exact equality
+  declared_projection,  # case-specific human-declared observable
+                        # (consequential tool args, final-answer field,
+                        #  evaluator result), else ⊥
 )
 ```
 
-Precedence for "the outcome changed": commitment > terminal_status >
-tool_signature > turn_count_band. A field marked ⊥ on either side is not
-compared (gap, not diff).
+- Every applicable field is compared and every changed field is retained in
+  the report. Precedence (declared_projection ≥ commitment > terminal_status
+  > tool_name_sequence) ranks the *primary display reason only* — it never
+  suppresses lower-field changes.
+- ⊥ on either side blocks classification at that field and everything below
+  it in precedence: the case is reported as `outcome evidence incomplete`,
+  with lower fields shown as partial observations only. Mechanical fields
+  matching is reported as "no change detected in observed fields" — never
+  "unchanged behavior."
+- turn count and cost/latency move to aggregate context measures; they are
+  not outcome fields.
 
-**Stable flip** (k trials per arm, k≥3): candidate outcome differs from the
-*baseline modal outcome* in ≥⌈2k/3⌉ candidate trials, AND baseline agrees
-with its own modal outcome in ≥⌈2k/3⌉ baseline trials. Baseline
-self-disagreement → case labeled `unstable`, excluded from tier 1.
+**Tier-1 stable flip** (k=3 per arm): all three valid baseline trials agree
+on outcome value O1 *at the field level under test*, all three valid
+candidate trials agree on O2, and O1 ≠ O2. Stability is judged per field —
+harmless tool-order variation cannot destabilize a unanimous commitment
+change. Anything short of 3/3-vs-3/3 (including every 2/1 split) is
+`unstable / weak evidence`, its own report section, never tier 1. Rationale:
+under a 90/10 A/A outcome distribution, a 2-of-3 rule fabricates ~11 false
+tier-1 findings per 200 cases; 3/3-vs-3/3 fabricates ~0.1. Fewer than three
+valid trials on either side → `insufficient trials`, a gap.
 
-**Noise floor**: derived from baseline trial self-agreement per measure (not
-from one A/A realization). Aggregate deltas smaller than the cross-trial
-spread on the same measure are demoted `inside noise`. Multiple-comparison
-honesty: the report states how many measures were tested.
+**Divergence localization is separate from outcome classification.** Both
+arms' event sequences are aligned on the shared recorded prefix; the
+divergence point is the first unequal aligned event (event type, role, tool
+name, normalized consequential arguments, explicit observation gaps).
+Terminal fields say *whether* behavior changed; the aligned sequence says
+*where*.
 
-**First-divergence alignment**: events aligned on the shared recorded prefix;
-divergence = first position where the compared outcome fields differ;
-execution-contract mismatches (different fixtures, seeds, schema) classify
-the case `non-comparable` (kernel `MOVED` semantics), never as divergence.
+**Comparability = closed execution fingerprint.** Case/prefix hash, fixture
+content hash, reset policy, tool/world contract version, simulator and
+derived-asset (persona/intent file) versions, randomization policy, runtime
+identities. Any undeclared fingerprint difference between arms →
+`non-comparable` (kernel `MOVED` semantics), never a divergence.
 
-Akarsh accepts, amends, or replaces this before component 3 is built.
+**Noise floor, deterministic rule:** numeric aggregates are computed per
+trial index over one fixed two-sided case intersection; the baseline's
+per-index value range is the noise width; candidate aggregate movement
+inside that range is `inside noise`. Categorical measures get no aggregate
+noise label — they are covered by the per-case 3/3 rule. The report states
+how many measures were tested.
+
+Codex findings 1–13 reconciled: all four blockers and nine majors accepted
+with the fixes above; no finding rejected. Full transcript:
+scratchpad `codex-outcome-review.txt` (session-local).
+
+Akarsh accepts or amends this before component 3 (diff engine) is built.
 
 ## Pipeline
 
