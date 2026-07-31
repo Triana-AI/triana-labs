@@ -1,0 +1,47 @@
+{
+  "$defs": {
+    "critiqueIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_ids": {"items": {"type": "string"}, "type": "array"},
+        "explanation": {"type": "string"},
+        "issue_key": {"type": "string"},
+        "reason_code": {
+          "enum": [
+            "INVALID_GROUNDING",
+            "INSUFFICIENT_SUPPORT",
+            "UNSUPPORTED_INVENTION",
+            "NOT_ADAPTIVE",
+            "DUPLICATE_CASE",
+            "IMPOSSIBLE_WORLD",
+            "WEAK_EVALUATION",
+            "REFERENCE_ERROR"
+          ],
+          "type": "string"
+        },
+        "severity": {"enum": ["CRITICAL", "MAJOR", "MINOR"], "type": "string"},
+        "target_key": {"type": "string"},
+        "target_kind": {
+          "enum": ["PERSONA", "INTENT", "TURN_POLICY", "CASE"],
+          "type": "string"
+        }
+      },
+      "required": [
+        "issue_key",
+        "severity",
+        "target_kind",
+        "target_key",
+        "reason_code",
+        "explanation",
+        "citation_ids"
+      ],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "issues": {"items": {"$ref": "#/$defs/critiqueIssue"}, "type": "array"}
+  },
+  "required": ["issues"],
+  "type": "object"
+}

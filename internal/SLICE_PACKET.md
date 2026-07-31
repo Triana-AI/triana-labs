@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **FROZEN ENTRY CONTRACT — INDEPENDENT TEST AUTHOR AUTHORIZED**
+Status: **FROZEN ENTRY CONTRACT — INDEPENDENT TEST AUTHOR REAUTHORIZED**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -607,7 +607,9 @@ implementation begins. It has three evidence lanes.
 - similar language with different consequential tool paths remains distinct;
 - five requested cases produce at least three valid distinct cases or the run
   cannot claim a usable case set;
-- model, deployment, prompt, evidence, or seed change creates new lineage;
+- this slice refuses model, deployment, prompt, or seed configuration changes;
+  evidence changes create new lineage, and any future explicitly authorized
+  contract variant must change the corresponding lineage field/hash;
 - the critic cannot create a score, acceptance state, or persistent truth.
 
 ### Lane C — blind human usefulness review
@@ -710,7 +712,7 @@ Closed reasons and exits:
    SECRET_SENTINEL_DETECTED
 5  CORPUS_INTEGRITY_FAILED, INTELLIGENCE_MISMATCH,
    NO_USABLE_SEMANTIC_EVIDENCE, NO_VALID_CASES
-7  OUTPUT_WRITE_FAILED
+7  OUTPUT_WRITE_FAILED, OUTPUT_CLEANUP_FAILED
 8  PROVIDER_FAILED
 9  BUDGET_REFUSED, BUDGET_EXHAUSTED
 70 INTERNAL_INVARIANT_FAILED
@@ -820,6 +822,7 @@ Orchestrator only:
 ```text
 internal/SLICE_PACKET.md
 internal/LABS04_WIRE_CONTRACT.md
+internal/labs04_provider_schemas/**
 internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
 internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md

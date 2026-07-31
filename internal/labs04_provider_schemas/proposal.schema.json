@@ -1,0 +1,248 @@
+{
+  "$defs": {
+    "caseDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "case_key": {"type": "string"},
+        "gaps": {
+          "items": {
+            "enum": [
+              "MODEL_DECLARED_AMBIGUITY",
+              "WORLD_CONTRACT_UNCLEAR",
+              "EVALUATION_SEMANTICS_UNCERTAIN"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "grounding_claims": {
+          "items": {"$ref": "#/$defs/claimDraft"},
+          "type": "array"
+        },
+        "intent_key": {"type": "string"},
+        "persona_key": {"type": "string"},
+        "proposed_evaluation": {"$ref": "#/$defs/evaluationDraft"},
+        "scenario": {"$ref": "#/$defs/scenarioDraft"},
+        "turn_policy_key": {"type": "string"}
+      },
+      "required": [
+        "case_key",
+        "persona_key",
+        "intent_key",
+        "turn_policy_key",
+        "scenario",
+        "grounding_claims",
+        "proposed_evaluation",
+        "gaps"
+      ],
+      "type": "object"
+    },
+    "claimDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_ids": {"items": {"type": "string"}, "type": "array"},
+        "claim": {"type": "string"},
+        "claim_key": {"type": "string"},
+        "support_state": {
+          "enum": ["SUPPORTED", "SINGLE_OBSERVATION", "CONFLICTED"],
+          "type": "string"
+        }
+      },
+      "required": ["claim_key", "claim", "support_state", "citation_ids"],
+      "type": "object"
+    },
+    "evaluationDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "abstain_conditions": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "criteria": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        }
+      },
+      "required": ["criteria", "abstain_conditions"],
+      "type": "object"
+    },
+    "intentDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "goal": {"$ref": "#/$defs/supportedTextDraft"},
+        "grounding_claims": {
+          "items": {"$ref": "#/$defs/claimDraft"},
+          "type": "array"
+        },
+        "intent_key": {"type": "string"},
+        "known_constraints": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "observed_failure_or_abandonment_signals": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "observed_success_signals": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        }
+      },
+      "required": [
+        "intent_key",
+        "goal",
+        "known_constraints",
+        "observed_success_signals",
+        "observed_failure_or_abandonment_signals",
+        "grounding_claims"
+      ],
+      "type": "object"
+    },
+    "personaDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "behavioral_traits": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "communication_tendencies": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "constraints": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "grounding_claims": {
+          "items": {"$ref": "#/$defs/claimDraft"},
+          "type": "array"
+        },
+        "label": {"type": "string"},
+        "persona_key": {"type": "string"}
+      },
+      "required": [
+        "persona_key",
+        "label",
+        "behavioral_traits",
+        "communication_tendencies",
+        "constraints",
+        "grounding_claims"
+      ],
+      "type": "object"
+    },
+    "scenarioDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_user_actions": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "expected_tool_names": {"items": {"type": "string"}, "type": "array"},
+        "known_facts": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "opening_user_turn": {"$ref": "#/$defs/supportedTextDraft"},
+        "private_user_facts": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "stressor_codes": {"items": {"type": "string"}, "type": "array"},
+        "termination_conditions": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "tool_world_constraints": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "unknowns": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        }
+      },
+      "required": [
+        "opening_user_turn",
+        "known_facts",
+        "private_user_facts",
+        "unknowns",
+        "allowed_user_actions",
+        "tool_world_constraints",
+        "termination_conditions",
+        "expected_tool_names",
+        "stressor_codes"
+      ],
+      "type": "object"
+    },
+    "supportedTextDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "enum": ["OBSERVED", "GENERATED_VARIATION"],
+          "type": "string"
+        },
+        "claim_keys": {"items": {"type": "string"}, "type": "array"},
+        "text": {"type": "string"}
+      },
+      "required": ["text", "basis", "claim_keys"],
+      "type": "object"
+    },
+    "turnPolicyDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "clarification_behavior": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "escalation_tendencies": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "forbidden_inventions": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "grounding_claims": {
+          "items": {"$ref": "#/$defs/claimDraft"},
+          "type": "array"
+        },
+        "information_reveal_policy": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "reaction_rules": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "stop_conditions": {
+          "items": {"$ref": "#/$defs/supportedTextDraft"},
+          "type": "array"
+        },
+        "turn_policy_key": {"type": "string"}
+      },
+      "required": [
+        "turn_policy_key",
+        "information_reveal_policy",
+        "reaction_rules",
+        "clarification_behavior",
+        "escalation_tendencies",
+        "stop_conditions",
+        "forbidden_inventions",
+        "grounding_claims"
+      ],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cases": {"items": {"$ref": "#/$defs/caseDraft"}, "type": "array"},
+    "intents": {"items": {"$ref": "#/$defs/intentDraft"}, "type": "array"},
+    "personas": {"items": {"$ref": "#/$defs/personaDraft"}, "type": "array"},
+    "turn_policies": {
+      "items": {"$ref": "#/$defs/turnPolicyDraft"},
+      "type": "array"
+    }
+  },
+  "required": ["personas", "intents", "turn_policies", "cases"],
+  "type": "object"
+}

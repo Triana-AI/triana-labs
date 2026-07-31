@@ -343,6 +343,13 @@ source rejections, then 25/25 Observer acceptance and 22 structural clusters.
 Those denominators remain visible and the subset cannot be changed to improve
 the smoke result.
 
+The independent LABS-04 test author stopped twice before editing rather than
+invent byte-affecting behavior. The second correction freezes exact provider
+schema values, callable transport/clock/publication seams, raw response hashing,
+fixed-config refusal, manifest/evaluation arithmetic, retained gap/duplicate
+semantics, blind-review membership, and cleanup-failure behavior. Acceptance
+authorship remains unstarted until that correction passes a fresh audit.
+
 Implementation has not started. The independent tester must first author and
 freeze valid RED. Production authorship follows serially; only then may the
 tester attack the frozen contract in an isolated parallel worktree. Mechanical
