@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **ENTRY GATE FROZEN; NO WORKER BEHAVIOR EDITS BEFORE PLAN COMMIT**
+Status: **ACCEPTANCE FROZEN AT `7237ed8`; IMPLEMENTATION AUTHORIZED**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -480,6 +480,9 @@ triana.traces.observe.completed_with_rejections
 triana.traces.observe.rejected
 ```
 
+Severity is exact: `succeeded` and `completed_with_rejections` use `INFO`;
+`rejected` uses `ERROR`.
+
 Safe fields:
 
 ```text
@@ -785,6 +788,49 @@ Before the test author starts:
 - observe returns safe deterministic `NOT_IMPLEMENTED`;
 - governance passes;
 - scaffold diff matches its budget.
+
+### 14.1 Independently frozen acceptance
+
+The independent black-box acceptance contract is frozen at commit `7237ed8`.
+The implementation author may read but must not edit:
+
+```text
+triana-labs/tests/acceptance/**
+triana-labs/tests/fixtures/**
+```
+
+The test-owned universe is 11 files and 107 collected cases. The independent
+test author and orchestrator each reproduced the valid RED state:
+
+```text
+100 failed, 7 passed, 0 errors
+```
+
+All failures are missing public behavior from the deliberate
+`NOT_IMPLEMENTED` scaffold. There are no syntax, dependency, import,
+collection, configuration, fixture, Hypothesis health-check, setup, or oracle
+failures.
+
+The SHA-256 of sorted project-relative `shasum -a 256` lines for all acceptance
+and fixture files is:
+
+```text
+fe53330744d56ea60771873872cb237a18a2ba5cc6cac13cc5a7d8cab6d20880
+```
+
+The fixture-only aggregate under the same procedure is:
+
+```text
+87d8610f7b92bb46c4322a4d03cb51e1c96a800ace80a96f4f0d75f93ad787c5
+```
+
+The orchestrator rejected two defects before freeze—one Ruff import-order
+failure and one Hypothesis fixture health check—and returned both exclusively
+to the independent test author. Commit `7237ed8` contains the corrected,
+re-audited contract. Any later acceptance or fixture edit invalidates this
+freeze and requires a test-author correction, new hashes, reproduced RED or
+GREEN evidence as appropriate, and a new explicit freeze before its result can
+judge production.
 
 ## 15. Slice exit gate
 
