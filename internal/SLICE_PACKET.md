@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **LABS-01A READABILITY ENTRY GATE FROZEN; COMMENT-ONLY WORK**
+Status: **LABS-01A COMPLETE AT `42043ab`; EXECUTABLE AST UNCHANGED**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -1006,6 +1006,40 @@ Exit requires:
 - generated canonical artifact bytes identical to the retained LABS-01
   evidence;
 - a small reading guide in the final handoff.
+
+### 18.1 Observed LABS-01A exit evidence
+
+Comment implementation: `42043ab`
+
+Changed production files: exactly the four authorized paths, with 207 inserted
+documentation lines and 16 replaced one-line docstring lines.
+
+Independent review: accepted after the author removed duplicated module-level
+boundary prose, changed value-class docstrings from function-like wording, and
+tightened failure and file-boundary statements.
+
+Post-change docstring-stripped AST hashes equal all four frozen pre-change
+values exactly. The final versioned verification gate observed:
+
+```text
+governance: passed
+Ruff format and lint: passed
+strict mypy: passed
+tests: 112 passed
+fresh-process repeatability: passed
+sdist and wheel: built
+clean CPython 3.13.14 wheel install: passed
+installed command parity: passed
+```
+
+Final evidence root:
+
+```text
+/private/tmp/triana-labs-verify.PPhSN7
+```
+
+The newly generated five artifact files are byte-identical to retained
+pre-comment evidence under `/private/tmp/triana-labs-verify.oLgULS`.
 
 ## 16. Structured uncertainty handoff
 

@@ -123,6 +123,20 @@ corpus_profile.json
 corpus_profile.md
 ```
 
+An external adapter currently interacts through files, not a Python SDK:
+
+```text
+provider- or application-specific trace
+  -> customer/integration adapter
+  -> one PreviewTrace JSON object per physical JSONL line
+  -> triana traces observe
+  -> deterministic Observer artifacts
+```
+
+The adapter does not call `contracts/traces.py`; that module is Triana's
+internal per-line validation boundary. A general adapter package, OTel mapping,
+and real/local-sensitive trace path do not exist yet.
+
 Use `./scripts/verify.sh` from `triana-labs/` to run governance, frozen-test
 integrity, formatting, lint, strict typing, all tests, deterministic
 repeatability, package builds, a clean CPython 3.13.14 wheel install, and
