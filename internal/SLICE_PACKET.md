@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-03 structural Corpus Intelligence
 
-Status: **ENTRY GATE FROZEN — INDEPENDENT TEST AUTHOR AUTHORIZED**
+Status: **CORRECTED ENTRY GATE — INDEPENDENT TEST AUTHOR RE-AUTHORIZED**
 
 Date: 2026-07-31
 Branch: `codex/labs-03-corpus-intelligence`
@@ -42,22 +42,31 @@ are accepted.
 
 The input is a regular, non-symlink Observer `manifest.json`, at most 1 MiB,
 inside a regular local directory. It must be strict UTF-8 JSON with no BOM,
-duplicate key, non-finite number, or unsupported nesting.
+duplicate key, non-finite number, or container depth above 32.
 
-The manifest must have the exact LABS-01 `corpus_manifest` schema version 1,
-privacy class `SYNTHETIC`, nonnegative counts satisfying
-`input_count = accepted_count + rejected_count`, and the exact four Observer
-artifact hash entries. LABS-03 reads and verifies:
+The manifest has exactly the LABS-01 keys `accepted_count`, `artifact_kind`,
+`artifacts`, `case_generation_eligible_count`, `input_count`, `privacy_class`,
+`rejected_count`, and `schema_version`. Kind is `corpus_manifest`, schema
+version is 1, privacy is `SYNTHETIC`, and nonnegative safe-integer counts obey
+`input_count = accepted_count + rejected_count`. `artifacts` has exactly
+`corpus_profile.json`, `corpus_profile.md`, `normalized_traces.jsonl`, and
+`rejected_traces.jsonl`, with lowercase `sha256:<64 hex>` values.
 
-- `normalized_traces.jsonl` against its manifest SHA-256;
-- `corpus_profile.json` against its manifest SHA-256;
-- the profile kind/version/privacy-relevant counts against the manifest;
-- every normalized trace through the unchanged PreviewTrace validator;
-- accepted line count and unique trace/source identities.
+LABS-03 hashes all four regular non-symlink sibling artifacts. Limits are 16
+MiB for each JSONL file, 1 MiB for each profile file, 1,000 normalized physical
+lines, and 1 MiB per normalized line. It parses every normalized line through
+the unchanged PreviewTrace validator, verifies accepted count and unique
+trace/source identities, and verifies `corpus_profile.json`.
 
-Sibling inputs must be regular non-symlink files. Any hash, count, schema, or
-trace contradiction is a fatal `CORPUS_INTEGRITY_FAILED`; it never becomes a
-cluster or partial pass. An accepted count of zero is fatal `EMPTY_CORPUS`.
+The profile has exactly `accepted_count`, `artifact_kind`,
+`case_generation_eligible_count`, `distress_analysis`, `event_kind_counts`,
+`input_count`, `language_analysis`, `rejected_count`,
+`rejection_code_counts`, `schema_version`, `terminal_state_counts`, and
+`tool_call_counts`. Its kind is `corpus_profile`, schema version is 1, its four
+corpus counts match the manifest, and both analyses are `NOT_EVALUATED`. Any
+sibling absence/symlink/nonregular file, hash/count/schema
+contradiction, invalid normalized trace, or duplicate identity is fatal
+`CORPUS_INTEGRITY_FAILED`. An accepted count of zero is fatal `EMPTY_CORPUS`.
 Source rejections are permitted when at least one accepted trace exists and
 become a typed derivation gap.
 
@@ -120,24 +129,56 @@ intents/index.json
 turn_policies/index.json
 ```
 
-All JSON is compact, sorted-key UTF-8 with one LF. The five non-manifest files
-carry `schema_version: 1`, the SHA-256 of exact input manifest bytes as
-`input_manifest_hash`, and `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`. The output
-manifest hashes their exact bytes and records counts, outcome, producing
-component/version, and input lineage. Timestamps and random values are absent.
+All JSON is compact, sorted-key UTF-8 with one LF. The fingerprint hash preimage
+uses that encoding without LF. The five non-manifest files carry schema version
+1, `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`, and the SHA-256 of the exact input
+manifest bytes including LF as `input_manifest_hash`. Timestamps and random
+values are absent.
 
-`clusters.json` has `artifact_kind: corpus_clusters`, trace and cluster counts,
-and the ordered clusters.
+The output `manifest.json` has exactly:
 
-Each asset index has `artifact_kind: derived_asset_index`, one `asset_kind`
+```json
+{
+  "artifact_kind": "intelligence_manifest",
+  "artifacts": {
+    "clusters.json": "sha256:<digest>",
+    "derivation_report.json": "sha256:<digest>",
+    "intents/index.json": "sha256:<digest>",
+    "personas/index.json": "sha256:<digest>",
+    "turn_policies/index.json": "sha256:<digest>"
+  },
+  "cluster_count": 0,
+  "fidelity": "SYNTHETIC_OBSERVED_STRUCTURE",
+  "gap_count": 0,
+  "input_manifest_hash": "sha256:<digest>",
+  "outcome": "COMPLETED_WITH_GAPS",
+  "privacy_class": "SYNTHETIC",
+  "producing_component": "corpus_intelligence",
+  "producing_component_version": "<triana_labs version>",
+  "schema_version": 1,
+  "trace_count": 0
+}
+```
+
+The five artifact digest values hash their exact bytes. `clusters.json` has
+exactly `artifact_kind: corpus_clusters`, `clusters`, `cluster_count`,
+`fidelity`, `input_manifest_hash`, `schema_version`, and `trace_count`.
+
+Each asset index has exactly `artifact_kind`, `asset_kind`, `assets`,
+`derivation_state`, `fidelity`, `input_manifest_hash`, `reason_code`,
+`schema_version`, and `support_count`. It uses
+`artifact_kind: derived_asset_index`, one `asset_kind`
 from `PERSONA | INTENT | TURN_POLICY`, `derivation_state: NOT_DERIVED`, empty
 `assets`, support count zero, and reason
 `SEMANTIC_EVIDENCE_NOT_DERIVED`. These are explicit gaps, not placeholder
 assets.
 
-`derivation_report.json` has `artifact_kind: corpus_derivation_report`, input,
-trace, cluster, singleton, supported-cluster, and source-rejection counts;
-`outcome: COMPLETED_WITH_GAPS`; and these sorted gap codes:
+`derivation_report.json` has exactly `artifact_kind`, `cluster_count`,
+`fidelity`, `gap_codes`, `gap_count`, `input_count`, `input_manifest_hash`,
+`outcome`, `schema_version`, `singleton_cluster_count`,
+`source_rejection_count`, `supported_cluster_count`, and `trace_count`. Its kind
+is `corpus_derivation_report`, outcome is `COMPLETED_WITH_GAPS`, and it carries
+these sorted gap codes:
 
 ```text
 DISTRESS_NOT_EVALUATED
@@ -148,13 +189,19 @@ SOURCE_REJECTIONS_PRESENT  # only when rejected_count > 0
 
 ## 6. CLI, refusal, and partial behavior
 
-- Completed structural derivation: exit 10, output exists, stdout has one
-  receipt with `outcome`, `trace_count`, `cluster_count`, `gap_count`, and
-  `manifest_path`; stderr has one safe terminal event with counts but no path,
-  trace ID, tool name, content, hash, or exception.
+- Completed structural derivation: exit 10, output exists, stdout has exactly
+  `cluster_count`, `gap_count`, `manifest_path`, `outcome`, and `trace_count`.
+  Stderr has exactly `cluster_count`, `command: corpus.derive`, nonnegative
+  `duration_ms`, `event_name: triana.corpus.derive.completed_with_gaps`,
+  `gap_count`, `outcome: COMPLETED_WITH_GAPS`, `reason_code: null`,
+  `service: triana-labs-cli`, current `service_version`, `severity: INFO`, and
+  `trace_count`. It has no path, trace ID, tool name, content, hash, or
+  exception.
 - `--help`: exit 0, human help on stdout, no terminal event.
-- Fatal input/path/usage refusal: exit 2, 3, 4, or 5 by reason, stdout empty,
-  one safe stderr event, and no output.
+- Fatal refusal has empty stdout, no output, and exactly one stderr event with
+  `command: corpus.derive`, nonnegative `duration_ms`, `event_name:
+  triana.corpus.derive.rejected`, `outcome: REJECTED`, the closed `reason_code`,
+  service/version, and `severity: ERROR`. It has no counts or unsafe values.
 - Output write failure: exit 7. Unexpected failure: exit 70. Neither emits raw
   values or a partial target.
 - Existing output is exit 2 and never overwritten or merged.
@@ -174,6 +221,25 @@ OUTPUT_PARENT_MISSING
 OUTPUT_WRITE_FAILED
 INTERNAL_INVARIANT_FAILED
 ```
+
+Exact exit mapping:
+
+```text
+2  CLI_USAGE_ERROR, INPUT_READ_FAILED, OUTPUT_ALREADY_EXISTS,
+   OUTPUT_PARENT_MISSING
+3  INPUT_TOO_LARGE
+4  MANIFEST_INVALID, UNSUPPORTED_PRIVACY_CLASS
+5  CORPUS_INTEGRITY_FAILED, EMPTY_CORPUS
+7  OUTPUT_WRITE_FAILED
+70 INTERNAL_INVARIANT_FAILED
+```
+
+`MANIFEST_INVALID` covers manifest byte/JSON/depth/closed-schema failures.
+Oversized manifest or sibling artifacts use `INPUT_TOO_LARGE`. Once a valid
+manifest names a sibling, its missing/nonregular/symlink state is corpus
+integrity failure. Atomic write cleanup is tested on POSIX with an OS-level
+`RLIMIT_FSIZE` child limit and ignored `SIGXFSZ`; no production injection seam
+is added.
 
 ## 7. Authority and non-goals
 
