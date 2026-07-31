@@ -974,26 +974,32 @@ triana-labs/src/triana_labs/cli.py
 
 The author may enrich module docstrings, class/function docstrings, and
 comments explaining boundaries, authority, ordering, refusal, privacy,
-determinism, and non-obvious tradeoffs. It may not change executable AST,
-tests, fixtures, public behavior, dependencies, or any other path.
+determinism, and non-obvious tradeoffs. It may not change executable AST after
+docstring nodes are removed, tests, fixtures, public behavior, dependencies,
+or any other path.
 
 Independent reviewer: the existing test-author agent reviews prose against
 the frozen LABS-01 contract and implementation after the author finishes. The
 reviewer does not edit production.
 
-Pre-change executable AST SHA-256 values (`ast.dump(...,
-include_attributes=False)`):
+Pre-change executable AST SHA-256 values are calculated after removing the
+leading string-expression docstring node from every module, class, sync
+function, and async function, then applying `ast.dump(...,
+include_attributes=False)`. Comments are naturally absent from the AST. This
+distinguishes documentation changes from executable changes while still
+allowing the docstrings this follow-up exists to improve:
 
 ```text
-contracts/traces.py  6c48355085dde7afdb8e0182e13355d2cbddcdd9e0df858948654cb48726e562
-observer/observe.py  14e396fa8d28febc60af16c38fbf2927e5490ccf2a9bd32b84bacc30fe3cb587
-observer/render.py   fbdcfebf59ee29bd89b81b730b2ff585b12c68a231330c86b13244bec817ffd3
-cli.py               e1e6e1ad4db84fd99170b3ec35dcdf9a0e2821fe2c280300474b2972efdd8237
+contracts/traces.py  a5091694e08be6644e604d614cb00310c9054e048f5b7f677bea64a6271e6f8a
+observer/observe.py  c0d525f5c085c8e3f44047e14a82e1009ac2d06dd9271a2e0525b53654ca6e6f
+observer/render.py   34b80d1e9deb76d78347579e820b8ebefc31af689b2343b86315003c8df7e814
+cli.py               da569a029882f155a6ac8d6c4e5d7cf2c94805e37856f4b02956a06ca4cd6f79
 ```
 
 Exit requires:
 
-- exact post-change AST hash equality for all four files;
+- exact post-change docstring-stripped executable AST hash equality for all
+  four files;
 - no test, fixture, package, dependency, or artifact change;
 - independent prose review with no misleading adapter or authority claim;
 - Ruff, strict mypy, 112 tests, repeatability, build, and clean-wheel checks;
