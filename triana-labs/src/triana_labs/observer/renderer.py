@@ -1,8 +1,8 @@
 """Serialize authoritative Observer values without deriving new claims.
 
-The Observer supplies already normalized traces, safe rejections, and a fully counted
-profile. This module controls portable bytes and human projection only; it never
-reopens source traces or owns arithmetic and eligibility.
+The Observer supplies normalized traces and safe rejections; the profile module
+supplies an already counted profile. This module controls portable bytes and human
+projection only; it never reopens source traces or owns arithmetic and eligibility.
 """
 
 from __future__ import annotations

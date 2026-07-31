@@ -1,29 +1,24 @@
 """Account for and publish a local synthetic PreviewTrace JSONL corpus.
 
 This is the corpus boundary between adapter-emitted JSONL and the five LABS-01
-artifacts. It owns files, physical lines, cross-line identity, counts, and atomic
-publication. Per-line byte/JSON/schema validation remains in ``contracts.traces``.
+artifacts. It owns files, physical lines, cross-line identity, and outcome selection;
+profile aggregation and publication are delegated to their owning modules.
 """
 
 from __future__ import annotations
 
-import hashlib
 import os
-import shutil
 import stat
-import tempfile
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
 from triana_labs.contracts.traces import (
-    EVENT_KINDS,
-    TERMINAL_STATES,
     LineRejection,
     parse_and_validate_line,
 )
-from triana_labs.observer.render import compact_json, render_markdown
+from triana_labs.observer.profile import build_profile
+from triana_labs.observer.publication import PublicationFailure, publish_bundle
 
 JsonObject = dict[str, Any]
 
@@ -101,13 +96,16 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
         seen_source_ids.add(source_id)
         eligible_count += int(validated.case_generation_eligible)
 
-    profile = _build_profile(
+    profile = build_profile(
         input_count=len(lines),
         accepted=accepted,
         rejected=rejected,
         eligible_count=eligible_count,
     )
-    _publish_bundle(output_path, accepted, rejected, profile)
+    try:
+        publish_bundle(output_path, accepted, rejected, profile)
+    except PublicationFailure as failure:
+        raise ObserveFailure(failure.reason_code, failure.exit_code) from failure
     # The outcome describes corpus accounting, not agent quality. Partial success and
     # an empty corpus still publish inspectable evidence and deliberately exit nonzero
     # at the CLI boundary.
@@ -188,114 +186,3 @@ def _physical_lines(payload: bytes) -> list[tuple[bytes, int]]:
         (line, len(line) + int(index < len(parts) - 1 or has_final_lf))
         for index, line in enumerate(parts)
     ]
-
-
-def _build_profile(
-    *,
-    input_count: int,
-    accepted: list[JsonObject],
-    rejected: list[JsonObject],
-    eligible_count: int,
-) -> JsonObject:
-    """Derive the closed profile solely from accounted accepted/rejected lists."""
-
-    # Only accepted traces contribute behavioral counts; all rejected lines contribute
-    # only their safe rejection code. Closed maps are seeded with zeroes, and every
-    # dynamic map is sorted before rendering to remove input-dictionary/locale effects.
-    event_counts = Counter({kind: 0 for kind in EVENT_KINDS})
-    terminal_counts = Counter({state: 0 for state in TERMINAL_STATES})
-    tool_counts: Counter[str] = Counter()
-    for trace in accepted:
-        for event in cast(list[JsonObject], trace["events"]):
-            kind = cast(str, event["event_kind"])
-            event_counts[kind] += 1
-            if kind == "TOOL_CALL":
-                tool_counts[cast(str, event["tool_name"])] += 1
-            elif kind == "TERMINAL":
-                terminal_counts[cast(str, event["terminal_state"])] += 1
-    rejection_counts = Counter(cast(str, record["code"]) for record in rejected)
-    return {
-        "artifact_kind": "corpus_profile",
-        "schema_version": 1,
-        "input_count": input_count,
-        "accepted_count": len(accepted),
-        "rejected_count": len(rejected),
-        "case_generation_eligible_count": eligible_count,
-        "event_kind_counts": dict(sorted(event_counts.items())),
-        "tool_call_counts": dict(sorted(tool_counts.items())),
-        "terminal_state_counts": dict(sorted(terminal_counts.items())),
-        "rejection_code_counts": dict(sorted(rejection_counts.items())),
-        "language_analysis": "NOT_EVALUATED",
-        "distress_analysis": "NOT_EVALUATED",
-    }
-
-
-def _publish_bundle(
-    output_path: Path,
-    accepted: list[JsonObject],
-    rejected: list[JsonObject],
-    profile: JsonObject,
-) -> None:
-    """Render authoritative bytes, construct their manifest, and publish once."""
-
-    # Machine artifacts are authoritative. Markdown is rendered from the completed
-    # profile, and the manifest hashes the exact four non-manifest byte streams. The
-    # renderer performs no independent counting and the manifest has no circular hash.
-    normalized_bytes = b"".join(compact_json(trace) for trace in accepted)
-    rejected_bytes = b"".join(compact_json(record) for record in rejected)
-    profile_bytes = compact_json(profile)
-    markdown_bytes = render_markdown(profile)
-    artifacts = {
-        "normalized_traces.jsonl": normalized_bytes,
-        "rejected_traces.jsonl": rejected_bytes,
-        "corpus_profile.json": profile_bytes,
-        "corpus_profile.md": markdown_bytes,
-    }
-    manifest = {
-        "artifact_kind": "corpus_manifest",
-        "schema_version": 1,
-        "privacy_class": "SYNTHETIC",
-        "input_count": profile["input_count"],
-        "accepted_count": profile["accepted_count"],
-        "rejected_count": profile["rejected_count"],
-        "case_generation_eligible_count": profile["case_generation_eligible_count"],
-        "artifacts": {
-            name: f"sha256:{hashlib.sha256(payload).hexdigest()}"
-            for name, payload in artifacts.items()
-        },
-    }
-    artifacts["manifest.json"] = compact_json(manifest)
-    _write_atomically(output_path, artifacts)
-
-
-def _write_atomically(output_path: Path, artifacts: dict[str, bytes]) -> None:
-    """Expose a complete bundle with one sibling-directory rename or clean up."""
-
-    # The random private sibling name is operational only: it never enters artifacts,
-    # logs, or identity. All files close before one rename exposes the bundle. Failure
-    # removes only this invocation's sibling; cleanup failure is an internal invariant
-    # failure because claiming ordinary write failure would hide uncertain residue.
-    parent = output_path.parent
-    try:
-        parent_mode = parent.stat().st_mode
-    except OSError as error:
-        raise ObserveFailure("OUTPUT_WRITE_FAILED", 7) from error
-    if parent_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH) == 0:
-        raise ObserveFailure("OUTPUT_WRITE_FAILED", 7)
-    temporary: Path | None = None
-    try:
-        temporary = Path(
-            tempfile.mkdtemp(prefix=f".{output_path.name}.tmp-", dir=parent)
-        )
-        for name, payload in artifacts.items():
-            (temporary / name).write_bytes(payload)
-        if os.path.lexists(output_path):
-            raise OSError
-        temporary.rename(output_path)
-    except Exception as error:
-        if temporary is not None and temporary.exists():
-            try:
-                shutil.rmtree(temporary)
-            except OSError as cleanup_error:
-                raise ObserveFailure("INTERNAL_INVARIANT_FAILED", 70) from cleanup_error
-        raise ObserveFailure("OUTPUT_WRITE_FAILED", 7) from error
