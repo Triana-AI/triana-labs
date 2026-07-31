@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **ENTRY GATE FROZEN — WORKERS NOT YET AUTHORIZED**
+Status: **INDEPENDENT TESTS FROZEN — IMPLEMENTATION AUTHOR AUTHORIZED AFTER FREEZE COMMIT**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -376,6 +376,57 @@ valid RED.
 The orchestrator freezes the test commit and aggregate hashes before the
 implementation author starts. Test defects return only to the same test author;
 implementation defects only to the implementation author.
+
+### 9.1 Independently frozen acceptance
+
+The corrected independent acceptance contract is frozen at commit `16f7b6b`,
+which supersedes provisional test commit `1a59239` after the orchestrator
+returned one exit-code defect and two missing source-boundary cases exclusively
+to the test author.
+
+Frozen test-owned paths:
+
+```text
+triana-labs/tests/adapter_acceptance/**
+triana-labs/tests/adapter_fixtures/**
+```
+
+The four test-owned files contain 27 collected black-box cases. The independent
+test author and orchestrator each reproduced valid RED:
+
+```text
+27 errors, all at the session-scoped precondition identifying only absent
+examples/hrai_v2/adapter.py and examples/hrai_v2/README.md
+```
+
+The aggregate SHA-256 over sorted repository-relative `shasum -a 256` lines is:
+
+```text
+ebd2274d8d09b51ec56e8d825bf16f69a9caebd4a799a287a9a3060fc02279a0
+```
+
+The orchestrator separately reproduced the unchanged prior suite as 118 passing
+tests, the prior acceptance/fixture aggregate
+`78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353`,
+and the architecture-test hash
+`a16c7ceea4d3f8a2cdb594019efbbeb1e9c05d758c552a1dd282168167b943b2`.
+
+Frozen acceptance files may not change during implementation. A suspected test
+defect returns only to the same independent test author and requires a new
+correction commit, valid RED evidence, hash, and orchestrator freeze.
+
+Reserved orchestrator adversarial checks, not disclosed as literal fixtures to
+the implementation author, cover:
+
+- a successful run under a socket-blocking `sitecustomize` to detect network
+  access;
+- a rejected deeply nested private marker absent from stdout, stderr, and safe
+  artifacts;
+- symlink/directory and exact whole-file resource refusal with no bundle;
+- copying only `adapter.py` to a temporary directory and running it outside the
+  repository to prove the standard-library/copyable boundary;
+- regeneration of the five canonical Observer hashes and source/clean-wheel
+  acceptance of the adapter's canonical PreviewTrace output.
 
 ## 10. Verification and immutable prior evidence
 
