@@ -22,3 +22,6 @@ __pycache__/
 # CLAUDE.md.
 .claude/settings.local.json
 .codex/
+
+# Braintrust tooling residue
+.bt/
