@@ -16,9 +16,11 @@ from pathlib import Path
 from typing import Any, Never
 
 from triana_labs import __version__
+from triana_labs.intelligence import DeriveFailure, derive
 from triana_labs.observer import ObserveFailure, observe
 
 _SERVICE = "triana-labs-cli"
+_usage_command = "traces.observe"
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -31,16 +33,23 @@ class _SafeArgumentParser(argparse.ArgumentParser):
         # message preserves the one-event log contract and prevents paths or values
         # from leaking before command execution begins.
         del message
-        _write_json(
-            sys.stderr,
-            _terminal_log(
+        if _usage_command == "corpus.derive":
+            event = _corpus_terminal_log(
+                event_name="triana.corpus.derive.rejected",
+                severity="ERROR",
+                outcome="REJECTED",
+                reason_code="CLI_USAGE_ERROR",
+                duration_ms=0,
+            )
+        else:
+            event = _terminal_log(
                 event_name="triana.traces.observe.rejected",
                 severity="ERROR",
                 outcome="REJECTED",
                 reason_code="CLI_USAGE_ERROR",
                 duration_ms=0,
-            ),
-        )
+            )
+        _write_json(sys.stderr, event)
         raise SystemExit(2)
 
 
@@ -64,6 +73,15 @@ def _build_parser() -> _SafeArgumentParser:
         "--out",
         required=True,
         help="New directory for generated corpus artifacts.",
+    )
+    corpus = commands.add_parser("corpus", help="Derive intelligence from a corpus.")
+    corpus_commands = corpus.add_subparsers(dest="corpus_command")
+    derive_parser = corpus_commands.add_parser(
+        "derive", help="Derive structural intelligence from an Observer bundle."
+    )
+    derive_parser.add_argument("manifest", help="Observer manifest.json path.")
+    derive_parser.add_argument(
+        "--out", required=True, help="New directory for intelligence artifacts."
     )
     return parser
 
@@ -121,8 +139,15 @@ def _terminal_log(
 def main(argv: Sequence[str] | None = None) -> int:
     """Invoke the Observer once and translate its typed result to CLI channels."""
 
+    global _usage_command
+    raw_arguments = list(sys.argv[1:] if argv is None else argv)
+    _usage_command = (
+        "corpus.derive"
+        if raw_arguments[:2] == ["corpus", "derive"]
+        else "traces.observe"
+    )
     parser = _build_parser()
-    arguments = parser.parse_args(argv)
+    arguments = parser.parse_args(raw_arguments)
 
     if arguments.command == "traces" and arguments.trace_command == "observe":
         start = time.monotonic_ns()
@@ -189,6 +214,59 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0 if result.outcome == "COMPLETED" else 10
 
+    if arguments.command == "corpus" and arguments.corpus_command == "derive":
+        start = time.monotonic_ns()
+        try:
+            derive_result = derive(Path(arguments.manifest), Path(arguments.out))
+        except DeriveFailure as failure:
+            _write_json(
+                sys.stderr,
+                _corpus_terminal_log(
+                    event_name="triana.corpus.derive.rejected",
+                    severity="ERROR",
+                    outcome="REJECTED",
+                    reason_code=failure.reason_code,
+                    duration_ms=_duration_ms(start),
+                ),
+            )
+            return failure.exit_code
+        except Exception:  # noqa: BLE001 - redact unexpected failures at the CLI.
+            _write_json(
+                sys.stderr,
+                _corpus_terminal_log(
+                    event_name="triana.corpus.derive.rejected",
+                    severity="ERROR",
+                    outcome="REJECTED",
+                    reason_code="INTERNAL_INVARIANT_FAILED",
+                    duration_ms=_duration_ms(start),
+                ),
+            )
+            return 70
+        _write_json(
+            sys.stdout,
+            {
+                "cluster_count": derive_result.cluster_count,
+                "gap_count": derive_result.gap_count,
+                "manifest_path": f"{arguments.out}/manifest.json",
+                "outcome": derive_result.outcome,
+                "trace_count": derive_result.trace_count,
+            },
+        )
+        _write_json(
+            sys.stderr,
+            _corpus_terminal_log(
+                event_name="triana.corpus.derive.completed_with_gaps",
+                severity="INFO",
+                outcome=derive_result.outcome,
+                reason_code=None,
+                duration_ms=_duration_ms(start),
+                cluster_count=derive_result.cluster_count,
+                gap_count=derive_result.gap_count,
+                trace_count=derive_result.trace_count,
+            ),
+        )
+        return 10
+
     parser.print_help()
     return 0
 
@@ -199,3 +277,37 @@ def _duration_ms(start_ns: int) -> int:
     # Duration is operational log metadata only. Monotonic time cannot affect any
     # portable artifact, count, rejection, or future Corpus Intelligence input.
     return max(0, (time.monotonic_ns() - start_ns) // 1_000_000)
+
+
+def _corpus_terminal_log(
+    *,
+    event_name: str,
+    severity: str,
+    outcome: str,
+    reason_code: str | None,
+    duration_ms: int,
+    cluster_count: int | None = None,
+    gap_count: int | None = None,
+    trace_count: int | None = None,
+) -> dict[str, Any]:
+    """Construct the closed, content-free Corpus Intelligence log shape."""
+
+    event: dict[str, Any] = {
+        "command": "corpus.derive",
+        "duration_ms": duration_ms,
+        "event_name": event_name,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "service": _SERVICE,
+        "service_version": __version__,
+        "severity": severity,
+    }
+    if cluster_count is not None:
+        event.update(
+            {
+                "cluster_count": cluster_count,
+                "gap_count": gap_count,
+                "trace_count": trace_count,
+            }
+        )
+    return event
