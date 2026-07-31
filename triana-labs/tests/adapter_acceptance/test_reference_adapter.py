@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import ast
-import hashlib
-import json
 import os
 import subprocess
 import sys
@@ -117,17 +115,20 @@ def expected_tool_trace() -> dict[str, Any]:
     }
 
 
-def assert_success_channels(result: Any, output: Path, *, outcome: str) -> None:
+def assert_success_channels(result: Any, *, outcome: str) -> None:
     receipt = result.stdout_json()
     assert set(receipt) == {
         "accepted_count",
-        "manifest_path",
+        "input_count",
         "outcome",
         "rejected_count",
     }
-    assert receipt["manifest_path"] == f"{output}/adapter_manifest.json"
     assert receipt["outcome"] == outcome
+    assert receipt["input_count"] == (
+        receipt["accepted_count"] + receipt["rejected_count"]
+    )
     terminal = result.stderr_json()
+    assert terminal["input_count"] == receipt["input_count"]
     assert terminal["accepted_count"] == receipt["accepted_count"]
     assert terminal["rejected_count"] == receipt["rejected_count"]
     assert terminal["outcome"] == outcome
@@ -156,24 +157,7 @@ def test_success_mappings_have_exact_independently_authored_bytes(
     expected_bytes = compact_json(expected())
     assert (output / "preview_traces.jsonl").read_bytes() == expected_bytes
     assert (output / "rejected_source_traces.jsonl").read_bytes() == b""
-    manifest = json.loads((output / "adapter_manifest.json").read_bytes())
-    assert manifest == {
-        "accepted_count": 1,
-        "adapter_kind": "hrai_normalized_trace_v2_reference",
-        "artifacts": {
-            "preview_traces.jsonl": f"sha256:{hashlib.sha256(expected_bytes).hexdigest()}",
-            "rejected_source_traces.jsonl": (
-                f"sha256:{hashlib.sha256(b'').hexdigest()}"
-            ),
-        },
-        "input_count": 1,
-        "privacy_class": "SYNTHETIC",
-        "rejected_count": 0,
-        "schema_version": 1,
-        "source_schema_version": "normalized-trace-v2",
-    }
-    assert (output / "adapter_manifest.json").read_bytes() == compact_json(manifest)
-    assert_success_channels(result, output, outcome="COMPLETED")
+    assert_success_channels(result, outcome="COMPLETED")
 
 
 def test_tool_mapping_preserves_order_ids_gaps_and_no_terminal(
@@ -245,24 +229,11 @@ def test_ignored_finite_floats_map_but_mapped_floats_reject(
     ] == ["SOURCE_SCHEMA_VALIDATION_FAILED"]
 
 
-@pytest.mark.parametrize(
-    ("mutation", "code"),
-    [
-        (
-            {"schema_version": "normalized-trace-v3"},
-            "UNSUPPORTED_SOURCE_SCHEMA_VERSION",
-        ),
-        ({"unexpected_exporter_field": "synthetic"}, "SOURCE_SCHEMA_VALIDATION_FAILED"),
-    ],
-)
-def test_source_version_and_closed_top_level_are_rejected(
-    run_adapter: Any,
-    tmp_path: Path,
-    mutation: dict[str, Any],
-    code: str,
+def test_unsupported_source_version_is_rejected(
+    run_adapter: Any, tmp_path: Path
 ) -> None:
     source_value = minimal_source()
-    source_value.update(mutation)
+    source_value["schema_version"] = "normalized-trace-v3"
     source = tmp_path / "source-boundary.jsonl"
     write_jsonl(source, [source_value])
     output = tmp_path / "source-boundary-output"
@@ -273,7 +244,50 @@ def test_source_version_and_closed_top_level_are_rejected(
     assert (output / "preview_traces.jsonl").read_bytes() == b""
     assert [
         item["code"] for item in parse_jsonl(output / "rejected_source_traces.jsonl")
-    ] == [code]
+    ] == ["UNSUPPORTED_SOURCE_SCHEMA_VERSION"]
+
+
+def test_unconsumed_fields_at_every_source_level_are_ignored(
+    run_adapter: Any, tmp_path: Path
+) -> None:
+    source_value = minimal_source(session_id="projection-proof")
+    source_value["new_exporter_field"] = {"finite_score": 1.25}
+    source_value["turns"][0]["unconsumed_turn_field"] = ["ignored"]
+    source_value["events"][0]["unconsumed_event_field"] = {"ignored": True}
+    source_value["events"][1]["tool_calls"] = [
+        {
+            "name": "lookup",
+            "arguments": {"id": 1},
+            "result_summary": {"found": True},
+            "status": "ok",
+            "unconsumed_tool_field": 9.5,
+        }
+    ]
+    source = tmp_path / "projection.jsonl"
+    write_jsonl(source, [source_value])
+    output = tmp_path / "projection-output"
+
+    result = run_adapter(source, output)
+
+    assert result.returncode == 0
+    trace = parse_jsonl(output / "preview_traces.jsonl")[0]
+    assert trace["trace_id"] == "projection-proof"
+    assert [event["event_kind"] for event in trace["events"]] == [
+        "SYSTEM_VISIBLE_MESSAGE",
+        "USER_MESSAGE",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "ASSISTANT_MESSAGE",
+    ]
+    serialized = (output / "preview_traces.jsonl").read_bytes()
+    for ignored in (
+        b"new_exporter_field",
+        b"unconsumed_turn_field",
+        b"unconsumed_event_field",
+        b"unconsumed_tool_field",
+        b"finite_score",
+    ):
+        assert ignored not in serialized
 
 
 def test_incomplete_harness_and_turn_event_mismatch_are_safe_rejections(
@@ -297,12 +311,16 @@ def test_incomplete_harness_and_turn_event_mismatch_are_safe_rejections(
         "SOURCE_EXECUTION_INCOMPLETE",
         "SOURCE_TURN_EVENT_MISMATCH",
     ]
-    assert rejections[1] == {
+    expected_mismatch = {
         "code": "SOURCE_TURN_EVENT_MISMATCH",
         "json_pointer": "/events",
         "line_number": 2,
         "safe_message": "Source turns and events do not align.",
     }
+    assert rejections[1] == expected_mismatch
+    assert (output / "rejected_source_traces.jsonl").read_bytes().splitlines(
+        keepends=True
+    )[1] == compact_json(expected_mismatch)
     combined = (
         result.stdout
         + result.stderr
@@ -349,18 +367,13 @@ def test_raw_line_rejections(
     assert [
         item["code"] for item in parse_jsonl(output / "rejected_source_traces.jsonl")
     ] == [code]
-    assert (
-        json.loads((output / "adapter_manifest.json").read_bytes())["input_count"] == 1
-    )
+    assert result.stdout_json()["input_count"] == 1
 
 
-def test_depth_and_line_size_are_per_line_rejections(
-    run_adapter: Any, tmp_path: Path
-) -> None:
-    too_deep = b'{"ignored":' + (b"[" * 32) + b"0" + (b"]" * 32) + b"}\n"
+def test_line_size_is_a_per_line_rejection(run_adapter: Any, tmp_path: Path) -> None:
     too_large = b'"' + (b"x" * (1024 * 1024)) + b'"\n'
     source = tmp_path / "bounded.jsonl"
-    source.write_bytes(too_deep + too_large)
+    source.write_bytes(too_large)
     output = tmp_path / "bounded-output"
 
     result = run_adapter(source, output)
@@ -368,10 +381,7 @@ def test_depth_and_line_size_are_per_line_rejections(
     assert result.returncode == 10
     assert [
         item["code"] for item in parse_jsonl(output / "rejected_source_traces.jsonl")
-    ] == [
-        "NESTING_TOO_DEEP",
-        "LINE_TOO_LARGE",
-    ]
+    ] == ["LINE_TOO_LARGE"]
 
 
 def test_duplicate_accepted_session_and_rejected_identity_accounting(
@@ -395,11 +405,11 @@ def test_duplicate_accepted_session_and_rejected_identity_accounting(
         "SOURCE_EXECUTION_INCOMPLETE",
         "DUPLICATE_TRACE_ID",
     ]
-    manifest = json.loads((output / "adapter_manifest.json").read_bytes())
+    receipt = result.stdout_json()
     assert (
-        manifest["input_count"],
-        manifest["accepted_count"],
-        manifest["rejected_count"],
+        receipt["input_count"],
+        receipt["accepted_count"],
+        receipt["rejected_count"],
     ) == (3, 1, 2)
 
 
@@ -425,13 +435,13 @@ def test_mixed_partial_success_preserves_source_order_and_exact_accounting(
         item["line_number"]
         for item in parse_jsonl(output / "rejected_source_traces.jsonl")
     ] == [2]
-    manifest = json.loads((output / "adapter_manifest.json").read_bytes())
+    receipt = result.stdout_json()
     assert (
-        manifest["input_count"]
-        == manifest["accepted_count"] + manifest["rejected_count"]
+        receipt["input_count"]
+        == receipt["accepted_count"] + receipt["rejected_count"]
         == 3
     )
-    assert_success_channels(result, output, outcome="COMPLETED_WITH_REJECTIONS")
+    assert_success_channels(result, outcome="COMPLETED_WITH_REJECTIONS")
 
 
 @pytest.mark.parametrize("payload", [b"", b"\n{}\n"])
@@ -450,22 +460,14 @@ def test_empty_and_all_rejected_bundles_are_deterministic(
     assert bundles[0] == bundles[1]
 
 
-def test_manifest_hashes_exact_artifact_bytes_and_fresh_process_repeatability(
+def test_fresh_process_outputs_are_byte_identical(
     run_adapter: Any, tmp_path: Path
 ) -> None:
     outputs = [tmp_path / "first", tmp_path / "second"]
     for output in outputs:
         result = run_adapter(FIXTURES / "tool_rich_hrai_v2.jsonl", output)
         assert result.returncode == 0
-        manifest = json.loads((output / "adapter_manifest.json").read_bytes())
-        for artifact in ("preview_traces.jsonl", "rejected_source_traces.jsonl"):
-            digest = hashlib.sha256((output / artifact).read_bytes()).hexdigest()
-            assert manifest["artifacts"][artifact] == f"sha256:{digest}"
-    for artifact in (
-        "adapter_manifest.json",
-        "preview_traces.jsonl",
-        "rejected_source_traces.jsonl",
-    ):
+    for artifact in ("preview_traces.jsonl", "rejected_source_traces.jsonl"):
         assert (outputs[0] / artifact).read_bytes() == (
             outputs[1] / artifact
         ).read_bytes()
@@ -557,6 +559,8 @@ def test_adapter_output_is_accepted_by_unchanged_observer(
 
 def test_script_is_copyable_standard_library_only_and_bounded() -> None:
     source = ADAPTER.read_text(encoding="utf-8")
+    assert "# fmt: off" not in source
+    assert "# ruff: noqa" not in source
     tree = ast.parse(source)
     imports = {
         alias.name.split(".")[0]

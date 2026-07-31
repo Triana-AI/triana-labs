@@ -19,7 +19,6 @@ ADAPTER = PROJECT_ROOT / "examples" / "hrai_v2" / "adapter.py"
 ADAPTER_README = PROJECT_ROOT / "examples" / "hrai_v2" / "README.md"
 FIXTURES = PROJECT_ROOT / "tests" / "adapter_fixtures"
 ARTIFACT_NAMES = {
-    "adapter_manifest.json",
     "preview_traces.jsonl",
     "rejected_source_traces.jsonl",
 }
@@ -136,6 +135,6 @@ def assert_bundle(output: Path) -> None:
         payload = (output / name).read_bytes()
         assert not payload.startswith(b"\xef\xbb\xbf")
         assert b"\r" not in payload
-        if name == "adapter_manifest.json" or payload:
+        if payload:
             assert payload.endswith(b"\n")
             assert not payload.endswith(b"\n\n")
