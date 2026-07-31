@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **LABS-01B STRUCTURAL REFACTOR ENTRY GATE FROZEN**
+Status: **LABS-01B ARCHITECTURE TESTS FROZEN; IMPLEMENTATION AUTHORIZED**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -1134,6 +1134,28 @@ Exit requires:
 - Ruff, strict mypy, governance, repeatability, sdist/wheel, and clean-install
   gates GREEN;
 - exact change-budget reconciliation and updated reading order.
+
+### 19.1 Independently frozen architecture RED
+
+Architecture test commit: `a08a149`
+
+Test file SHA-256:
+
+```text
+a16c7ceea4d3f8a2cdb594019efbbeb1e9c05d758c552a1dd282168167b943b2
+```
+
+The test author and orchestrator independently observed:
+
+```text
+architecture target: 6 failed, 0 errors
+existing behavioral suite: 112 passed, 0 failures
+```
+
+All six RED failures are caused by the frozen current layout: the three target
+modules are absent, ownership remains embedded in `observe.py`/`render.py`, and
+the old module still ships. Implementation may read but must not edit
+`tests/architecture/**`, existing tests, or fixtures.
 
 ## 16. Structured uncertainty handoff
 
