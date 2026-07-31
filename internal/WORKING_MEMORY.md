@@ -348,11 +348,14 @@ invent byte-affecting behavior. The second correction freezes exact provider
 schema values, callable transport/clock/publication seams, raw response hashing,
 fixed-config refusal, manifest/evaluation arithmetic, retained gap/duplicate
 semantics, blind-review membership, and cleanup-failure behavior. Acceptance
-authorship remains unstarted until that correction passes a fresh audit.
+authorship then produced 109 cases. Codex reproduced valid RED at 108 expected
+behavioral failures plus one normative-schema pass, all 188 prior tests green,
+and aggregate sorted-content SHA-256
+`98eab12ef1d85fe1fea18150b729fcc6cf38530cb482a996df80dcc5b92457de`.
 
-Implementation has not started. The independent tester must first author and
-freeze valid RED. Production authorship follows serially; only then may the
-tester attack the frozen contract in an isolated parallel worktree. Mechanical
-GREEN may be produced unattended, but the product checkpoint remains
+The immutable RED contract is frozen and production authorship is authorized
+only within the packet's bounded implementation paths. Once production begins,
+the tester may attack the frozen contract in an isolated parallel worktree.
+Mechanical GREEN may be produced unattended, but the product checkpoint remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
 runtime, DeepEval, memory, UI, real-data support, or LABS-05 work is authorized.

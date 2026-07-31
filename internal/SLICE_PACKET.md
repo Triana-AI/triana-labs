@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **FROZEN ENTRY CONTRACT — ORCHESTRATOR RED AUDIT CORRECTION**
+Status: **INDEPENDENT ACCEPTANCE RED FROZEN — IMPLEMENTATION AUTHORIZED**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -580,6 +580,17 @@ the algorithm, version, threshold, cluster sizes, raw N, and effective N.
 
 The independent acceptance suite is complete and valid RED before production
 implementation begins. It has three evidence lanes.
+
+Codex independently reproduced the frozen suite before authorizing production:
+109 cases collected, 108 expected behavioral RED failures, and one passing
+normative-schema check. All 188 prior tests passed unchanged. Ruff and format
+checks passed. The sorted concatenated test/fixture content SHA-256 is
+`98eab12ef1d85fe1fea18150b729fcc6cf38530cb482a996df80dcc5b92457de`;
+the ten test-owned files contain 3,022 physical lines. The SHA-256 of the
+NUL-sorted relative-path per-file hash-list stream is
+`627e54c9cc57bed0bf4356989afd43e9b1dc0428c424606ec4775c06478b5fe5`.
+Any change under the two test-author-owned paths invalidates this freeze and
+stops production.
 
 ### Lane A — deterministic contract and safety
 
