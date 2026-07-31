@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **INDEPENDENT TESTS FROZEN — IMPLEMENTATION AUTHOR AUTHORIZED AFTER FREEZE COMMIT**
+Status: **CHECKPOINT NARROWED AFTER READABILITY FALSIFICATION — TEST CORRECTION REQUIRED**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -35,7 +35,7 @@ Acceptance path:
 ```text
 synthetic HRAI normalized-trace-v2 JSONL
   -> standalone examples/hrai_v2/adapter.py
-  -> adapter bundle/preview_traces.jsonl
+  -> adapter output/preview_traces.jsonl
   -> existing `triana traces observe`
   -> unchanged five Observer artifacts and hashes for the canonical fixture
 ```
@@ -90,20 +90,18 @@ mapping surface is:
 }
 ```
 
-Required fields are exactly `schema_version`, `case_id`, `session_id`,
-`status`, `system_prompt`, `turns`, and `events`. The exporter fields
-`client_id`, `simulator_model`, `user_turn_budget`, `started_at`, `error`,
-`tokens`, `usd`, `tool_sequence`, `decision_observable`, `sub_agents`, and
-`finished_at` are recognized and ignored because they do not map to the frozen
-LABS-01 vocabulary. Any other top-level field rejects the source line. Ignored
-fields never enter output, logs, identities, or hashes.
+Required mapped fields are `schema_version`, `case_id`, `session_id`, `status`,
+`system_prompt`, `turns`, and `events`. Other source-export fields are ignored
+because this reference is a mapping proof, not a second HRAI source validator.
+Ignored fields never enter output, logs, or identities. The same projection
+rule applies to unconsumed fields inside turn, event, and tool-call objects;
+required mapped fields and their exact meanings below remain strict.
 
-Recognized ignored fields are parsed only to enforce raw JSON resource and
-strict-syntax boundaries. They may contain any finite strict-JSON value,
-including finite floats used by HRAI for fields such as `usd`; non-finite
-`NaN`/`Infinity` tokens remain malformed JSON. A finite float is forbidden in
-every mapped field, including message content structure, tool `arguments`, and
-`result_summary`, because LABS-01 PreviewTrace cannot represent it.
+Ignored fields may contain any finite strict-JSON value, including finite
+floats used by HRAI for fields such as `usd`; non-finite `NaN`/`Infinity`
+tokens remain malformed JSON. A finite float is forbidden in every mapped
+field, including tool `arguments` and `result_summary`, because LABS-01
+PreviewTrace cannot represent it.
 
 Source constraints:
 
@@ -116,32 +114,29 @@ Source constraints:
   duplicate-source-ID condition. Rejected lines do not reserve `session_id`.
 - `status` must be `COMPLETED`. `HARNESS_ERROR` or any other value is rejected,
   not translated into agent terminal behavior.
-- `system_prompt` is a closed object with one non-empty string field `text`.
-- `turns` is a non-empty ordered array of closed objects with `role`, `content`,
-  and optional recognized-but-ignored `tools_called` and `metadata`.
+- `system_prompt` is an object with a non-empty string field `text`.
+- `turns` is a non-empty ordered array of objects with `role` and `content`.
 - Roles alternate exactly `user`, `assistant`, beginning with `user`; the final
   turn is `assistant`.
 - User content is non-empty; assistant content may be empty. LABS-01 content
   byte/control limits apply.
-- `events` has the same length and role order as `turns`. Each event is a
-  closed object with `turn`, `role`, `tool_calls`, and optional
-  recognized-but-ignored `tokens`, `ts`, and `error`.
-- User events have no tool calls. Assistant events contain zero or more closed
-  tool-call objects with `name`, `arguments`, `result_summary`, `status`,
-  `error`, `latency_ms`, and `cached`.
+- `events` has the same length and role order as `turns`. Each event is an
+  object with `turn`, `role`, and `tool_calls`.
+- User events have no tool calls. Assistant events contain zero or more
+  tool-call objects with required `name`, `arguments`, `result_summary`, and
+  `status`; other source fields are ignored.
 - Assistant tool-call `name` is a LABS-01 `SafeId`; `arguments` and a present
   `result_summary` obey LABS-01 opaque-JSON limits and forbid floats.
 - Tool status is exactly `ok` or `error`. `error` status may contain any
   source-local error value, but output uses only safe code
   `HRAI_TOOL_ERROR`; raw error content is never emitted.
-- `latency_ms` and `cached` are validated only as non-negative safe integer or
-  null, and boolean, respectively; they have no LABS-01 output field.
 
-Raw file boundaries equal LABS-01: local regular non-symlink file, 16 MiB,
-1,000 physical lines, 1 MiB per line, LF/CRLF, optional final LF, strict UTF-8,
-no BOM, duplicate JSON keys rejected, maximum JSON depth 32, strict JSON with
-non-finite numeric tokens rejected by the parser. Finite floats are accepted
-only within the recognized ignored source fields described above.
+Raw boundaries remain bounded but do not duplicate the Observer's complete
+parser: local regular non-symlink file, 16 MiB, 1,000 physical lines, 1 MiB per
+line, LF/CRLF, optional final LF, strict UTF-8, no BOM, duplicate JSON keys
+rejected, and non-finite numeric tokens rejected. JSON beyond the standard
+parser's safe recursion boundary is `MALFORMED_JSON`; LABS-02 no longer
+promises an independently calculated depth-32 source validator.
 
 ## 4. Exact mapping to PreviewTrace
 
@@ -185,12 +180,11 @@ The resulting object must independently pass the existing LABS-01
 `PreviewTrace` validator. The adapter must not import that production validator
 to construct output or its test oracle.
 
-## 5. Adapter output bundle
+## 5. Adapter output
 
 `--out` names a new directory containing exactly:
 
 ```text
-adapter_manifest.json
 preview_traces.jsonl
 rejected_source_traces.jsonl
 ```
@@ -226,34 +220,20 @@ DUPLICATE_TRACE_ID
 MAPPED_TRACE_INVALID
 ```
 
-`adapter_manifest.json` is:
-
-```json
-{
-  "accepted_count": 1,
-  "adapter_kind": "hrai_normalized_trace_v2_reference",
-  "artifacts": {
-    "preview_traces.jsonl": "sha256:<exact bytes>",
-    "rejected_source_traces.jsonl": "sha256:<exact bytes>"
-  },
-  "input_count": 1,
-  "privacy_class": "SYNTHETIC",
-  "rejected_count": 0,
-  "schema_version": 1,
-  "source_schema_version": "normalized-trace-v2"
-}
-```
-
-All files are UTF-8/LF/no-BOM, compact sorted-key JSON, one terminal LF except
-an empty JSONL file, with byte-identical output across fresh processes. The
-manifest hashes exact artifact bytes and has no self-hash.
+`NESTING_TOO_DEEP` and `MAPPED_TRACE_INVALID` remain reserved defensive codes;
+portable black-box fixtures need not manufacture Python recursion failure or
+an impossible post-mapping state. Both files are UTF-8/LF/no-BOM, compact
+sorted-key JSON, with one terminal LF except an empty JSONL file, and are
+byte-identical across fresh processes. LABS-02 adds no adapter manifest or
+adapter-owned artifact identity; the unchanged Observer manifest hashes the
+accepted PreviewTrace artifact in the next command.
 
 ## 6. Exit, refusal, publication, and logs
 
 - Exit 0: at least one input line and every line maps.
-- Exit 10: bundle exists but input is empty or at least one line is rejected.
-- Stdout: one compact receipt with only counts, outcome, and presentation
-  manifest path.
+- Exit 10: output exists but input is empty or at least one line is rejected.
+- Stdout: one compact receipt with only `input_count`, `accepted_count`,
+  `rejected_count`, and `outcome`.
 - Stderr: exactly one compact safe terminal event with counts and outcome; no
   paths or source values.
 - `--help`: exit 0, help on stdout, no terminal event.
@@ -264,8 +244,8 @@ manifest hashes exact artifact bytes and has no self-hash.
 - An already-existing output target is an output-path precondition refusal and
   exits 2 before publication begins. Exit 7 is reserved for a failure while
   creating, flushing, or atomically publishing a previously absent target.
-- Output is a private temporary sibling atomically renamed to a target that
-  must not exist. It never overwrites or merges.
+- Output is a private temporary sibling containing both files, atomically
+  renamed to a target that must not exist. It never overwrites or merges.
 - Every physical source line is counted exactly once:
   `input_count = accepted_count + rejected_count`.
 
@@ -276,8 +256,8 @@ must not be used in LABS-02.
 
 ## 7. Authority, privacy, and provenance
 
-Deterministic code owns raw accounting, source-shape validation, mapping,
-ordering, IDs, rejection classification, output bytes/hashes, and exit state.
+Deterministic code owns raw accounting, mapped-field validation, mapping,
+ordering, IDs, rejection classification, output bytes, and exit state.
 No LLM, provider, network, human semantic ruling, redaction, or egress occurs.
 The human owns the truthful synthetic-data attestation.
 
@@ -355,15 +335,15 @@ The test author independently creates source fixtures and expected
 - missing tool summary retained as an unmatched call;
 - source harness error refused rather than mapped to terminal behavior;
 - role/turn/event mismatch;
-- malformed/duplicate-key/invalid UTF-8/BOM/blank/depth/size cases, including
+- malformed/duplicate-key/invalid UTF-8/BOM/blank/size cases, including
   accepted finite floats in ignored fields and rejected floats in mapped fields;
 - duplicate accepted `session_id` as `DUPLICATE_TRACE_ID`, with rejected lines
   not reserving the identity;
 - mixed partial success and exact accounting;
-- empty/all-rejected deterministic bundles;
+- empty/all-rejected deterministic outputs;
 - mandatory synthetic attestation and no raw values in rejection/log output;
 - atomic no-overwrite/fatal no-output behavior;
-- repeatability and independent artifact hashes;
+- repeatability and exact output bytes;
 - adapter output accepted by unchanged `triana traces observe`;
 - standalone standard-library/import-boundary and 200-line ceiling;
 - all prior 118 tests and five canonical hashes unchanged.
@@ -411,18 +391,24 @@ tests, the prior acceptance/fixture aggregate
 and the architecture-test hash
 `a16c7ceea4d3f8a2cdb594019efbbeb1e9c05d758c552a1dd282168167b943b2`.
 
-Frozen acceptance files may not change during implementation. A suspected test
-defect returns only to the same independent test author and requires a new
-correction commit, valid RED evidence, hash, and orchestrator freeze.
+The freeze above is now historical: implementation commit `5d90662` reached
+GREEN only through whole-file formatter suppression and 35 overlong lines.
+Normal Ruff formatting produced 420 counted lines; an implementation-author
+data-driven refactor still produced 324. The orchestrator rejected that result
+as unreadable and the implementation author independently recommended against
+shipping it. LABS-02 therefore removes non-mapping manifest/hash machinery and
+exhaustive validation of ignored source fields rather than raising or gaming
+the 200-line ceiling. The same independent test author must correct only the
+affected expectations, reproduce RED against `5d90662`, and provide a new hash
+and freeze before implementation resumes.
 
 Reserved orchestrator adversarial checks, not disclosed as literal fixtures to
 the implementation author, cover:
 
 - a successful run under a socket-blocking `sitecustomize` to detect network
   access;
-- a rejected deeply nested private marker absent from stdout, stderr, and safe
-  artifacts;
-- symlink/directory and exact whole-file resource refusal with no bundle;
+- a rejected private marker absent from stdout, stderr, and safe artifacts;
+- symlink/directory and exact whole-file resource refusal with no output;
 - copying only `adapter.py` to a temporary directory and running it outside the
   repository to prove the standard-library/copyable boundary;
 - regeneration of the five canonical Observer hashes and source/clean-wheel
