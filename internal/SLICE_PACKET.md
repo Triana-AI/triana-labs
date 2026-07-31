@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **CHECKPOINT NARROWED AFTER READABILITY FALSIFICATION — TEST CORRECTION REQUIRED**
+Status: **NARROWED INDEPENDENT TESTS FROZEN — IMPLEMENTATION CORRECTION AUTHORIZED AFTER FREEZE COMMIT**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -413,6 +413,35 @@ the implementation author, cover:
   repository to prove the standard-library/copyable boundary;
 - regeneration of the five canonical Observer hashes and source/clean-wheel
   acceptance of the adapter's canonical PreviewTrace output.
+
+### 9.2 Narrowed acceptance freeze
+
+The corrected narrowed acceptance is frozen at commit `04d16e2`, superseding
+the broader freeze `16f7b6b`. It retains 27 black-box cases and changes only
+the two acceptance modules; both synthetic fixture files remain byte-identical.
+
+The independent test author and orchestrator each reproduced valid RED against
+the rejected implementation `5d90662`:
+
+```text
+12 failed, 15 passed
+```
+
+The 12 failures are exhaustively attributable to the four intentional narrowed
+differences: stale third manifest output, stale receipt shape, stale rejection
+of ignored exporter fields, and whole-file formatter suppression. There are no
+syntax, import, setup, environment, or fixture-oracle failures. The previous
+118 tests remain green.
+
+The new aggregate SHA-256 over all four test-owned files is:
+
+```text
+10149a2a6ad8ce50caa2f77155e95b88638b62a8f9c9637dc1ea9e411b9b0104
+```
+
+This aggregate and commit are the only acceptance freeze authorized to judge
+the implementation correction. The implementation author may change only the
+same two example files and must not edit tests or fixtures.
 
 ## 10. Verification and immutable prior evidence
 
