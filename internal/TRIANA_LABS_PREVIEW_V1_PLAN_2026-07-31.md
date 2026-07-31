@@ -55,9 +55,11 @@ LABS-04 uses the owner's existing Azure OpenAI `gpt-4.1-mini` deployment,
 model version `2025-04-14`, through strict structured outputs. Normal execution
 uses three calls, all retries are capped at six total calls, and a conservative
 USD 10 ceiling is enforced before and during egress. The non-test smoke corpus
-is the tracked 50-line HRAI historical-traffic export at source commit
-`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, labeled synthetic rather than
-real-user evidence.
+is the first 50 physical lines of the tracked HRAI v2 `run_200`
+historical-traffic export at source commit
+`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, selected SHA-256
+`4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`,
+labeled synthetic rather than real-user evidence.
 
 Mechanically green generation is not product passage. At least three distinct
 valid cases must survive deterministic gates and the owner must clear the

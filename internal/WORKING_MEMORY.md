@@ -328,13 +328,20 @@ and one revision. It emits five proposed personas/intents/adaptive turn
 policies and case designs plus attempts, citations, lineage, diversity, cost,
 gaps, and a blind human-review template.
 
-The live smoke uses the pre-existing tracked HRAI 50-trace historical-traffic
-file at commit `728f6c5058efe40a16e2aecc9b528b3353f4df4f`, exact SHA-256
-`62d0d188c05a34e346edfb0315b6348343037fcf25a94cf32d10384e5a9b6c61`.
+The live smoke uses the first 50 physical lines of the pre-existing tracked
+HRAI v2 `run_200` historical-traffic file at commit
+`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, exact selected SHA-256
+`4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`.
 It is labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`; it cannot support a production
 or real-user claim. The provider boundary has three normal/six absolute calls,
 a conservative USD 10 cap, strict named Azure egress, and no ambient
 credential discovery.
+
+Preflight rejected the previously frozen `run_50b` file as legacy (0/50
+adapter acceptance). The corrected v2 subset yielded 25 accepted and 25 typed
+source rejections, then 25/25 Observer acceptance and 22 structural clusters.
+Those denominators remain visible and the subset cannot be changed to improve
+the smoke result.
 
 Implementation has not started. The independent tester must first author and
 freeze valid RED. Production authorship follows serially; only then may the

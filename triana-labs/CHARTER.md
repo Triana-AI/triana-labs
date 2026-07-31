@@ -60,12 +60,15 @@ publication. Model output remains `PROPOSED`; semantic usefulness requires a
 blind owner review. Fewer than three distinct valid cases or a failed review
 blocks multi-turn runtime work.
 
-The required smoke input is an existing 50-trace HRAI historical-traffic
-corpus labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or
-real-user evidence. LABS-04 does not expand the privacy boundary, execute the
-target agent, create memory, adopt an agent framework, or authorize LABS-05.
-The exact contract, USD 10 ceiling, edge cases, outputs, and independent
-test-first roles live in `internal/SLICE_PACKET.md`.
+The required smoke input is the first 50 physical lines of the existing
+tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
+`4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`,
+labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or real-user
+evidence. LABS-04 does not expand the privacy boundary, execute the target
+agent, create memory, adopt an agent framework, or authorize LABS-05. The
+exact contract, USD 10 ceiling, edge cases, outputs, and independent test-first
+roles live in `internal/SLICE_PACKET.md` and
+`internal/LABS04_WIRE_CONTRACT.md`.
 
 ## Scope decisions (Akarsh, 2026-07-31)
 

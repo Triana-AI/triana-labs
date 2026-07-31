@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **FROZEN ENTRY CONTRACT — WORKERS NOT YET STARTED**
+Status: **FROZEN ENTRY CONTRACT — INDEPENDENT TEST AUTHOR AUTHORIZED**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -8,6 +8,12 @@ Canonical base: `83454e3`
 Slice ID: `LABS-04-grounded-case-factory`
 Owner: Akarsh
 Orchestrator: Codex
+
+Exact wire authority: `internal/LABS04_WIRE_CONTRACT.md`. That document closes
+field-level schemas, canonical bytes, identity preimages, provider envelopes,
+transport behavior, partial publication, blind ordering, and the corrected
+smoke identity. Its exact rules supersede examples or shorthand here without
+expanding this packet's product scope.
 
 ## 1. Product outcome and falsifiable claim
 
@@ -115,6 +121,7 @@ The config names, but never contains, credentials:
     "provider_kind": "AZURE_OPENAI",
     "endpoint_env": "AZURE_OPENAI_ENDPOINT",
     "api_key_env": "AZURE_OPENAI_API_KEY",
+    "secret_sentinel_envs": ["TRIANA_LABS04_SECRET_SENTINEL"],
     "allowed_endpoint_host": "<operator-approved-azure-host>",
     "api_surface": "/openai/v1/chat/completions",
     "deployment": "gpt-4.1-mini",
@@ -426,9 +433,10 @@ tool call, or hidden target answer is schema-invalid.
 ### 6.5 Simulation case candidate
 
 Each line of `case_candidates.jsonl` and
-`control_case_candidates.jsonl` has the exact wire shape below; the
-independent tester derives exact fixtures from the closed Pydantic/JSON Schema
-contract authored in the slice, not from production serialization output:
+`control_case_candidates.jsonl` has the illustrative shape below; the
+independent tester derives exact fixtures from
+`internal/LABS04_WIRE_CONTRACT.md`, not from production models, schemas, or
+serialization output:
 
 ```json
 {
@@ -638,16 +646,27 @@ traffic corpus:
 ```text
 source repository: /Users/akarshgajbhiye/Documents/hr_ai
 source commit: 728f6c5058efe40a16e2aecc9b528b3353f4df4f
-source path: experiments/historical_traffic_v0/out/run_50b/normalized_traces.jsonl
-source physical lines: 50
-source SHA-256: 62d0d188c05a34e346edfb0315b6348343037fcf25a94cf32d10384e5a9b6c61
+source path: experiments/historical_traffic_v0/out/run_200/normalized_traces.jsonl
+source physical lines: 200
+source SHA-256: 76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b
+selection: first 50 physical lines, bytes preserved exactly
+selected SHA-256: 4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c
 classification: SYNTHETIC_EXISTING_TRACE_CORPUS
 ```
 
 The source is existing end-to-end trace data generated independently of the
 LABS-04 tests. It is synthetic, not production or real-user evidence. The
-smoke run reads it in place through the shipped LABS-02 adapter; no HRAI trace,
-prompt, output, or raw corpus is copied into Triana.
+smoke deterministically copies only the first 50 physical lines to a private
+local temporary file, then reads it through the shipped LABS-02 adapter; no
+HRAI trace, prompt, output, or raw corpus is copied into Triana.
+
+Preflight exposed that the previously named `run_50b` file was legacy and
+incompatible with the shipped adapter (0/50 accepted). It is not used. The
+corrected selected v2 records produced 25 accepted and 25 explicit LABS-02
+source rejections; Observer accepted all 25 mapped traces as eligible; LABS-03
+produced 22 clusters and three expected semantic gaps. Those observations are
+honest denominators, not favorable acceptance constants. The final smoke may
+not select a different subset or rerun to improve them.
 
 The reproducible smoke sequence is:
 
@@ -800,6 +819,7 @@ Orchestrator only:
 
 ```text
 internal/SLICE_PACKET.md
+internal/LABS04_WIRE_CONTRACT.md
 internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
 internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md
