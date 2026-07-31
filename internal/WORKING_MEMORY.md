@@ -171,14 +171,12 @@ refactor. The Observer does not derive language, distress, personas, intents,
 cases, execution, comparison, or findings. Real/local-sensitive traces remain
 refused.
 
-No next implementation slice is authorized in this checkpoint. LABS-02 proves
-the mechanical file handoff for one newly authored synthetic source format; it
-does not prove that a stranger can adapt a customer system, that real traces
-are supported, or that the product is wanted. Corpus Intelligence remains
-unstarted. Any next product discussion must use the demonstrated PreviewTrace
-output rather than inventing a generic SDK, OTel integration, hosted ingestion,
-or real-data path. Any accepted implementation requires a new packet,
-independent test author, change budget, and owner review before code.
+LABS-03 is authorized as the first bounded M1B checkpoint. It consumes only a
+verified synthetic Observer manifest and derives deterministic clusters from
+observable event structure. Persona, intent, turn policy, language, and
+distress semantics remain explicit NOT_DERIVED gaps; no LLM, provider, real
+data, redaction, Blitz mining, Case Generator, SDK, OTel, hosted ingestion, or
+UI is authorized. The live slice packet freezes its serial roles and exit gate.
 
 Next-session handoff prompt:
 

@@ -1,611 +1,259 @@
-# Active implementation slice — LABS-02 external adapter proof
+# Active implementation slice — LABS-03 structural Corpus Intelligence
 
-Status: **COMPLETE — LABS-02 MAPPING PROOF SHIPPED; CORPUS INTELLIGENCE NOT STARTED**
+Status: **ENTRY GATE FROZEN — INDEPENDENT TEST AUTHOR AUTHORIZED**
 
 Date: 2026-07-31
-Canonical base: `2e6d35d`
-Product authority: `triana-labs/CHARTER.md`
-Execution authority: `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
-Engineering authority: `docs/ENGINEERING.md`
-Provenance authority: `docs/PROVENANCE.md`
-Orchestrator: primary Codex agent
-Worker roles: exactly one independent test author followed serially by one
-implementation author
+Branch: `codex/labs-03-corpus-intelligence`
+Canonical base: `c993be3`
+Slice ID: `LABS-03-structural-corpus-intelligence`
 
-## 1. Outcome and falsifiable claim
+## 1. Product outcome
 
-Slice ID: `LABS-02-hrai-v2-reference-adapter`
+Prove that the unchanged synthetic Trace Observer bundle is a usable input to
+the next canonical component. The new command derives deterministic,
+inspectable structural clusters with support, ambiguity, fidelity, lineage,
+and explicit gaps. It does not invent semantic personas, intents, distress,
+language, or turn-generation policy.
 
-Component advanced: the external file boundary immediately before **Trace
-Observer**. Corpus Intelligence is not started.
-
-The checkpoint proves or falsifies this claim:
-
-> A coding agent can copy a small, dependency-free reference transform for one
-> concrete foreign trace shape, run it locally on explicitly synthetic data,
-> produce exact LABS-01 `PreviewTrace` JSONL with complete source-line
-> accounting, and pass that file to the unchanged Trace Observer.
-
-This is the already-planned HRAI reference adapter, not a supported HRAI
-integration, adapter SDK, generic import framework, or new `triana` command.
-Customer/provider mappings remain outside Triana's deterministic product core.
-
-Acceptance path:
+This is the first bounded checkpoint inside plan milestone M1B. It is not full
+Corpus Intelligence and does not start Case Generator.
 
 ```text
-synthetic HRAI normalized-trace-v2 JSONL
-  -> standalone examples/hrai_v2/adapter.py
-  -> adapter output/preview_traces.jsonl
-  -> existing `triana traces observe`
-  -> unchanged five Observer artifacts and hashes for the canonical fixture
+PreviewTrace JSONL
+  -> triana traces observe
+  -> Observer manifest + normalized_traces.jsonl
+  -> triana corpus derive <manifest> --out <new-directory>
+  -> structural clusters + typed semantic gaps
 ```
 
-## 2. Invocation and install/run experience
+## 2. Invocation and location
 
-From a repository checkout with the existing locked environment:
-
-```text
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache \
-  uv run --project triana-labs --locked python \
-  triana-labs/examples/hrai_v2/adapter.py \
-  <synthetic-hrai-v2.jsonl> \
-  --out <new-adapter-output-directory> \
-  --data-class SYNTHETIC
-
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache \
-  uv run --project triana-labs --locked triana traces observe \
-  <new-adapter-output-directory>/preview_traces.jsonl \
-  --out <new-observer-output-directory>
+```bash
+triana corpus derive <observer-output>/manifest.json \
+  --out <new-intelligence-directory>
 ```
 
-The adapter script uses only the Python standard library and imports no
-`triana_labs` implementation module. It is deliberately copyable into a
-customer repository. It must remain at or below 200 nonblank, non-comment
-physical Python lines, with a target of 100; the measured count is reported at
-exit. Rich module/function comments are excluded from the count.
+Execution is local and deterministic. The command performs no network access,
+provider call, model inference, redaction, hidden credential discovery, or
+environment-based configuration. Only Observer bundles labeled `SYNTHETIC`
+are accepted.
 
-No console entry point, package API, registry, dynamic plugin loading, stdin,
-pipe protocol, or automatic adapter discovery is added.
+## 3. Input contract
 
-## 3. Exact source format
+The input is a regular, non-symlink Observer `manifest.json`, at most 1 MiB,
+inside a regular local directory. It must be strict UTF-8 JSON with no BOM,
+duplicate key, non-finite number, or unsupported nesting.
 
-One physical input line is one HRAI historical-traffic record whose required
-mapping surface is:
+The manifest must have the exact LABS-01 `corpus_manifest` schema version 1,
+privacy class `SYNTHETIC`, nonnegative counts satisfying
+`input_count = accepted_count + rejected_count`, and the exact four Observer
+artifact hash entries. LABS-03 reads and verifies:
+
+- `normalized_traces.jsonl` against its manifest SHA-256;
+- `corpus_profile.json` against its manifest SHA-256;
+- the profile kind/version/privacy-relevant counts against the manifest;
+- every normalized trace through the unchanged PreviewTrace validator;
+- accepted line count and unique trace/source identities.
+
+Sibling inputs must be regular non-symlink files. Any hash, count, schema, or
+trace contradiction is a fatal `CORPUS_INTEGRITY_FAILED`; it never becomes a
+cluster or partial pass. An accepted count of zero is fatal `EMPTY_CORPUS`.
+Source rejections are permitted when at least one accepted trace exists and
+become a typed derivation gap.
+
+The Observer remains the input-validation owner. LABS-03 does not accept raw
+PreviewTrace JSONL or an external source export directly.
+
+## 4. Exact deterministic clustering
+
+Each accepted trace receives one structural fingerprint derived only from its
+validated ordered event shapes:
 
 ```json
 {
-  "schema_version": "normalized-trace-v2",
-  "case_id": "case-001",
-  "session_id": "pf-case-001-demo0001",
-  "status": "COMPLETED",
-  "system_prompt": {"text": "You are the synthetic reference agent."},
-  "turns": [
-    {"role": "user", "content": "Find the synthetic candidate."},
-    {"role": "assistant", "content": "I found the synthetic candidate."}
-  ],
-  "events": [
-    {"turn": 1, "role": "user", "tool_calls": []},
-    {"turn": 1, "role": "assistant", "tool_calls": []}
-  ]
+  "assistant_message_count": 0,
+  "case_generation_eligible": false,
+  "terminal_state": "MISSING",
+  "tool_call_count": 0,
+  "tool_error_count": 0,
+  "tool_name_sequence": [],
+  "tool_result_count": 0,
+  "unmatched_tool_call_count": 0,
+  "user_message_count": 0
 }
 ```
 
-Required mapped fields are `schema_version`, `case_id`, `session_id`, `status`,
-`system_prompt`, `turns`, and `events`. Other source-export fields are ignored
-because this reference is a mapping proof, not a second HRAI source validator.
-Ignored fields never enter output, logs, or identities. The same projection
-rule applies to unconsumed fields inside turn, event, and tool-call objects;
-required mapped fields and their exact meanings below remain strict.
+`unmatched_tool_call_count` counts calls with no later result for the same
+call ID. `tool_error_count` counts error-state tool results. The terminal state
+is the one validated terminal value or `MISSING`.
 
-Ignored fields may contain any finite strict-JSON value, including finite
-floats used by HRAI for fields such as `usd`; non-finite `NaN`/`Infinity`
-tokens remain malformed JSON. A finite float is forbidden in every mapped
-field, including tool `arguments` and `result_summary`, because LABS-01
-PreviewTrace cannot represent it.
+Traces with byte-identical canonical fingerprints share one cluster.
+`cluster_id` is `cluster-` plus the first 16 lowercase hex characters of the
+SHA-256 of the compact sorted-key fingerprint JSON bytes. Cluster members are
+sorted by trace ID and clusters by cluster ID, independent of input line order.
 
-Source constraints:
+Each cluster contains exactly:
 
-- `schema_version` is exactly `normalized-trace-v2`.
-- `case_id` and `session_id` are LABS-01 `SafeId`; `session_id` becomes both
-  `trace_id` and `source_trace_id`.
-- A `session_id` already used by an earlier accepted source line rejects the
-  later line as `DUPLICATE_TRACE_ID`. Because both output identities derive
-  from the same source field, LABS-02 has no separately representable
-  duplicate-source-ID condition. Rejected lines do not reserve `session_id`.
-- `status` must be `COMPLETED`. `HARNESS_ERROR` or any other value is rejected,
-  not translated into agent terminal behavior.
-- `system_prompt` is an object with a non-empty string field `text`.
-- `turns` is a non-empty ordered array of objects with `role` and `content`.
-- Roles alternate exactly `user`, `assistant`, beginning with `user`; the final
-  turn is `assistant`.
-- User content is non-empty; assistant content may be empty. LABS-01 content
-  byte/control limits apply.
-- `events` has the same length and role order as `turns`. Each event is an
-  object with `turn`, `role`, and `tool_calls`.
-- User events have no tool calls. Assistant events contain zero or more
-  tool-call objects with required `name`, `arguments`, `result_summary`, and
-  `status`; other source fields are ignored.
-- Assistant tool-call `name` is a LABS-01 `SafeId`; `arguments` and a present
-  `result_summary` obey LABS-01 opaque-JSON limits and forbid floats.
-- Tool status is exactly `ok` or `error`. `error` status may contain any
-  source-local error value, but output uses only safe code
-  `HRAI_TOOL_ERROR`; raw error content is never emitted.
+- `cluster_id`;
+- the complete fingerprint;
+- `member_trace_ids`;
+- `support_count`;
+- `support_state: SINGLETON | SUPPORTED`;
+- `ambiguity_state: SEMANTICS_NOT_EVALUATED`;
+- `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`.
 
-Raw boundaries remain bounded but do not duplicate the Observer's complete
-parser: local regular non-symlink file, 16 MiB, 1,000 physical lines, 1 MiB per
-line, LF/CRLF, optional final LF, strict UTF-8, no BOM, duplicate JSON keys
-rejected, and non-finite numeric tokens rejected. JSON beyond the standard
-parser's safe recursion boundary is `MALFORMED_JSON`; LABS-02 no longer
-promises an independently calculated depth-32 source validator.
+No system/user/assistant text, opaque argument/result value, error/reason text,
+or source trace ID enters cluster artifacts. Safe tool names and trace IDs are
+the only source-derived strings retained.
 
-## 4. Exact mapping to PreviewTrace
+## 5. Exact output bundle
 
-For every accepted source line, output one compact, sorted-key JSON object with
-exactly:
-
-```json
-{
-  "contract_kind": "preview_trace",
-  "events": [],
-  "privacy_class": "SYNTHETIC",
-  "schema_version": 1,
-  "source_trace_id": "<source session_id>",
-  "trace_id": "<source session_id>"
-}
-```
-
-The ordered `events` array is constructed as follows:
-
-1. Event 0 is `SYSTEM_VISIBLE_MESSAGE` containing `system_prompt.text`.
-2. Each user turn emits one `USER_MESSAGE` with its source content.
-3. For each assistant turn, its aligned enriched source tool calls are emitted
-   before the assistant message, in source order.
-4. Each source tool call emits `TOOL_CALL` with deterministic
-   `call_id: "hrai-t<turn>-c<one-based-call-index>"`, source `name` as
-   `tool_name`, and source `arguments`.
-5. `status: "ok"` plus a non-null `result_summary` emits a following
-   `TOOL_RESULT` with `result_state: "SUCCEEDED"` and `result` equal to the
-   source summary. A null summary emits no result, leaving the observation gap
-   visible as an unmatched call.
-6. `status: "error"` emits a following `TOOL_RESULT` with
-   `result_state: "ERROR"` and `error_code: "HRAI_TOOL_ERROR"`; raw source
-   error content is discarded.
-7. The assistant turn then emits `ASSISTANT_MESSAGE`. `is_final` is true only
-   for the last assistant turn.
-8. `sequence` is assigned contiguously from zero after expansion.
-9. No `TERMINAL` event is invented: HRAI `COMPLETED` describes harness
-   completion, not agent-origin success.
-
-The resulting object must independently pass the existing LABS-01
-`PreviewTrace` validator. The adapter must not import that production validator
-to construct output or its test oracle.
-
-## 5. Adapter output
-
-`--out` names a new directory containing exactly:
+`--out` must not exist and its immediate parent must be a real directory. A
+successful partial derivation is published atomically as:
 
 ```text
-preview_traces.jsonl
-rejected_source_traces.jsonl
+manifest.json
+clusters.json
+derivation_report.json
+personas/index.json
+intents/index.json
+turn_policies/index.json
 ```
 
-`preview_traces.jsonl` contains accepted mappings in source-line order. It is
-zero bytes when no source line maps.
+All JSON is compact, sorted-key UTF-8 with one LF. The five non-manifest files
+carry `schema_version: 1`, the SHA-256 of exact input manifest bytes as
+`input_manifest_hash`, and `fidelity: SYNTHETIC_OBSERVED_STRUCTURE`. The output
+manifest hashes their exact bytes and records counts, outcome, producing
+component/version, and input lineage. Timestamps and random values are absent.
 
-`rejected_source_traces.jsonl` contains one safe record per rejected physical
-line:
+`clusters.json` has `artifact_kind: corpus_clusters`, trace and cluster counts,
+and the ordered clusters.
 
-```json
-{"code":"SOURCE_TURN_EVENT_MISMATCH","json_pointer":"/events","line_number":2,"safe_message":"Source turns and events do not align."}
-```
+Each asset index has `artifact_kind: derived_asset_index`, one `asset_kind`
+from `PERSONA | INTENT | TURN_POLICY`, `derivation_state: NOT_DERIVED`, empty
+`assets`, support count zero, and reason
+`SEMANTIC_EVIDENCE_NOT_DERIVED`. These are explicit gaps, not placeholder
+assets.
 
-It contains no path, raw value, excerpt, exception, trace/session/case ID,
-prompt, message, tool name, arguments, result, or error content.
-
-Closed per-line codes:
+`derivation_report.json` has `artifact_kind: corpus_derivation_report`, input,
+trace, cluster, singleton, supported-cluster, and source-rejection counts;
+`outcome: COMPLETED_WITH_GAPS`; and these sorted gap codes:
 
 ```text
-BLANK_LINE
-INVALID_UTF8
-BOM_FORBIDDEN
-LINE_TOO_LARGE
-MALFORMED_JSON
-DUPLICATE_JSON_KEY
-NESTING_TOO_DEEP
-SOURCE_SCHEMA_VALIDATION_FAILED
-UNSUPPORTED_SOURCE_SCHEMA_VERSION
-SOURCE_EXECUTION_INCOMPLETE
-SOURCE_TURN_EVENT_MISMATCH
-DUPLICATE_TRACE_ID
-MAPPED_TRACE_INVALID
+DISTRESS_NOT_EVALUATED
+LANGUAGE_NOT_EVALUATED
+SEMANTIC_ASSETS_NOT_DERIVED
+SOURCE_REJECTIONS_PRESENT  # only when rejected_count > 0
 ```
 
-`NESTING_TOO_DEEP` and `MAPPED_TRACE_INVALID` remain reserved defensive codes;
-portable black-box fixtures need not manufacture Python recursion failure or
-an impossible post-mapping state. Both files are UTF-8/LF/no-BOM, compact
-sorted-key JSON, with one terminal LF except an empty JSONL file, and are
-byte-identical across fresh processes. LABS-02 adds no adapter manifest or
-adapter-owned artifact identity; the unchanged Observer manifest hashes the
-accepted PreviewTrace artifact in the next command.
+## 6. CLI, refusal, and partial behavior
 
-## 6. Exit, refusal, publication, and logs
+- Completed structural derivation: exit 10, output exists, stdout has one
+  receipt with `outcome`, `trace_count`, `cluster_count`, `gap_count`, and
+  `manifest_path`; stderr has one safe terminal event with counts but no path,
+  trace ID, tool name, content, hash, or exception.
+- `--help`: exit 0, human help on stdout, no terminal event.
+- Fatal input/path/usage refusal: exit 2, 3, 4, or 5 by reason, stdout empty,
+  one safe stderr event, and no output.
+- Output write failure: exit 7. Unexpected failure: exit 70. Neither emits raw
+  values or a partial target.
+- Existing output is exit 2 and never overwritten or merged.
 
-- Exit 0: at least one input line and every line maps.
-- Exit 10: output exists but input is empty or at least one line is rejected.
-- Stdout: one compact receipt with only `input_count`, `accepted_count`,
-  `rejected_count`, and `outcome`.
-- Successful and partial-completion runs write no stderr. Fatal refusal writes
-  exactly one compact safe JSON object containing only `outcome: "REJECTED"`
-  and `reason_code`; it contains no path or source value.
-- `--help`: exit 0, help on stdout, no terminal event.
-- `--data-class SYNTHETIC` is mandatory. Missing or any other value is fatal
-  `UNSUPPORTED_DATA_CLASS`, exit 2, before reading input.
-- Input/path/resource failures are fatal exits 2 or 3; publication failure is
-  7; internal invariant is 70. Fatal failure creates no target directory.
-- An already-existing output target is an output-path precondition refusal and
-  exits 2 before writing begins. Exit 7 is reserved for a failure while
-  creating or writing a previously absent target.
-- Output is created only after all source lines have been mapped and contains
-  both files. The target must not exist; the adapter never overwrites or
-  merges. A write failure returns 7 and best-effort removes only the exact new
-  directory it created. This copyable example does not promise atomic
-  multi-file publication; its output is consumable only after exit 0 or 10.
-- Every physical source line is counted exactly once:
-  `input_count = accepted_count + rejected_count`.
-
-The synthetic flag is an explicit caller attestation, not automatic data
-classification. Documentation must state that real, production-derived,
-customer, Blitz, or otherwise local-sensitive exports are unsupported and
-must not be used in LABS-02.
-
-## 7. Authority, privacy, and provenance
-
-Deterministic code owns raw accounting, mapped-field validation, mapping,
-ordering, IDs, rejection classification, output bytes, and exit state.
-No LLM, provider, network, human semantic ruling, redaction, or egress occurs.
-The human owns the truthful synthetic-data attestation.
-
-The source format was inspected at HRAI repository commit
-`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, specifically:
+Closed fatal reasons:
 
 ```text
-experiments/historical_traffic_v0/runner/run_preflight.py
-experiments/historical_traffic_v0/runner/hr_bridge.py
+CLI_USAGE_ERROR
+INPUT_READ_FAILED
+INPUT_TOO_LARGE
+MANIFEST_INVALID
+UNSUPPORTED_PRIVACY_CLASS
+CORPUS_INTEGRITY_FAILED
+EMPTY_CORPUS
+OUTPUT_ALREADY_EXISTS
+OUTPUT_PARENT_MISSING
+OUTPUT_WRITE_FAILED
+INTERNAL_INVARIANT_FAILED
 ```
 
-The implementation is a clean reimplementation of the mapping specified in
-this packet. No HRAI code, raw trace, generated corpus, prompt, or fixture is
-copied. All committed fixtures are newly authored synthetic examples. The
-provenance ledger records the exact inspection and destination before worker
-implementation.
+## 7. Authority and non-goals
 
-## 8. Change budget and serial ownership
+Deterministic code owns parsing, integrity, membership, fingerprints, IDs,
+support counts, ambiguity state, fidelity, lineage, serialization, hashes, and
+exit state. No LLM or human semantic ruling is used. A human has not accepted
+any cluster as a persona, intent, policy, failure, or product truth.
 
-Orchestrator entry/exit only:
+Explicitly absent: real/local-sensitive input; redaction; provider egress;
+semantic labels; language/distress mining; Blitz/public corpus mining; persona,
+intent, or turn-policy generation; Case Generator; Panel Builder; runner; F1;
+report UI; SDK; OTel; hosted ingestion; changes to `triana-core` or LABS-01/02
+artifact bytes.
+
+## 8. Change budget and serial roles
+
+Orchestrator only:
 
 ```text
 internal/SLICE_PACKET.md
 internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
-docs/PROVENANCE.md
+docs/ARCHITECTURE.md
 README.md
 triana-labs/scripts/verify.sh
-triana-labs/tests/adapter_adversarial/**
+triana-labs/tests/intelligence_adversarial/**
 ```
 
 Independent test author only:
 
 ```text
-triana-labs/tests/adapter_acceptance/**
-triana-labs/tests/adapter_fixtures/**
+triana-labs/tests/intelligence_acceptance/**
+triana-labs/tests/intelligence_fixtures/**
 ```
 
-Implementation author only after test freeze:
+Implementation author only after RED freeze:
 
 ```text
-triana-labs/examples/hrai_v2/adapter.py
-triana-labs/examples/hrai_v2/README.md
+triana-labs/src/triana_labs/cli.py
+triana-labs/src/triana_labs/intelligence/**
 ```
 
-No dependency, package metadata, lockfile, core source, existing test, or
-existing fixture change is allowed. Maximum scope expansion without
-orchestrator return: none.
+No dependency, package metadata, lockfile, existing test/fixture, Observer,
+adapter example, `triana-core`, or suspended V1 change is allowed. Maximum
+scope expansion without orchestrator return is none.
 
-Explicitly untouched:
+## 9. Independent acceptance
 
-```text
-triana-labs/src/triana_labs/**
-triana-labs/pyproject.toml
-triana-labs/uv.lock
-triana-labs/tests/acceptance/**
-triana-labs/tests/adversarial/**
-triana-labs/tests/architecture/**
-triana-labs/tests/fixtures/**
-triana-core/**
-docs/PRODUCT.md
-docs/ARCHITECTURE.md
-docs/CONTRACTS.md
-all raw/external corpora and external repositories
-```
+The test author independently creates synthetic Observer bundles and exact
+expected bytes without importing production derivation code. Minimum matrix:
 
-## 9. Independent acceptance and RED
+- exact structural fingerprints, clusters, IDs, ordering, counts, fidelity,
+  lineage, manifest hashes, and typed semantic gaps;
+- repeated-process byte determinism and line-order-independent memberships;
+- singleton and supported clusters, tool errors, unmatched calls, missing and
+  present terminal states, and case-generation eligibility;
+- no semantic/raw content leakage into any output or safe terminal event;
+- source-rejection gap and empty-corpus fatal refusal;
+- manifest/profile/normalized hash, count, schema, duplicate-ID, and trace
+  integrity failures;
+- manifest/artifact symlinks, missing/nonregular/oversize input, invalid JSON,
+  no-overwrite, atomic failure cleanup, and safe CLI errors;
+- unchanged Observer/adapter behavior, prior 151 tests, frozen acceptance
+  aggregates, and five canonical Observer hashes;
+- source and clean-wheel command parity.
 
-The test author independently creates source fixtures and expected
-`PreviewTrace` bytes without importing production adapter code. Minimum matrix:
+Valid RED means new tests fail only because `triana corpus derive` and the
+`intelligence` package do not exist. The orchestrator freezes test commit and
+aggregate before implementation begins.
 
-- minimal and tool-rich successful mappings with exact bytes;
-- system/user/tool/result/assistant ordering and contiguous sequences;
-- deterministic call IDs and final-assistant marking;
-- missing tool summary retained as an unmatched call;
-- source harness error refused rather than mapped to terminal behavior;
-- role/turn/event mismatch;
-- malformed/duplicate-key/invalid UTF-8/BOM/blank/size cases, including
-  accepted finite floats in ignored fields and rejected floats in mapped fields;
-- duplicate accepted `session_id` as `DUPLICATE_TRACE_ID`, with rejected lines
-  not reserving the identity;
-- mixed partial success and exact accounting;
-- empty/all-rejected deterministic outputs;
-- mandatory synthetic attestation and no raw values in rejection/log output;
-- no-overwrite, fatal pre-write no-output, and owned write-failure cleanup;
-- repeatability and exact output bytes;
-- adapter output accepted by unchanged `triana traces observe`;
-- standalone standard-library/import-boundary and 200-line ceiling;
-- all prior 118 tests and five canonical hashes unchanged.
+## 10. Reproducible exit gate
 
-Valid RED on canonical base means existing 118 tests pass and new adapter tests
-fail only because the two implementation-owned example files do not exist.
-No import, fixture-oracle, syntax, environment, or existing-behavior failure is
-valid RED.
+LABS-03 exits only when independent RED is frozen; implementation changes only
+owned files; all new and prior tests pass; deterministic outputs match exact
+independent bytes; adversarial safety and no-network checks pass; source and
+clean-wheel commands match; the five Observer hashes and LABS-02 aggregates
+remain unchanged; the diff and dependency budget reconcile; canonical docs
+and decision log are current; and all non-goals remain absent.
 
-The orchestrator freezes the test commit and aggregate hashes before the
-implementation author starts. Test defects return only to the same test author;
-implementation defects only to the implementation author.
-
-### 9.1 Independently frozen acceptance
-
-The corrected independent acceptance contract is frozen at commit `16f7b6b`,
-which supersedes provisional test commit `1a59239` after the orchestrator
-returned one exit-code defect and two missing source-boundary cases exclusively
-to the test author.
-
-Frozen test-owned paths:
-
-```text
-triana-labs/tests/adapter_acceptance/**
-triana-labs/tests/adapter_fixtures/**
-```
-
-The four test-owned files contain 27 collected black-box cases. The independent
-test author and orchestrator each reproduced valid RED:
-
-```text
-27 errors, all at the session-scoped precondition identifying only absent
-examples/hrai_v2/adapter.py and examples/hrai_v2/README.md
-```
-
-The aggregate SHA-256 over sorted repository-relative `shasum -a 256` lines is:
-
-```text
-ebd2274d8d09b51ec56e8d825bf16f69a9caebd4a799a287a9a3060fc02279a0
-```
-
-The orchestrator separately reproduced the unchanged prior suite as 118 passing
-tests, the prior acceptance/fixture aggregate
-`78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353`,
-and the architecture-test hash
-`a16c7ceea4d3f8a2cdb594019efbbeb1e9c05d758c552a1dd282168167b943b2`.
-
-The freeze above is now historical: implementation commit `5d90662` reached
-GREEN only through whole-file formatter suppression and 35 overlong lines.
-Normal Ruff formatting produced 420 counted lines; an implementation-author
-data-driven refactor still produced 324. The orchestrator rejected that result
-as unreadable and the implementation author independently recommended against
-shipping it. LABS-02 therefore removes non-mapping manifest/hash machinery and
-exhaustive validation of ignored source fields rather than raising or gaming
-the 200-line ceiling. A first narrowed readable implementation still measured
-214 lines. The final mapping-only correction also removes duplicated nonfatal
-terminal logging and the production-grade atomic-directory promise; it keeps
-safe fatal refusal, no-overwrite behavior, owned cleanup, and exact output.
-The same independent test author must correct only the affected expectations,
-reproduce RED against `5d90662`, and provide a new hash and freeze before
-implementation resumes.
-
-Reserved orchestrator adversarial checks, not disclosed as literal fixtures to
-the implementation author, cover:
-
-- a successful run under a socket-blocking `sitecustomize` to detect network
-  access;
-- a rejected private marker absent from stdout, stderr, and safe artifacts;
-- symlink/directory and exact whole-file resource refusal with no output;
-- copying only `adapter.py` to a temporary directory and running it outside the
-  repository to prove the standard-library/copyable boundary;
-- regeneration of the five canonical Observer hashes and source/clean-wheel
-  acceptance of the adapter's canonical PreviewTrace output.
-
-### 9.2 Narrowed acceptance freeze
-
-The corrected narrowed acceptance is frozen at commit `04d16e2`, superseding
-the broader freeze `16f7b6b`. It retains 27 black-box cases and changes only
-the two acceptance modules; both synthetic fixture files remain byte-identical.
-
-The independent test author and orchestrator each reproduced valid RED against
-the rejected implementation `5d90662`:
-
-```text
-12 failed, 15 passed
-```
-
-The 12 failures are exhaustively attributable to the four intentional narrowed
-differences: stale third manifest output, stale receipt shape, stale rejection
-of ignored exporter fields, and whole-file formatter suppression. There are no
-syntax, import, setup, environment, or fixture-oracle failures. The previous
-118 tests remain green.
-
-The new aggregate SHA-256 over all four test-owned files is:
-
-```text
-10149a2a6ad8ce50caa2f77155e95b88638b62a8f9c9637dc1ea9e411b9b0104
-```
-
-This aggregate and commit are the only acceptance freeze authorized to judge
-the implementation correction. The implementation author may change only the
-same two example files and must not edit tests or fixtures.
-
-The freeze above is historical and superseded by the final mapping-only freeze
-below.
-
-### 9.3 Final mapping-only acceptance freeze
-
-The final corrected acceptance is frozen at commit `c39ae8e`, superseding the
-affected channel and publication expectations in `04d16e2`. It contains 28
-black-box cases and changes only the same two acceptance modules; both synthetic
-fixture files remain byte-identical.
-
-The independent test author and orchestrator each reproduced valid RED against
-the rejected implementation `5d90662`:
-
-```text
-20 failed, 8 passed
-```
-
-The failures are exhaustively attributable to stale nonfatal stderr events,
-stale four-field fatal events, the previously identified ignored-field and
-formatter-suppression behavior, and no unrelated setup or fixture failure. An
-OS-level file-size limit independently proves exit 7 removes only the adapter's
-new output and preserves a caller-owned sibling without adding a production
-test seam. The previous 118 tests remain green.
-
-The final aggregate SHA-256 over all four test-owned files is:
-
-```text
-99cf8455d81aebfb84c30beb9a672bb3f795bb30f67734fd39e11aba4dcde66c
-```
-
-Commit `c39ae8e` and this aggregate are the only acceptance freeze authorized
-to judge the final implementation. The implementation author may change only
-`examples/hrai_v2/adapter.py` and `examples/hrai_v2/README.md`.
-
-## 10. Verification and immutable prior evidence
-
-Prior acceptance/fixture aggregate remains:
-
-```text
-78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353
-```
-
-Prior architecture test hash remains:
-
-```text
-a16c7ceea4d3f8a2cdb594019efbbeb1e9c05d758c552a1dd282168167b943b2
-```
-
-The canonical Observer artifact hashes must remain:
-
-```text
-corpus_profile.json      6d6c8d38dae3b7fb4d5580153e7fe1f77f8b9104b6bb28e0f5234c9d30d52146
-corpus_profile.md        4ede1203e02462d870865abcefdf277c1e24b2bfa16cc5785b42eaf7cc1419c6
-manifest.json            7a14709fd10373beaa2da842c869988f1d976ddeae34b46501f6d8930fa7e808
-normalized_traces.jsonl b294d8b0bc9dd5fe8e449015b1d9ef4e72cb815260d88cda394db1bc9fde0447
-rejected_traces.jsonl   c36c32c1adce137a6c6765823fbf271005df64d04547ad9fe17f7ad6c264e98f
-```
-
-Frozen commands before worker start (the `uv run` commands execute with
-`triana-labs/` as their working directory):
-
-```text
-./scripts/verify-governance.sh --working-tree
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache uv run --locked ruff format --check src tests examples
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache uv run --locked ruff check src tests examples
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache uv run --locked mypy src examples
-UV_CACHE_DIR=/private/tmp/triana-labs-uv-cache uv run --locked pytest tests -q
-triana-labs/scripts/verify.sh
-```
-
-The versioned verification script is extended only by the orchestrator after
-GREEN to execute the canonical adapter fixture, feed its PreviewTrace file into
-source and clean-wheel Observer commands, compare exact outputs, enforce prior
-hashes, and inspect package contents. The example need not ship in the wheel;
-the test must make that packaging fact explicit.
-
-## 11. Abort conditions and debugging
-
-Workers stop before changing a frozen contract, existing behavior, package
-surface, dependency, or unowned file. Any ambiguity about HRAI source meaning,
-especially harness completion versus agent outcome, returns to the
-orchestrator. No permissive fallback, unknown-field dropping, role repair,
-content guessing, or retry-to-green is permitted.
-
-Every debugging iteration records the repository's one-hypothesis template.
-Falsified changes are removed before the next hypothesis.
-
-## 12. Exit gate and structured handoff
-
-LABS-02 exits only when:
-
-- test-author RED is independently reproduced and frozen before implementation;
-- implementation touches only its two owned example files;
-- new tests pass without changing test-owned paths;
-- all previous 118 tests and exact test hashes remain unchanged;
-- all five canonical Observer hashes remain unchanged;
-- adapter output is independently byte-checked and accepted by the unchanged
-  source and installed-wheel Observer;
-- mixed input accounting, safe rejections, synthetic refusal, no-overwrite and
-  owned write-failure cleanup,
-  repeatability, no-network behavior, and line ceiling are verified;
-- source provenance and clean reimplementation are recorded;
-- actual diff and dependencies reconcile exactly with this budget;
-- Corpus Intelligence, real data, SDK, OTel, hosted ingestion, and UI remain
-  unimplemented.
-
-Every worker and the orchestrator reports:
-
-```text
-What changed:
-Why each changed file was necessary:
-Change-budget reconciliation:
-What was verified (exact commands and artifacts):
-What remains unverified:
-Assumptions made:
-Unexpected findings:
-Dependencies added and why:
-Out-of-scope problems deliberately left alone:
-Known risks or uncertainty:
-Human action still required:
-```
-
-## 13. Explicit non-goals
-
-- real/local-sensitive trace support, redaction, authorization, or egress;
-- an HRAI product integration or stable `triana` adapter command;
-- generic adapters, SDKs, plugins, OTel, Langfuse, HTTP, or hosted ingestion;
-- stdin/streaming or direct in-process Observer invocation;
-- source format repair, inference, enrichment, or semantic interpretation;
-- Corpus Intelligence, cases, panels, execution, comparison, reports, or UI;
-- any change to LABS-01, `triana-core`, frozen V1 contracts, dependencies, or
-  canonical artifact bytes.
-
-## 14. Completion evidence
-
-LABS-02 completed on branch `codex/labs-02-reference-adapter` with production
-commits `c315ef0` and `ebf7417` and orchestrator gate commit `b1b917d`.
-
-- independent mapping-only acceptance: 28 passing cases at frozen test commit
-  `c39ae8e`, aggregate
-  `99cf8455d81aebfb84c30beb9a672bb3f795bb30f67734fd39e11aba4dcde66c`;
-- orchestrator-reserved adapter boundary: five passing cases covering blocked
-  network access, private-marker non-emission, non-regular and 16 MiB input
-  refusal, execution of a copied standalone script, and safe CLI refusal;
-- complete suite: 151 passing tests, including the prior 118 unchanged tests;
-- adapter size: exactly 200 nonblank/noncomment lines, normally formatted,
-  zero lines over 100 characters, standard library only;
-- final repository verification: GREEN at
-  `/private/tmp/triana-labs-verify.CcyH1H`, including Ruff, mypy, sdist/wheel,
-  clean install, source and installed-wheel Observer acceptance of adapter
-  output, and confirmation that the standalone example is not packaged;
-- all five frozen Observer artifact hashes remain exactly those in section 10;
-- no dependency, package/core contract, SDK, OTel, real-data path, hosted
-  ingestion, Corpus Intelligence, case generation, or UI change occurred.
-
-The checkpoint proves one clean, synthetic HRAI-v2 mapping can produce
-Observer-usable PreviewTrace JSONL within the M3.5 line ceiling. It does not
-prove stranger installation, customer trace compatibility, or product demand.
+Every role reports: what changed; why each file was necessary; budget
+reconciliation; exact verification and artifacts; unverified work;
+assumptions; unexpected findings; dependencies; deliberately excluded
+problems; known risks; and human action required, using `none` explicitly.
