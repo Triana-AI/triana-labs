@@ -134,11 +134,33 @@ handoff that separates verified facts, unverified work, assumptions, and
 uncertainty.
 
 The plan-first delivery decision is implemented in
-`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`. Before any worker edits
-Labs code, the orchestrator replaces the historical Slice 0A packet with the
-M0A source/provenance and safe-rerun preparation contract. The canonical plan
-defines the complete edge-case register, slice ordering, owner gates,
-artifacts, acceptance conditions, and final deliverable.
+`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`. LABS-01 replaced the
+historical packet and shipped the first component at `92f65a1` under an
+independent 106-case acceptance freeze plus six orchestrator-reserved
+adversarial cases. The current packet records the exact edge cases, hashes,
+role handoffs, generated evidence, and exit gate.
+
+Current component checkpoint:
+
+```text
+SYNTHETIC PreviewTrace JSONL
+  → strict Trace Observer
+  → normalized_traces.jsonl
+  → rejected_traces.jsonl
+  → corpus_profile.json
+  → corpus_profile.md
+  → manifest.json
+```
+
+Observed canonical result: five physical lines, three accepted, two rejected,
+and two mechanically eligible for later case generation. The Observer does not
+derive language, distress, personas, intents, cases, execution, comparison, or
+findings. Real/local-sensitive traces remain refused.
+
+No next implementation slice is authorized in this checkpoint. The next
+product discussion is the Corpus Intelligence input/output and quality
+contract; it must receive its own packet, independent test author, change
+budget, and owner review before code.
 
 The frozen product component flow is:
 

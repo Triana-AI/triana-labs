@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **ACCEPTANCE RE-FROZEN AT `85ee978`; IMPLEMENTATION AUTHORIZED**
+Status: **COMPLETE — IMPLEMENTATION `92f65a1`; 112 TESTS GREEN**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -861,6 +861,78 @@ LABS-01 is complete only when:
 - actual changed files and dependencies reconcile with the budget;
 - no unsupported product claim is added;
 - decision memory is complete.
+
+### 15.1 Observed exit evidence
+
+Implementation commit: `92f65a1`
+
+Corrected independent acceptance freeze: `85ee978`
+
+Frozen acceptance/fixture aggregate:
+
+```text
+78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353
+```
+
+The versioned command `triana-labs/scripts/verify.sh` observed:
+
+```text
+governance: passed
+Ruff format and lint: passed
+strict mypy: passed
+independent acceptance: 106 passed
+orchestrator adversarial: 6 passed
+total: 112 passed
+fresh-process artifact repeatability: byte-identical
+sdist and wheel: built
+clean CPython 3.13.14 wheel install: passed
+source/installed help parity: passed
+source/installed canonical artifact parity: byte-identical
+```
+
+Final retained evidence root:
+
+```text
+/private/tmp/triana-labs-verify.oLgULS
+```
+
+Canonical artifact paths:
+
+```text
+/private/tmp/triana-labs-verify.oLgULS/first/output/manifest.json
+/private/tmp/triana-labs-verify.oLgULS/first/output/normalized_traces.jsonl
+/private/tmp/triana-labs-verify.oLgULS/first/output/rejected_traces.jsonl
+/private/tmp/triana-labs-verify.oLgULS/first/output/corpus_profile.json
+/private/tmp/triana-labs-verify.oLgULS/first/output/corpus_profile.md
+```
+
+Observed canonical result:
+
+```text
+5 input lines
+3 accepted traces
+2 rejected traces
+2 case-generation eligible traces
+COMPLETED_WITH_REJECTIONS
+```
+
+Recommended code-reading order:
+
+1. `triana-labs/src/triana_labs/contracts/traces.py`
+2. `triana-labs/src/triana_labs/observer/observe.py`
+3. `triana-labs/src/triana_labs/observer/render.py`
+4. `triana-labs/src/triana_labs/cli.py`
+5. `triana-labs/tests/acceptance/test_observe_success.py`
+6. `triana-labs/tests/acceptance/test_observe_rejections.py`
+7. `triana-labs/tests/acceptance/test_observe_safety.py`
+8. `triana-labs/tests/adversarial/test_observer_boundaries.py`
+
+Known bounded uncertainty: portable Python does not provide a universal atomic
+directory rename with no-replace semantics against a hostile process creating
+an empty target in the final check-to-rename interval. The implementation
+checks immediately before rename, never merges, preserves an existing
+non-empty target, and safely fails concurrent ordinary publication. No broader
+filesystem-locking or platform-specific syscall was added to this slice.
 
 ## 16. Structured uncertainty handoff
 

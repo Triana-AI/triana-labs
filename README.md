@@ -91,9 +91,39 @@ The first value moment is:
 ## Repository status
 
 The shared Slice 0A deterministic kernel is implemented in `triana-core/`.
-Triana Labs has an active charter and canonical execution plan but no Labs
-implementation yet. The first implementation action is to replace the
-historical `internal/SLICE_PACKET.md` with the exact M0A slice contract.
+Triana Labs now has its first executable component: the synthetic-only Trace
+Observer at implementation commit `92f65a1`. It validates a bounded local
+JSONL corpus, accounts for every physical line, identifies mechanically usable
+traces, and writes deterministic machine-readable and Markdown artifacts. It
+does not yet accept real/local-sensitive traces, generate cases, run agents,
+compare releases, or render HTML.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.
+
+## Run the first component
+
+The current command accepts only traces explicitly labeled `SYNTHETIC`:
+
+```bash
+cd triana-labs
+uv sync --locked --all-groups
+uv run --locked triana traces observe \
+  tests/fixtures/valid_all_events.jsonl \
+  --out /private/tmp/triana-observed
+```
+
+The new output directory contains:
+
+```text
+manifest.json
+normalized_traces.jsonl
+rejected_traces.jsonl
+corpus_profile.json
+corpus_profile.md
+```
+
+Use `./scripts/verify.sh` from `triana-labs/` to run governance, frozen-test
+integrity, formatting, lint, strict typing, all tests, deterministic
+repeatability, package builds, a clean CPython 3.13.14 wheel install, and
+installed-command parity.
