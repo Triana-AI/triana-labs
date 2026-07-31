@@ -337,7 +337,7 @@ Closed deterministic structure:
   "case_generation_eligible_count": 2,
   "event_kind_counts": {
     "ASSISTANT_MESSAGE": 2,
-    "SYSTEM_VISIBLE_MESSAGE": 0,
+    "SYSTEM_VISIBLE_MESSAGE": 2,
     "TERMINAL": 1,
     "TOOL_CALL": 1,
     "TOOL_RESULT": 1,
@@ -359,6 +359,22 @@ Closed deterministic structure:
   "distress_analysis": "NOT_EVALUATED"
 }
 ```
+
+The canonical mixed fixture behind these counts has:
+
+- accepted trace 1: `SYSTEM_VISIBLE_MESSAGE`, `USER_MESSAGE`,
+  non-final `ASSISTANT_MESSAGE`, `TOOL_CALL lookup_order`, successful
+  `TOOL_RESULT`, and `TERMINAL SUCCESS`;
+- accepted trace 2: `USER_MESSAGE` followed by final
+  `ASSISTANT_MESSAGE`;
+- accepted trace 3: one `SYSTEM_VISIBLE_MESSAGE`, making it structurally valid
+  but mechanically ineligible;
+- rejected line 4: malformed JSON;
+- rejected line 5: an orphan tool result producing
+  `IMPOSSIBLE_TRACE_STATE`.
+
+The accepted universe therefore contains exactly nine events. This explicit
+construction is normative for the five-line acceptance fixture.
 
 Tool-name keys sort by UTF-8 bytes. Closed event and terminal maps include zero
 counts. Rejection counts include only codes present and sort by code.
