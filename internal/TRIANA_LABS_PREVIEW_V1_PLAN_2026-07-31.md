@@ -405,6 +405,56 @@ interfaces. Labs must not edit or reinterpret the five V1 contracts. If the
 needed public kernel seam does not exist, the slice stops for a bounded shared
 infrastructure decision instead of reaching into private internals.
 
+### 7.1 Frozen product component map
+
+The active product is **Triana Labs**. The user-facing CLI command is
+`triana`; the active Python package namespace is `triana_labs`. The suspended
+proprietary product line is **Triana Release Review**. `triana-core` is the
+frozen internal integrity kernel shared by the product lines, not a
+customer-facing product name. Its existing package and license boundary are
+not silently changed; public distribution requires an explicit migration or
+licensing slice.
+
+```mermaid
+flowchart LR
+    A["Trace Observer"] --> B["Corpus Intelligence"]
+    B --> C["Case Generator"]
+    C --> D["Panel Builder"]
+    D --> E["F0 Paired Runner"]
+    E --> F["F1 Next-Turn Generator"]
+    E --> G["Evidence Engine"]
+    F --> G
+    G --> H["Local Report"]
+    H --> I["Human Rulings (after M3.5)"]
+```
+
+The component boundaries and inspectable outputs are:
+
+| Component | Responsibility | Primary inspectable output |
+|---|---|---|
+| Trace Observer | Normalize authorized traces and state what evidence is usable, rejected, redacted, or missing | `corpus/manifest.json`, `normalized_traces.jsonl`, `rejected_traces.jsonl`, `corpus_profile.json` |
+| Corpus Intelligence | Derive supported clusters, personas, intents, turn policies, distress signals, support counts, ambiguity, fidelity, and lineage | `intelligence/clusters.json`, `personas/*.json`, `intents/*.json`, `turn_policies/*.json`, `derivation_report.json` |
+| Case Generator | Convert observed prefixes, derived assets, failure anchors, scenario truth, and optional change context into executable candidate situations | `cases/case_candidates.jsonl` |
+| Panel Builder | Select a bounded, stratified, diverse, identity-stable case set and explain inclusion/exclusion | `panels/panel.json`, `panels/panel.html` |
+| F0 Paired Runner | Execute baseline and candidate freshly for three paired trials against identical historical prefixes | `runs/<run-id>/attempts.jsonl`, `execution_summary.json` |
+| F1 Next-Turn Generator | Continue divergent cases with corpus-grounded labeled user simulation and measure trajectory diversity | `continuations.jsonl`, `trajectory_clusters.json`, `diversity_report.json` |
+| Evidence Engine | Own field outcomes, pass^3 stability, comparability, alignment, denominators, variation, gaps, and finding classification | `runs/<run-id>/report.json` |
+| Local Report | Render the evidence artifact without recalculating product logic | `runs/<run-id>/report.html` |
+| Human Rulings | After M3.5, persist only human-confirmed meaning across compatible runs | append-only ruling artifacts |
+
+The intelligence layer has two explicit parts:
+
+1. **Offline corpus intelligence:** observes the trace corpus and generates
+   supported behavioral assets and candidate cases.
+2. **Runtime continuation intelligence:** generates the next realistic user
+   turn only after an F0 divergence.
+
+Deterministic code owns corpus membership, support counts, asset/case identity,
+lineage, selection, denominators, comparability, stability, fidelity, and
+diversity arithmetic. An LLM may propose semantic labels, case descriptions,
+scenario-truth candidates, and user turns; it cannot invent support, silently
+select the panel, or create accepted truth.
+
 Every portable artifact has:
 
 - `artifact_kind` and schema version;
@@ -421,12 +471,12 @@ Every portable artifact has:
 The intended CLI surface is:
 
 ```text
-triana-labs traces validate <jsonl-or-manifest>
-triana-labs corpus derive <trace-manifest> --out <directory>
-triana-labs panel build <trace-manifest> --assets <directory> --out <panel>
-triana-labs preview run <config>
-triana-labs preview report <run-manifest> --out <directory>
-triana-labs preview demo
+triana traces validate <jsonl-or-manifest>
+triana corpus derive <trace-manifest> --out <directory>
+triana panel build <trace-manifest> --assets <directory> --out <panel>
+triana preview run <config>
+triana preview report <run-manifest> --out <directory>
+triana preview demo
 ```
 
 The CLI is the primary setup and execution surface. The human-facing product
@@ -640,6 +690,48 @@ Every implementation slice follows the three-role serial protocol:
 orchestrator entry gate, independent test author with valid RED, orchestrator
 test freeze, independent implementation author, and orchestrator exit verdict.
 The exact slice packet controls code; this plan controls sequencing and exits.
+
+### First-alpha review checkpoints
+
+The first alpha executes through product-component checkpoints, not isolated
+plumbing layers. The milestone labels below remain evidence gates, but the
+review order is:
+
+1. **Observe the corpus:** produce the manifest, normalized/rejected traces,
+   evidence profile, redaction facts, and exact refusal counts.
+2. **Derive corpus intelligence:** produce inspectable clusters, personas,
+   intents, turn policies, support counts, ambiguity, lineage, and fidelity.
+3. **Generate candidate cases:** produce executable cases with source
+   prefixes, asset references, scenario truth, declared outcome projection,
+   baseline status, tool/world contract, and fidelity.
+4. **Build the panel:** produce a human-inspectable panel showing coverage,
+   duplicate clusters, selection reasons, exclusion reasons, and identities.
+5. **Run F0:** produce an append-only paired attempt ledger for baseline and
+   candidate at k=3.
+6. **Run bounded F1:** for divergent cases only, produce labeled
+   continuations, provider lineage, metering, and diversity evidence.
+7. **Calculate and render evidence:** produce deterministic `report.json` and
+   a local `report.html` with paired transcripts and explicit gaps.
+
+Each checkpoint ends with a small review handoff: commit hash, changed files,
+recommended code-reading order, production/test line counts, exact reproduction
+command, output artifact paths, verification evidence, unverified behavior,
+and the next checkpoint proposal. The orchestrator stops for owner review
+before expanding to the next component.
+
+The bounded first-alpha target is:
+
+- 25–100 authorized source traces;
+- 5–10 generated candidate cases;
+- 3–5 selected panel cases;
+- k=3 paired F0 trials per arm;
+- F1 on at most two divergent cases;
+- one provider/model and one subprocess agent protocol;
+- one machine-readable report and one generated local HTML report.
+
+This bound is an alpha scope ceiling, not permission to fabricate favorable
+coverage. Small, homogeneous, missing, unsafe, or unusable evidence remains
+visible and may reduce the produced panel.
 
 ### P0 — planning and authority alignment
 
@@ -890,7 +982,7 @@ Inputs: publication-safe synthetic corpus and all M1–M3 machinery.
 
 Outputs:
 
-- `triana-labs preview demo`;
+- `triana preview demo`;
 - install, quickstart, adapter, runner, privacy, report, and troubleshooting
   documentation;
 - agent-readable setup instructions and a copyable integration task;

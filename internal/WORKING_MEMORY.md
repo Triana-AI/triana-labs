@@ -140,6 +140,27 @@ M0A source/provenance and safe-rerun preparation contract. The canonical plan
 defines the complete edge-case register, slice ordering, owner gates,
 artifacts, acceptance conditions, and final deliverable.
 
+The frozen product component flow is:
+
+```text
+Trace Observer
+  → Corpus Intelligence
+  → Case Generator
+  → Panel Builder
+  → F0 Paired Runner
+  → bounded F1 Next-Turn Generator
+  → Evidence Engine
+  → Local Report
+  → Human Rulings only after M3.5
+```
+
+The first alpha is reviewed at each component artifact rather than hiding
+value behind plumbing milestones. It is bounded to 25–100 traces, 5–10
+generated cases, 3–5 selected cases, k=3 paired F0 trials, F1 on at most two
+divergent cases, one provider/model, one subprocess protocol, and local
+machine-readable plus HTML reports. Exact outputs and authority boundaries are
+frozen in the canonical plan.
+
 1. **M0 — honest demo data:** fresh HRAI baseline/candidate/control data,
    current trace schema, k=3, spend cap, redaction and self-agreement evidence.
 2. **M1 — public input boundary:** PreviewTrace, external adapter and runner

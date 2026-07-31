@@ -11,6 +11,11 @@ the human reviews a generated local HTML report backed by machine-readable
 evidence. Initial user acquisition is a bounded five-team design-partner
 cohort, not a hosted account or trace-upload product.
 
+The active product and package namespace are Triana Labs and `triana_labs`;
+the user-facing command is `triana`. Triana Release Review is the suspended
+proprietary product line, while `triana-core` remains its frozen shared
+integrity kernel pending an explicit public-distribution boundary decision.
+
 The prior Release Review V1 is suspended, not deleted. Its implemented
 deterministic contract kernel remains shared infrastructure in `triana-core/`.
 
