@@ -126,6 +126,13 @@ falsifiable hypothesis per debugging iteration, and ends with a structured
 handoff that separates verified facts, unverified work, assumptions, and
 uncertainty.
 
+The plan-first delivery decision is implemented in
+`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`. Before any worker edits
+Labs code, the orchestrator replaces the historical Slice 0A packet with the
+M0A source/provenance and safe-rerun preparation contract. The canonical plan
+defines the complete edge-case register, slice ordering, owner gates,
+artifacts, acceptance conditions, and final deliverable.
+
 1. **M0 — honest demo data:** fresh HRAI baseline/candidate/control data,
    current trace schema, k=3, spend cap, redaction and self-agreement evidence.
 2. **M1 — public input boundary:** PreviewTrace, external adapter and runner

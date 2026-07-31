@@ -9,7 +9,7 @@ Owner: Akarsh
 The governing specification for Triana Labs work. It exists because the
 suspended V1 specification (`docs/PRODUCT.md`) and Labs cannot share one
 frozen boundary. Precedence for Labs work: this charter → the append-only
-`internal/DECISION_LOG.md` → the current plan
+`internal/DECISION_LOG.md` → the current canonical execution plan
 (`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`). Repository governance
 (`AGENTS.md`, provenance ledger, decision-memory hooks) applies unchanged.
 

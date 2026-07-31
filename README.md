@@ -1,14 +1,13 @@
 # Triana
 
-Triana produces a Release Review for an AI agent change. It binds the exact
-baseline-to-candidate change to one human-approved Release Obligation, combines
-its production-derived Protected Case with available customer-owned eval
-results, applies a customer-approved Release Policy, and presents an advisory
-recommendation with permanent evidence.
+Triana Labs Preview is the active build surface. It takes production-derived
+traces, builds a grounded case panel, executes an explicit baseline and
+candidate against the same historical prefixes, continues post-divergence
+only through labeled simulation, and reports stable paired behavioral
+differences and explicit gaps. It does not decide whether to ship.
 
-Production issue discovery is the acquisition path. Production replay is one
-check mechanism. The human-facing product is the Release Review. The human,
-not Triana, makes the Release Decision.
+The prior Release Review V1 is suspended, not deleted. Its implemented
+deterministic contract kernel remains shared infrastructure in `triana-core/`.
 
 This is a clean-room repository. It has no Agentagon source code, Git history,
 tests, fixtures, prompts, schemas, or generated artifacts. Product context was
@@ -18,22 +17,26 @@ code from Akarsh's Kairos repositories only through the provenance process in
 
 ## Read this first
 
-1. [`docs/PRODUCT.md`](docs/PRODUCT.md) — the frozen self-serve V1.
-2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — execution and trust
+1. [`triana-labs/CHARTER.md`](triana-labs/CHARTER.md) — active Labs product
+   authority.
+2. [`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`](internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md)
+   — canonical execution plan, deliverables, edge cases, gates, and exits.
+3. [`internal/DECISION_LOG.md`](internal/DECISION_LOG.md) — append-only
+   accepted decisions.
+4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — shared execution and trust
    boundaries.
-3. [`docs/FOUNDER_CONTEXT.md`](docs/FOUNDER_CONTEXT.md) — why this wedge,
-   competitive objection, and unresolved risks.
-4. [`internal/WORKING_MEMORY.md`](internal/WORKING_MEMORY.md) — current
-   hypotheses, proof plan, and immediate work.
-5. [`docs/PROVENANCE.md`](docs/PROVENANCE.md) — what may and may not enter this
-   repository.
-6. [`internal/DECISION_LOG.md`](internal/DECISION_LOG.md) — append-only accepted
-   decisions.
-7. [`docs/ENGINEERING.md`](docs/ENGINEERING.md) — shared implementation,
+5. [`docs/ENGINEERING.md`](docs/ENGINEERING.md) — shared implementation,
    verification, decision-memory, Git, and review policy.
-8. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup and daily workflow.
-9. [`internal/SLICE_PACKET.md`](internal/SLICE_PACKET.md) — the live,
-   role-separated contract for the current implementation slice.
+6. [`internal/WORKING_MEMORY.md`](internal/WORKING_MEMORY.md) — active
+   hypotheses, proof plan, and immediate work.
+7. [`docs/PROVENANCE.md`](docs/PROVENANCE.md) — what may and may not enter this
+   repository.
+8. [`docs/PRODUCT.md`](docs/PRODUCT.md) — the suspended self-serve V1.
+9. [`docs/FOUNDER_CONTEXT.md`](docs/FOUNDER_CONTEXT.md) — historical wedge,
+   competitive objection, and unresolved risks.
+10. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup and workflow.
+11. [`internal/SLICE_PACKET.md`](internal/SLICE_PACKET.md) — historical Slice
+    0A packet; it must be replaced before any Labs implementation worker starts.
 
 Working product instruments:
 
@@ -48,60 +51,39 @@ Both Codex and Claude Code use the same operating contract:
 [`AGENTS.md`](AGENTS.md). Claude Code enters through [`CLAUDE.md`](CLAUDE.md),
 which points to that shared source instead of duplicating rules.
 
-## The V1 loop
+## The active Labs loop
 
 ```text
-FREE ACQUISITION
-
-read-only traces or local trace export
+production-derived traces
         ↓
-mechanically suspicious trace candidates
+redaction, authorization, and versioned PreviewTrace adaptation
         ↓
-human selects one known production incident
+corpus-derived personas, intents, turn policies, and grounded case panel
         ↓
-Triana proposes an exact protected case
+F0 shared-prefix baseline/candidate resampling with paired trials
         ↓
-human edits, approves, and promotes it
+labeled F1 simulated continuation after divergence
         ↓
-qualification proves it is replayable and measurable
-
-RECURRING RELEASE REVIEW
-
-declared Release Change + human-approved Release Obligation
+typed outcomes, pass^3 stability, comparability, and explicit gaps
         ↓
-approved Protected Case + optional customer eval command
+divergence-first report with paired transcripts and fidelity
         ↓
-approved baseline and PR candidate run in customer CI
-        ↓
-required and received deterministic + customer-owned evidence
-        ↓
-immutable Release Evidence Record
-        ↓
-Release Policy → advisory PASS / REVIEW / BLOCK
-        ↓
-Release Review in the PR and on a permanent page
-        ↓
-human approves, holds, or records an exception
-        ↓
-append-only Decision Attestation links the human outcome
+human confirms meaning; a later run may reuse that ruling after M3.5
 ```
 
-The first recurring value moment is not a trace dashboard or another eval
-score. It is:
+The first value moment is:
 
-> This approved production failure passed 10/10 on the approved baseline and
-> 6/10 on this PR. Recommendation: BLOCK. Here are the failed executions and
-> exact evidence. The release owner can now approve, hold, or document an
-> exception.
+> Baseline reliably did A and candidate reliably did B under the same
+> historical prefix (pass^3 on both arms). Here is the first divergence, every
+> paired transcript, the evidence fidelity, and every gap. A human decides
+> what the difference means.
 
 ## Repository status
 
-No production implementation exists yet. The first build target is a
-record-first vertical kernel: versioned contracts and verification, honest A/A
-and planted A/B comparison with policy, then one usable Release Review page by
-the third slice. Real trace ingestion and paired customer execution replace
-the fixture boundaries after the record and UI are inspectable. This grows
-into M0: one public reference agent, three protected cases, reproducible
-records, and a static evidence page. Triana itself remains closed-source.
+The shared Slice 0A deterministic kernel is implemented in `triana-core/`.
+Triana Labs has an active charter and canonical execution plan but no Labs
+implementation yet. The first implementation action is to replace the
+historical `internal/SLICE_PACKET.md` with the exact M0A slice contract.
 
-No open-source license is granted.
+Labs is intended for open-source distribution only after provenance, privacy,
+egress, and license gates pass. No open-source license is granted yet.
