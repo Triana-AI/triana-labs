@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **ACCEPTANCE FROZEN AT `7237ed8`; IMPLEMENTATION AUTHORIZED**
+Status: **ACCEPTANCE RE-FROZEN AT `85ee978`; IMPLEMENTATION AUTHORIZED**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -791,7 +791,8 @@ Before the test author starts:
 
 ### 14.1 Independently frozen acceptance
 
-The independent black-box acceptance contract is frozen at commit `7237ed8`.
+The corrected independent black-box acceptance contract is frozen at commit
+`85ee978`.
 The implementation author may read but must not edit:
 
 ```text
@@ -799,11 +800,11 @@ triana-labs/tests/acceptance/**
 triana-labs/tests/fixtures/**
 ```
 
-The test-owned universe is 11 files and 107 collected cases. The independent
+The test-owned universe is 11 files and 106 collected cases. The independent
 test author and orchestrator each reproduced the valid RED state:
 
 ```text
-100 failed, 7 passed, 0 errors
+100 failed, 6 passed, 0 errors
 ```
 
 All failures are missing public behavior from the deliberate
@@ -815,7 +816,7 @@ The SHA-256 of sorted project-relative `shasum -a 256` lines for all acceptance
 and fixture files is:
 
 ```text
-fe53330744d56ea60771873872cb237a18a2ba5cc6cac13cc5a7d8cab6d20880
+78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353
 ```
 
 The fixture-only aggregate under the same procedure is:
@@ -824,13 +825,18 @@ The fixture-only aggregate under the same procedure is:
 87d8610f7b92bb46c4322a4d03cb51e1c96a800ace80a96f4f0d75f93ad787c5
 ```
 
-The orchestrator rejected two defects before freeze—one Ruff import-order
-failure and one Hypothesis fixture health check—and returned both exclusively
-to the independent test author. Commit `7237ed8` contains the corrected,
-re-audited contract. Any later acceptance or fixture edit invalidates this
-freeze and requires a test-author correction, new hashes, reproduced RED or
-GREEN evidence as appropriate, and a new explicit freeze before its result can
-judge production.
+The orchestrator rejected two defects before the initial freeze—one Ruff
+import-order failure and one Hypothesis fixture health check—and returned both
+exclusively to the independent test author. After initial freeze `7237ed8`, the
+implementation author found that a temporary scaffold sentinel permanently
+required `NOT_IMPLEMENTED` for the same valid behavior that final acceptance
+required to succeed. Production stopped with no edits. The independent test
+author removed only that obsolete sentinel, preserved both help checks and all
+product assertions, and reproduced corrected RED twice. Commit `85ee978`
+supersedes `7237ed8` as the acceptance freeze. Any later acceptance or fixture
+edit invalidates this freeze and requires a test-author correction, new
+hashes, reproduced RED or GREEN evidence as appropriate, and a new explicit
+freeze before its result can judge production.
 
 ## 15. Slice exit gate
 
