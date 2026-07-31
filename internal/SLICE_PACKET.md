@@ -756,7 +756,8 @@ The independent tester must encode every relevant row before valid RED.
 - multilingual and code-switched text preserved without invented language
   normalization;
 - malformed/tampered/stale manifests and artifacts, duplicate identities,
-  symlinks, nonregular files, invalid UTF-8, BOM, depth/size/line limits;
+  symlinks, nonregular files, invalid UTF-8, BOM, depth limits, and the exact
+  config/intelligence byte and single-line ceilings in the wire contract;
 - same trace ID with changed content and duplicate content under different IDs;
 - input reorder, fresh process repeat, seed change, and model/prompt change.
 

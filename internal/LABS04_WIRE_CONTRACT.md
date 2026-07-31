@@ -141,6 +141,35 @@ Its lowercase IDNA hostname must equal `allowed_endpoint_host`; “resolve” me
 URL host equality, not a DNS lookup. The request URL appends the exact
 `api_surface`. Redirects are disabled; any 3xx is `PROVIDER_REDIRECT_REFUSED`.
 
+### 3.1 Exact local input resource boundaries
+
+Resource checks use `lstat` size before reading and exact byte length after
+reading. A value equal to its ceiling is allowed; a value above it is
+`INPUT_TOO_LARGE(3)` before parsing, digest comparison, or provider work. A
+physical line is LF-delimited with the same final-LF accounting as the shipped
+Observer. Every strict JSON object file below is canonical compact JSON with
+exactly one LF-terminated physical line; more than one physical line is also
+`INPUT_TOO_LARGE(3)`. Missing final LF or noncanonical bytes within the resource
+ceiling fail the owning representation/integrity check, not a size check.
+
+| Local input | Maximum exact bytes | Maximum physical lines |
+|---|---:|---:|
+| authoring config | 65,536 | 1 |
+| intelligence `manifest.json` | 1,048,576 | 1 |
+| intelligence `clusters.json` | 16,777,216 | 1 |
+| intelligence `derivation_report.json` | 1,048,576 | 1 |
+| intelligence `personas/index.json` | 1,048,576 | 1 |
+| intelligence `intents/index.json` | 1,048,576 | 1 |
+| intelligence `turn_policies/index.json` | 1,048,576 | 1 |
+
+The Observer bundle is read only through the unchanged shipped
+`triana_labs.intelligence.input.read_bundle`; its frozen manifest/artifact byte,
+1,000-trace-line, and one-MiB trace-line limits and typed reasons are inherited
+literally rather than reimplemented or widened. LABS-04 adds no auto-detection,
+alternate reader, schema fallback, or second input attempt. Intelligence
+artifact size/line checks precede artifact digest checks, so even a manifest
+that correctly hashes an over-limit artifact refuses `INPUT_TOO_LARGE(3)`.
+
 ## 4. Evidence selection and provider projection
 
 The linked Observer/intelligence bundles are verified exactly as frozen in the

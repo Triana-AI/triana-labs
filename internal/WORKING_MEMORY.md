@@ -353,9 +353,14 @@ behavioral failures plus one normative-schema pass, all 188 prior tests green,
 and aggregate sorted-content SHA-256
 `98eab12ef1d85fe1fea18150b729fcc6cf38530cb482a996df80dcc5b92457de`.
 
-The immutable RED contract is frozen and production authorship is authorized
-only within the packet's bounded implementation paths. Once production begins,
-the tester may attack the frozen contract in an isolated parallel worktree.
-Mechanical GREEN may be produced unattended, but the product checkpoint remains
+The first immutable RED freeze was paused immediately after production began
+when the isolated tester found that `INPUT_TOO_LARGE` lacked exact config and
+intelligence artifact byte/line ceilings. Production did not choose a value.
+The wire correction fixes 64-KiB config, 1-MiB manifest/report/index, 16-MiB
+cluster, and single-line canonical JSON ceilings while literally inheriting the
+unchanged Observer reader limits. The test author must add the missing black-box
+cases and Codex must explicitly re-freeze RED before production resumes.
+Mechanical GREEN may later be produced unattended, but the product checkpoint
+remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
 runtime, DeepEval, memory, UI, real-data support, or LABS-05 work is authorized.
