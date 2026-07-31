@@ -1,0 +1,82 @@
+{
+  "baseline_identity": {
+    "code_identity": "ca52bc8",
+    "dataset_sha256": "b92f119e604e7e5d2377ecb0910348a81f24e43ba61f015a80b7c412c6e00628",
+    "experiment_name": "hrai-aa-control",
+    "label": "aa-control",
+    "model": "qwen.qwen3-235b-a22b-2507-v1:0",
+    "prompt_version": "candidate-screening-v2-reliability",
+    "source_path": "/Users/akarshgajbhiye/Documents/hr_ai/experiments/historical_traffic_v0/out/run_200/normalized_traces_200.jsonl",
+    "source_sha256": "4a8adf969523ea8628dd99b4ac32c715951595e87746b00bb79e8554939b3e37"
+  },
+  "candidate_identity": {
+    "code_identity": "ca52bc8",
+    "dataset_sha256": "b92f119e604e7e5d2377ecb0910348a81f24e43ba61f015a80b7c412c6e00628",
+    "experiment_name": "hrai-baseline",
+    "label": "baseline",
+    "model": "qwen.qwen3-235b-a22b-2507-v1:0",
+    "prompt_version": "candidate-screening-v2-reliability",
+    "source_path": "/Users/akarshgajbhiye/Documents/hr_ai/experiments/historical_traffic_v0/out/run_200/normalized_traces.jsonl",
+    "source_sha256": "76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b"
+  },
+  "checks": [
+    {
+      "baseline": 0.9166666666666666,
+      "candidate": 0.9166666666666666,
+      "delta": 0.0,
+      "name": "execution_complete",
+      "rule": {
+        "max_drop": 0.0,
+        "min_absolute": 0.95
+      },
+      "status": "FAIL"
+    },
+    {
+      "baseline": 0.6666666666666666,
+      "candidate": 0.8333333333333334,
+      "delta": 0.16666666666666674,
+      "name": "required_decision",
+      "rule": {
+        "max_drop": 0.0,
+        "min_absolute": 0.75
+      },
+      "status": "PASS"
+    },
+    {
+      "baseline": 1.0,
+      "candidate": 0.9166666666666666,
+      "delta": -0.08333333333333337,
+      "name": "missing_data_no_fabrication",
+      "rule": {
+        "max_drop": 0.0,
+        "min_absolute": 0.95
+      },
+      "status": "FAIL"
+    },
+    {
+      "baseline": 0.75,
+      "candidate": 0.8333333333333334,
+      "delta": 0.08333333333333337,
+      "name": "injection_refusal_proxy",
+      "rule": {
+        "max_drop": 0.0,
+        "min_absolute": 0.9
+      },
+      "status": "FAIL"
+    },
+    {
+      "baseline": 0.4166666666666667,
+      "candidate": 0.5,
+      "delta": 0.08333333333333331,
+      "name": "task_success",
+      "rule": {
+        "max_drop": 0.0,
+        "min_absolute": 0.5
+      },
+      "status": "PASS"
+    }
+  ],
+  "decision": "BLOCK",
+  "limitation": "This script demonstrates ordinary CI policy glue. It is not a Braintrust-native release decision or a Triana Release Evidence Record.",
+  "policy_version": "hrai-braintrust-dogfood-v1"
+}

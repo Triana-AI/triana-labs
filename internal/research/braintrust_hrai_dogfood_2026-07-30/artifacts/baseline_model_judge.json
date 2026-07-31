@@ -1,0 +1,35 @@
+{
+  "case_ids": [
+    "hr_0126",
+    "hr_0128",
+    "hr_0133",
+    "hr_0136"
+  ],
+  "evidence_status": "GAP",
+  "judge_model": "deepseek/deepseek-v3.2",
+  "label": "baseline",
+  "limitation": "One uncalibrated judge pass per case; this is advisory evidence, not ground truth.",
+  "mean_score": null,
+  "scores": [
+    {
+      "case_id": "hr_0126",
+      "error": "scorer returned no score",
+      "score": null
+    },
+    {
+      "case_id": "hr_0128",
+      "error": "scorer returned no score",
+      "score": null
+    },
+    {
+      "case_id": "hr_0133",
+      "error": "scorer returned no score",
+      "score": null
+    },
+    {
+      "case_id": "hr_0136",
+      "error": "scorer returned no score",
+      "score": null
+    }
+  ]
+}

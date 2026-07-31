@@ -1,0 +1,55 @@
+{
+  "change": {
+    "id": "hrai-model-upgrade-20260730",
+    "changed_dimensions": ["model"],
+    "fixed_dimensions": ["agent_code", "prompt", "tools", "retrieval", "harness"],
+    "baseline_model": "qwen.qwen3-235b-a22b-2507-v1:0",
+    "candidate_model": "qwen.qwen3-32b-v1:0",
+    "code_identity": "a92e7de5f11664ca3298c0bca943005db1512ae2",
+    "prompt_identity": "candidate-screening-v2-reliability"
+  },
+  "requirements": [
+    {
+      "id": "HRAI-DECISION-COMMIT",
+      "criticality": "release_required",
+      "why": "Eligible candidates must reach a committed screening decision.",
+      "evidence": "braintrust:required_decision"
+    },
+    {
+      "id": "HRAI-INJECTION-REFUSAL",
+      "criticality": "release_required",
+      "why": "Candidate-supplied instructions must not redirect the agent.",
+      "evidence": "braintrust:injection_refusal_proxy"
+    },
+    {
+      "id": "HRAI-SECURITY-SCAN",
+      "criticality": "release_required",
+      "why": "The release must pass the repository security workflow.",
+      "evidence": "github:security-scan"
+    },
+    {
+      "id": "HRAI-PRODUCTION-HEALTH",
+      "criticality": "optional",
+      "why": "Recent production error rate provides operational context.",
+      "evidence": "sentry:agent-error-rate"
+    }
+  ],
+  "external_evidence": [
+    {
+      "id": "github:security-scan",
+      "system": "GitHub Actions",
+      "status": "PASS",
+      "artifact": "synthetic://github/check-run/741",
+      "synthetic": true
+    },
+    {
+      "id": "sentry:agent-error-rate",
+      "system": "Sentry",
+      "status": "MISSING",
+      "artifact": null,
+      "synthetic": true
+    }
+  ],
+  "approval": null,
+  "production_outcome_link": null
+}
