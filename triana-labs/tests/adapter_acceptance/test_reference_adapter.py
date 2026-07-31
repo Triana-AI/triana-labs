@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import ast
 import os
+import resource
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -127,12 +129,23 @@ def assert_success_channels(result: Any, *, outcome: str) -> None:
     assert receipt["input_count"] == (
         receipt["accepted_count"] + receipt["rejected_count"]
     )
-    terminal = result.stderr_json()
-    assert terminal["input_count"] == receipt["input_count"]
-    assert terminal["accepted_count"] == receipt["accepted_count"]
-    assert terminal["rejected_count"] == receipt["rejected_count"]
-    assert terminal["outcome"] == outcome
-    assert "path" not in terminal
+    assert result.stderr == b""
+
+
+def assert_fatal_refusal(result: Any, *, reason_code: str | None = None) -> None:
+    assert result.stdout == b""
+    refusal = result.stderr_json()
+    assert set(refusal) == {"outcome", "reason_code"}
+    assert refusal["outcome"] == "REJECTED"
+    if reason_code is not None:
+        assert refusal["reason_code"] == reason_code
+
+
+def limit_child_file_writes() -> None:
+    """Force regular-file writes to fail without a production injection seam."""
+
+    signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+    resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
 
 
 @pytest.mark.parametrize(
@@ -153,6 +166,7 @@ def test_success_mappings_have_exact_independently_authored_bytes(
     result = run_adapter(FIXTURES / fixture, output)
 
     assert result.returncode == 0
+    assert result.stderr == b""
     assert_bundle(output)
     expected_bytes = compact_json(expected())
     assert (output / "preview_traces.jsonl").read_bytes() == expected_bytes
@@ -221,6 +235,7 @@ def test_ignored_finite_floats_map_but_mapped_floats_reject(
     result = run_adapter(source, output)
 
     assert result.returncode == 10
+    assert result.stderr == b""
     assert [
         item["trace_id"] for item in parse_jsonl(output / "preview_traces.jsonl")
     ] == ["finite-ignored"]
@@ -364,6 +379,7 @@ def test_raw_line_rejections(
     result = run_adapter(source, output)
 
     assert result.returncode == 10
+    assert result.stderr == b""
     assert [
         item["code"] for item in parse_jsonl(output / "rejected_source_traces.jsonl")
     ] == [code]
@@ -397,6 +413,7 @@ def test_duplicate_accepted_session_and_rejected_identity_accounting(
     result = run_adapter(source, output)
 
     assert result.returncode == 10
+    assert result.stderr == b""
     assert [
         item["trace_id"] for item in parse_jsonl(output / "preview_traces.jsonl")
     ] == ["reusable-session"]
@@ -425,6 +442,7 @@ def test_mixed_partial_success_preserves_source_order_and_exact_accounting(
     result = run_adapter(source, output)
 
     assert result.returncode == 10
+    assert result.stderr == b""
     assert [
         item["trace_id"] for item in parse_jsonl(output / "preview_traces.jsonl")
     ] == [
@@ -455,6 +473,7 @@ def test_empty_and_all_rejected_bundles_are_deterministic(
     for output in outputs:
         result = run_adapter(source, output)
         assert result.returncode == 10
+        assert result.stderr == b""
         assert (output / "preview_traces.jsonl").read_bytes() == b""
         bundles.append({path.name: path.read_bytes() for path in output.iterdir()})
     assert bundles[0] == bundles[1]
@@ -480,8 +499,7 @@ def test_synthetic_attestation_is_mandatory_before_input_read(
     output = tmp_path / "must-not-exist"
     result = run_adapter(tmp_path / "private-do-not-read.jsonl", output, extra=extra)
     assert result.returncode == 2
-    assert result.stdout == b""
-    assert result.stderr_json()["reason_code"] == "UNSUPPORTED_DATA_CLASS"
+    assert_fatal_refusal(result, reason_code="UNSUPPORTED_DATA_CLASS")
     assert b"private-do-not-read" not in result.stderr
     assert not output.exists()
 
@@ -499,13 +517,14 @@ def test_help_is_safe_and_has_no_terminal_event(tmp_path: Path) -> None:
     assert completed.stderr == b""
 
 
-def test_fatal_input_and_publication_failures_never_overwrite(
+def test_fatal_prewrite_and_existing_output_refusals_never_overwrite(
     run_adapter: Any, tmp_path: Path
 ) -> None:
     missing_output = tmp_path / "missing-output"
     missing = run_adapter(tmp_path / "missing.jsonl", missing_output)
     assert missing.returncode in {2, 3}
     assert not missing_output.exists()
+    assert_fatal_refusal(missing)
 
     existing = tmp_path / "existing"
     existing.mkdir()
@@ -515,7 +534,26 @@ def test_fatal_input_and_publication_failures_never_overwrite(
     assert collision.returncode == 2
     assert marker.read_text(encoding="utf-8") == "keep"
     assert {path.name for path in existing.iterdir()} == {"customer-owned.txt"}
-    assert not list(tmp_path.glob(".*existing*"))
+    assert_fatal_refusal(collision)
+
+
+def test_owned_output_is_removed_after_deterministic_write_failure(
+    run_adapter: Any, tmp_path: Path
+) -> None:
+    output = tmp_path / "owned-output"
+    sibling = tmp_path / "caller-owned.txt"
+    sibling.write_text("keep", encoding="utf-8")
+
+    result = run_adapter(
+        FIXTURES / "minimal_hrai_v2.jsonl",
+        output,
+        preexec_fn=limit_child_file_writes,
+    )
+
+    assert result.returncode == 7
+    assert not output.exists()
+    assert sibling.read_text(encoding="utf-8") == "keep"
+    assert_fatal_refusal(result)
 
 
 def test_total_line_limit_is_fatal_with_no_bundle(
@@ -527,6 +565,7 @@ def test_total_line_limit_is_fatal_with_no_bundle(
     result = run_adapter(source, output)
     assert result.returncode in {2, 3}
     assert not output.exists()
+    assert_fatal_refusal(result)
 
 
 def test_adapter_output_is_accepted_by_unchanged_observer(

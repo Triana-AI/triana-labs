@@ -6,7 +6,7 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -59,6 +59,7 @@ def run_adapter() -> Iterator[Any]:
         *,
         extra: tuple[str, ...] = ("--data-class", "SYNTHETIC"),
         env: Mapping[str, str] | None = None,
+        preexec_fn: Callable[[], None] | None = None,
     ) -> CommandResult:
         child_env = os.environ.copy()
         if env is not None:
@@ -76,6 +77,7 @@ def run_adapter() -> Iterator[Any]:
             env=child_env,
             check=False,
             capture_output=True,
+            preexec_fn=preexec_fn,
             timeout=30,
         )
         return CommandResult(completed.returncode, completed.stdout, completed.stderr)
