@@ -1,4 +1,9 @@
-"""Local orchestration for the synthetic-only LABS-01 Trace Observer."""
+"""Account for and publish a local synthetic PreviewTrace JSONL corpus.
+
+This is the corpus boundary between adapter-emitted JSONL and the five LABS-01
+artifacts. It owns files, physical lines, cross-line identity, counts, and atomic
+publication. Per-line byte/JSON/schema validation remains in ``contracts.traces``.
+"""
 
 from __future__ import annotations
 
@@ -29,7 +34,7 @@ _MAX_LINES = 1_000
 
 @dataclass(frozen=True)
 class ObserveFailure(Exception):
-    """Safe fatal refusal with a stable public reason and exit status."""
+    """Carry a safe fatal corpus refusal and its stable CLI exit status."""
 
     reason_code: str
     exit_code: int
@@ -37,7 +42,7 @@ class ObserveFailure(Exception):
 
 @dataclass(frozen=True)
 class ObserveResult:
-    """Completed corpus accounting and its user-facing outcome."""
+    """Hold completed corpus counts and the non-semantic CLI outcome."""
 
     input_count: int
     accepted_count: int
@@ -47,7 +52,16 @@ class ObserveResult:
 
 
 def observe(input_path: Path, output_path: Path) -> ObserveResult:
-    """Observe a bounded local synthetic corpus and atomically publish artifacts."""
+    """Account for every input line and atomically publish the five artifacts.
+
+    Fatal file/resource refusals raise :class:`ObserveFailure` without a target
+    directory. Per-line rejections remain evidence inside a completed bundle.
+    """
+
+    # Output refusal is checked before reading input so the command never performs
+    # corpus work when it cannot honor the new-directory/no-overwrite contract. Fatal
+    # boundary failures publish nothing; after boundaries pass, every physical line
+    # is accounted exactly once as accepted or rejected.
 
     _validate_output_boundary(output_path)
     payload = _read_input(input_path)
@@ -62,6 +76,8 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
     eligible_count = 0
 
     for line_number, (line, raw_size) in enumerate(lines, start=1):
+        # Raw size includes the original line ending. CR is removed only after the
+        # limit is decided, making LF, CRLF, and missing-final-LF accounting explicit.
         if raw_size > _MAX_LINE_BYTES:
             rejected.append(LineRejection("LINE_TOO_LARGE").as_record(line_number))
             continue
@@ -78,6 +94,8 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
         except LineRejection as rejection:
             rejected.append(rejection.as_record(line_number))
             continue
+        # IDs are reserved only after complete line validation. A rejected line can
+        # therefore never prevent a later valid trace from using either identifier.
         accepted.append(validated.value)
         seen_trace_ids.add(trace_id)
         seen_source_ids.add(source_id)
@@ -90,6 +108,9 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
         eligible_count=eligible_count,
     )
     _publish_bundle(output_path, accepted, rejected, profile)
+    # The outcome describes corpus accounting, not agent quality. Partial success and
+    # an empty corpus still publish inspectable evidence and deliberately exit nonzero
+    # at the CLI boundary.
     rejected_count = len(rejected)
     if not lines:
         outcome = "EMPTY_CORPUS"
@@ -107,6 +128,10 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
 
 
 def _validate_output_boundary(output_path: Path) -> None:
+    """Require a new target beneath an existing real parent directory."""
+
+    # Existing targets are never merged or replaced. The immediate parent must be a
+    # real local directory because later atomic publication uses a private sibling.
     if os.path.lexists(output_path):
         raise ObserveFailure("OUTPUT_ALREADY_EXISTS", 2)
     parent = output_path.parent
@@ -119,6 +144,11 @@ def _validate_output_boundary(output_path: Path) -> None:
 
 
 def _read_input(input_path: Path) -> bytes:
+    """Read a path observed as a bounded regular file at the boundary check."""
+
+    # The observed lstat mode rejects a symlink, device, or directory before open.
+    # Size is checked both before and after the read so growth during that interval
+    # cannot return a payload above the 16 MiB cap.
     try:
         input_stat = input_path.lstat()
     except FileNotFoundError as error:
@@ -143,6 +173,11 @@ def _read_input(input_path: Path) -> bytes:
 
 
 def _physical_lines(payload: bytes) -> list[tuple[bytes, int]]:
+    """Return LF-defined lines paired with their original byte sizes."""
+
+    # Splitting is defined over LF bytes rather than text lines: a final LF terminates
+    # the preceding line but does not create an extra empty line, while interior blank
+    # lines remain first-class rejected inputs with one-based positions.
     if not payload:
         return []
     parts = payload.split(b"\n")
@@ -162,6 +197,11 @@ def _build_profile(
     rejected: list[JsonObject],
     eligible_count: int,
 ) -> JsonObject:
+    """Derive the closed profile solely from accounted accepted/rejected lists."""
+
+    # Only accepted traces contribute behavioral counts; all rejected lines contribute
+    # only their safe rejection code. Closed maps are seeded with zeroes, and every
+    # dynamic map is sorted before rendering to remove input-dictionary/locale effects.
     event_counts = Counter({kind: 0 for kind in EVENT_KINDS})
     terminal_counts = Counter({state: 0 for state in TERMINAL_STATES})
     tool_counts: Counter[str] = Counter()
@@ -196,6 +236,11 @@ def _publish_bundle(
     rejected: list[JsonObject],
     profile: JsonObject,
 ) -> None:
+    """Render authoritative bytes, construct their manifest, and publish once."""
+
+    # Machine artifacts are authoritative. Markdown is rendered from the completed
+    # profile, and the manifest hashes the exact four non-manifest byte streams. The
+    # renderer performs no independent counting and the manifest has no circular hash.
     normalized_bytes = b"".join(compact_json(trace) for trace in accepted)
     rejected_bytes = b"".join(compact_json(record) for record in rejected)
     profile_bytes = compact_json(profile)
@@ -224,6 +269,12 @@ def _publish_bundle(
 
 
 def _write_atomically(output_path: Path, artifacts: dict[str, bytes]) -> None:
+    """Expose a complete bundle with one sibling-directory rename or clean up."""
+
+    # The random private sibling name is operational only: it never enters artifacts,
+    # logs, or identity. All files close before one rename exposes the bundle. Failure
+    # removes only this invocation's sibling; cleanup failure is an internal invariant
+    # failure because claiming ordinary write failure would hide uncertain residue.
     parent = output_path.parent
     try:
         parent_mode = parent.stat().st_mode

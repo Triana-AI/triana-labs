@@ -1,4 +1,9 @@
-"""Pure artifact rendering for an already-accounted corpus profile."""
+"""Serialize authoritative Observer values without deriving new claims.
+
+The Observer supplies already normalized traces, safe rejections, and a fully counted
+profile. This module controls portable bytes and human projection only; it never
+reopens source traces or owns arithmetic and eligibility.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +14,10 @@ JsonObject = dict[str, Any]
 
 
 def compact_json(value: Any) -> bytes:
-    """Return portable compact JSON with exactly one terminal LF."""
+    """Serialize supplied JSON as sorted UTF-8 with exactly one terminal LF."""
+
+    # Sorted object keys and explicit UTF-8/LF rules make artifact bytes independent
+    # of ambient locale, timezone, platform line endings, and dictionary construction.
 
     return (
         json.dumps(
@@ -24,7 +32,11 @@ def compact_json(value: Any) -> bytes:
 
 
 def render_markdown(profile: JsonObject) -> bytes:
-    """Project the machine profile without performing independent arithmetic."""
+    """Project supplied profile values and explicit non-evaluations as Markdown."""
+
+    # Table order is inherited from the already closed/sorted profile. Explicit
+    # non-evaluation statements keep a readable report from implying that LABS-01 ran
+    # language, distress, persona, case, execution, or comparison intelligence.
 
     lines = [
         "# Triana Labs Corpus Profile",

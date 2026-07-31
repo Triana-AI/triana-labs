@@ -1,4 +1,10 @@
-"""Closed, deterministic validation for the LABS-01 PreviewTrace contract."""
+"""Validate one adapter-emitted PreviewTrace JSONL line.
+
+External integrations emit JSONL; they do not call this module. The Observer passes
+one already size-bounded physical line to :func:`parse_and_validate_line`, which owns
+the byte and strict-JSON boundary. :func:`validate_trace` then owns the closed schema,
+cross-event invariants, and mechanical eligibility returned to the Observer.
+"""
 
 from __future__ import annotations
 
@@ -42,21 +48,31 @@ _SAFE_MESSAGES = {
 
 
 class _DuplicateKeyError(ValueError):
-    pass
+    """Signal that strict JSON parsing observed an ambiguous object."""
+
+    # Private parser signal translated into the stable DUPLICATE_JSON_KEY rejection.
+    pass  # noqa: PIE790 - retained by the frozen docstring-stripped AST gate.
 
 
 class _NonFiniteError(ValueError):
-    pass
+    """Signal that strict JSON parsing observed a non-standard numeric token."""
+
+    # Private parser signal: bare NaN/Infinity are malformed JSON, not schema values.
+    pass  # noqa: PIE790 - retained by the frozen docstring-stripped AST gate.
 
 
 @dataclass(frozen=True)
 class LineRejection(Exception):
-    """Safe reason for rejecting one physical input line."""
+    """Carry one closed, content-free reason for rejecting a physical line."""
 
     code: str
     json_pointer: str = ""
 
     def as_record(self, line_number: int) -> JsonObject:
+        """Return the safe rejection artifact record for a one-based line."""
+
+        # Only closed codes, pointers, and fixed prose cross the privacy boundary.
+        # Raw values and parser exceptions must never enter rejected_traces.jsonl.
         return {
             "line_number": line_number,
             "code": self.code,
@@ -67,14 +83,27 @@ class LineRejection(Exception):
 
 @dataclass(frozen=True)
 class ValidatedTrace:
-    """A normalized trace and its mechanical case-generation eligibility."""
+    """Represent a normalized trace plus mechanical downstream readiness."""
 
     value: JsonObject
+    # This flag is mechanical readiness for a future component. It is neither a
+    # generated case nor a semantic judgment about the conversation.
     case_generation_eligible: bool
 
 
 def parse_and_validate_line(raw_line: bytes, *, first_line: bool) -> ValidatedTrace:
-    """Parse and validate one size-bounded physical line."""
+    """Turn one bounded raw line into a validated trace or typed rejection.
+
+    ``first_line`` enables the first-line-only BOM rule. Contract and validation
+    failures become :class:`LineRejection`; unexpected faults remain internal. Raw
+    bytes and parser exceptions never become rejection output.
+    """
+
+    # The Observer has already enforced the raw line-size limit. This stage owns the
+    # remaining byte and strict-JSON boundary in a deliberate order: first-line BOM,
+    # UTF-8, blankness, JSON grammar/duplicate keys, then structural depth. Keeping
+    # these checks before validate_trace makes malformed transport distinguishable
+    # from a well-formed JSON value that violates the PreviewTrace contract.
 
     if first_line and raw_line.startswith(b"\xef\xbb\xbf"):
         raise LineRejection("BOM_FORBIDDEN")
@@ -105,7 +134,17 @@ def parse_and_validate_line(raw_line: bytes, *, first_line: bool) -> ValidatedTr
 
 
 def validate_trace(value: Any) -> ValidatedTrace:
-    """Validate the closed PreviewTrace schema and cross-event invariants."""
+    """Validate parsed JSON against the closed trace and event contract.
+
+    The function returns the input object only after local event shapes and ordered
+    cross-event relationships pass. It does not own cross-line identity or artifacts.
+    """
+
+    # validate_trace starts at an already parsed JSON value. It owns the closed
+    # top-level/event vocabulary and relationships across events; it owns no file or
+    # corpus behavior. Unsupported integer versions and named privacy classes take
+    # precedence over generic schema failure so callers receive the actionable typed
+    # refusal even though the complete closed schema will also reject those values.
 
     if not isinstance(value, dict):
         raise LineRejection("SCHEMA_VALIDATION_FAILED")
@@ -143,6 +182,9 @@ def validate_trace(value: Any) -> ValidatedTrace:
         raise LineRejection("SCHEMA_VALIDATION_FAILED", "/events")
     for index, event in enumerate(events):
         _validate_event(event, index)
+    # Per-event shape must be known before relationship code reads discriminator and
+    # companion fields. This separation prevents cross-event checks from inventing
+    # defaults for malformed events or turning schema gaps into impossible states.
     _validate_event_relationships(cast(list[JsonObject], events))
 
     return ValidatedTrace(
@@ -154,6 +196,10 @@ def validate_trace(value: Any) -> ValidatedTrace:
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> JsonObject:
+    """Build a JSON object while refusing a second occurrence of any key."""
+
+    # json.loads normally keeps the last duplicate key. Rejecting while the ordered
+    # pair stream is still visible prevents ambiguous input from being normalized.
     result: JsonObject = {}
     for key, value in pairs:
         if key in result:
@@ -163,10 +209,18 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> JsonObject:
 
 
 def _reject_nonfinite(_: str) -> None:
+    """Reject the non-standard constants routed here by ``json.loads``."""
+
+    # This callback is used only for non-standard bare constants. Finite JSON floats
+    # parse as Decimal and are rejected later as syntactically valid but out-of-domain.
     raise _NonFiniteError
 
 
 def _json_depth(value: Any) -> int:
+    """Return maximum container depth, counting the root container as one."""
+
+    # Containers contribute one level and scalars zero; the root container is depth
+    # one. Object member order cannot affect the maximum, preserving determinism.
     if isinstance(value, dict):
         return 1 + max((_json_depth(item) for item in value.values()), default=0)
     if isinstance(value, list):
@@ -175,14 +229,24 @@ def _json_depth(value: Any) -> int:
 
 
 def _is_safe_id(value: Any) -> bool:
+    """Return whether a value satisfies the closed ASCII SafeId domain."""
+
+    # SafeId's ASCII grammar makes the regex character bound identical to its byte
+    # bound and keeps identifiers safe in deterministic artifacts.
     return isinstance(value, str) and _SAFE_ID.fullmatch(value) is not None
 
 
 def _is_safe_code(value: Any) -> bool:
+    """Return whether a value satisfies the closed uppercase SafeCode domain."""
+
     return isinstance(value, str) and _SAFE_CODE.fullmatch(value) is not None
 
 
 def _contains_control(value: str, *, allow_lf: bool) -> bool:
+    """Detect forbidden C0/C1 controls under the selected LF policy."""
+
+    # Message and opaque JSON strings may carry LF; identifiers may not. All other
+    # C0/C1 controls remain forbidden even when JSON escaped them successfully.
     return any(
         (code < 32 and not (allow_lf and code == 10)) or 127 <= code <= 159
         for code in map(ord, value)
@@ -196,6 +260,10 @@ def _is_bounded_text(
     maximum_bytes: int,
     allow_lf: bool,
 ) -> bool:
+    """Check text type, control policy, and inclusive UTF-8 byte bounds."""
+
+    # Limits are UTF-8 bytes, not Python code points. Encoding also rejects lone
+    # surrogates before canonical artifact serialization can fail unexpectedly.
     if not isinstance(value, str) or _contains_control(value, allow_lf=allow_lf):
         return False
     try:
@@ -206,6 +274,8 @@ def _is_bounded_text(
 
 
 def _is_external_id(value: Any) -> bool:
+    """Return whether a value is a bounded, control-free ExternalId."""
+
     return _is_bounded_text(
         value,
         minimum_bytes=1,
@@ -215,6 +285,11 @@ def _is_external_id(value: Any) -> bool:
 
 
 def _is_json_scalar_domain(value: Any) -> bool:
+    """Recursively check the portable LABS-01 opaque-JSON value domain."""
+
+    # Tool arguments/results are opaque to Triana but not unbounded: their entire
+    # tree must use portable strings, safe integers, and JSON containers. Decimal is
+    # the parser's marker for every finite fractional/exponent-form number.
     if value is None or isinstance(value, (bool, str)):
         return not isinstance(value, str) or _is_bounded_text(
             value,
@@ -243,6 +318,11 @@ def _is_json_scalar_domain(value: Any) -> bool:
 
 
 def _validate_event(value: Any, index: int) -> None:
+    """Validate one closed event variant without interpreting other events."""
+
+    # This function validates one closed variant in isolation and reports the event
+    # location. Ordering, call/result linkage, and terminal placement are intentionally
+    # deferred until every event has a trustworthy shape.
     pointer = f"/events/{index}"
     if not isinstance(value, dict):
         raise LineRejection("SCHEMA_VALIDATION_FAILED", pointer)
@@ -291,6 +371,10 @@ def _validate_event(value: Any, index: int) -> None:
 
 
 def _validate_tool_result(event: JsonObject, pointer: str) -> None:
+    """Validate result-state companion fields and opaque result content."""
+
+    # Result-state companion fields are mutually exclusive. Presence is checked via
+    # exact key sets so null cannot stand in for a required result or error code.
     state = event.get("result_state")
     if state == "SUCCEEDED":
         valid = set(event) == {
@@ -315,6 +399,10 @@ def _validate_tool_result(event: JsonObject, pointer: str) -> None:
 
 
 def _validate_terminal(event: JsonObject, pointer: str) -> None:
+    """Validate terminal-state companion fields without judging the outcome."""
+
+    # SUCCESS carries no reason; ERROR and ABORTED require a safe reason code. This is
+    # structural evidence only and does not interpret whether the outcome was good.
     state = event.get("terminal_state")
     if state == "SUCCESS":
         valid = set(event) == {"sequence", "event_kind", "terminal_state"}
@@ -332,6 +420,11 @@ def _validate_terminal(event: JsonObject, pointer: str) -> None:
 
 
 def _validate_event_relationships(events: list[JsonObject]) -> None:
+    """Reject impossible sequence, call/result, final, and terminal ordering."""
+
+    # Input order is semantic. Calls become available only after their TOOL_CALL,
+    # results consume that earlier call once, and terminal/final multiplicity is
+    # checked without reordering or repairing the supplied history.
     calls: set[str] = set()
     results: set[str] = set()
     final_count = 0
@@ -363,6 +456,11 @@ def _validate_event_relationships(events: list[JsonObject]) -> None:
 
 
 def _is_case_generation_eligible(events: list[JsonObject]) -> bool:
+    """Return whether a user turn has later assistant or tool-call behavior."""
+
+    # Eligibility means only that an observed user turn has later agent behavior to
+    # condition on. Future Corpus Intelligence consumes eligible normalized traces;
+    # LABS-01 neither generates a case nor infers persona, intent, or quality here.
     user_seen = False
     for event in events:
         if event["event_kind"] == "USER_MESSAGE":
