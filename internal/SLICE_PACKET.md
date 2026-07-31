@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-02 external adapter proof
 
-Status: **NARROWED INDEPENDENT TESTS FROZEN — IMPLEMENTATION CORRECTION AUTHORIZED AFTER FREEZE COMMIT**
+Status: **FINAL MAPPING-ONLY NARROWING — TEST CORRECTION REQUIRED**
 
 Date: 2026-07-31
 Canonical base: `2e6d35d`
@@ -234,18 +234,22 @@ accepted PreviewTrace artifact in the next command.
 - Exit 10: output exists but input is empty or at least one line is rejected.
 - Stdout: one compact receipt with only `input_count`, `accepted_count`,
   `rejected_count`, and `outcome`.
-- Stderr: exactly one compact safe terminal event with counts and outcome; no
-  paths or source values.
+- Successful and partial-completion runs write no stderr. Fatal refusal writes
+  exactly one compact safe JSON object containing only `outcome: "REJECTED"`
+  and `reason_code`; it contains no path or source value.
 - `--help`: exit 0, help on stdout, no terminal event.
 - `--data-class SYNTHETIC` is mandatory. Missing or any other value is fatal
   `UNSUPPORTED_DATA_CLASS`, exit 2, before reading input.
 - Input/path/resource failures are fatal exits 2 or 3; publication failure is
   7; internal invariant is 70. Fatal failure creates no target directory.
 - An already-existing output target is an output-path precondition refusal and
-  exits 2 before publication begins. Exit 7 is reserved for a failure while
-  creating, flushing, or atomically publishing a previously absent target.
-- Output is a private temporary sibling containing both files, atomically
-  renamed to a target that must not exist. It never overwrites or merges.
+  exits 2 before writing begins. Exit 7 is reserved for a failure while
+  creating or writing a previously absent target.
+- Output is created only after all source lines have been mapped and contains
+  both files. The target must not exist; the adapter never overwrites or
+  merges. A write failure returns 7 and best-effort removes only the exact new
+  directory it created. This copyable example does not promise atomic
+  multi-file publication; its output is consumable only after exit 0 or 10.
 - Every physical source line is counted exactly once:
   `input_count = accepted_count + rejected_count`.
 
@@ -342,7 +346,7 @@ The test author independently creates source fixtures and expected
 - mixed partial success and exact accounting;
 - empty/all-rejected deterministic outputs;
 - mandatory synthetic attestation and no raw values in rejection/log output;
-- atomic no-overwrite/fatal no-output behavior;
+- no-overwrite, fatal pre-write no-output, and owned write-failure cleanup;
 - repeatability and exact output bytes;
 - adapter output accepted by unchanged `triana traces observe`;
 - standalone standard-library/import-boundary and 200-line ceiling;
@@ -398,9 +402,13 @@ data-driven refactor still produced 324. The orchestrator rejected that result
 as unreadable and the implementation author independently recommended against
 shipping it. LABS-02 therefore removes non-mapping manifest/hash machinery and
 exhaustive validation of ignored source fields rather than raising or gaming
-the 200-line ceiling. The same independent test author must correct only the
-affected expectations, reproduce RED against `5d90662`, and provide a new hash
-and freeze before implementation resumes.
+the 200-line ceiling. A first narrowed readable implementation still measured
+214 lines. The final mapping-only correction also removes duplicated nonfatal
+terminal logging and the production-grade atomic-directory promise; it keeps
+safe fatal refusal, no-overwrite behavior, owned cleanup, and exact output.
+The same independent test author must correct only the affected expectations,
+reproduce RED against `5d90662`, and provide a new hash and freeze before
+implementation resumes.
 
 Reserved orchestrator adversarial checks, not disclosed as literal fixtures to
 the implementation author, cover:
@@ -507,7 +515,8 @@ LABS-02 exits only when:
 - all five canonical Observer hashes remain unchanged;
 - adapter output is independently byte-checked and accepted by the unchanged
   source and installed-wheel Observer;
-- mixed input accounting, safe rejections, synthetic refusal, atomic output,
+- mixed input accounting, safe rejections, synthetic refusal, no-overwrite and
+  owned write-failure cleanup,
   repeatability, no-network behavior, and line ceiling are verified;
 - source provenance and clean reimplementation are recorded;
 - actual diff and dependencies reconcile exactly with this budget;
