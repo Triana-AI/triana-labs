@@ -91,17 +91,17 @@ The first value moment is:
 ## Repository status
 
 The shared Slice 0A deterministic kernel is implemented in `triana-core/`.
-Triana Labs now has its first executable component: the synthetic-only Trace
-Observer at implementation commit `92f65a1`. It validates a bounded local
-JSONL corpus, accounts for every physical line, identifies mechanically usable
-traces, and writes deterministic machine-readable and Markdown artifacts. It
-does not yet accept real/local-sensitive traces, generate cases, run agents,
-compare releases, or render HTML.
+Triana Labs now has a synthetic-only local path through a reference transform,
+the Trace Observer, and structural Corpus Intelligence. The Observer validates
+and accounts for PreviewTrace JSONL. Corpus Intelligence verifies that bundle
+and derives deterministic structural clusters while preserving explicit gaps
+for semantics it cannot support. Labs still does not accept real/local-sensitive
+traces, generate cases, run agents, compare releases, or render HTML.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.
 
-## Run the first component
+## Run the local synthetic pipeline
 
 The current command accepts only traces explicitly labeled `SYNTHETIC`:
 
@@ -153,6 +153,21 @@ The script is a copyable example, not an HRAI integration or supported adapter
 API. It refuses real/local-sensitive data by contract, performs no redaction or
 network access, and emits safe per-line rejections separately from accepted
 PreviewTrace JSONL.
+
+Derive the first inspectable structural intelligence bundle from the Observer
+manifest:
+
+```bash
+uv run --locked triana corpus derive \
+  /private/tmp/triana-observed/manifest.json \
+  --out /private/tmp/triana-intelligence
+```
+
+Exit 10 is expected: structural clusters are complete, while persona, intent,
+turn-policy, language, and distress semantics are explicitly not derived. The
+output contains `manifest.json`, `clusters.json`, `derivation_report.json`, and
+the three typed asset indexes under `personas/`, `intents/`, and
+`turn_policies/`.
 
 Use `./scripts/verify.sh` from `triana-labs/` to run governance, frozen-test
 integrity, formatting, lint, strict typing, all tests, deterministic

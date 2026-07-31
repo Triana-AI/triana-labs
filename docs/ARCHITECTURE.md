@@ -7,6 +7,36 @@ AI-assisted packages, with TypeScript for the web UI and versioned JSON Schema
 as the enforced language boundary. `docs/CONTRACTS.md` owns the exact Slice 0A
 wire representation.
 
+## Active Labs execution boundary
+
+For active Triana Labs work, `triana-labs/CHARTER.md` and the current Labs plan
+supersede the suspended V1 flow below. The shipped local synthetic pipeline is:
+
+```text
+source-specific synthetic JSONL
+  -> standalone reference transform
+  -> PreviewTrace JSONL
+  -> Trace Observer
+  -> verified Observer manifest + normalized traces
+  -> structural Corpus Intelligence
+  -> deterministic clusters + explicit semantic gaps
+```
+
+`triana traces observe` owns raw PreviewTrace accounting and five deterministic
+corpus artifacts. `triana corpus derive` accepts only that Observer manifest,
+verifies all sibling hashes/counts/traces, and publishes a separate atomic
+intelligence bundle. `intelligence/input.py` owns input integrity,
+`intelligence/derive.py` owns fingerprints, membership, IDs, support and gap
+artifacts, `intelligence/publication.py` owns atomic filesystem publication,
+and `cli.py` owns invocation, safe terminal events, and exits.
+
+The current structural fingerprint contains counts, ordered safe tool names,
+terminal presence/state, unmatched calls, and mechanical case eligibility. It
+does not consume conversation text, opaque tool values, error prose, or source
+trace IDs. Personas, intents, turn policies, language, and distress remain
+typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
+redaction/egress path, Case Generator, or UI exists in this checkpoint.
+
 ## Authority map
 
 ```text

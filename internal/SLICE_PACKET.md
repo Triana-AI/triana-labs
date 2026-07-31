@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-03 structural Corpus Intelligence
 
-Status: **INDEPENDENT ACCEPTANCE FROZEN — IMPLEMENTATION AUTHOR AUTHORIZED**
+Status: **COMPLETE — STRUCTURAL INTELLIGENCE SHIPPED WITH EXPLICIT SEMANTIC GAPS**
 
 Date: 2026-07-31
 Branch: `codex/labs-03-corpus-intelligence`
@@ -340,3 +340,27 @@ Every role reports: what changed; why each file was necessary; budget
 reconciliation; exact verification and artifacts; unverified work;
 assumptions; unexpected findings; dependencies; deliberately excluded
 problems; known risks; and human action required, using `none` explicitly.
+
+## 11. Completion evidence
+
+LABS-03 production is committed at `7cde8b5`; the orchestrator gate is
+`db91380`.
+
+- independent acceptance: 33 passing cases at frozen commit `f731afe`, test
+  aggregate `2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae`;
+- orchestrator-reserved boundary: four passing cases for real Observer handoff
+  with sockets blocked, output-parent symlink refusal, deep-manifest safe
+  refusal, and absence of semantic/provider dependencies;
+- full suite: 188 passing tests; Ruff and strict mypy pass;
+- final reproducible gate: `/private/tmp/triana-labs-verify.JjLqlV`, including
+  sdist/wheel build, clean install, source and installed-wheel byte parity, all
+  frozen acceptance aggregates, and all five unchanged Observer hashes;
+- actual output contains structural clusters and explicit NOT_DERIVED persona,
+  intent, turn-policy, language, and distress states;
+- dependencies, LABS-01/02 behavior, `triana-core`, real-data support,
+  redaction/egress, LLM/provider calls, Case Generator, and UI remain unchanged
+  or absent.
+
+The checkpoint proves the Observer bundle is usable by the next component. It
+does not complete semantic M1B Corpus Intelligence or establish customer
+grounding, persona realism, distress detection, or product demand.

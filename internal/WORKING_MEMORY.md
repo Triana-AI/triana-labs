@@ -143,9 +143,11 @@ with six additional independently authored architecture tests. LABS-02 then
 shipped one standalone, synthetic-only HRAI `normalized-trace-v2` reference
 mapping into PreviewTrace JSONL. It is exactly 200 counted adapter lines, uses
 only the standard library, and is accepted by both source and installed-wheel
-Observer commands. The complete suite has 151 passing tests and the five
-canonical Observer hashes remain frozen. The current packet records exact edge
-cases, hashes, role handoffs, generated evidence, and exit gates.
+Observer commands. LABS-03 now consumes that Observer bundle and publishes
+deterministic structural clusters plus explicit semantic gap indexes. The
+complete suite has 188 passing tests and the five canonical Observer hashes
+remain frozen. The current packet records exact edge cases, hashes, role
+handoffs, generated evidence, and exit gates.
 
 Current component checkpoint:
 
@@ -162,57 +164,49 @@ SYNTHETIC PreviewTrace JSONL
   → corpus_profile.json
   → corpus_profile.md
   → manifest.json
+  → corpus derive
+      → intelligence/input.py        Observer bundle integrity
+      → intelligence/derive.py       structural membership and gaps
+      → intelligence/publication.py  atomic bundle publication
+  → clusters.json
+  → derivation_report.json
+  → personas/intents/turn_policies indexes (NOT_DERIVED)
 ```
 
-Observed canonical result: five physical lines, three accepted, two rejected,
-and two mechanically eligible for later case generation. All 118 tests pass;
-the five canonical artifact hashes are unchanged by the responsibility
-refactor. The Observer does not derive language, distress, personas, intents,
-cases, execution, comparison, or findings. Real/local-sensitive traces remain
-refused.
-
-LABS-03 is authorized as the first bounded M1B checkpoint. It consumes only a
-verified synthetic Observer manifest and derives deterministic clusters from
-observable event structure. Persona, intent, turn policy, language, and
-distress semantics remain explicit NOT_DERIVED gaps; no LLM, provider, real
-data, redaction, Blitz mining, Case Generator, SDK, OTel, hosted ingestion, or
-UI is authorized. The live slice packet freezes its serial roles and exit gate.
+Observed Observer result remains five physical lines, three accepted, two
+rejected, and two mechanically eligible; all five hashes are unchanged.
+LABS-03 is complete as the first bounded M1B checkpoint, with 188 tests passing
+and source/clean-wheel artifact parity. It derives only observable structural
+clusters. Persona, intent, turn policy, language, and distress semantics remain
+explicit NOT_DERIVED gaps. Full semantic M1B, LLM/provider use, real data,
+redaction, Blitz mining, Case Generator, SDK, OTel, hosted ingestion, and UI
+are not authorized by this completed packet.
 
 Next-session handoff prompt:
 
 ```text
-Continue Triana from main after the completed LABS-01 Trace Observer and its
-responsibility refactor.
+Continue Triana after the completed LABS-03 structural Corpus Intelligence
+checkpoint.
 
 Read AGENTS.md, triana-labs/CHARTER.md, the current plan named by the charter,
 docs/PRODUCT.md, docs/ARCHITECTURE.md, docs/CONTRACTS.md,
 internal/WORKING_MEMORY.md, docs/PROVENANCE.md, the full
 internal/DECISION_LOG.md, docs/ENGINEERING.md, and internal/SLICE_PACKET.md.
 
-Ground truth: the synthetic-only Trace Observer is shipped and green at
-c87a521. Its adapter boundary is currently a file contract only: an external
-adapter must emit PreviewTrace JSONL, then `triana traces observe` validates and
-profiles it. There is no adapter SDK, supported real-trace path, Corpus
-Intelligence, Case Generator, or UI product yet. The suite has 118 passing
-tests and the five canonical artifact hashes are frozen.
+Ground truth: the synthetic-only path now runs reference adapter → Trace
+Observer → structural Corpus Intelligence. `triana corpus derive` verifies the
+Observer bundle and publishes deterministic clusters plus explicit NOT_DERIVED
+semantic indexes. The suite has 188 passing tests; all five Observer hashes and
+prior acceptance aggregates are frozen. There is still no real-data path,
+redaction/egress layer, semantic persona/intent/turn-policy derivation,
+language/distress mining, Case Generator, SDK/OTel, provider call, or UI.
 
-Start with product/technical discussion, not implementation and not a giant
-self-referential plan. Define the smallest shippable LABS-02 external-adapter
-checkpoint. Resolve only the material choices: one explicit source trace
-format, mapping ownership, invocation surface, install/run experience for a
-coding agent, synthetic/privacy boundary, refusal and partial-failure behavior,
-provenance, and the exact PreviewTrace JSONL output. Argue whether this should
-be a Triana-owned executable transform or a customer-owned adapter template.
-Do not invent generic SDK, OTel, hosted ingestion, or real-data support.
-
-First response: summarize the shipped boundary in at most 10 lines, propose
-the smallest useful adapter deliverable with concrete input/output, and surface
-only decisions that materially change it. Do not write repository files until
-I accept the checkpoint. After acceptance, freeze a new slice packet and use
-exactly two serial roles: an independent test author and an implementation
-author, with Codex orchestrating. Preserve all 118 tests and canonical hashes.
-Do not start Corpus Intelligence until the adapter output is demonstrably
-usable.
+Start with the next material product decision inside M1B: what authorized
+evidence and privacy/egress boundary could support semantic asset proposals
+without inventing customer truth. Do not skip directly to Case Generator while
+persona, intent, policy, fidelity, and correction authority remain explicit
+gaps. Any implementation requires a new slice packet and the same independent
+test-author → implementation-author → orchestrator protocol.
 ```
 
 The frozen product component flow is:
