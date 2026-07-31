@@ -245,6 +245,37 @@ def test_ignored_finite_floats_map_but_mapped_floats_reject(
     ] == ["SOURCE_SCHEMA_VALIDATION_FAILED"]
 
 
+@pytest.mark.parametrize(
+    ("mutation", "code"),
+    [
+        (
+            {"schema_version": "normalized-trace-v3"},
+            "UNSUPPORTED_SOURCE_SCHEMA_VERSION",
+        ),
+        ({"unexpected_exporter_field": "synthetic"}, "SOURCE_SCHEMA_VALIDATION_FAILED"),
+    ],
+)
+def test_source_version_and_closed_top_level_are_rejected(
+    run_adapter: Any,
+    tmp_path: Path,
+    mutation: dict[str, Any],
+    code: str,
+) -> None:
+    source_value = minimal_source()
+    source_value.update(mutation)
+    source = tmp_path / "source-boundary.jsonl"
+    write_jsonl(source, [source_value])
+    output = tmp_path / "source-boundary-output"
+
+    result = run_adapter(source, output)
+
+    assert result.returncode == 10
+    assert (output / "preview_traces.jsonl").read_bytes() == b""
+    assert [
+        item["code"] for item in parse_jsonl(output / "rejected_source_traces.jsonl")
+    ] == [code]
+
+
 def test_incomplete_harness_and_turn_event_mismatch_are_safe_rejections(
     run_adapter: Any, tmp_path: Path
 ) -> None:
@@ -479,7 +510,7 @@ def test_fatal_input_and_publication_failures_never_overwrite(
     marker = existing / "customer-owned.txt"
     marker.write_text("keep", encoding="utf-8")
     collision = run_adapter(FIXTURES / "minimal_hrai_v2.jsonl", existing)
-    assert collision.returncode == 7
+    assert collision.returncode == 2
     assert marker.read_text(encoding="utf-8") == "keep"
     assert {path.name for path in existing.iterdir()} == {"customer-owned.txt"}
     assert not list(tmp_path.glob(".*existing*"))
