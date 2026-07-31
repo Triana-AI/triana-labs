@@ -18,6 +18,7 @@ Akarsh during Triana product work. They are not a code port.
 | `/Users/akarshgajbhiye/Documents/hr_ai` | Permitted with ledger (authorized by Akarsh 2026-07-31) | Inspect, copy, or reimplement Akarsh-owned code after recording exact provenance and licenses per the reuse procedure. |
 | `/Users/akarshgajbhiye/agentagon/Triana demo` (package `triana-demo`, including `triana-demo-clean-video`) | Permitted with ledger (explicit Akarsh allowlist exception 2026-07-31; rest of Agentagon stays Restricted) | Inspect and adapt this UI for the Triana Labs Preview report after per-file authorship/ancestry checks and a reuse-ledger entry. |
 | `/Users/akarshgajbhiye/kairos-ai` | Permitted with ledger | Inspect, copy, or reimplement Akarsh-owned code after recording exact provenance and licenses. |
+| Blitz "Leo" production corpus (`~/Downloads/blitzlangsmith_*.jsonl`; `agentagon/experiments/blitz_seed/**`) | Design-partner data (letter of intent held by Akarsh, stated 2026-07-31) | Internal mining, miner validation, and persona/intent derivation permitted. No raw conversations, quotes, or PII in any public artifact or open-source repo without explicit Blitz sign-off; derived public assets must be synthetic regenerations labeled "generated, blitz-informed". |
 | Triana Notion database | Permitted context | Rewrite Akarsh-owned product decisions, interviews, and research; link canonical pages. |
 | Third-party repositories/packages | License-dependent | Record version, license, and usage before adoption. |
 
