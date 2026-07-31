@@ -15,9 +15,9 @@ uv lock --check --project "${triana_project_root}"
 uv sync --locked --all-groups --project "${triana_project_root}"
 
 cd "${triana_project_root}"
-uv run --locked ruff format --check src tests
-uv run --locked ruff check src tests
-uv run --locked mypy src
+uv run --locked ruff format --check src tests examples
+uv run --locked ruff check src tests examples
+uv run --locked mypy src examples
 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests -q
 
 triana_frozen_hash="$(
@@ -30,6 +30,22 @@ triana_frozen_hash="$(
 triana_expected_hash="78bd653ffaa2282de7fb094d18e93b4590eaa2e59737d84330160444f985e353"
 if [[ "${triana_frozen_hash}" != "${triana_expected_hash}" ]]; then
   echo "frozen acceptance hash mismatch" >&2
+  exit 1
+fi
+
+triana_adapter_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/adapter_acceptance \
+    triana-labs/tests/adapter_fixtures \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_adapter_hash="99cf8455d81aebfb84c30beb9a672bb3f795bb30f67734fd39e11aba4dcde66c"
+if [[ "${triana_adapter_hash}" != "${triana_expected_adapter_hash}" ]]; then
+  echo "frozen adapter acceptance hash mismatch" >&2
   exit 1
 fi
 
@@ -56,6 +72,33 @@ diff -rq \
   "${triana_evidence_root}/first/output" \
   "${triana_evidence_root}/second/output"
 
+triana_verify_hash() {
+  local artifact="$1"
+  local expected="$2"
+  local actual
+  actual="$(shasum -a 256 "${triana_evidence_root}/first/output/${artifact}" | awk '{print $1}')"
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "canonical ${artifact} hash mismatch" >&2
+    exit 1
+  fi
+}
+triana_verify_hash corpus_profile.json 6d6c8d38dae3b7fb4d5580153e7fe1f77f8b9104b6bb28e0f5234c9d30d52146
+triana_verify_hash corpus_profile.md 4ede1203e02462d870865abcefdf277c1e24b2bfa16cc5785b42eaf7cc1419c6
+triana_verify_hash manifest.json 7a14709fd10373beaa2da842c869988f1d976ddeae34b46501f6d8930fa7e808
+triana_verify_hash normalized_traces.jsonl b294d8b0bc9dd5fe8e449015b1d9ef4e72cb815260d88cda394db1bc9fde0447
+triana_verify_hash rejected_traces.jsonl c36c32c1adce137a6c6765823fbf271005df64d04547ad9fe17f7ad6c264e98f
+
+uv run --locked python examples/hrai_v2/adapter.py \
+  tests/adapter_fixtures/tool_rich_hrai_v2.jsonl \
+  --out "${triana_evidence_root}/adapted" \
+  --data-class SYNTHETIC \
+  >"${triana_evidence_root}/adapter-receipt.json"
+uv run --locked triana traces observe \
+  "${triana_evidence_root}/adapted/preview_traces.jsonl" \
+  --out "${triana_evidence_root}/source-adapter-output" \
+  >"${triana_evidence_root}/source-adapter-receipt.json" \
+  2>"${triana_evidence_root}/source-adapter-terminal.jsonl"
+
 uv build --project "${triana_project_root}" --out-dir "${triana_evidence_root}/dist"
 triana_wheels=("${triana_evidence_root}"/dist/*.whl)
 if [[ "${#triana_wheels[@]}" -ne 1 ]]; then
@@ -67,6 +110,9 @@ uv venv \
   "${triana_evidence_root}/clean-venv"
 uv pip install \
   --python "${triana_evidence_root}/clean-venv/bin/python" \
+  "${triana_wheels[0]}"
+"${triana_evidence_root}/clean-venv/bin/python" -c \
+  'import sys, zipfile; names = zipfile.ZipFile(sys.argv[1]).namelist(); assert not any("examples/hrai_v2" in name for name in names)' \
   "${triana_wheels[0]}"
 uv run --locked triana --help >"${triana_evidence_root}/source-help.txt"
 "${triana_evidence_root}/clean-venv/bin/triana" \
@@ -90,6 +136,16 @@ fi
 diff -rq \
   "${triana_evidence_root}/first/output" \
   "${triana_evidence_root}/installed-output"
+
+"${triana_evidence_root}/clean-venv/bin/triana" \
+  traces observe \
+  "${triana_evidence_root}/adapted/preview_traces.jsonl" \
+  --out "${triana_evidence_root}/installed-adapter-output" \
+  >"${triana_evidence_root}/installed-adapter-receipt.json" \
+  2>"${triana_evidence_root}/installed-adapter-terminal.jsonl"
+diff -rq \
+  "${triana_evidence_root}/source-adapter-output" \
+  "${triana_evidence_root}/installed-adapter-output"
 
 echo "triana-labs verification passed"
 echo "evidence: ${triana_evidence_root}"
