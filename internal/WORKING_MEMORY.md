@@ -358,8 +358,12 @@ when the isolated tester found that `INPUT_TOO_LARGE` lacked exact config and
 intelligence artifact byte/line ceilings. Production did not choose a value.
 The wire correction fixes 64-KiB config, 1-MiB manifest/report/index, 16-MiB
 cluster, and single-line canonical JSON ceilings while literally inheriting the
-unchanged Observer reader limits. The test author must add the missing black-box
-cases and Codex must explicitly re-freeze RED before production resumes.
+unchanged Observer reader limits. The test author added 33 black-box cases
+without changing the original 109; Codex reproduced 142 collected, 140 intended
+RED failures, two unaffected passes, all 188 prior tests green, and corrected
+aggregate SHA-256
+`0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`.
+Production is reauthorized only against that corrected immutable suite.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

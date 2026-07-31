@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **INDEPENDENT ACCEPTANCE RED FROZEN — IMPLEMENTATION AUTHORIZED**
+Status: **CORRECTED INDEPENDENT ACCEPTANCE RED FROZEN — IMPLEMENTATION REAUTHORIZED**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -581,16 +581,20 @@ the algorithm, version, threshold, cluster sizes, raw N, and effective N.
 The independent acceptance suite is complete and valid RED before production
 implementation begins. It has three evidence lanes.
 
-Codex independently reproduced the frozen suite before authorizing production:
-109 cases collected, 108 expected behavioral RED failures, and one passing
-normative-schema check. All 188 prior tests passed unchanged. Ruff and format
-checks passed. The sorted concatenated test/fixture content SHA-256 is
-`98eab12ef1d85fe1fea18150b729fcc6cf38530cb482a996df80dcc5b92457de`;
-the ten test-owned files contain 3,022 physical lines. The SHA-256 of the
+The first 109-case freeze at `949fcaa` was paused when isolated adversarial
+review found the missing resource ceilings. After the wire correction at
+`02b7801`, the independent author added 33 resource cases without changing the
+original 109. Codex independently reproduced the corrected suite before
+reauthorizing production: 142 cases collected, 140 expected behavioral RED
+failures, and two unaffected passes. All 188 prior tests passed unchanged.
+Ruff and format checks passed. The sorted concatenated test/fixture content
+SHA-256 is
+`0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`;
+the eleven test-owned files contain 3,339 physical lines. The SHA-256 of the
 NUL-sorted relative-path per-file hash-list stream is
-`627e54c9cc57bed0bf4356989afd43e9b1dc0428c424606ec4775c06478b5fe5`.
-Any change under the two test-author-owned paths invalidates this freeze and
-stops production.
+`3ed4858ee7607915513abf8f785d8ec227dc1d0f91c6a8bf13f45e944a4c22d9`.
+Any change under the two test-author-owned paths invalidates this corrected
+freeze and stops production.
 
 ### Lane A — deterministic contract and safety
 
