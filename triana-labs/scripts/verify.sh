@@ -49,6 +49,22 @@ if [[ "${triana_adapter_hash}" != "${triana_expected_adapter_hash}" ]]; then
   exit 1
 fi
 
+triana_intelligence_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/intelligence_acceptance \
+    triana-labs/tests/intelligence_fixtures \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_intelligence_hash="2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae"
+if [[ "${triana_intelligence_hash}" != "${triana_expected_intelligence_hash}" ]]; then
+  echo "frozen intelligence acceptance hash mismatch" >&2
+  exit 1
+fi
+
 mkdir "${triana_evidence_root}/first" "${triana_evidence_root}/second"
 set +e
 uv run --locked triana traces observe \
@@ -99,6 +115,24 @@ uv run --locked triana traces observe \
   >"${triana_evidence_root}/source-adapter-receipt.json" \
   2>"${triana_evidence_root}/source-adapter-terminal.jsonl"
 
+uv run --locked triana traces observe \
+  tests/intelligence_fixtures/structural_traces.jsonl \
+  --out "${triana_evidence_root}/source-intelligence-corpus" \
+  >"${triana_evidence_root}/source-intelligence-observer-receipt.json" \
+  2>"${triana_evidence_root}/source-intelligence-observer-terminal.jsonl"
+set +e
+uv run --locked triana corpus derive \
+  "${triana_evidence_root}/source-intelligence-corpus/manifest.json" \
+  --out "${triana_evidence_root}/source-intelligence-output" \
+  >"${triana_evidence_root}/source-intelligence-receipt.json" \
+  2>"${triana_evidence_root}/source-intelligence-terminal.jsonl"
+triana_source_intelligence_exit=$?
+set -e
+if [[ "${triana_source_intelligence_exit}" -ne 10 ]]; then
+  echo "source intelligence did not complete with gaps" >&2
+  exit 1
+fi
+
 uv build --project "${triana_project_root}" --out-dir "${triana_evidence_root}/dist"
 triana_wheels=("${triana_evidence_root}"/dist/*.whl)
 if [[ "${#triana_wheels[@]}" -ne 1 ]]; then
@@ -146,6 +180,23 @@ diff -rq \
 diff -rq \
   "${triana_evidence_root}/source-adapter-output" \
   "${triana_evidence_root}/installed-adapter-output"
+
+set +e
+"${triana_evidence_root}/clean-venv/bin/triana" \
+  corpus derive \
+  "${triana_evidence_root}/source-intelligence-corpus/manifest.json" \
+  --out "${triana_evidence_root}/installed-intelligence-output" \
+  >"${triana_evidence_root}/installed-intelligence-receipt.json" \
+  2>"${triana_evidence_root}/installed-intelligence-terminal.jsonl"
+triana_installed_intelligence_exit=$?
+set -e
+if [[ "${triana_installed_intelligence_exit}" -ne 10 ]]; then
+  echo "installed intelligence did not complete with gaps" >&2
+  exit 1
+fi
+diff -rq \
+  "${triana_evidence_root}/source-intelligence-output" \
+  "${triana_evidence_root}/installed-intelligence-output"
 
 echo "triana-labs verification passed"
 echo "evidence: ${triana_evidence_root}"
