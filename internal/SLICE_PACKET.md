@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-01 Trace Observer
 
-Status: **LABS-01A COMPLETE AT `42043ab`; EXECUTABLE AST UNCHANGED**
+Status: **LABS-01B STRUCTURAL REFACTOR ENTRY GATE FROZEN**
 
 Date: 2026-07-31
 Canonical base before slice plan: `6d86624`
@@ -1040,6 +1040,100 @@ Final evidence root:
 
 The newly generated five artifact files are byte-identical to retained
 pre-comment evidence under `/private/tmp/triana-labs-verify.oLgULS`.
+
+## 19. LABS-01B Observer responsibility refactor
+
+Date: 2026-07-31
+
+Base: `dcfc02d`
+
+Owner-approved outcome: make the module tree express the responsibilities a
+reader expects, without changing the CLI, contracts, artifacts, rejection
+precedence, privacy, packaging, or runtime behavior.
+
+Target dependency flow:
+
+```text
+cli.py
+  -> observer/observe.py       file input, line accounting, orchestration
+       -> contracts/traces.py  one-line parsing and trace validation
+       -> observer/profile.py  aggregate accepted/rejected corpus facts
+       -> observer/publication.py
+            -> observer/renderer.py  canonical JSON and Markdown projection
+            -> hashing and atomic five-file publication
+```
+
+Exact production ownership after the refactor:
+
+- `contracts/traces.py`: unchanged one-trace contract and validation.
+- `observer/observe.py`: `observe`, output/input boundary checks, physical-line
+  splitting, cross-line identity, and outcome selection. It must not define
+  corpus profiling, JSON/Markdown rendering, hashing, or atomic writing.
+- `observer/profile.py`: `build_profile` and aggregate count-map construction.
+- `observer/renderer.py`: `compact_json` and `render_markdown`; no counting,
+  hashing, filesystem, or CLI behavior.
+- `observer/publication.py`: `publish_bundle` and private atomic-write helpers;
+  owns exact artifact bytes, manifest hashing, and publication.
+- `observer/render.py`: removed. It is an internal module with no promised
+  compatibility surface; preserving both names would make ownership ambiguous.
+
+Public behavior remains only:
+
+```text
+triana traces observe <input.jsonl> --out <new-directory>
+```
+
+No external adapter SDK, direct Python adapter API, Corpus Intelligence,
+profile semantics, new artifact, schema change, dependency, or performance
+claim is authorized.
+
+Change budget:
+
+Independent test author:
+
+```text
+triana-labs/tests/architecture/**
+```
+
+Implementation author after test freeze:
+
+```text
+triana-labs/src/triana_labs/observer/observe.py
+triana-labs/src/triana_labs/observer/profile.py
+triana-labs/src/triana_labs/observer/renderer.py
+triana-labs/src/triana_labs/observer/publication.py
+triana-labs/src/triana_labs/observer/render.py  # deletion only
+```
+
+Explicitly forbidden: acceptance/adversarial tests, fixtures,
+`contracts/traces.py`, CLI, package/lock files, dependencies, other products,
+and all later components.
+
+Independent RED must prove the target modules and ownership do not yet exist,
+while all existing 112 behavioral tests remain green. Architecture assertions
+must inspect imports/definitions rather than impose arbitrary source-line
+limits.
+
+Canonical pre-refactor artifact SHA-256 values:
+
+```text
+corpus_profile.json      6d6c8d38dae3b7fb4d5580153e7fe1f77f8b9104b6bb28e0f5234c9d30d52146
+corpus_profile.md        4ede1203e02462d870865abcefdf277c1e24b2bfa16cc5785b42eaf7cc1419c6
+manifest.json            7a14709fd10373beaa2da842c869988f1d976ddeae34b46501f6d8930fa7e808
+normalized_traces.jsonl b294d8b0bc9dd5fe8e449015b1d9ef4e72cb815260d88cda394db1bc9fde0447
+rejected_traces.jsonl   c36c32c1adce137a6c6765823fbf271005df64d04547ad9fe17f7ad6c264e98f
+```
+
+Exit requires:
+
+- independently frozen architecture tests GREEN;
+- all 112 existing tests GREEN and unchanged;
+- the five canonical hashes above unchanged in source and clean-wheel runs;
+- `render.py` absent and `profile.py`, `renderer.py`, `publication.py` present
+  in both source and wheel;
+- Ruff, strict mypy, governance, repeatability, sdist/wheel, and clean-install
+  gates GREEN;
+- exact change-budget reconciliation and updated reading order.
 
 ## 16. Structured uncertainty handoff
 
