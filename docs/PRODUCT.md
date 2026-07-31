@@ -1,11 +1,23 @@
 # Triana self-serve V1
 
-Status: **frozen build boundary**
+Status: **suspended build boundary** (frozen 2026-07-29; suspended 2026-07-31)
 
 Frozen on 2026-07-29 by Akarsh. Transferred into this clean-room repository on
 2026-07-30. The V1 ICP was narrowed on 2026-07-30 to conversational,
-tool-using agents. This document governs shipping scope until customer evidence
-produces an explicit successor decision.
+tool-using agents.
+
+**Suspension notice (2026-07-31, Akarsh):** After the Braintrust HRAI dogfood
+falsified the generic release layer as a standalone wedge (see
+`internal/research/BRAINTRUST_FALSIFICATION_AND_DOUBT_DRIVEN_DECISION_2026-07-30.md`
+and the 2026-07-31 decision-log entries), implementation of V1 slices beyond
+the completed Slice 0A contract kernel is suspended. The active build surface
+is **Triana Labs Preview**, governed by `triana-labs/CHARTER.md`. This
+document is retained as the specification of the suspended V1: it is not
+deleted, its decisions are not silently rewritten, and resuming it requires an
+explicit decision-log entry. Where this document and the Labs charter
+conflict, the charter governs Labs work and this document governs nothing
+until resumed. The Slice 0A kernel in `triana-core/` remains shared, live
+infrastructure.
 
 ## Product in one sentence
 
