@@ -1,284 +1,192 @@
 # Working memory
 
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 ## Active strategic position
 
-Triana is not being repositioned as an automatic eval-improvement loop.
-Customer-owned evals and production-derived cases are evidence inputs. The
-unproven independent boundary is the cross-stack Release Review and retained
-release lineage:
+Triana Labs Preview is the active build and learning surface. The prior
+closed-source Release Review V1 is suspended, not deleted. Its deterministic
+kernel remains shared infrastructure in `triana-core/`; no Labs work may
+silently alter its five frozen contracts.
+
+The current bet is deliberately smaller than the long-term release-control
+thesis:
 
 ```text
-Release Change                          exact candidate under review
-Release Obligation                      human-approved behavior requirement
-Protected Case                          V1 executable form of one obligation
-required + received evidence            Triana and customer-owned lanes
-Release Evidence Record                 immutable pre-decision artifact
-Release Policy                          evidence-to-recommendation rules
-PASS / REVIEW / BLOCK                   advisory recommendation
-Release Review                          recurring V1 product
-human approval / hold / exception       Release Decision
-Decision Attestation                    immutable human-decision link
-rollout + production outcome            future Release Control lifecycle
-future protection                       human-reviewed feedback loop
+production traces
+  → grounded case panel
+  → shared-prefix baseline/candidate resampling
+  → labeled simulated continuation after divergence
+  → stable, paired behavioral differences and explicit gaps
+  → human-confirmed persistent rulings
+  → rerun on the next candidate
 ```
 
-Frozen V1 implements the chain through the human Release Decision. It accepts a
-customer-declared Release Change, requires a human-selected obligation, and
-does not automatically infer impact or applicability. Production outcome,
-calibration, and automatic policy learning remain outside V1.
+The product is not “another eval platform” and does not claim to decide
+whether to ship. It must make consequential behavioral movement visible using
+evidence a team already has, preserve comparability and lineage, and honestly
+state when the evidence supports no conclusion.
 
-This becomes a company only if eligible teams use it as a recurring release
-ritual, retain it across releases, value it alongside—not instead of—their eval
-stack, and eventually ask it to govern rollout or enforcement.
+Canonical active documents:
 
-Canonical handoff:
+- `triana-labs/CHARTER.md`
+- `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
+- `internal/DECISION_LOG.md`
+- `docs/PROVENANCE.md`
 
+Historical research and suspended-product handoff:
+
+- `internal/BRAINTRUST_HRAI_DOGFOOD_REPORT_2026-07-30.md`
+- `internal/BRAINTRUST_REPLACEMENT_VERDICT_2026-07-30.md`
 - `internal/TRIANA_RESEARCH_CONVERSATION_HANDOFF_2026-07-30.md`
-- `internal/BRAINTRUST_DIFFERENTIATION_MIND_MAP_2026-07-30.md`
-- `internal/DISCOVERY_ASK_GUIDE.md`
-- `internal/examples/HIRING_AGENT_MODEL_UPGRADE_RELEASE_REVIEW.md`
-- `internal/FUTURE_RELEASE_CONTROL_CONSIDERATIONS.md`
-
-The next strategic work should reconstruct real release and rollout decisions,
-then stress-test Braintrust's extension path against those workflows. Do not
-resolve the distinction through internal reasoning alone.
+- `docs/PRODUCT.md`
 
 ## Current objective
 
-Prove that an eligible team can receive a decision-changing Release Review on a
-real PR that states the exact Release Change, one human-approved Release
-Obligation, required and received evidence, gaps, policy reasoning, and human
-decision state—without Triana-authored integration code.
+Ship a public, local-first Preview that a developer with a conversational AI
+agent can install and use without founder-written integration code. The
+decisive exit is M3.5: a developer who did not build Triana must provide a
+trace export, configure baseline and candidate execution, and produce an
+honest report in under 90 minutes with at most 200 adapter lines (target 100).
 
-Do not optimize the long-term platform before proving this loop.
+Internal HRAI success proves machinery and supplies a demo. It does not prove
+that another team has a recurring problem or that the adapter contract is
+usable.
 
-## Frozen
+## Accepted Preview boundary
 
-- Narrow CI-runnable ICP: conversational, tool-using agents only.
-- Offline document-processing, batch, coding, research, and other
-  non-conversational autonomous agents are outside V1.
-- The replay unit is one bounded conversational episode, not open-ended
-  multi-turn simulation.
-- One exact incident, not representative production coverage.
-- Human-approved Release Obligation carried by one Protected Case.
-- Customer-declared Release Change; no automatic impact or applicability
-  inference.
-- Explicit approved baseline and GitHub candidate.
-- Execution inside customer CI.
-- Triana deterministic assertions plus one customer-owned JSONL evaluator
-  command.
-- Separate behavioral failures, evaluation gaps, and non-comparability.
-- Advisory PASS/REVIEW/BLOCK as the Release Recommendation, never the human
-  Release Decision.
-- Immutable Release Evidence Record.
-- One Release Review joining evidence, gaps, policy reasoning, recommendation,
-  and any linked Decision Attestation.
-- Existing GitHub/release workflow remains the V1 human authority surface.
-- One case free; $500/month design-partner pilot.
-- Closed-source distribution.
+- Conversational, tool-using agents with observable structured turns or
+  transcripts and ordered tool activity.
+- Customer-provided production traces or approved synthetic/public corpora.
+- A public `PreviewTrace` contract and documented JSONL/OTel-shaped adapter.
+- Explicit baseline and candidate command or endpoint identities.
+- F0 shared-prefix resampling: both arms receive the same historical prefix
+  and execute freshly.
+- F1 continuation driven by a next-turn generator derived from the authorized
+  corpus; simulation and generated-corpus evidence are labeled.
+- Repeated paired trials, trajectory-diversity measurement, typed gaps, and
+  divergence-first reporting.
+- Local-first execution. Nothing goes to Triana. Provider and permitted egress
+  must be explicitly configured; redaction and egress validation happen before
+  hashing and before model-provider calls.
+- Open-source distribution only after provenance, privacy, and egress checks.
+- No SHIP/BLOCK verdict. Humans confirm persistent rulings and decide what the
+  difference means.
 
-## Active hypotheses
+## Accepted outcome and stability machinery
 
-| ID | Hypothesis | Evidence required | Status |
+- Each trial is `valid` or `invalid` with a typed cause before comparison.
+- Applicable outcome fields use
+  `NOT_APPLICABLE | MISSING | PRESENT(value)`.
+  `NOT_APPLICABLE` is skipped; `MISSING` prevents a complete-outcome claim but
+  does not erase lower-field partial observations; `PRESENT` is compared.
+- Outcome fields are declared projection, commitment, agent-origin terminal
+  status, and exact ordered tool-name sequence. Precedence controls only the
+  primary display reason.
+- The baseline is reference behavior, not accepted ground truth. Explicit
+  human evidence may mark it accepted or `KNOWN_FAILURE`.
+- Tier-1 stability at k=3 requires pass^3 on one outcome in the baseline and
+  pass^3 on a different outcome in the candidate. Weaker or unstable changes
+  live on a separate evidence shelf.
+- Paired claims use only the two-sided comparable intersection. Fingerprint
+  differences, invalid runs, and insufficient trials are never silently put in
+  pass denominators.
+- Numeric aggregate movement is contextualized against observed baseline
+  variation. This is not called a statistical noise estimate.
+- Every milestone is compared with the standing DIY frontier-agent benchmark.
+  If a generic coding agent produces the same useful result without Triana,
+  Preview must win on reproducible execution, stability math, denominators,
+  persistent rulings, repeatability, or cost.
+
+## Active hypotheses and stopping evidence
+
+| ID | Hypothesis | Smallest useful evidence | Current status |
 |---|---|---|---|
-| H1 | At least one-third of important incidents for eligible teams become `READY` without Triana engineering | Qualification attempts across first three eligible teams | Untested |
-| H2 | A new engineer reaches the first real record in under one working day | Timed external M1 | Untested |
-| H3 | The Release Review changes a merge/release action or materially improves the release conversation | Before/after decision interview tied to a real PR | Untested |
-| H4 | Teams retain protected cases across at least three releases | Longitudinal partner usage | Untested |
-| H5 | Teams will pay $500/month for repeated records before mandatory enforcement exists | Direct pilot purchase | Untested |
-| H6 | After advisory trust, at least one team asks for enforcement | Partner request backed by usage | Untested |
-| H7 | The customer-command lane adds a unique release action rather than duplicating Braintrust/DeepEval/LangSmith | Side-by-side workflow on customer stack | Untested |
-| H8 | A consequential release's change, obligations, evidence, decision, and later outcome are fragmented across systems or people in a way that creates measurable cost, delay, uncertainty, or escaped failures | Artifact-based reconstruction using the discovery ask guide | Untested |
+| L1 | A stranger can reach a report without founder integration | One M3.5 installation under 90 minutes and at most 200 adapter lines | Untested |
+| L2 | Preview finds a useful stable difference that the team's current eval/review did not make obvious, or earns trust by showing honest no-difference | Stranger report plus debrief against their existing process | Untested |
+| L3 | F1 generated user continuations are realistic enough to reveal relevant post-divergence behavior | Blind or owner-reviewed sample of 30 with declared acceptance and duplicate-trajectory budget | Untested |
+| L4 | The deterministic machinery beats “give both trace sets to Codex/Claude” on a structural axis | Same inputs, timed DIY benchmark, compare findings, denominators, repeatability, and cost | Untested |
+| L5 | Confirmed rulings become more valuable on a second candidate run | Same external developer reruns one changed candidate and prior rulings apply correctly | Blocked on M3.5 |
+| L6 | The artifact creates qualified conversations with agent builders | At least five relevant users inspect or run it; at least two request a follow-up about their release workflow | Untested |
+
+M3.5 fails if the stranger needs bespoke founder engineering, exceeds the time
+or adapter budget, cannot understand the report, or would not consider using
+it again. Failure triggers a narrow correction to installation, adapter, or
+problem scope. It does not authorize building M4 to compensate.
 
 ## Immediate build sequence
 
-Every slice below uses the three-role protocol in `docs/ENGINEERING.md` and the
-live `internal/SLICE_PACKET.md`: main orchestrator → independent test author
-with valid RED → orchestrator test freeze → independent implementation author
-→ orchestrator seed/adversarial/full-gate verification. Worker edits are
-serial in the shared worktree.
+All implementation slices use `docs/ENGINEERING.md` and a current
+`internal/SLICE_PACKET.md`: orchestrator freezes the contract, an independent
+test author proves RED, a separate implementation author implements without
+changing frozen tests, and the orchestrator owns adversarial and full-gate
+verification. Shared-worktree edits are serial unless isolated worktrees are
+used. Each slice also freezes and reconciles a change budget, uses one
+falsifiable hypothesis per debugging iteration, and ends with a structured
+handoff that separates verified facts, unverified work, assumptions, and
+uncertainty.
 
-### Phase 0: record-first visible kernel
-
-Keep four small top-level, versioned contracts:
-
-1. normalized trace;
-2. protected case;
-3. release evidence record;
-4. record chain.
-
-Nested typed primitives include execution contract, trial result, assertion
-result, customer-evaluator result, Release Change, Release Obligation fields,
-evidence requirements, evidence gap, comparison, Release Policy evaluation,
-recommendation, and Decision Attestation. Do not turn every nested type into a
-separately deployed service or storage system.
-
-#### Slice 0A: contract kernel
-
-- strict parsing and versioning;
-- canonical serialization;
-- stable identity and hashing;
-- golden A/A, A/B, gap, and tampered fixtures;
-- record round-trip verifier.
-
-Proof: changing any protected field invalidates verification while a valid
-record survives serialize, reload, and verify without semantic drift.
-
-Initial orchestrator seed/fixture matrix:
-
-- canonical A/A control;
-- planted A/B regression;
-- missing approved baseline;
-- mismatched execution contract;
-- partial evidence or evaluator timeout;
-- protected-field tampering;
-- order permutation that must preserve canonical identity;
-- same declared input repeated twice to detect nondeterminism.
-
-#### Slice 0B: comparison and Release Policy
-
-- explicit comparability;
-- pass and evaluable denominators;
-- typed gaps and weakest supported claim;
-- deterministic PASS/REVIEW/BLOCK;
-- record-chain verification.
-
-Proof: A/A passes, planted A/B blocks, missing baseline becomes
-`FIRST_OBSERVATION`, mismatched execution becomes `MOVED`, missing evidence
-reviews, and tampering is rejected.
-
-#### Slice 0C: first visible Release Review
-
-Build one permanent-page projection over the exact same fixture records and
-Decision Attestation contracts used by the core verifier. Show identity,
-declared change, obligation, required and received baseline/candidate evidence,
-named risks, gaps, policy reasoning, recommendation, hash verification, and
-decision state.
-
-Proof: a human can inspect the planted regression and understand what changed,
-why the policy recommends BLOCK, what remains unknown, and whether a human
-decision is pending. The UI performs no independent release arithmetic.
-
-The product is visible and usable against deterministic fixtures by the end of
-the third slice. Do not wait for real trace ingestion, authentication, billing,
-or paired customer execution before showing the Release Review.
-
-### Phase 1: acquisition — Connect → Surface → Promote
-
-Mine only permitted Kairos/Kairos-AI code after provenance review. Build:
-
-- one trace adapter;
-- deterministic candidate signals and ranking;
-- a six-to-nine-field protected-case proposal;
-- human review and Promotion;
-- qualification state.
-
-Proof: one real incident becomes a promoted case in under 15 minutes.
-
-### Phase 2: recurring product — local `triana check` → Release Review
-
-Implement the paired execution contract:
-
-- explicit baseline and candidate refs;
-- isolated runtimes;
-- same case and fixture fingerprint;
-- repeated trials;
-- deterministic assertions;
-- optional customer JSONL evaluator;
-- gap/comparability logic;
-- Release Evidence Record and verification;
-- Release Policy recommendation;
-- Release Review with a linked GitHub Decision Attestation.
-
-Proof: the reference agent produces honest A/A and planted A/B rates, a policy
-recommendation, and a Release Review that keeps the human decision separate
-through an append-only Decision Attestation.
-
-### M0: public reproducibility
-
-Publish the reference agent and every customer-visible artifact. Keep Triana
-source private. A skeptic must reproduce the record using the shipped
-container.
-
-### M1: real partner
-
-Run one retained case on one real PR with no bespoke Triana integration code.
-
-### Alpha
-
-Open only after M0 and one successful M1.
+1. **M0 — honest demo data:** fresh HRAI baseline/candidate/control data,
+   current trace schema, k=3, spend cap, redaction and self-agreement evidence.
+2. **M1 — public input boundary:** PreviewTrace, external adapter and runner
+   contracts, corpus-derived personas/intents/turn policies, fidelity-labeled
+   grounding.
+3. **M2 — comparison machinery:** typed outcomes, pass^3 stability, closed
+   comparability fingerprint, observed baseline variation, sequence alignment,
+   next-turn generation and trajectory-diversity checks.
+4. **M3 — public-ready report:** one-command demo, divergence-first report,
+   paired transcript, lineage, fidelity, denominators, gaps, redaction and
+   egress gates, DIY-agent comparison.
+5. **M3.5 — stranger installation:** external developer meets the time and
+   adapter limits and answers whether they would use it on another release.
+6. **M4 — gated recurrence:** only after M3.5, persist confirmed ruling
+   identity and apply it on a changed candidate; promotion emits a
+   ProtectedCase draft for human completion.
 
 ## Do not build yet
 
-- authentication or billing before a slice needs them;
-- microservices, Kubernetes, event buses, or a general workflow engine;
-- a broad dashboard or large design system;
-- performance infrastructure without a measured bottleneck and target;
-- full scan, clustering, and coverage maps;
-- behavior-family inference;
-- Triana-owned LLM judges;
-- automatic ground truth;
-- simulation platform or managed sandbox;
-- provider-specific evaluator adapters;
-- automatic eval-set maintenance, issue-to-fix generation, or agent
-  self-modification;
-- visual release policy;
-- automatic blocking;
-- rollout and rollback;
-- compliance packaging;
-- dashboards;
-- SDK/re-instrumentation layer;
-- open-source core.
+- Hosted ingestion, storage, authentication, billing, or managed execution.
+- Guard, Learn, automatic release recommendations, rollout, rollback, or live
+  side-effectful tool execution.
+- Full eval-platform imports, scorer authoring, prompt management, or generic
+  observability.
+- Automatic change-to-impact inference or production-incidence prediction.
+- Universal-agent support beyond the conversational/tool-agent boundary.
+- An LLM-owned ground truth, verdict, denominator, comparability decision, or
+  persistent ruling.
+- M4 label storage and promotion before M3.5 passes.
+- Broad dashboards, a general workflow engine, microservices, Kubernetes, or
+  performance infrastructure without a measured bottleneck.
+
+## Suspended Release Review V1
+
+The frozen V1 in `docs/PRODUCT.md` remains an archived, internally consistent
+product boundary: customer-declared Release Change, human-approved Release
+Obligation expressed as a Protected Case, paired customer-CI evidence, typed
+gaps and comparability, immutable Release Evidence Record, advisory
+PASS/REVIEW/BLOCK, and separate human Decision Attestation.
+
+The Braintrust HRAI dogfood found that Braintrust plus roughly 282 lines of
+ordinary CI glue could solve the bounded workflow sufficiently, making the
+generic release layer likely internal glue for that case. Do not resume V1,
+merge it into Labs, or present it as the active product without new external
+evidence and an explicit decision-log entry.
+
+## External evidence log
+
+Add one row per installation or serious workflow reconstruction.
+
+| Date | Team/agent | Existing stack | Input adapter LOC | Time to report | Useful difference or honest no-difference? | Existing process missed it? | Would use again? | Follow-up requested? | Notes |
+|---|---|---|---:|---:|---|---|---|---|---|
 
 ## Open implementation decisions
 
-- **Language and monorepo shape:** TypeScript across contracts, core, CLI, API,
-  and UI is the current speed/readability candidate because it minimizes
-  cross-language contract duplication. It is not accepted yet. Decide with a
-  short Slice 0A spike against canonical serialization, hashing, CLI
-  distribution, container size, test speed, and code readability.
-- **Persistence:** fixtures and files are sufficient for Slice 0A–0C unless
-  record-chain acceptance tests prove otherwise. Do not select hosted storage
-  before that evidence exists.
-- **UI framework:** choose only after the contract kernel exposes the exact
-  Release Review projection. The UI must consume core outputs rather than own
-  domain logic.
+- Exact public adapter envelope: minimum JSONL event vocabulary and optional
+  OTel mapping.
+- Exact baseline/candidate runner protocol for subprocess versus HTTP agents.
+- License and contribution policy for the public Labs repository.
+- Operator spend cap after the initial USD 50 per-panel default is tested.
+- M3.5 participant selection: must operate a real conversational AI agent and
+  must not have contributed to Triana.
 
-## Engineering dogfood
-
-Adopt the proven shape of Kairos-AI's CI practices, not its product semantics:
-
-- one local command shared by CI;
-- format, lint, strict type, complete tests, and build/package gates;
-- deterministic round-trip, seeded sampling, corpus/fixture hashes, and
-  tamper rejection;
-- negative architecture and redaction guards;
-- artifact-derived published-claim consistency when M0 values appear.
-
-Do not inherit unlocked dependency installs, informational-only coverage,
-moving CI action tags, fail-fast-only CI reporting, or silent integration-test
-skips.
-
-Kairos-AI coding-agent and development-session corpora are outside the frozen
-conversational-agent V1. They may later stress an adapter or reproducibility
-tool under an explicit `engineering_dogfood` label, pinned source ref, runtime,
-fixture hash, and refusal to make a V1 product claim.
-
-## Customer evidence log
-
-Add one row per real qualification or release attempt.
-
-| Date | Customer/agent | Eligibility | Incident | Qualification | Time to Release Review | Decision changed? | Retained? | Payment signal | Notes |
-|---|---|---|---|---|---|---|---|---|---|
-
-## Change rule
-
-- One request: record it.
-- Repeated blocker among eligible teams: create a focused discovery test.
-- Paying team cannot complete core loop: test ICP or contract.
-- Record changes no release behavior: reconsider the wedge.
-- Nice-to-have feedback: preserve scope.
-
-Only an explicit decision may modify `docs/PRODUCT.md`.
+These are implementation questions, not permission to expand product scope.

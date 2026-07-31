@@ -1,6 +1,68 @@
 # Active implementation slice
 
-Status: **READY_FOR_IMPLEMENTATION_AUTHOR**
+Status: **HISTORICAL SLICE 0A — COMPLETE; REPLACE BEFORE NEW LABS WORK**
+
+## Repository-wide workflow controls
+
+These controls were accepted after Slice 0A was completed and moved into
+`triana-core/`. They do not change Slice 0A product behavior, acceptance
+criteria, frozen test ownership, or allowed production paths. Before any new
+Labs slice or any other implementation slice begins, the orchestrator must
+replace this historical packet and populate the fields below with
+slice-specific values. No worker starts while a required field remains
+unfilled.
+
+### Change budget
+
+```text
+Expected files or bounded path patterns: [required]
+Expected production areas: [required]
+Expected test and fixture areas: [required]
+Explicitly untouched areas: [required]
+New dependencies permitted: [none, or exact allowed purpose]
+Maximum scope expansion without orchestrator return: [required]
+```
+
+Every worker stops before exceeding this budget. At exit, the orchestrator
+records the actual files and dependencies and explains every variance.
+
+### Single-hypothesis debugging record
+
+Repeat this block once per debugging iteration:
+
+```text
+Observed failure:
+Smallest reproduction:
+Current hypothesis:
+Evidence that would falsify it:
+One change attempted:
+Result:
+Regression test or fixture:
+```
+
+One iteration contains one causal intervention. A falsified speculative change
+is removed or isolated before the next hypothesis.
+
+### Structured uncertainty handoff
+
+Every worker and the final orchestrator handoff uses:
+
+```text
+What changed:
+Why each changed file was necessary:
+Change-budget reconciliation:
+What was verified (exact commands and artifacts):
+What remains unverified:
+Assumptions made:
+Unexpected findings:
+Dependencies added and why:
+Out-of-scope problems deliberately left alone:
+Known risks or uncertainty:
+Human action still required:
+```
+
+Use `none` rather than omitting an empty field. Unrun checks are reported as
+unverified, never implied to have passed.
 
 The owner started execution on 2026-07-30. The implementation author first
 created only the approved reproducible `NOT_IMPLEMENTED` scaffold. Independent

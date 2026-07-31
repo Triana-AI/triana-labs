@@ -3,9 +3,10 @@
 Status: **repository operating contract**
 
 This document defines how humans and coding agents turn Triana decisions into
-reviewable, reproducible changes. `docs/PRODUCT.md` and
-`docs/ARCHITECTURE.md` own product and trust boundaries. This document owns
-implementation and delivery practice.
+reviewable, reproducible changes. The active product authority identified in
+`AGENTS.md` owns product scope; `docs/ARCHITECTURE.md` owns shared trust
+boundaries where the active authority does not supersede it. This document
+owns implementation and delivery practice.
 
 ## First principles
 
@@ -27,8 +28,8 @@ implementation and delivery practice.
 8. **Small changes preserve understanding.** Each commit should be reviewable,
    testable, and safe to revert on its own.
 9. **Visible value arrives early.** A vertical slice must end in an executable
-   or inspectable product result. The first Release Review page ships by the
-   third implementation slice.
+   or inspectable product result. The active product plan defines the concrete
+   milestone; infrastructure alone is not a slice exit.
 10. **Optimization follows measurement.** Correctness, clarity, and the first
     complete loop come before performance or infrastructure tuning. Optimize
     only a measured bottleneck against a stated target.
@@ -39,7 +40,7 @@ Write down the slice before writing implementation code. A plan, issue, pull
 request description, or the active section of `internal/WORKING_MEMORY.md` may
 hold it, but it must identify:
 
-- the frozen V1 outcome advanced;
+- the active product outcome advanced;
 - inputs and outputs;
 - deterministic, LLM, and human authority;
 - privacy and execution location;
@@ -47,6 +48,9 @@ hold it, but it must identify:
 - provenance for reused material;
 - a reproducible acceptance test;
 - explicit non-goals.
+- a change budget naming expected files and areas, test-owned paths, production
+  paths, explicitly untouched areas, permitted dependencies, and the maximum
+  scope expansion that can occur without returning to the orchestrator.
 
 An implementation can proceed when the user has explicitly requested it and
 these points do not introduce a material choice beyond that request. Material
@@ -71,7 +75,7 @@ versioned evidence artifact
 CLI or Release Review projection
 ```
 
-The first three slices are fixed:
+For the suspended Release Review V1, the first three slices were:
 
 1. **Contract kernel:** versioned contracts, strict parsing, canonical
    serialization, stable identity, hashing, golden fixtures, and round-trip
@@ -81,9 +85,11 @@ The first three slices are fixed:
 3. **Visible Release Review:** one focused page rendering the same record and
    Decision Attestation contracts used by the CLI. It is not a dashboard.
 
-Do not postpone all UI until ingestion and orchestration are complete. Start
-with deterministic fixtures, then replace fixture boundaries with real
-adapters in later slices.
+The active Triana Labs milestone sequence is owned by its charter and current
+plan. Do not restart or continue the suspended sequence without an explicit
+resumption decision. For either product line, do not postpone all visible
+output until ingestion and orchestration are complete: start with
+deterministic fixtures, then replace fixture boundaries with real adapters.
 
 Do not begin with authentication, billing, microservices, Kubernetes, event
 buses, generic plugin systems, general workflow engines, or a large design
@@ -100,7 +106,8 @@ worktrees if genuine parallelism is necessary.
 The main orchestrator completes `internal/SLICE_PACKET.md` before worker edits.
 It freezes:
 
-- slice ID, canonical base commit, and V1 outcome;
+- slice ID, canonical base commit, active product authority, and product
+  outcome;
 - input/output contracts and public behavior table;
 - deterministic, LLM, customer-evaluator, and human authority;
 - privacy and execution location;
@@ -108,11 +115,21 @@ It freezes:
 - provenance and allowed source material;
 - deterministic seed policy and fixture identities;
 - explicit non-goals and file ownership;
+- the change budget: expected files or bounded path patterns, expected
+  production and test areas, explicitly untouched areas, whether any new
+  dependency is allowed, and the maximum acceptable scope expansion;
 - exact RED and final verification commands.
 
 Unresolved product, architecture, privacy, or semantic choices go to
 `internal/WORKING_MEMORY.md` and stop the slice. Accepted durable choices are
 appended to `internal/DECISION_LOG.md`.
+
+The change budget is a review boundary, not a target to consume. A worker must
+stop and report before editing outside it. The orchestrator may narrow or
+clarify the budget before the edit occurs. Expanding it after work begins
+requires a written reason; any material product, architecture, privacy, or
+repository-boundary expansion requires the human decision already mandated
+above.
 
 ### 2. Independent test author
 
@@ -132,10 +149,10 @@ The test author does not write production code.
 
 ### 3. Orchestrator test freeze
 
-The orchestrator reviews the tests against `docs/PRODUCT.md`,
-`docs/ARCHITECTURE.md`, and the slice packet. It verifies RED on the canonical
-base, then records the test commit or content hashes and freezes the owned
-paths.
+The orchestrator reviews the tests against the active product authority named
+in `AGENTS.md`, applicable shared architecture and contracts, and the slice
+packet. It verifies RED on the canonical base, then records the test commit or
+content hashes and freezes the owned paths.
 
 Acceptance tests may be visible to the implementation author. Independence
 comes from ownership and freeze, not artificial secrecy. The orchestrator also
@@ -157,6 +174,10 @@ valid RED evidence. It edits only production-owned paths and:
 
 The implementation author does not approve the slice.
 
+When debugging, the implementation author follows the single-hypothesis loop
+defined below. It must not bundle multiple speculative fixes into one
+iteration.
+
 ### 5. Orchestrator integration and exit
 
 The orchestrator integrates test work before implementation work and rejects
@@ -171,7 +192,10 @@ any implementation diff that touches frozen test-owned paths. It:
 - checks that no missing evidence became PASS;
 - checks decisions, doubts, provenance, canonical docs, and local decision
   memory;
+- reconciles the declared change budget against the actual diff and rejects
+  unexplained files, dependencies, formatting, cleanup, or scope expansion;
 - records exact commands and artifacts;
+- records the structured uncertainty handoff defined below;
 - alone declares the slice complete.
 
 The orchestrator does not directly repair failed production or acceptance
@@ -187,6 +211,44 @@ test must still demonstrate valid RED against the pre-implementation base.
 Semantic weakening requires a human product decision and append-only decision
 entry. Never combine relaxed acceptance criteria and production changes in one
 commit.
+
+## Single-hypothesis debugging loop
+
+Debugging is an evidence loop, not a sequence of plausible edits. Before each
+debugging change, record:
+
+```text
+Observed failure:
+Smallest reproduction:
+Current hypothesis:
+Evidence that would falsify it:
+One change attempted:
+Result:
+Regression test or fixture:
+```
+
+Rules:
+
+- read the complete error and relevant trace before forming the hypothesis;
+- reproduce the failure before changing production behavior whenever the
+  failure is locally reproducible;
+- make one causal intervention per iteration; mechanical edits required to
+  compile that intervention count as the same change, but unrelated fixes do
+  not;
+- run the smallest discriminating check first, then the required broader gate;
+- if the result falsifies the hypothesis, remove or isolate the speculative
+  change before starting the next hypothesis;
+- never hide an unexplained state with a default, retry, null guard, broader
+  exception handler, or weakened assertion;
+- promote a confirmed defect to a stable regression test or fixture with a
+  reproduction command;
+- preserve failed attempts when they affect interpretation, cost, or
+  reproducibility.
+
+The loop may live in the slice packet, agent handoff, issue, or local decision
+journal. It must be inspectable by the orchestrator. Test defects still return
+to the test author and implementation defects still return to the
+implementation author.
 
 ## Seeds, fixtures, and nondeterminism
 
@@ -215,8 +277,9 @@ repeated trials and reported evidence.
 
 Kairos-AI corpora involving coding agents or agent-development sessions may be
 used only as labeled engineering stress tests for adapters, replayability,
-hashing, or tooling. They are outside Triana's frozen V1 ICP and cannot be
-presented as product acceptance evidence or customer ground truth.
+hashing, or tooling. Unless an active product authority explicitly includes
+them, they cannot be presented as product acceptance evidence or customer
+ground truth.
 
 ## Decision memory
 
@@ -467,7 +530,11 @@ may already rely on without explicit coordination.
 
 ## Review checklist
 
-- Does the change stay inside frozen V1 and the approved implementation slice?
+- Does the change stay inside the active product authority and approved
+  implementation slice?
+- Does every changed file and dependency fit the declared change budget?
+- Were debugging fixes supported by one reproduced, falsifiable hypothesis at
+  a time?
 - Is human, deterministic, LLM, and customer-evaluator authority explicit?
 - Can missing evidence accidentally become a pass?
 - Are baseline and candidate actually comparable before regression language?
@@ -481,5 +548,25 @@ may already rely on without explicit coordination.
 ## Completion
 
 A slice is complete only when implementation, tests, verification, provenance,
-canonical docs, and decision memory agree. Report what changed, what was
-verified, known gaps, and any human action still required.
+canonical docs, and decision memory agree.
+
+Every worker and orchestrator handoff must state:
+
+```text
+What changed:
+Why each changed file was necessary:
+Change-budget reconciliation:
+What was verified (exact commands and artifacts):
+What remains unverified:
+Assumptions made:
+Unexpected findings:
+Dependencies added and why:
+Out-of-scope problems deliberately left alone:
+Known risks or uncertainty:
+Human action still required:
+```
+
+Use `none` where a field is empty. Do not replace evidence with “should work,”
+and do not imply that an unrun check passed. The orchestrator's final handoff
+must distinguish observed facts, reasoned inferences, and unresolved
+uncertainty.

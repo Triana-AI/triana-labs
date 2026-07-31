@@ -15,11 +15,11 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
 
 ## Narrative (owner-frozen)
 
-> Triana Preview takes your production traces, learns accepted agent behavior
-> and user-signaled failures from them, builds a case panel that mixes real
-> replay with grounded expansion, runs your baseline and candidate on the same
-> panel, and reports ranked divergences — including behaviors your evals never
-> covered — with every claim backed by a paired transcript and every
+> Triana Preview takes your production traces, builds a grounded case panel
+> from observed reference behavior and failure signals, mixes shared-context
+> resampling with labeled expansion, runs your baseline and candidate on the
+> same panel, and reports ranked divergences — including behaviors your evals
+> never covered — with every claim backed by a paired transcript and every
 > non-claim labeled. Confirmed findings become must-checks for the next run.
 
 ## Scope decisions (Akarsh, 2026-07-31)
@@ -42,9 +42,11 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
    for distress markers and persona realism; public corpora (ABCD, tau-bench)
    are acceptable supplements; generated corpora are acceptable when labeled
    as such. Fidelity labels on every derived asset.
-5. **Open-source distribution** after the redaction and provenance checks
-   pass. Local-first: customer traces go only to model providers the
-   customer already uses, under customer keys; nothing is sent to Triana.
+5. **Open-source distribution** after the redaction, egress-validation, and
+   provenance checks pass. Local-first: nothing is sent to Triana. Redaction
+   and egress validation run before hashing and before trace content is sent
+   to a model provider. Customer-held keys do not imply authorization;
+   configuration or consent must name the provider and permitted egress.
 6. **The Slice 0A kernel (`triana-core/`) is shared infrastructure.** Labs
    defines its own document kinds (e.g. PreviewTrace) using the kernel's
    canonicalization and hashing; the five frozen V1 contracts are not
@@ -55,24 +57,34 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
 - Divergence-first reporting; verdict language never replaces the human.
 - Universal-invariant hits are high-priority flags, not verdicts; a human
   confirmation converts a flag class into a persistent ruling.
-- Baseline is accepted behavior **except** on cases carrying failure
-  evidence, where divergence defaults to candidate-improvement-candidate.
+- Baseline is reference behavior, not automatically accepted behavior.
+  Acceptance requires a human ruling or explicit acceptance evidence. A case
+  carrying confirmed failure evidence marks the baseline `KNOWN_FAILURE`;
+  divergence then defaults to a candidate-improvement candidate, not a
+  verdict.
 - Explicit denominators; paired claims only from two-sided intersections;
   gaps, non-comparable, and unstable cases reported separately, never folded
   into scores.
 - No rerun-to-green: machinery acceptance is proven on constructed
   nondeterministic fixtures; real-data milestones pass by reporting honestly,
   whatever the data shows.
-- Fidelity badge on every report: frozen replay, simulated continuation, and
-  generated-corpus evidence are labeled and never conflated.
+- Fidelity badge on every report: shared-prefix resampling, simulated
+  continuation, and generated-corpus evidence are labeled and never
+  conflated.
 
-## Open blocker (owner-acknowledged)
+## Accepted outcome and stability boundary
 
-**Outcome and stability machinery is undesigned.** What counts as a case's
-outcome, what makes a flip stable, and how noise bands are derived at small n
-have no accepted specification yet. This is the single design blocker before
-implementation; the current proposal lives in the plan and must be accepted
-or amended by Akarsh before the diff engine is built.
+The owner accepted the typed outcome, pass^3 stability, comparability,
+observed-baseline-variation, and evidence-gap machinery in the active plan on
+2026-07-31. Outcome fields use `NOT_APPLICABLE`, `MISSING`, or
+`PRESENT(value)`; missing required evidence cannot block valid lower-field
+observations from being shown, but it prevents a complete-outcome claim. The
+plan is normative for the complete mechanism.
+
+The external usability gate is M3.5: a developer who did not build Triana must
+install the public repository, adapt their traces within the stated line
+budget, and produce an honest report within 90 minutes before persistent label
+storage or promotion work proceeds.
 
 ## Relationship to suspended V1
 
