@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-03 structural Corpus Intelligence
 
-Status: **CORRECTED ENTRY GATE — INDEPENDENT TEST AUTHOR RE-AUTHORIZED**
+Status: **INDEPENDENT ACCEPTANCE FROZEN — IMPLEMENTATION AUTHOR AUTHORIZED**
 
 Date: 2026-07-31
 Branch: `codex/labs-03-corpus-intelligence`
@@ -309,6 +309,23 @@ expected bytes without importing production derivation code. Minimum matrix:
 Valid RED means new tests fail only because `triana corpus derive` and the
 `intelligence` package do not exist. The orchestrator freezes test commit and
 aggregate before implementation begins.
+
+### 9.1 Frozen acceptance evidence
+
+Independent acceptance is frozen at commit `f731afe`. Its six test-owned files
+contain 33 black-box cases. The independent author and Codex each reproduced
+valid RED: all 33 fail solely because the command and packaged intelligence
+module are absent, while the previous 151 tests pass.
+
+The aggregate SHA-256 over sorted repository-relative `shasum -a 256` lines is:
+
+```text
+2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae
+```
+
+Commit `f731afe` and this aggregate are the only acceptance freeze authorized
+to judge implementation. Evidence root:
+`/private/tmp/labs03-test-author.Avnprb`.
 
 ## 10. Reproducible exit gate
 
