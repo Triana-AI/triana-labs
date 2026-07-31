@@ -22,6 +22,32 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
 > never covered — with every claim backed by a paired transcript and every
 > non-claim labeled. Confirmed findings become must-checks for the next run.
 
+## Immediate launch cut (owner-frozen, 2026-08-01)
+
+For the first public developer preview, the value moment is narrower and
+supersedes the immediate baseline/candidate sequence above without erasing the
+longer-term comparison product:
+
+> Supply authorized conversational traces; Triana derives grounded proposed
+> user personas and behaviors, synthesizes a diverse panel of new situations,
+> runs genuinely adaptive multi-turn conversations against one existing
+> conversational/tool agent, and returns inspectable transcripts, coverage,
+> cost, fidelity, and uncertainty. Reviewed local evidence compounds into the
+> next run.
+
+This mode is labeled `GENERATED_MULTI_TURN_SIMULATION`. It is not F0 or F1,
+does not compare baseline and candidate, and cannot make regression, release,
+or accepted-behavior claims. The launch remains local-first and initially
+synthetic-only. A model may propose personas, cases, turns, rubrics, and memory;
+deterministic code owns identity, support, lineage, selection, duplicate
+arithmetic, budgets, and publication; a human supplies the judgment that can
+promote, reject, supersede, or revoke persistent local memory.
+
+The launch cut explicitly defers baseline/candidate execution, divergence
+reporting, global or managed memory, autonomous model/prompt training, coding
+and other universal-agent support, hosted ingestion, and a SaaS control plane.
+Those surfaces require later evidence and a new accepted checkpoint.
+
 ## Scope decisions (Akarsh, 2026-07-31)
 
 1. **User simulation is in scope.** The core intelligence layer is the

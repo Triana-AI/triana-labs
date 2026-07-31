@@ -6,6 +6,37 @@ Canonical planning base: `b963b85`
 Owner: Akarsh
 Execution orchestrator: primary coding agent operating under `AGENTS.md`
 
+## 2026-08-01 launch-sequence amendment
+
+The owner accepted a narrower 36-hour first-launch sequence. This amendment
+supersedes the plan's immediate baseline/candidate component order through the
+first public developer preview; it does not delete the longer-term comparison
+architecture described below.
+
+The launch deliverable is a local, initially synthetic-only
+`GENERATED_MULTI_TURN_SIMULATION` path:
+
+```text
+authorized conversational traces
+  -> structural and semantic corpus intelligence
+  -> grounded proposed personas, intents, and turn policies
+  -> distinct generated cases and selected panel
+  -> one existing conversational/tool agent via one bounded runner protocol
+  -> adaptive multi-turn simulated-user conversations
+  -> inspectable transcripts, evaluation evidence, cost, fidelity, and gaps
+  -> versioned local evaluated memory for later runs
+```
+
+The launch path has no baseline/candidate arms, F0/F1 label, regression claim,
+release verdict, global memory, automatic training, universal-agent promise,
+hosted ingestion, or SaaS surface. Automated graders remain evidence lanes;
+human annotations calibrate them and alone create accepted local rulings. Exact
+checkpoint contracts, evaluation datasets, judge thresholds, memory promotion,
+runner protocol, provider choice, budgets, and UI/report cut are frozen in
+slice packets only after owner discussion. All unchanged privacy, authority,
+provenance, test-first, change-budget, and typed-gap rules in this plan remain
+binding.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

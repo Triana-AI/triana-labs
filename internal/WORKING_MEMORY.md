@@ -294,3 +294,25 @@ Add one row per installation or serious workflow reconstruction.
   must not have contributed to Triana.
 
 These are implementation questions, not permission to expand product scope.
+
+## Active discussion tree — 2026-08-01
+
+The accumulated semantic-agent, evaluator, budget, duplicate-control,
+turn-generator reuse, and memory discussion is normalized in
+`internal/LABS_NEXT_DECISION_TREE.md`. It is discussion state, not accepted
+authority. Its current recommendation is one next checkpoint only: evaluate
+grounded semantic asset derivation behind the minimum provider
+privacy/egress/budget boundary. DeepEval remains a later F1 conformance
+candidate; neither adopting it nor building a custom runtime turn generator is
+authorized yet. Memory beyond the minimal record/snapshot lifecycle remains
+parked until a consuming milestone passes.
+
+The owner subsequently accepted a different first-launch cut on 2026-08-01:
+single-agent `GENERATED_MULTI_TURN_SIMULATION` from authorized traces, with
+grounded proposed semantic assets, distinct case synthesis, adaptive multi-turn
+execution against one conversational/tool agent, inspectable evaluation and
+budget evidence, and versioned local evaluated memory. The decision-log entry
+and charter/plan amendment supersede the discussion tree wherever they differ.
+Exact checkpoints, human-review workflow, judge calibration, runner protocol,
+provider/model, cost bounds, and report cut remain the active discussion before
+the next slice packet is frozen.
