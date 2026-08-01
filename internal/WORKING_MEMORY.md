@@ -409,6 +409,17 @@ parity, prior handoffs, five canonical Observer hashes, governance, and both
 LABS-04 acceptance/adversarial hash gates. Local mechanics are green; live
 Azure/HRAI evidence, final secret scan, artifact inspection, and owner review
 remain.
+The first smoke command preserved a zero-call `CONFIG_INVALID` receipt caused
+by Codex omitting `api_key_env` from the private config. After exact local config
+preflight, the valid command preserved a second zero-call refusal:
+`EVIDENCE_TOO_LARGE(3)`. The HRAI evidence root was 73,650 bytes, but its 424
+singleton citations made the exact PROPOSE request 193,867 bytes. The test
+author stopped rather than inventing a 100-total-citation limit that conflicts
+with `internal/LABS04_WIRE_CONTRACT.md`. The frozen correction instead keeps
+the 90,000-byte root pass, then tail-removes selected traces with existing
+`EVIDENCE_BYTE_LIMIT_REACHED` gaps until the exact request fits 100,000 bytes;
+one oversized trace remains a typed refusal. Pre-test replay predicts nine
+retained priority traces, 198 citations, and 93,166 request bytes for HRAI.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

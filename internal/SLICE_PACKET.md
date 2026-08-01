@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **LOCAL EXIT GATE GREEN — LIVE AZURE/HRAI SMOKE PENDING**
+Status: **SMOKE-DISCOVERED REQUEST-SELECTION RED — CORRECTION FROZEN**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -656,6 +656,22 @@ wheel build/install, all prior source/wheel handoffs, five canonical Observer
 hashes, governance, and the added LABS-04 hashes passed. The remaining exit
 work is the authorized one-shot Azure/HRAI smoke, artifact inspection, secret
 scan after that run, budget reconciliation, and owner usefulness review.
+
+Smoke preflight preserved two zero-egress refusals. The first was Codex's local
+config omission (`api_key_env`), corrected and exactly preflighted before any
+provider call. The valid config then exposed a contract defect: the pinned
+HRAI projection passed the 90,000-byte evidence-root bound at 73,650 bytes but
+created 424 singleton citations and an exact 193,867-byte PROPOSE request, so
+the required smoke refused `EVIDENCE_TOO_LARGE(3)` with zero Azure calls. The
+independent test author correctly rejected a proposed 100-total-citation cap as
+contrary to the exact wire. The accepted correction retains the existing
+90,000-byte root bound, then removes lowest-priority selected traces from the
+tail until the complete request is at most 100,000 bytes, recording the existing
+`EVIDENCE_BYTE_LIMIT_REACHED` gap for every removal. It never replaces removed
+traces, truncates evidence, raises the budget, or changes the frozen oversized
+single-trace refusal. On the pinned corpus this deterministic rule is expected
+to retain nine priority traces and 198 citations in a 93,166-byte request; that
+measurement is pre-test evidence, not a passing smoke claim.
 
 ### Lane A — deterministic contract and safety
 

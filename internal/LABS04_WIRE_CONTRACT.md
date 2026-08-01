@@ -206,8 +206,17 @@ evidence gap. A trace with no remaining user content is excluded. For each
 candidate trace, construct the complete evidence root below with that trace
 added. If canonical root bytes exceed 90000, skip that trace and continue to
 later candidates. Stop after 25 included traces or exhaustion. The 90000 root
-limit reserves at least 10000 request bytes; the final request still must be at
-most 100000 bytes.
+limit is only the first deterministic projection bound; it does not assume a
+fixed request-envelope size. After singleton citations and the exact PROPOSE
+envelope are constructed, measure the complete canonical request. While it
+exceeds 100000 bytes and more than one trace remains, remove the last selected
+trace, add one trace-specific `EVIDENCE_BYTE_LIMIT_REACHED` gap, re-sort gaps,
+rebuild citations, and measure again. Removed traces are not replaced by later
+candidates: tail removal preserves the frozen cluster-round-robin priority.
+If the exact request for the sole remaining trace still exceeds 100000 bytes,
+preserve that evidence and refuse `EVIDENCE_TOO_LARGE(3)` before egress. No
+event or trace is silently truncated, the request ceiling is not raised, and
+no alternate corpus or selection retry is allowed.
 
 ```json
 {
