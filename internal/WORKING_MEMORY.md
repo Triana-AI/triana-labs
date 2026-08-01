@@ -396,6 +396,19 @@ files and is independently green at 17/17 adversarial, 142/142 acceptance,
 Native Darwin/Linux no-replace publication fails closed when unavailable; the
 remaining mechanical work is the complete clean-wheel/privacy/hash gate and
 the single preserved Azure/HRAI smoke, not further contract invention.
+The first combined full-suite gate then found a test-only module-cache collision:
+three runtime `from conftest` statements resolved to LABS-03's already imported
+module. The independent test author changed only import timing in the three
+affected files, preserving every assertion and expectation, and proved 142/142
+isolated plus 347/347 combined. The corrected acceptance aggregate hashes are
+`0044aab6adc61a5f1c65184e98be2ee7b84fb4f0f404288315c4043c2bee8fd5`
+and `df4d1aaacd24c8049e47bda6594b09697ced68af02b820507075cf984be4ec73`.
+The updated versioned verifier subsequently passed 347/347 tests plus Ruff,
+strict mypy, lock, build, clean CPython 3.13.14 wheel install, source/wheel
+parity, prior handoffs, five canonical Observer hashes, governance, and both
+LABS-04 acceptance/adversarial hash gates. Local mechanics are green; live
+Azure/HRAI evidence, final secret scan, artifact inspection, and owner review
+remain.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

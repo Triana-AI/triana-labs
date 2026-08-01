@@ -17,6 +17,7 @@ from conftest import (
     domain_hash,
     invoke,
     request_user_value,
+    trace,
 )
 
 
@@ -173,8 +174,6 @@ def test_fresh_runs_repeat_and_evidence_changes_lineage(
     assert publishers[0].artifacts == publishers[1].artifacts
 
     changed = CapturePublisher()
-    from conftest import trace
-
     traces = [
         trace("trace-alpha", "Changed evidence", "I can help"),
         trace("trace-beta", "Need code-switched सहायता", "I can assist"),

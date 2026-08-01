@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **CORRECTED IMPLEMENTATION GREEN — FULL EXIT GATE PENDING**
+Status: **LOCAL EXIT GATE GREEN — LIVE AZURE/HRAI SMOKE PENDING**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -635,6 +635,27 @@ custody. The author and Codex independently reproduced 17/17 adversarial,
 package contains 1,779 normally formatted nonblank/noncomment production lines.
 This is a corrected implementation candidate, not mechanical checkpoint exit:
 the full packaging/privacy/hash gate and the one-shot Azure/HRAI smoke remain.
+
+The first combined full-suite run exposed three order-dependent runtime imports
+inside the frozen acceptance harness: `from conftest` resolved to the already
+cached LABS-03 module rather than the LABS-04 module. The independent test
+author reproduced 344 passes/three import failures and moved only the same
+helper names into the three files' existing module-level imports; no assertion,
+fixture, or expected behavior changed. Codex reproduced the exact three-file
+diff and re-froze the 142-case suite with sorted concatenated content SHA-256
+`0044aab6adc61a5f1c65184e98be2ee7b84fb4f0f404288315c4043c2bee8fd5`
+and sorted per-file hash-list SHA-256
+`df4d1aaacd24c8049e47bda6594b09697ced68af02b820507075cf984be4ec73`.
+This narrow harness correction supersedes only the two earlier LABS-04
+acceptance aggregate hashes; all 142 behavioral assertions remain frozen.
+The versioned verifier now enforces both corrected acceptance aggregates, both
+adversarial-file hashes, and source/clean-wheel `cases generate --help` parity.
+Codex ran it through a clean CPython 3.13.14 install with network access:
+347/347 tests, Ruff, strict mypy, lock verification, source distribution,
+wheel build/install, all prior source/wheel handoffs, five canonical Observer
+hashes, governance, and the added LABS-04 hashes passed. The remaining exit
+work is the authorized one-shot Azure/HRAI smoke, artifact inspection, secret
+scan after that run, budget reconciliation, and owner usefulness review.
 
 ### Lane A — deterministic contract and safety
 

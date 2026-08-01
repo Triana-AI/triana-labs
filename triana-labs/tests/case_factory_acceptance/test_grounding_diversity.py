@@ -10,6 +10,7 @@ import pytest
 from conftest import (
     CapturePublisher,
     api,
+    azure_body,
     compact_id,
     critique_callback,
     domain_hash,
@@ -238,8 +239,6 @@ def test_critic_cannot_score_approve_or_create_truth(tmp_path: Path) -> None:
     api()
 
     def critic_with_score(_: Any) -> tuple[int, bytes]:
-        from conftest import azure_body
-
         return 200, azure_body({"issues": [], "score": 4, "approved": True})
 
     publisher = CapturePublisher()

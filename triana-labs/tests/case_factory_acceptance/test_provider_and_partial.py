@@ -16,6 +16,8 @@ from conftest import (
     critique_callback,
     invoke,
     proposal_callback,
+    request_user_value,
+    valid_proposal,
 )
 
 
@@ -221,8 +223,6 @@ def test_raw_response_extras_change_response_hash_not_projection(
     api()
 
     def extra_proposal(request: Any) -> tuple[int, bytes]:
-        from conftest import request_user_value, valid_proposal
-
         return 200, azure_body(
             valid_proposal(request_user_value(request)["citations"]), extra=True
         )

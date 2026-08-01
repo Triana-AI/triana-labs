@@ -65,6 +65,55 @@ if [[ "${triana_intelligence_hash}" != "${triana_expected_intelligence_hash}" ]]
   exit 1
 fi
 
+triana_case_factory_content_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/case_factory_acceptance \
+    triana-labs/tests/case_factory_fixtures \
+    | LC_ALL=C sort \
+    | xargs cat \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_case_factory_content_hash="0044aab6adc61a5f1c65184e98be2ee7b84fb4f0f404288315c4043c2bee8fd5"
+if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
+  echo "frozen case factory acceptance content hash mismatch" >&2
+  exit 1
+fi
+
+triana_case_factory_file_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/case_factory_acceptance \
+    triana-labs/tests/case_factory_fixtures \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_case_factory_file_hash="df4d1aaacd24c8049e47bda6594b09697ced68af02b820507075cf984be4ec73"
+if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
+  echo "frozen case factory acceptance file hash mismatch" >&2
+  exit 1
+fi
+
+triana_verify_tracked_hash() {
+  local path="$1"
+  local expected="$2"
+  local actual
+  actual="$(shasum -a 256 "${triana_repository_root}/${path}" | awk '{print $1}')"
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "frozen ${path} hash mismatch" >&2
+    exit 1
+  fi
+}
+triana_verify_tracked_hash \
+  triana-labs/tests/case_factory_adversarial/test_contract_regressions.py \
+  d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276
+triana_verify_tracked_hash \
+  triana-labs/tests/case_factory_adversarial/test_uncovered_contract_edges.py \
+  4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a
+
 mkdir "${triana_evidence_root}/first" "${triana_evidence_root}/second"
 set +e
 uv run --locked triana traces observe \
@@ -154,6 +203,13 @@ uv run --locked triana --help >"${triana_evidence_root}/source-help.txt"
 diff \
   "${triana_evidence_root}/source-help.txt" \
   "${triana_evidence_root}/installed-help.txt"
+uv run --locked triana cases generate \
+  --help >"${triana_evidence_root}/source-case-help.txt"
+"${triana_evidence_root}/clean-venv/bin/triana" cases generate \
+  --help >"${triana_evidence_root}/installed-case-help.txt"
+diff \
+  "${triana_evidence_root}/source-case-help.txt" \
+  "${triana_evidence_root}/installed-case-help.txt"
 set +e
 "${triana_evidence_root}/clean-venv/bin/triana" \
   traces observe \
