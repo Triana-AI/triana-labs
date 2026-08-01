@@ -887,9 +887,9 @@ Explicitly untouched:
 
 Maximum production scope is the CLI addition, one bounded `case_factory`
 package, and checked-in schemas. Maximum new production-file count is 14;
-maximum new production code is 1,500 normally formatted nonblank/noncomment
-lines. These are ceilings, not targets. Any new file or line beyond them stops
-the implementation author.
+maximum new production code is 2,000 normally formatted nonblank/noncomment
+lines. These are ceilings, not targets. Any new file, line, or edit outside the
+authorized paths stops the implementation author.
 
 ## 13. Reproducible exit gate
 

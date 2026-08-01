@@ -367,6 +367,12 @@ Codex and the implementation author reproduced the clean authoritative state:
 prior tests green, and unchanged corrected aggregate SHA-256
 `0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`.
 Production is reauthorized only against that corrected immutable suite.
+The owner superseded the independently imposed 1,500-line production ceiling
+with a 2,000-line maximum after two readable implementations exceeded the old
+limit. The 14-file limit, exact owned paths, no-dependency rule, immutable tests,
+and all behavioral gates remain unchanged. The current reduced implementation
+is uncommitted and must now be verified rather than further optimized for line
+count.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
