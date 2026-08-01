@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **CORRECTED INDEPENDENT ACCEPTANCE RED FROZEN — IMPLEMENTATION REAUTHORIZED**
+Status: **IMPLEMENTATION CANDIDATE REJECTED — ADVERSARIAL RED FROZEN**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -600,6 +600,16 @@ NUL-sorted relative-path per-file hash-list stream is
 `3ed4858ee7607915513abf8f785d8ec227dc1d0f91c6a8bf13f45e944a4c22d9`.
 Any change under the two test-author-owned paths invalidates this corrected
 freeze and stops production.
+
+After candidate `2c6aeb8` passed the immutable acceptance contract, the
+independent tester reproduced six additional contract-derived RED cases in an
+isolated worktree: self-consistent forged intelligence accepted before egress;
+wrong CRITIQUE and REVISE request-too-large reason codes; raw `Invalid` leakage
+from non-Money provider cost; missing staging-directory fsync; and replacement
+of a TOCTOU-created output target. The adversarial file SHA-256 is
+`d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276`.
+All six failures were independently reproduced by Codex before production
+correction. These assertions are immutable until a new explicit freeze.
 
 ### Lane A — deterministic contract and safety
 

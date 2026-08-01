@@ -373,6 +373,14 @@ implementation reached 1,796 lines before six legitimate adversarial fixes.
 The limit is a blast-radius alarm, not a product-quality metric or compression
 target. The 14-file limit, exact owned paths, no-dependency rule, immutable
 tests, and all behavioral gates remain unchanged.
+Candidate `2c6aeb8` passed all 142 frozen acceptance and 188 prior tests but is
+rejected by six isolated adversarial regressions: forged self-consistent
+intelligence acceptance, both later-stage request-too-large reason mappings,
+raw invalid provider-cost exception leakage, missing staging-directory fsync,
+and output-target TOCTOU replacement. The independent tester authored the new
+292-line file; Codex reproduced exact 6/6 RED and SHA-256
+`d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276`
+before returning production to the implementation author.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
