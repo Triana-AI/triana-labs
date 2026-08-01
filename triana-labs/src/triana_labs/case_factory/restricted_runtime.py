@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from itertools import chain
 from pathlib import Path
@@ -95,17 +96,60 @@ class RestrictedTools:
     log_path: Path | None = None
     attempt_id: str | None = None
     sequence: int = 0
+    search_cache: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def search_evidence(self, query: str) -> Json:
         def execute() -> Json:
             if not bounded_text(query, 512):
                 raise Invalid
-            matches = []
+            query_key = " ".join(query.casefold().split())
+            cached = self.search_cache.get(query_key)
+            if cached is not None:
+                return {
+                    "trace_handles": list(cached[0]),
+                    "evidence_handles": list(cached[1]),
+                    "duplicate_query": True,
+                    "searches_used": len(self.search_cache),
+                    "searches_remaining": 2 - len(self.search_cache),
+                }
+            if len(self.search_cache) >= 2:
+                raise Invalid
+            query_tokens = frozenset(re.findall(r"[a-z0-9]+", query.casefold()))
+            ranked: list[tuple[int, str, tuple[tuple[int, int, str], ...]]] = []
             for trace in self.catalog["traces"]:
+                event_matches = []
                 for event in trace["events"]:
-                    if query.casefold() in canonical(event).decode().casefold():
-                        matches.append(event["evidence_handle"])
-            return {"evidence_handles": matches[:20]}
+                    event_tokens = frozenset(
+                        re.findall(r"[a-z0-9]+", canonical(event).decode().casefold())
+                    )
+                    score = len(query_tokens & event_tokens)
+                    if score:
+                        event_matches.append(
+                            (-score, event["sequence"], event["evidence_handle"])
+                        )
+                if event_matches:
+                    ranked.append(
+                        (
+                            -sum(-match[0] for match in event_matches),
+                            trace["trace_handle"],
+                            tuple(sorted(event_matches)),
+                        )
+                    )
+            ranked.sort()
+            trace_handles = (ranked[0][1],) if ranked else ()
+            evidence_handles = (
+                tuple(match[2] for match in ranked[0][2]) if ranked else ()
+            )
+            self.search_cache[query_key] = (trace_handles, evidence_handles)
+            return {
+                "trace_handles": list(trace_handles),
+                "evidence_handles": list(evidence_handles),
+                "duplicate_query": False,
+                "searches_used": len(self.search_cache),
+                "searches_remaining": 2 - len(self.search_cache),
+            }
 
         return self._execute("search_evidence", {"query": query}, execute)
 
@@ -1319,10 +1363,21 @@ def _restricted_agent(
     from langchain.agents import create_agent
     from langchain.agents.middleware import wrap_model_call
     from langchain.agents.structured_output import ProviderStrategy
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langgraph.errors import GraphRecursionError
 
     @wrap_model_call
     def require_tool(request: Any, handler: Any) -> Any:
-        return handler(request.override(tool_choice="required"))
+        if sum(isinstance(message, AIMessage) for message in request.messages) >= 3:
+            raise GraphRecursionError("Restricted agent exceeded three model calls")
+        trace_read = any(
+            isinstance(message, ToolMessage)
+            and message.name == "get_trace_packet"
+            and message.status == "success"
+            for message in request.messages
+        )
+        tool_choice = "submit_case_batch" if trace_read else "required"
+        return handler(request.override(tool_choice=tool_choice))
 
     instruction = (
         "This interaction is RESUMED. The supplied answers are authoritative and "
