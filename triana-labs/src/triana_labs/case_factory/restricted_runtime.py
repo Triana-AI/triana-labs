@@ -1091,9 +1091,18 @@ def _field(value: Any, name: str) -> Any:
 class FoundryGLMRestrictedTransport:
     """Pinned Foundry model executed only through a restricted LangChain agent."""
 
-    def __init__(self, endpoint: str, api_key: str) -> None:
+    def __init__(
+        self, endpoint: str, api_key: str, *, timeout_seconds: int = 180
+    ) -> None:
+        if (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, int)
+            or not 1 <= timeout_seconds <= 600
+        ):
+            raise Invalid("PROVIDER_TIMEOUT_INVALID")
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
+        self.timeout_seconds = timeout_seconds
 
     def run(self, request: AgentBatchRequest, tools: RestrictedTools) -> Any:
         import httpx
@@ -1102,7 +1111,9 @@ class FoundryGLMRestrictedTransport:
         from langgraph.errors import GraphRecursionError
 
         capture = _HTTPExchangeCapture()
-        model, http_client = _foundry_model(self.endpoint, self.api_key, capture)
+        model, http_client = _foundry_model(
+            self.endpoint, self.api_key, self.timeout_seconds, capture
+        )
         agent_tools = _agent_tools(request, tools)
         if tuple(item.name for item in agent_tools) != TOOLS:
             raise Invalid
@@ -1225,7 +1236,10 @@ class _HTTPExchangeCapture:
 
 
 def _foundry_model(
-    endpoint: str, api_key: str, capture: _HTTPExchangeCapture
+    endpoint: str,
+    api_key: str,
+    timeout_seconds: int,
+    capture: _HTTPExchangeCapture,
 ) -> tuple[Any, Any]:
     import httpx
     from langchain_openai import ChatOpenAI
@@ -1254,7 +1268,7 @@ def _foundry_model(
             http_client=client,
             max_retries=0,
             temperature=0,
-            timeout=60,
+            timeout=timeout_seconds,
         ),
         client,
     )
