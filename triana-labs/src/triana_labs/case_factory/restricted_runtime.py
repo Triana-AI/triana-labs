@@ -1317,7 +1317,15 @@ def _restricted_agent(
     model: Any, agent_tools: list[Any], *, resumed: bool = False
 ) -> Any:
     from langchain.agents import create_agent
+    from langchain.agents.middleware import wrap_model_call
     from langchain.agents.structured_output import ProviderStrategy
+
+    @wrap_model_call
+    def require_tool(request: Any, handler: Any) -> Any:
+        settings = {**request.model_settings, "tool_choice": "required"}
+        return handler(
+            request.override(tool_choice="required", model_settings=settings)
+        )
 
     instruction = (
         "This interaction is RESUMED. The supplied answers are authoritative and "
@@ -1330,6 +1338,7 @@ def _restricted_agent(
     return create_agent(
         model=model,
         tools=agent_tools,
+        middleware=[require_tool] if resumed else [],
         system_prompt=(
             "Act as a grounding researcher, then a case architect. Use only the "
             "four supplied tools. Inspect evidence before drafting. Submit exactly "
