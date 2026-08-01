@@ -445,11 +445,16 @@ def _response(
     try:
         value = strict_json(body, allow_decimal=True)
         choices, usage = value["choices"], value["usage"]
-        if len(choices) != 1 or set(usage) not in (
-            {"prompt_tokens", "completion_tokens", "total_tokens"},
-            {"prompt_tokens", "completion_tokens", "total_tokens", "cost"},
+        core_usage = ("prompt_tokens", "completion_tokens", "total_tokens")
+        if (
+            len(choices) != 1
+            or not isinstance(usage, dict)
+            or not set(core_usage) <= set(usage)
         ):
             raise Invalid
+        projected_usage = {name: usage[name] for name in core_usage}
+        if "cost" in usage:
+            projected_usage["cost"] = usage["cost"]
         choice = choices[0]
         finish = choice["finish_reason"]
         if finish == "content_filter":
@@ -461,18 +466,18 @@ def _response(
             return None, "PROVIDER_REFUSED", "PROVIDER_MODEL_REFUSED", digest, None
         if (
             any(
-                type(usage[name]) is not int or usage[name] < 0
-                for name in ("prompt_tokens", "completion_tokens", "total_tokens")
+                type(projected_usage[name]) is not int or projected_usage[name] < 0
+                for name in core_usage
             )
-            or usage["total_tokens"]
-            != usage["prompt_tokens"] + usage["completion_tokens"]
+            or projected_usage["total_tokens"]
+            != projected_usage["prompt_tokens"] + projected_usage["completion_tokens"]
         ):
             raise Invalid
         parsed = strict_json(content.encode())
         if not _schema(parsed, schema, schema):
             raise Invalid
-        _reported_cost(usage)
-        return parsed, "SUCCEEDED", None, digest, usage
+        _reported_cost(projected_usage)
+        return parsed, "SUCCEEDED", None, digest, projected_usage
     except (Invalid, KeyError, TypeError, json.JSONDecodeError):
         return None, "INVALID_RESPONSE", "PROVIDER_RESPONSE_INVALID", digest, None
 
