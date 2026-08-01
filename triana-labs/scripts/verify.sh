@@ -75,7 +75,7 @@ triana_case_factory_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_content_hash="5b0cdb61674dea350bcc35c05e853a69c25d4950ab141422159daa8cb98e3896"
+triana_expected_case_factory_content_hash="c8e327774c2bfb6cf5733ed1390ab7ece045386338baf330d0ceecace5aedfca"
 if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
   echo "frozen case factory acceptance content hash mismatch" >&2
   exit 1
@@ -91,7 +91,7 @@ triana_case_factory_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_file_hash="5c5e42090f577004b4f0821f16e52d6dc28fd242bfa27e78229ea36e21b8ff03"
+triana_expected_case_factory_file_hash="d1031cee6692851687e50db1871797aee9133b7aeb50b0fed43fd0a1b9066dd5"
 if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
   echo "frozen case factory acceptance file hash mismatch" >&2
   exit 1
@@ -109,13 +109,13 @@ triana_verify_tracked_hash() {
 }
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_contract_regressions.py \
-  a4140877cb081469a047868cb96a873fcad10b21ebd256177097ec2dc802f943
+  5c1a65d177896ab45081e37195c4f77e50e7edd12443a452a50006213bedc1bd
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_uncovered_contract_edges.py \
-  3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07
+  97a205a81010f4c116de543711a8c41e149cb4db3519f8866a0567c4b9e10c5b
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_request_tail_fit.py \
-  9e0540e18ea540cb37041570758a69c002a5fc63b49d8cfae16c466f04f6866c
+  d5d290fa6be8af5ec46618b1ce573bc6cf97624598c60491bab02d0eacd11636
 
 mkdir "${triana_evidence_root}/first" "${triana_evidence_root}/second"
 set +e

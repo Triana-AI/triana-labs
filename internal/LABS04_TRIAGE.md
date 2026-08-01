@@ -229,24 +229,22 @@ the live contract remains `internal/SLICE_PACKET.md` and
   support-state trace cardinality, cross-asset references, nonempty reaction
   rules, complete claim use, and observed anchors. Azure structured output can
   satisfy the schema while still being discarded before CRITIQUE.
-- **Fix:** none authorized or attempted. The final live call is preserved and
-  no subsequent provider call is allowed. A recovery checkpoint must make
-  model-visible schema and deterministic acceptance agree, and must preserve
-  invalid drafts as diagnosable typed evidence instead of collapsing every
-  proposal defect to `PROVIDER_FAILED(8)`.
-- **Fix authority:** requires a new owner-approved design/test slice; Codex may
-  not silently weaken semantic validity or spend again.
+- **Fix:** the bounded recovery at `dae4bf1` preserves exact secret-safe stage
+  evidence, diagnoses three frozen semantic defects, carries an invalid parsed
+  proposal through CRITIQUE and REVISE, and adds exact local response replay;
+  strict final semantic validity is unchanged.
+- **Fix authority:** Akarsh approved the minimal recovery and one final live run
+  under USD 15; the independent RED is `1f65901` and reconciled suite is
+  `3e716bb`.
 - **Regression/evidence:** private terminal SHA-256
   `f129baff229940cf4faf18a4fcad6bebd417a23bcdfd72c6e2365ce3205b3e7b`;
   Azure minute metrics at 07:43Z; no output directory.
-- **Status:** RECOVERY AUTHORIZED. Grounded Case Factory usefulness remains
-  unproven; the bounded contract is `internal/LABS04_RECOVERY_CONTRACT.md`.
+- **Status:** RECOVERY LOCALLY GREEN: 167/167 LABS-04 tests, Ruff, and strict
+  mypy pass. Grounded Case Factory usefulness remains unproven until the full
+  gate and one authorized live smoke complete.
 
 ## Remaining decisions requiring owner visibility
 
-1. **Recovery design:** decide whether to align the provider schema with every
-   deterministic semantic condition, or preserve a schema-valid draft and
-   expose typed defects to the critic/reviser. This requires eval-first design;
-   simply weakening `convert_lane` or making another call is not authorized.
-2. **Usefulness verdict:** unavailable because no case bundle was published.
+1. **Usefulness verdict:** unavailable because no case bundle has yet been
+   published by a live provider run.
    The rubric remains unchanged for a future valid bundle.

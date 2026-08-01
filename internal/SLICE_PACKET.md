@@ -784,6 +784,23 @@ This proven parser bug is a strong explanation for the preserved live failure,
 not a claim about unretained raw fields. A changed-version live run still
 requires explicit cumulative-budget and no-rerun reconciliation.
 
+The owner-approved bounded recovery is frozen by contract `1957cd9`, independent
+RED `1f65901`, production `dae4bf1`, and stale-expectation reconciliation
+`3e716bb`. The three decisive recovery tests prove exact local response-cache
+miss/write/replay with zero replay transport/cost, safe post-egress failure
+bundles, and a schema-valid but semantically invalid PROPOSE draft carrying the
+three frozen defects through CRITIQUE and REVISE into five valid revised cases
+with an unavailable control comparison. All 167 LABS-04 tests pass. The new
+acceptance-plus-fixture content SHA-256 is
+`c8e327774c2bfb6cf5733ed1390ab7ece045386338baf330d0ceecace5aedfca`
+and its repository-root per-file hash-list SHA-256 is
+`d1031cee6692851687e50db1871797aee9133b7aeb50b0fed43fd0a1b9066dd5`.
+The three verifier-enforced adversarial hashes are respectively
+`5c1a65d177896ab45081e37195c4f77e50e7edd12443a452a50006213bedc1bd`,
+`97a205a81010f4c116de543711a8c41e149cb4db3519f8866a0567c4b9e10c5b`,
+and `d5d290fa6be8af5ec46618b1ce573bc6cf97624598c60491bab02d0eacd11636`.
+The final live HRAI usefulness verdict remains pending the complete local gate.
+
 ### Lane A — deterministic contract and safety
 
 - strict config, input, portable artifact, citation, and reference schemas;
