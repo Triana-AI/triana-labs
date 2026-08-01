@@ -1560,3 +1560,37 @@ model/provider, weaken validation, or exceed the single USD 25 experiment is
 outside budget and stops the slice. Roles execute serially: independent test
 author, then implementation author, with Codex as orchestrator and final
 verdict owner for machinery only.
+
+### HTTP-accounting wire clarification
+
+The independent test-author entry audit correctly refused to invent the new
+counter wire. Freeze it as follows:
+
+- Existing `provider_call_count` keeps its meaning: one logical restricted
+  transport invocation for each GENERATE or REPAIR attempt. It is not renamed.
+- New `provider_http_exchange_count` is a nonnegative integer and appears in
+  `RestrictedResult`, each `generation_attempts.jsonl` record,
+  `case_factory_eval.json`, and `manifest.json`.
+- A live Foundry transport invocation reports the number of request bodies
+  actually captured by its HTTP hook. Multiple agent-loop model requests in
+  one GENERATE/REPAIR invocation therefore count separately.
+- A failure before provider egress reports zero. A provider response or
+  refusal after egress counts its captured request. Cached or replayed work
+  with no request reports zero.
+- The fake transport seam is the optional nonnegative response field
+  `provider_http_exchange_count`. Existing scripted fixtures that omit it are
+  interpreted as one exchange for compatibility; the new acceptance tests
+  state it explicitly.
+- `_State` sums this field across attempts. The existing
+  `reservation_usd_per_agent_call` remains a conservative reservation for the
+  entire bounded logical invocation (up to three exchanges), not a price per
+  exchange and not actual cost. `actual_cost_usd` remains `null` unless the
+  provider supplies defensible cost.
+- Restricted `max_usd` now permits exact values through `25.000000` and
+  refuses anything larger before transport. Reservation still occurs before
+  each GENERATE/REPAIR invocation; an unfunded invocation is not made and adds
+  zero HTTP exchanges.
+
+Adding this accounting field is the only portable envelope expansion allowed
+by the closing slice. Semantic case/persona/intent/turn-policy schemas remain
+untouched.
