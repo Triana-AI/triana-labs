@@ -214,7 +214,7 @@ def generate(
     }
     if (
         proposal_defects
-        and {item["code"] for item in proposal_defects} != recoverable_codes
+        and not {item["code"] for item in proposal_defects} <= recoverable_codes
     ):
         raise GenerateFailure("PROVIDER_FAILED", 8)
     try:
