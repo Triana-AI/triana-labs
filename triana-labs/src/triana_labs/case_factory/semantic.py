@@ -13,6 +13,7 @@ from triana_labs.case_factory.primitives import (
     Invalid,
     Json,
     bounded_text,
+    canonical,
     compact_id,
     domain_hash,
 )
@@ -93,6 +94,79 @@ class CaseInvalid(Invalid):
     def __init__(self, valid_refs: int = 0, invalid_refs: int = 0) -> None:
         self.valid_refs = valid_refs
         self.invalid_refs = invalid_refs
+
+
+def diagnose(draft: Json, citations: list[Json]) -> list[Json]:
+    """Return the closed repair defects needed by the recovery contract."""
+
+    citation_map = {item["citation_id"]: item for item in citations}
+    defects: list[Json] = []
+    for group_name in ("personas", "intents", "turn_policies", "cases"):
+        for item_index, item in enumerate(draft[group_name]):
+            for claim_index, claim in enumerate(item["grounding_claims"]):
+                if claim["support_state"] != "SUPPORTED":
+                    continue
+                resolving = sorted(
+                    {value for value in claim["citation_ids"] if value in citation_map}
+                )
+                traces = {citation_map[value]["trace_id"] for value in resolving}
+                if len(traces) < 2:
+                    defects.append(
+                        {
+                            "code": "SUPPORT_CARDINALITY_MISMATCH",
+                            "path": f"/{group_name}/{item_index}/grounding_claims/{claim_index}",
+                            "message": "SUPPORTED requires citations from at least two traces",
+                            "related_ids": resolving,
+                            "repairable": True,
+                        }
+                    )
+    for index, policy in enumerate(draft["turn_policies"]):
+        if not policy["reaction_rules"]:
+            defects.append(
+                {
+                    "code": "EMPTY_REACTION_RULES",
+                    "path": f"/turn_policies/{index}/reaction_rules",
+                    "message": "reaction_rules must contain at least one item",
+                    "related_ids": [],
+                    "repairable": True,
+                }
+            )
+    for index, case in enumerate(draft["cases"]):
+        claim_keys = {
+            claim["claim_key"]
+            for claim in case["grounding_claims"]
+            if claim["citation_ids"]
+        }
+        if not _has_observed_anchor(case, claim_keys):
+            defects.append(
+                {
+                    "code": "MISSING_OBSERVED_ANCHOR",
+                    "path": f"/cases/{index}",
+                    "message": "case must contain at least one case-local OBSERVED item",
+                    "related_ids": [],
+                    "repairable": True,
+                }
+            )
+    return sorted(
+        defects,
+        key=lambda item: (
+            item["code"],
+            item["path"],
+            canonical(item["related_ids"]),
+        ),
+    )
+
+
+def _has_observed_anchor(value: Any, claim_keys: set[str]) -> bool:
+    if isinstance(value, dict):
+        if value.get("basis") == "OBSERVED":
+            keys = value.get("claim_keys")
+            if isinstance(keys, list) and any(item in claim_keys for item in keys):
+                return True
+        return any(_has_observed_anchor(item, claim_keys) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_observed_anchor(item, claim_keys) for item in value)
+    return False
 
 
 def convert_lane(

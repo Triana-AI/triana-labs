@@ -99,6 +99,11 @@ def _build_parser() -> _SafeArgumentParser:
     generate_parser.add_argument("observer_manifest")
     generate_parser.add_argument("--intelligence", required=True)
     generate_parser.add_argument("--config", required=True)
+    generate_parser.add_argument(
+        "--cache-dir",
+        required=True,
+        help="Private exact-response cache directory.",
+    )
     generate_parser.add_argument("--out", required=True)
     return parser
 
@@ -295,6 +300,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Path(arguments.intelligence),
                 Path(arguments.config),
                 Path(arguments.out),
+                cache_path=Path(arguments.cache_dir),
             )
         except GenerateFailure as failure:
             _write_json(
