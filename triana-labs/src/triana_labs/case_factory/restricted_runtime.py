@@ -1169,7 +1169,7 @@ class FoundryGLMRestrictedTransport:
             if (
                 tools.submission is None
                 and _valid_questions(questions)
-                and reason is None
+                and reason in {None, "MATERIAL_INPUT_REQUIRED"}
             ):
                 return {
                     "status": "NEEDS_INPUT",
