@@ -16,6 +16,7 @@ from typing import Any, Protocol, cast
 from triana_labs import __version__
 from triana_labs.case_factory.evidence import build as build_evidence
 from triana_labs.case_factory.primitives import (
+    SAFE_CODE,
     Invalid,
     Json,
     artifact_hash,
@@ -608,6 +609,30 @@ def _normalize(
             defects.append(_defect("BROKEN_LOCAL_REFERENCE", f"/{group}"))
             continue
         for index, value in enumerate(values):
+            if group == "cases":
+                scenario = value.get("scenario")
+                stressors = (
+                    scenario.get("stressor_codes")
+                    if isinstance(scenario, dict)
+                    else None
+                )
+                if isinstance(stressors, list) and all(
+                    isinstance(item, str) for item in stressors
+                ):
+                    valid_stressors = (
+                        len(stressors) <= 20
+                        and len(stressors) == len(set(stressors))
+                        and stressors == sorted(stressors)
+                        and all(SAFE_CODE.fullmatch(item) for item in stressors)
+                    )
+                    if not valid_stressors:
+                        defects.append(
+                            _defect(
+                                "INVALID_CASE",
+                                f"/cases/{index}/scenario/stressor_codes",
+                                sorted(stressors),
+                            )
+                        )
             claims = value.get("grounding_claims")
             if not isinstance(claims, list):
                 defects.append(
@@ -1428,7 +1453,8 @@ def _restricted_agent(
             "Act as a grounding researcher, then a case architect. Use only the "
             "four supplied tools. Inspect evidence before drafting. Every declared "
             "grounding claim in each object must be referenced by at least one local "
-            "claim_keys; omit unused claims. Submit exactly "
+            "claim_keys; omit unused claims. stressor_codes must be unique and "
+            "lexicographically sorted. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
             f"and every supplied case slot. {instruction} After a successful "
             "submission, stop. "
