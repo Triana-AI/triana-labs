@@ -287,3 +287,48 @@ the live contract remains `internal/SLICE_PACKET.md` and
   zero-call replay reproduced identical provider-stage bytes.
 - **Status:** OPEN PRODUCT BLOCKER. LABS-04 Grounded Case Factory is not
   complete and Corpus Intelligence must not start.
+
+### TRIAGE-14 — provider wire makes grounding an identity-copy task
+
+- **Type:** root design defect confirmed by the TRIAGE-13 artifacts.
+- **Observed:** the provider received duplicated evidence/citation structures,
+  had to copy opaque canonical IDs, authored support cardinality and several
+  cross-linked local identities, and could pass strict JSON Schema while
+  repeating slots and inventing citations.
+- **Classification evidence:** the final request used 58,855 prompt tokens;
+  16/20 proposal and 32/40 revision citation references were unknown; both
+  drafts used only three unique intent keys for five intents; current
+  diagnosis reports only three defect kinds.
+- **Fix:** freeze `internal/LABS04_GROUNDING_HANDLE_CONTRACT.md`: one compact
+  co-located evidence catalog, schema-bounded run-local handles and slots,
+  deterministic canonical-ID mapping/support derivation, complete guardrails,
+  and a real-failure-shaped independent regression.
+- **Fix authority:** Akarsh explicitly requested the OpenAI/Codex-style design
+  correction and immediate implementation; Codex bounded it without a new
+  framework, provider, feature, or paid call.
+- **Status:** FROZEN FOR INDEPENDENT RED.
+
+### TRIAGE-15 — automation principal cannot administer Foundry deployments
+
+- **Type:** external access blocker discovered before provider spend.
+- **Observed:** the Azure CLI service principal can read subscription resources
+  as `Contributor`, but the Foundry project deployment API denies
+  `Microsoft.CognitiveServices/accounts/AIServices/deployments/read`; an
+  attempted resource-scoped `Foundry User` assignment also failed because the
+  principal lacks `Microsoft.Authorization/roleAssignments/write`.
+- **Classification evidence:** the existing `akarsh-7101` project and its three
+  Azure OpenAI deployments are visible through management-plane reads, while
+  the project data-plane read and role-assignment operations fail with explicit
+  authorization errors. No model was deployed and no provider call or cost was
+  incurred.
+- **Fix:** Codex must provide exact manual Foundry steps for Akarsh to perform;
+  no authenticated-console UI automation is allowed. After Akarsh confirms
+  deployment, Codex may use the already-authenticated CLI or provider endpoint
+  to run only the frozen disposable conformance probe under the USD 3 ceiling.
+  Do not add a fallback provider or weaken the conformance gate.
+- **Process correction:** Codex incorrectly opened and automated the Foundry
+  sign-in path after the CLI permission failure. Akarsh rejected that behavior;
+  `AGENTS.md` now prohibits UI automation for authenticated flows.
+- **Status:** BLOCKED ON OWNER-RUN MANUAL FOUNDRY DEPLOYMENT. No model was
+  deployed, no credentials were entered by Codex, and no provider cost was
+  incurred.

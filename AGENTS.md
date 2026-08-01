@@ -195,6 +195,21 @@ Stop for confirmation only when a material product/architecture choice,
 destructive action, external side effect, or unresolved ambiguity would expand
 that scope.
 
+## Authenticated consoles and UI automation
+
+Do not use Playwright, browser control, computer-use tooling, or other UI
+automation for a flow that requires authentication or operates inside an
+authenticated cloud/provider console. If an already-authenticated CLI cannot
+perform the required operation because login, authorization, role assignment,
+marketplace acceptance, or console-only configuration is required, stop the UI
+path and give Akarsh the exact minimal manual steps to perform. Resume only
+after Akarsh confirms completion.
+
+Prefer an existing authenticated AWS, Azure, or provider CLI for authorized
+non-interactive operations. Never enter, request through an automated browser,
+or interact with passwords, OTPs, security keys, consent screens, or account
+selectors. Public unauthenticated documentation browsing remains allowed.
+
 ## Engineering and delivery
 
 Read `docs/ENGINEERING.md` before implementation. In particular:

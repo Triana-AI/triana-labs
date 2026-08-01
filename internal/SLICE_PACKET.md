@@ -1223,3 +1223,46 @@ The owner-approved bounded recovery is frozen in
 `internal/LABS04_RECOVERY_CONTRACT.md`. It supersedes only post-egress artifact
 custody, exact response replay, cached-token accounting, typed semantic defects,
 and invalid-PROPOSE repair flow. It authorizes no other LABS-04 expansion.
+
+## LABS-04 restricted DeepAgents POC amendment — 2026-08-01
+
+The accepted correction is governed by
+`internal/LABS04_GROUNDING_HANDLE_CONTRACT.md` and
+`internal/AGENT_ARCHITECTURE.md`. It supersedes the five-case, three-stage,
+Azure OpenAI `gpt-4.1-mini`, and no-framework portions of this packet only.
+
+The checkpoint now uses Fireworks GLM-5.2 through Microsoft Foundry against the
+same synthetic HRAI corpus under a fresh USD 3 ceiling. A disposable live probe
+must first prove tool calling, strict structured output, usage visibility, and
+safe failure preservation. Only after that probe may DeepAgents/LangGraph be
+pinned in the repository.
+
+The shipped POC requests ten cases in batches of at most five through a
+restricted DeepAgent exposing only evidence search, trace retrieval, budget
+inspection, and case submission. It may ask at most three material questions,
+has at most one repair handoff per invalid batch, and has no retry, fallback,
+shell, web, arbitrary filesystem, real-data, target-agent, judge, or global
+memory authority.
+
+The independent RED contract is limited to five outcomes: valid portable
+grounded generation; invented-handle refusal; budget refusal before a call;
+preserved tool/provider failure; and bounded `NEEDS_INPUT` preservation/resume.
+No new resource-boundary matrix or quality-score proxy is authorized. The live
+artifact reports invalid handles, duplicate groups, actual cost/latency, and
+owner `WOULD_RUN | EDIT | REJECT` rulings rather than an invented scalar score.
+
+The production change budget is the Grounding Handle Contract paths plus
+`triana-labs/pyproject.toml`, `uv.lock`, and at most one new bounded runtime
+module under `triana_labs/case_factory/`. Existing tests and five canonical
+Observer hashes remain unchanged. The test author and implementation author
+work serially; Codex owns provider conformance, integration, smoke, and exit.
+
+Owner scheduling correction: provider deployment and local construction may
+now proceed concurrently, but repository authorship remains serial. The
+independent test author first freezes the five fake-transport outcomes; only
+after that handoff may the implementation author add the restricted runtime.
+The local implementation may pin DeepAgents/LangGraph before live GLM
+conformance, but it earns no provider-compatibility or usable-artifact claim
+until the disposable GLM probe and ten-case smoke pass. A failed conformance
+probe stops provider work and leaves the local result explicitly provisional;
+it does not authorize fallback, retries, or acceptance weakening.
