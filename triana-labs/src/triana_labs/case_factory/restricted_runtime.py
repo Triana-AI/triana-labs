@@ -1605,9 +1605,7 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
 
 
 def _terminal_schema(*, resumed: bool = False) -> Json:
-    statuses = (
-        ["SUBMITTED", "FAILED"] if resumed else ["SUBMITTED", "NEEDS_INPUT", "FAILED"]
-    )
+    statuses = ["SUBMITTED", "FAILED"] if resumed else ["NEEDS_INPUT", "FAILED"]
     return {
         "title": "case_factory_agent_outcome",
         "type": "object",
