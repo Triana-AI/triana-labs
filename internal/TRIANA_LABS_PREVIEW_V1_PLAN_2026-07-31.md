@@ -52,9 +52,11 @@ verified synthetic Observer bundle + linked structural intelligence
 ```
 
 LABS-04 uses the owner's existing Azure OpenAI `gpt-4.1-mini` deployment,
-model version `2025-04-14`, through strict structured outputs. Normal execution
-uses three calls, all retries are capped at six total calls, and a conservative
-USD 10 ceiling is enforced before and during egress. The non-test smoke corpus
+model version `2025-04-14`, through strict structured outputs. After the first
+preserved live call exhausted the original 4,096-token output ceiling, corrected
+execution uses exactly three calls with no retry and a USD 8.70 run ceiling;
+the preserved call plus corrected-run worst case remains below the original
+cumulative USD 10 ceiling. The non-test smoke corpus
 is the first 50 physical lines of the tracked HRAI v2 `run_200`
 historical-traffic export at source commit
 `728f6c5058efe40a16e2aecc9b528b3353f4df4f`, selected SHA-256

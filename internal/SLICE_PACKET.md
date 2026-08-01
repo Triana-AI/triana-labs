@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **REQUEST-SELECTION CORRECTION GREEN — FULL GATE/SMOKE PENDING**
+Status: **LIVE PROVIDER RED — REMAINING BUDGET RESHAPED**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -83,7 +83,7 @@ round-robin order, then take remaining traces by trace ID, stopping at 25
 traces or the provider-bound byte ceiling. A message event above 16,384 UTF-8
 bytes is omitted whole and creates `EVIDENCE_EVENT_TOO_LARGE`; it is never
 silently truncated. A trace with no remaining user content is excluded with
-`NO_USABLE_USER_EVIDENCE`. The complete provider request is limited to 100,000
+`NO_USABLE_USER_EVIDENCE`. The complete provider request is limited to 240,000
 UTF-8 bytes before transmission.
 
 The evidence projection is treated as untrusted data. It is serialized inside
@@ -139,14 +139,14 @@ The config names, but never contains, credentials:
     "seed": 2026080104
   },
   "budget": {
-    "max_calls": 6,
+    "max_calls": 3,
     "normal_calls": 3,
-    "max_input_bytes_per_call": 100000,
-    "max_output_tokens_per_call": 4096,
+    "max_input_bytes_per_call": 240000,
+    "max_output_tokens_per_call": 12000,
     "max_wall_clock_seconds": 600,
     "request_timeout_seconds": 60,
-    "max_transport_retries_per_stage": 1,
-    "max_usd": "10.000000",
+    "max_transport_retries_per_stage": 0,
+    "max_usd": "8.700000",
     "conservative_input_usd_per_million_tokens": "10.000000",
     "conservative_output_usd_per_million_tokens": "40.000000",
     "pricing_source": "OPERATOR_CONSERVATIVE_BOUND"
@@ -162,8 +162,8 @@ uncommitted config and represented portably only by its hash; the raw endpoint
 does not enter the repository.
 
 The conservative preflight treats each UTF-8 input byte as one input token,
-uses the configured maximum output tokens, includes all six possible calls,
-and refuses before egress if its upper cost bound exceeds USD 10. Missing price
+uses the configured maximum output tokens, includes exactly three stage calls,
+and refuses before egress if its upper cost bound exceeds USD 8.70. Missing price
 information is never zero. Provider-reported usage and any available charged
 cost remain separate observed facts; the conservative estimate is never
 presented as an invoice.
@@ -198,10 +198,10 @@ schema:
 3. `REVISE`: produce the final five proposed assets/cases using the evidence,
    original proposal, and critique.
 
-Each stage permits at most one retry for a transport failure, HTTP 429, or HTTP
-5xx response. Schema failure, content filtering, refusal, length truncation,
-invalid citation, or semantic rejection is not transport-retried. Every retry
-has a new attempt ID; the failed attempt remains in `generation_attempts.jsonl`.
+The corrected run permits exactly one attempt per stage. Transport failure,
+HTTP 429/5xx, schema failure, content filtering, refusal, length truncation,
+invalid citation, and semantic rejection are never retried; the single failed
+attempt remains visible when the contract publishes a partial result.
 
 The loop has no tools, retrieval service, agent framework, memory backend,
 sub-agent API, dynamic prompt rewriting, or model-selected evidence. It is a
@@ -666,22 +666,22 @@ the required smoke refused `EVIDENCE_TOO_LARGE(3)` with zero Azure calls. The
 independent test author correctly rejected a proposed 100-total-citation cap as
 contrary to the exact wire. The accepted correction retains the existing
 90,000-byte root bound, then removes lowest-priority selected traces from the
-tail until the complete request is at most 100,000 bytes, recording the existing
+tail until the then-current complete request limit, recording the existing
 `EVIDENCE_BYTE_LIMIT_REACHED` gap for every removal. It never replaces removed
-traces, truncates evidence, raises the budget, or changes the frozen oversized
-single-trace refusal. On the pinned corpus this deterministic rule is expected
-to retain nine priority traces and 198 citations in a 93,166-byte request; that
-measurement is pre-test evidence, not a passing smoke claim.
+traces or truncates evidence. Under the superseded 100,000-byte request wire,
+the pinned corpus retained nine priority traces and 198 citations in a
+93,166-byte request; that preflight evidence led to the first actual call below.
 
 The independent test author encoded the corrected wire in one synthetic-only
 268-line adversarial file with SHA-256
 `9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd`.
 Codex reproduced three collected cases as one GREEN exact-100,000-byte boundary
-and two RED failures: exact 100,001-byte two-trace tail fitting, and repeated
+and two RED failures under the then-current wire: exact 100,001-byte two-trace tail fitting, and repeated
 priority-preserving tail removal without admitting a 26th replacement trace.
 The oracle independently reconstructs every citation, gap, exclusion, order,
-and input-order invariant. The existing 100,348-byte oversized single-trace
-refusal remains green. These test bytes are immutable before production resumes.
+and input-order invariant. The then-current 100,348-byte oversized single-trace
+refusal remained green. The live result below supersedes only those byte and
+budget boundaries; the behavioral assertions require independent correction.
 
 The implementation author changed only `case_factory/generate.py` to fit the
 fresh provider projection after exact schema/citation construction. The author
@@ -689,9 +689,26 @@ and Codex independently reproduced 3/3 tail-fit, 20/20 total adversarial,
 142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN. Production
 is 1,810 counted lines with no dependency. A fresh pinned-HRAI preflight now
 retains nine traces and 198 citations, records 16 explicit byte-limit
-exclusions, and constructs a 93,166-byte PROPOSE request. Azure call count is
-still zero. The versioned verifier now also freezes the tail-fit test hash;
-the complete gate and provider smoke remain required before mechanical exit.
+exclusions, and constructs a 93,166-byte PROPOSE request. That correction passed
+the 350-case versioned gate before the actual provider call below.
+
+The preserved actual provider run made exactly one request. Azure telemetry for
+the exact minute records HTTP 200, 28,295 input tokens, and exactly 4,096 output
+tokens—the configured output ceiling. Triana returned `PROVIDER_FAILED(8)`
+after 34.6 seconds and published no cases. The exact raw response is deliberately
+not retained, so output truncation is an evidence-backed inference rather than
+a quoted provider field; auth, transport, non-200 HTTP, and zero-generation
+failures are ruled out. No unchanged rerun is allowed.
+
+The corrected remaining experiment budget removes retries and permits exactly
+three calls: 240,000 input bytes and 12,000 reserved output tokens per call,
+with `max_usd=8.700000`. Its worst-case reservation is
+`3 * (2.400000 + 0.480000) = 8.640000`. The preserved first call reserved
+`1.095500`, so the cumulative conservative ceiling is `9.735500`, below the
+owner-approved USD 10. The 193,867-byte full 25-trace HRAI proposal now fits;
+no evidence reduction is expected at PROPOSE. This correction supersedes only
+the request/output/call/retry/USD literals and their exact test bytes. New
+independent RED must be frozen before production or another provider call.
 
 ### Lane A — deterministic contract and safety
 
@@ -703,7 +720,7 @@ the complete gate and provider smoke remain required before mechanical exit.
   refusals before a provider call;
 - conservative budget preflight and per-attempt reservation;
 - provider timeout, 429/5xx, content filter, refusal, length, malformed output,
-  schema error, and retry ledger behavior through a fake internal transport;
+  schema error, and no-retry ledger behavior through a fake internal transport;
 - no unsafe value in terminal logs or portable lineage;
 - atomic publication, no overwrite, safe cleanup, and typed partial output;
 - source and clean-wheel parity, unchanged 188 tests, frozen acceptance
@@ -801,7 +818,7 @@ Smoke acceptance requires:
 - every downstream accepted/rejected denominator is explicit;
 - the exact input and output hashes are retained in local evidence;
 - normal generation uses no more than three calls and total execution never
-  exceeds six calls or USD 10 conservative bound;
+  exceeds three calls or the corrected-run USD 8.70 conservative bound;
 - five final cases are requested and at least three valid distinct cases are
   emitted;
 - every retained claim passes deterministic citation validation;
@@ -890,8 +907,9 @@ The independent tester must encode every relevant row before valid RED.
 - connection failure, timeout, TLS failure, 401/403, 429, 5xx, content filter,
   provider refusal, truncated/length output, empty output, invalid JSON,
   schema-invalid JSON, unknown fields, duplicate keys, and repeated response;
-- transport retry succeeds/fails, original attempt preserved, no semantic
-  retry, retry budget exhausted, and retry never exceeds six total calls;
+- transport/429/5xx failures remain single-attempt evidence with no retry;
+  semantic failures likewise do not retry, and execution never exceeds three
+  total calls;
 - missing price, conservative bound above cap, exact boundary, usage above
   reservation, budget exhaustion between stages, and wall-clock exhaustion;
 - critic or reviser failure preserves the one-shot evidence without claiming
@@ -993,10 +1011,11 @@ The slice implementation is mechanically complete only when:
   byte-identical;
 - Ruff, strict mypy, package build, clean CPython 3.13.14 wheel install, source
   and wheel CLI parity, secret scan, governance, and decision-memory pass;
-- fake-provider tests prove every refusal/partial/retry/budget state without
+- fake-provider tests prove every refusal/partial/no-retry/budget state without
   network access;
-- the authorized Azure/HRAI-50 smoke runs without exceeding three normal/six
-  total calls or the USD 10 conservative cap;
+- the authorized Azure/HRAI-50 corrected smoke runs without exceeding three
+  total calls or its USD 8.70 conservative cap, while all preserved smoke calls
+  remain below the original cumulative USD 10 conservative cap;
 - smoke artifacts retain every weak, duplicate, rejected, refused, and partial
   state without rerun-to-green;
 - no raw HRAI data, secret, endpoint, absolute path, or provider payload enters

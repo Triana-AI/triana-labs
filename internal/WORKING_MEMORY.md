@@ -432,6 +432,17 @@ and Codex independently reproduced 3/3 new tail-fit, 20/20 adversarial,
 production lines. Pinned-HRAI preflight now yields nine selected traces, 198
 citations, 16 explicit byte-limit exclusions, and a 93,166-byte request with
 Azure calls still zero. Full verifier and the actual provider smoke remain.
+The subsequent actual provider run is preserved unfavorable: one HTTP 200 call,
+28,295 Azure-observed input tokens, exactly 4,096 output tokens, 34.6 seconds,
+`PROVIDER_FAILED(8)`, and no output directory. Because raw response bytes are
+intentionally not retained, hitting the exact output ceiling is strong
+telemetry-backed truncation evidence, not a quoted finish reason. The next
+contract correction permits no retry and exactly three calls at 240,000 input
+bytes/12,000 output tokens each with a USD 8.70 run cap. Worst-case corrected
+reservation is USD 8.64; adding the first call's USD 1.095500 reservation gives
+USD 9.735500 cumulative. The full 25-trace/424-citation HRAI proposal is 193,867
+bytes and fits the corrected bound. Independent tests must refreeze every
+changed budget/wire literal before production or another provider call.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

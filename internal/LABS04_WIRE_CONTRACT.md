@@ -102,14 +102,14 @@ The config root has exactly:
     "seed": 2026080104
   },
   "budget": {
-    "max_calls": 6,
+    "max_calls": 3,
     "normal_calls": 3,
-    "max_input_bytes_per_call": 100000,
-    "max_output_tokens_per_call": 4096,
+    "max_input_bytes_per_call": 240000,
+    "max_output_tokens_per_call": 12000,
     "max_wall_clock_seconds": 600,
     "request_timeout_seconds": 60,
-    "max_transport_retries_per_stage": 1,
-    "max_usd": "10.000000",
+    "max_transport_retries_per_stage": 0,
+    "max_usd": "8.700000",
     "conservative_input_usd_per_million_tokens": "10.000000",
     "conservative_output_usd_per_million_tokens": "40.000000",
     "pricing_source": "OPERATOR_CONSERVATIVE_BOUND"
@@ -209,14 +209,14 @@ later candidates. Stop after 25 included traces or exhaustion. The 90000 root
 limit is only the first deterministic projection bound; it does not assume a
 fixed request-envelope size. After singleton citations and the exact PROPOSE
 envelope are constructed, measure the complete canonical request. While it
-exceeds 100000 bytes and more than one trace remains, remove the last selected
+exceeds 240000 bytes and more than one trace remains, remove the last selected
 trace, add one trace-specific `EVIDENCE_BYTE_LIMIT_REACHED` gap, re-sort gaps,
 rebuild citations, and measure again. Removed traces are not replaced by later
 candidates: tail removal preserves the frozen cluster-round-robin priority.
-If the exact request for the sole remaining trace still exceeds 100000 bytes,
+If the exact request for the sole remaining trace still exceeds 240000 bytes,
 preserve that evidence and refuse `EVIDENCE_TOO_LARGE(3)` before egress. No
-event or trace is silently truncated, the request ceiling is not raised, and
-no alternate corpus or selection retry is allowed.
+event or trace is silently truncated; the 240000-byte ceiling is the corrected
+budget-derived limit below, and no alternate corpus or selection retry is allowed.
 
 ```json
 {
@@ -265,12 +265,13 @@ A match refuses all egress. After a clean scan,
 `provider_evidence_hash = domain_hash("provider-evidence", evidence_root)`.
 
 Budget arithmetic uses `Decimal` only. For any request, reserved input tokens
-equal its exact HTTP-body byte length and reserved output tokens equal 4096.
+equal its exact HTTP-body byte length and reserved output tokens equal 12000.
 Reserved USD is
 `ceil_to_6((input_tokens * input_rate + output_tokens * output_rate) /
 1000000)`, where `ceil_to_6` rounds toward positive infinity to six decimal
-places. Preflight repeats the 100000-byte/4096-token worst case six times and
-refuses if the sum is greater than `max_usd`. Immediately before each attempt,
+places. Preflight repeats the 240000-byte/12000-token worst case three times:
+`3 * (2.400000 + 0.480000) = 8.640000`, and refuses if the sum is greater than
+`max_usd`. The corrected run permits no transport retry. Immediately before each attempt,
 the actual request reservation plus every prior attempt reservation must fit
 the call, wall-clock, and USD limits. A failed attempt consumes its full
 reservation. Observed provider tokens and cost never refund authorization.
@@ -334,10 +335,10 @@ supported text are ordered and limited to 20.
 `Lineage` has exactly `provider_kind,endpoint_host_hash,deployment,model_name,
 model_version,prompt_pack_hash,provider_evidence_hash,stage,seed,attempt_ids`.
 The fixed provider/model values come from config; stage is `PROPOSE | REVISE`;
-attempt IDs are unique in ledger order. Control lineage contains every PROPOSE
-attempt through its successful response, including a failed retry precursor.
-Revised lineage contains every PROPOSE, CRITIQUE, and REVISE attempt through
-the accepted revised response, including failed retry precursors. The endpoint host hash is
+attempt IDs are unique in ledger order. Control lineage contains the single
+PROPOSE attempt through its successful response. Revised lineage contains the
+single PROPOSE, CRITIQUE, and REVISE attempts through the accepted revised
+response. The endpoint host hash is
 `domain_hash("endpoint-host", allowed_endpoint_host)` and the prompt-pack hash
 is `domain_hash("prompt-pack", {"PROPOSE":<exact prompt>,"CRITIQUE":<exact
 prompt>,"REVISE":<exact prompt>,"proposal_schema":<canonical schema>,
@@ -530,7 +531,7 @@ Request JSON has exactly:
   ],
   "temperature":"0.200000",
   "seed":2026080104,
-  "max_tokens":4096,
+  "max_tokens":12000,
   "response_format":{
     "type":"json_schema",
     "json_schema":{"name":"triana_labs04_<stage>","strict":true,"schema":{}}
@@ -543,7 +544,7 @@ is emitted as JSON number `0.2` only by the HTTP serializer; all portable JSON
 still forbids floats. `<stage>` is `propose|critique|revise`; `schema` is the
 closed draft schema above. Request hash is
 `byte_hash("provider-request", exact_http_body_bytes)`. The complete body
-must not exceed 100000 bytes.
+must not exceed 240000 bytes.
 
 Request construction never truncates, drops evidence, abbreviates schemas,
 rewrites prompts, or changes model. If PROPOSE exceeds the limit, generation
@@ -638,9 +639,10 @@ nonnegative, and exactly representable as a decimal with at most six
 fractional digits; it is rendered to `Money` with trailing zeroes. Exponent
 notation is accepted by the provider parser but never emitted portably.
 
-Only transport, 429, and 5xx failures retry, once per stage, if call/time/cost
-reservation still fits. Semantic, schema, content-filter, length, auth, 3xx,
-and other refusal states do not retry.
+No provider or transport state retries in the corrected run. Transport, 429,
+5xx, semantic, schema, content-filter, length, auth, 3xx, and every other
+failure remains visible on its single stage attempt and follows the existing
+fatal-versus-partial mapping.
 
 ## 9. Attempt identity and ledger
 
@@ -660,9 +662,8 @@ Before sending, attempt preimage is exactly:
 }
 ```
 
-Attempt ID uses this preimage. Attempt index is 0 for the normal call and 1 for
-its retry, independently per stage. Ledger order is PROPOSE attempts, CRITIQUE
-attempts, REVISE attempts.
+Attempt ID uses this preimage. Attempt index is always 0. Ledger order is the
+single PROPOSE attempt, single CRITIQUE attempt, then single REVISE attempt.
 
 The portable attempt has exactly `artifact_kind,schema_version,attempt_id,
 stage,attempt_index,status,reason_code,request_hash,response_hash,input_tokens,
