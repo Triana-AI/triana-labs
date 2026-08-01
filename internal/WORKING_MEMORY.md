@@ -455,3 +455,17 @@ Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
 runtime, DeepEval, memory, UI, real-data support, or LABS-05 work is authorized.
+
+The independent audit subsequently removed the brittle `240,055` fixture
+equality: that test's product duty is a sole-trace request above 240,000 bytes
+refusing before egress, not a magic serialized size. Exact 240,000 acceptance
+and 240,001 tail fitting remain covered by the separate request oracle. The
+corrected test hash is
+`3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07`;
+the complete LABS-04 aggregates are
+`fd3d310166742fd67469fb68f068a5a6296ff724eb87a444a2f47ca2d4edf2be`
+and `399aa3010821083cd2e87a073fffe7381eeb11b75d0c4eee4eb90b8496dda315`.
+All 163 LABS-04 and 188 historical tests are green. This is an operational
+guard only; checkpoint success still depends on live HRAI outputs clearing the
+frozen grounding, realism, adaptive multi-turn readiness, distinctness,
+target-relevance, and unjustified-assumption usefulness review.

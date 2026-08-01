@@ -726,6 +726,20 @@ supersede the earlier LABS-04 acceptance-only aggregates and all three prior
 adversarial-file hashes; no behavioral assertion outside the corrected wire is
 weakened.
 
+The independent post-implementation audit found that `240,055` above was a
+brittle fixture byte count rather than the refusal contract. Production and
+the independent request oracle both constructed the same 240,776-byte request;
+the test now asserts only the meaningful precondition that the sole-trace
+request exceeds 240,000 bytes, followed by `EVIDENCE_TOO_LARGE(3)`, zero
+transport, and no output. The dedicated independent oracle still freezes exact
+240,000 acceptance and 240,001 whole-trace tail fitting. The corrected test is
+SHA-256 `3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07`;
+the complete 14-file aggregates are content SHA-256
+`fd3d310166742fd67469fb68f068a5a6296ff724eb87a444a2f47ca2d4edf2be`
+and per-file hash-list SHA-256
+`399aa3010821083cd2e87a073fffe7381eeb11b75d0c4eee4eb90b8496dda315`.
+All 163 LABS-04 and 188 historical tests passed after this correction.
+
 ### Lane A — deterministic contract and safety
 
 - strict config, input, portable artifact, citation, and reference schemas;

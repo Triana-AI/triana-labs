@@ -112,7 +112,7 @@ triana_verify_tracked_hash \
   d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_uncovered_contract_edges.py \
-  4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a
+  3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_request_tail_fit.py \
   9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd
