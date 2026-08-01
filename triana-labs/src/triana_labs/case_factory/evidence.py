@@ -15,6 +15,7 @@ from triana_labs.case_factory.primitives import (
     read_object_file,
     strict_json,
 )
+from triana_labs.intelligence.derive import _derive_artifacts
 from triana_labs.intelligence.input import InputFailure, read_bundle
 
 _INTELLIGENCE_LIMITS = {
@@ -41,7 +42,7 @@ def build(
     observer_path: Path, intelligence_path: Path
 ) -> tuple[Json, list[Json], Json, int]:
     try:
-        observer_bytes, _, traces = read_bundle(observer_path)
+        observer_bytes, observer, traces = read_bundle(observer_path)
     except InputFailure as error:
         raise Invalid(error.reason_code) from error
     intelligence_bytes = read_object_file(
@@ -77,6 +78,11 @@ def build(
     if any(
         canonical(parsed_payloads[name], lf=True) != payload
         for name, payload in payloads.items()
+    ):
+        raise Invalid("INTELLIGENCE_MISMATCH")
+    expected, _ = _derive_artifacts(observer_bytes, observer, traces)
+    if intelligence_bytes != expected.pop("manifest.json") or any(
+        payload != expected[name] for name, payload in payloads.items()
     ):
         raise Invalid("INTELLIGENCE_MISMATCH")
     clusters_bytes = payloads["clusters.json"]

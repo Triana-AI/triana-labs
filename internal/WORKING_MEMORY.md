@@ -390,6 +390,12 @@ PROPOSE size classification, exact API-key response scanning, secret and DNS
 configuration validation, and post-proposal interruption custody. Production
 must not replace these with check-then-rename, a visible claim directory, or
 another unsafe fallback.
+The implementation-author correction changes only three authorized production
+files and is independently green at 17/17 adversarial, 142/142 acceptance,
+188/188 historical, Ruff, and strict mypy. Production is 1,779 counted lines.
+Native Darwin/Linux no-replace publication fails closed when unavailable; the
+remaining mechanical work is the complete clean-wheel/privacy/hash gate and
+the single preserved Azure/HRAI smoke, not further contract invention.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

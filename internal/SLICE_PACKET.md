@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **IMPLEMENTATION CANDIDATE REJECTED — SECOND ADVERSARIAL RED FROZEN**
+Status: **CORRECTED IMPLEMENTATION GREEN — FULL EXIT GATE PENDING**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -624,6 +624,17 @@ otherwise ignored response field; three invalid secret-configuration cases;
 two malformed lowercase DNS hosts; and escaped interruption after a valid
 proposal. The already-correct pre-proposal interruption behavior remains
 frozen. Both adversarial files are immutable until a new explicit freeze.
+
+The implementation-author correction against commit `f39dbc7` changes only
+`evidence.py`, `generate.py`, and `provider.py`. It uses native atomic
+no-replace publication on Darwin and Linux with fail-closed unsupported-platform
+behavior; validates PROPOSE size, exact response secrets, secret configuration,
+and DNS hosts before egress; and preserves typed post-proposal interruption
+custody. The author and Codex independently reproduced 17/17 adversarial,
+142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN. The
+package contains 1,779 normally formatted nonblank/noncomment production lines.
+This is a corrected implementation candidate, not mechanical checkpoint exit:
+the full packaging/privacy/hash gate and the one-shot Azure/HRAI smoke remain.
 
 ### Lane A — deterministic contract and safety
 

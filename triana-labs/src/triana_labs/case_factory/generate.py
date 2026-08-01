@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 from triana_labs import __version__
 from triana_labs.case_factory.evidence import build as build_evidence
 from triana_labs.case_factory.primitives import (
+    SAFE_ID,
     Invalid,
     Json,
     artifact_hash,
@@ -95,6 +96,7 @@ class Run:
     clock: Clock
     hashes: tuple[str, str]
     evidence_hash: str
+    unavailable_reason: str | None
 
 
 def generate(
@@ -164,6 +166,7 @@ def generate(
         active_clock,
         hashes,
         evidence_hash,
+        None,
     )
     user = {"evidence": evidence, "citations": citations}
     proposal = _stage("PROPOSE", user, schemas["proposal"], run)
@@ -179,20 +182,39 @@ def generate(
         )
     except Invalid as error:
         raise GenerateFailure("PROVIDER_FAILED", 8) from error
-    critique = _stage(
-        "CRITIQUE", {**user, "proposal": proposal}, schemas["critique"], run
-    )
-    final: Lane | None = None
-    reason: str | None = "CRITIQUE_UNAVAILABLE" if critique is None else None
-    if critique is not None:
-        revision = _stage(
-            "REVISE",
-            {**user, "proposal": proposal, "critique": critique},
-            schemas["proposal"],
-            run,
+    interrupted = False
+    try:
+        critique = _stage(
+            "CRITIQUE", {**user, "proposal": proposal}, schemas["critique"], run
         )
+    except KeyboardInterrupt:
+        critique = None
+        interrupted = True
+    final: Lane | None = None
+    reason: str | None = (
+        "INTERRUPTED"
+        if interrupted
+        else run.unavailable_reason or "CRITIQUE_UNAVAILABLE"
+        if critique is None
+        else None
+    )
+    if critique is not None:
+        try:
+            revision = _stage(
+                "REVISE",
+                {**user, "proposal": proposal, "critique": critique},
+                schemas["proposal"],
+                run,
+            )
+        except KeyboardInterrupt:
+            revision = None
+            interrupted = True
         if revision is None:
-            reason = "REVISION_UNAVAILABLE"
+            reason = (
+                "INTERRUPTED"
+                if interrupted
+                else run.unavailable_reason or "REVISION_UNAVAILABLE"
+            )
         else:
             try:
                 final = convert_lane(
@@ -268,8 +290,15 @@ def _stage(
     schema: Json,
     run: Run,
 ) -> Any | None:
+    run.unavailable_reason = None
     body = _request(stage, user, schema)
     if len(body) > 100_000:
+        if stage == "PROPOSE":
+            raise GenerateFailure("EVIDENCE_TOO_LARGE", 3)
+        run.unavailable_reason = {
+            "CRITIQUE": "CRITIQUE_REQUEST_TOO_LARGE",
+            "REVISE": "REVISION_REQUEST_TOO_LARGE",
+        }[stage]
         return None
     for index in range(2):
         now = run.clock.monotonic_ns()
@@ -410,6 +439,7 @@ def _response(
         parsed = strict_json(content.encode())
         if not _schema(parsed, schema, schema):
             raise Invalid
+        _reported_cost(usage)
         return parsed, "SUCCEEDED", None, digest, usage
     except (Invalid, KeyError, TypeError, json.JSONDecodeError):
         return None, "INVALID_RESPONSE", "PROVIDER_RESPONSE_INVALID", digest, None
@@ -466,16 +496,7 @@ def _attempt(
         "model_version": MODEL_VERSION,
         "seed": SEED,
     }
-    reported = None
-    if usage and "cost" in usage:
-        value = usage["cost"]
-        if isinstance(value, bool) or not isinstance(value, (int, Decimal)):
-            raise Invalid
-        reported_cost = Decimal(value)
-        exponent = reported_cost.as_tuple().exponent
-        if value < 0 or not isinstance(exponent, int) or exponent < -6:
-            raise Invalid
-        reported = _money(reported_cost)
+    reported = _reported_cost(usage)
     return {
         "artifact_kind": "case_factory_generation_attempt",
         "schema_version": 1,
@@ -494,6 +515,19 @@ def _attempt(
         "model_name": MODEL,
         "model_version": MODEL_VERSION,
     }
+
+
+def _reported_cost(usage: Json | None) -> str | None:
+    if not usage or "cost" not in usage:
+        return None
+    value = usage["cost"]
+    if isinstance(value, bool) or not isinstance(value, (int, Decimal)):
+        raise Invalid
+    cost = Decimal(value)
+    exponent = cost.as_tuple().exponent
+    if value < 0 or not isinstance(exponent, int) or exponent < -6:
+        raise Invalid
+    return _money(cost)
 
 
 def _bundle(
@@ -793,11 +827,14 @@ def _config(path: Path) -> Json:
     }
     if (
         value != expected
-        or not isinstance(host, str)
-        or not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", host)
+        or not _valid_host(host)
         or not isinstance(sentinels, list)
         or sentinels != sorted(set(sentinels))
         or len(sentinels) > 20
+        or any(
+            not isinstance(name, str) or SAFE_ID.fullmatch(name) is None
+            for name in sentinels
+        )
     ):
         raise GenerateFailure("CONFIG_INVALID", 2)
     return value
@@ -811,8 +848,8 @@ def _egress(config: Json, env: Mapping[str, str]) -> tuple[str, str, list[bytes]
         sentinels = [env[name] for name in provider["secret_sentinel_envs"]]
     except KeyError as error:
         raise GenerateFailure("CONFIG_INVALID", 2) from error
-    if not 8 <= len(key.encode()) <= 4096 or any(
-        not 8 <= len(item.encode()) <= 256 for item in sentinels
+    if not _secret_value(key, 8, 4096) or any(
+        not _secret_value(item, 8, 256) for item in sentinels
     ):
         raise GenerateFailure("CONFIG_INVALID", 2)
     parsed = urlsplit(endpoint)
@@ -834,7 +871,34 @@ def _egress(config: Json, env: Mapping[str, str]) -> tuple[str, str, list[bytes]
     return (
         f"https://{parsed.hostname}{provider['api_surface']}",
         key,
-        [item.encode() for item in sentinels],
+        [key.encode(), *(item.encode() for item in sentinels)],
+    )
+
+
+def _secret_value(value: Any, minimum: int, maximum: int) -> bool:
+    if not isinstance(value, str) or any(
+        ord(character) < 32 or 127 <= ord(character) <= 159 for character in value
+    ):
+        return False
+    try:
+        return minimum <= len(value.encode()) <= maximum
+    except UnicodeError:
+        return False
+
+
+def _valid_host(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        if not 1 <= len(value.encode("ascii")) <= 253:
+            return False
+    except UnicodeError:
+        return False
+    labels = value.split(".")
+    return all(
+        1 <= len(label) <= 63
+        and re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) is not None
+        for label in labels
     )
 
 

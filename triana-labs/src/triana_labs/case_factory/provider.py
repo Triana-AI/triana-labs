@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import ctypes
+import errno
 import os
 import shutil
 import ssl
+import sys
 import tempfile
 import time
 import urllib.error
@@ -77,6 +80,26 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def _rename_no_replace(source: Path, target: Path) -> None:
+    library = ctypes.CDLL(None, use_errno=True)
+    old, new = os.fsencode(source), os.fsencode(target)
+    if sys.platform == "darwin":
+        result = library.renamex_np(old, new, 4)
+    elif sys.platform.startswith("linux"):
+        try:
+            rename = library.renameat2
+        except AttributeError as error:
+            raise OSError(
+                errno.ENOTSUP, "atomic no-replace rename unavailable"
+            ) from error
+        result = rename(-100, old, -100, new, 1)
+    else:
+        raise OSError(errno.ENOTSUP, "atomic no-replace rename unavailable")
+    if result != 0:
+        code = ctypes.get_errno()
+        raise OSError(code, os.strerror(code), target)
+
+
 class AtomicPublisher:
     def publish(self, output_path: Path, artifacts: Mapping[str, bytes]) -> None:
         temporary: Path | None = None
@@ -86,16 +109,29 @@ class AtomicPublisher:
                     prefix=f".{output_path.name}.tmp-", dir=output_path.parent
                 )
             )
-            for name, payload in artifacts.items():
+            names = [name for name in artifacts if name != "manifest.json"]
+            if "manifest.json" in artifacts:
+                names.append("manifest.json")
+            for name in names:
+                payload = artifacts[name]
                 target = temporary / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with target.open("wb") as stream:
                     stream.write(payload)
                     stream.flush()
                     os.fsync(stream.fileno())
+            directory = os.open(temporary, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+            ready = temporary.with_name(f"{temporary.name}.ready")
+            temporary.rename(ready)
+            temporary = ready
             if os.path.lexists(output_path):
                 raise OSError
-            temporary.rename(output_path)
+            _rename_no_replace(temporary, output_path)
+            temporary = None
         except BaseException as error:
             if temporary is not None and temporary.exists():
                 try:
