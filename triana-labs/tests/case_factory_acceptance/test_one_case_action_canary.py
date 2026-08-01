@@ -8,6 +8,9 @@ from typing import Any
 
 import pytest
 from conftest import ENVIRON
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.outputs import ChatResult
+from pydantic import PrivateAttr
 from test_restricted_runtime_outcomes import (
     ScriptedRestrictedTransport,
     _clock,
@@ -54,6 +57,68 @@ def _pause_one_case(tmp_path: Path) -> tuple[Any, Path, Path]:
     )
     assert result.outcome == "NEEDS_INPUT"
     return transport.requests[0], paused, cache
+
+
+class _BindingObserved(Exception):
+    pass
+
+
+class _BindingRecorder(BaseChatModel):
+    _calls: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+
+    @property
+    def _llm_type(self) -> str:
+        return "one-case-binding-recorder"
+
+    def _generate(self, *_: Any, **__: Any) -> ChatResult:
+        raise AssertionError("the binding-only test must not execute a model")
+
+    def bind_tools(
+        self,
+        tools: Any,
+        *,
+        tool_choice: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        self._calls.append(
+            {
+                "tool_names": [tool.name for tool in tools],
+                "tool_choice": tool_choice,
+                "kwargs": kwargs,
+            }
+        )
+        raise _BindingObserved
+
+
+def _binding_for(request: Any, *, resumed: bool) -> dict[str, Any]:
+    runtime = _runtime()
+    tools = runtime._agent_tools(
+        request,
+        runtime.RestrictedTools(
+            _field(request, "evidence_catalog"),
+            _field(request, "remaining_budget_usd"),
+        ),
+    )
+    assert [tool.name for tool in tools] == list(runtime.TOOLS)
+    assert [tool.name for tool in tools if tool.return_direct] == ["submit_case_batch"]
+    model = _BindingRecorder()
+    with pytest.raises(_BindingObserved):
+        agent = runtime._restricted_agent(model, tools, resumed=resumed)
+        agent.invoke({"messages": [{"role": "user", "content": "synthetic"}]})
+    assert len(model._calls) == 1
+    return model._calls[0]
+
+
+def test_resumed_create_agent_binding_requires_one_of_four_tools(
+    tmp_path: Path,
+) -> None:
+    request, _, _ = _pause_one_case(tmp_path)
+
+    initial = _binding_for(request, resumed=False)
+    resumed = _binding_for(request, resumed=True)
+
+    assert initial["tool_choice"] not in {"required", "any"}
+    assert resumed["tool_choice"] in {"required", "any"}
 
 
 def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts(
