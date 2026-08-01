@@ -114,6 +114,7 @@ def test_transient_provider_state_never_retries(
             intelligence,
             write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=ENVIRON,
             publisher=publisher,

@@ -477,6 +477,7 @@ def invoke(
     environ: Mapping[str, str] | None = None,
     clock: Any = None,
     publisher: Any = None,
+    cache_path: Path | None = None,
 ) -> tuple[Any, ScriptedTransport, Any, Path]:
     observer, intelligence = build_upstream(tmp_path, traces, rejected=rejected)
     config_path = write_config(tmp_path, config)
@@ -488,6 +489,7 @@ def invoke(
         intelligence,
         config_path,
         output,
+        cache_path=cache_path or tmp_path / "provider-cache",
         transport=transport,
         clock=clock,
         environ=dict(environ or ENVIRON),

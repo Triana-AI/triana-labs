@@ -50,6 +50,7 @@ def assert_refusal(
             intelligence,
             config,
             output,
+            cache_path=output.parent / "provider-cache",
             transport=transport,
             environ=ENVIRON,
         )

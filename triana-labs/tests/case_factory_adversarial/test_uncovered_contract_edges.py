@@ -42,6 +42,7 @@ def _failure(
             intelligence,
             HELPERS.write_config(tmp_path, config),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=environ or dict(HELPERS.ENVIRON),
         )
@@ -140,6 +141,7 @@ def test_oversized_propose_request_refuses_as_evidence_too_large(
             intelligence,
             HELPERS.write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
         )
@@ -265,6 +267,7 @@ def test_interrupt_before_valid_propose_publishes_nothing(tmp_path: Path) -> Non
             intelligence,
             HELPERS.write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
             publisher=publisher,
@@ -291,6 +294,7 @@ def test_interrupt_during_critique_publishes_control_only_partial(
             intelligence,
             HELPERS.write_config(tmp_path),
             tmp_path / "case-factory",
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
             publisher=publisher,

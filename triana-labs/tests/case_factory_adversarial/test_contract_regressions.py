@@ -44,6 +44,7 @@ def _invoke(
         intelligence,
         HELPERS.write_config(tmp_path),
         tmp_path / "case-factory",
+        cache_path=tmp_path / "provider-cache",
         transport=transport,
         environ=HELPERS.ENVIRON,
         publisher=publisher,
@@ -103,6 +104,7 @@ def test_self_consistent_forged_intelligence_refuses_before_egress(
             intelligence,
             HELPERS.write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
         )
@@ -201,6 +203,7 @@ def test_non_money_provider_cost_closes_as_typed_provider_failure(
             intelligence,
             HELPERS.write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
         )
@@ -279,6 +282,7 @@ def test_publish_race_never_replaces_existing_output(
             intelligence,
             HELPERS.write_config(tmp_path),
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
         )

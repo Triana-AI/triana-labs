@@ -97,6 +97,7 @@ def test_oversized_user_event_leaves_no_usable_evidence(tmp_path: Path) -> None:
             intelligence,
             config,
             tmp_path / "output",
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=ENVIRON,
         )
@@ -138,6 +139,7 @@ def test_manifest_symlink_and_privacy_tamper_refuse(tmp_path: Path) -> None:
             intelligence,
             config,
             tmp_path / "one",
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=ENVIRON,
         )
@@ -151,6 +153,7 @@ def test_manifest_symlink_and_privacy_tamper_refuse(tmp_path: Path) -> None:
             intelligence,
             config,
             tmp_path / "two",
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=ENVIRON,
         )
@@ -195,6 +198,7 @@ def test_cluster_round_robin_selection_matches_upstream_clusters_exactly(
         intelligence,
         write_config(tmp_path),
         tmp_path / "round-robin",
+        cache_path=tmp_path / "provider-cache",
         transport=transport,
         publisher=publisher,
         environ=ENVIRON,
@@ -341,6 +345,7 @@ def test_default_publisher_preconditions_leave_existing_paths_untouched(
             intelligence,
             config,
             output,
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=ENVIRON,
         )

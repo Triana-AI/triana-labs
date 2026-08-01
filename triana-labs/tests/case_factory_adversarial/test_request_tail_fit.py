@@ -143,6 +143,7 @@ def _generate(
             intelligence,
             HELPERS.write_config(tmp_path),
             tmp_path / "case-factory",
+            cache_path=tmp_path / "provider-cache",
             transport=transport,
             environ=HELPERS.ENVIRON,
             publisher=publisher,
