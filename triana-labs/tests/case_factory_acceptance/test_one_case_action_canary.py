@@ -409,13 +409,13 @@ def test_resumed_no_tool_terminal_cannot_publish(tmp_path: Path) -> None:
     assert len(transport.requests) == 1
 
 
-def test_usd_ten_is_allowed_and_above_ten_refuses_before_transport(
+def test_usd_twenty_five_is_allowed_and_above_twenty_five_refuses_before_transport(
     tmp_path: Path,
 ) -> None:
     over_root = tmp_path / "over"
     over_root.mkdir()
     observer, intelligence, _, cache = _inputs(over_root)
-    over_config = _restricted_config(over_root, maximum="10.000001")
+    over_config = _restricted_config(over_root, maximum="25.000001")
     over_transport = ScriptedRestrictedTransport([])
 
     with pytest.raises(Invalid):
@@ -435,7 +435,7 @@ def test_usd_ten_is_allowed_and_above_ten_refuses_before_transport(
     exact_root = tmp_path / "exact"
     exact_root.mkdir()
     observer, intelligence, _, cache = _inputs(exact_root)
-    exact_config = _restricted_config(exact_root, maximum="10.000000")
+    exact_config = _restricted_config(exact_root, maximum="25.000000")
 
     def submit(request: Any, tools: Any) -> Any:
         submission = _submission(request)
