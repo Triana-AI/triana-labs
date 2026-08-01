@@ -109,13 +109,13 @@ triana_verify_tracked_hash() {
 }
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_contract_regressions.py \
-  d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276
+  a4140877cb081469a047868cb96a873fcad10b21ebd256177097ec2dc802f943
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_uncovered_contract_edges.py \
   3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_request_tail_fit.py \
-  9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd
+  9e0540e18ea540cb37041570758a69c002a5fc63b49d8cfae16c466f04f6866c
 
 mkdir "${triana_evidence_root}/first" "${triana_evidence_root}/second"
 set +e

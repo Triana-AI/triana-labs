@@ -744,6 +744,13 @@ gate, the corrected content SHA-256 is
 `217083673e064de01af78970ef09a2e5d8bad6c1c36aee3746fbfca1103be18c`
 and its per-file hash-list SHA-256 is
 `51d67a9922c53f9b1b9da52ba0274c4494da946bd56f6a173c3cb1c74f5f6b4a`.
+The corrected individual adversarial hashes enforced by the same gate are
+`a4140877cb081469a047868cb96a873fcad10b21ebd256177097ec2dc802f943`
+for contract regressions,
+`3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07`
+for uncovered edges, and
+`9e0540e18ea540cb37041570758a69c002a5fc63b49d8cfae16c466f04f6866c`
+for request tail fitting.
 
 ### Lane A — deterministic contract and safety
 
