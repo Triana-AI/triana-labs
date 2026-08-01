@@ -264,3 +264,26 @@ the live contract remains `internal/SLICE_PACKET.md` and
   `1f35cb1`; fixture reconciliation `d25bbbc`.
 - **Regression/evidence:** 168/168 LABS-04 tests pass; no second provider call.
 - **Status:** CLOSED LOCALLY; exact-cache replay and usefulness review pending.
+
+### TRIAGE-13 — revision repeats hallucinated citation identifiers
+
+- **Type:** observed model/prompt conformance and usefulness failure.
+- **Observed:** the completed three-stage HRAI run published zero usable cases
+  with `INVALID_REVISED_LANE`. PROPOSE had 16 unknown of 20 citation references;
+  REVISE had 32 unknown of 40 and still represented only one valid trace.
+- **Classification evidence:** the critique explicitly returned five
+  invalid-grounding and five insufficient-support issues, yet revision retained
+  all 20 `SUPPORT_CARDINALITY_MISMATCH` defects. Exact secret-safe request,
+  response, parsed, and defect artifacts are preserved for all stages.
+- **Fix:** none within the frozen recovery. Deterministic remapping would invent
+  grounding. A future slice must make valid citation selection mechanically
+  representable or independently prove a stronger repair prompt before spend.
+- **Fix authority:** no retry, new prompt, schema change, or additional provider
+  call was authorized. Codex stopped inside the USD 15 ceiling.
+- **Regression/evidence:** final manifest SHA-256
+  `7ca3f8378ab08ae4095f27814dbed55bb22996ef014c55aa47f71211f519c715`;
+  provider-stage aggregate SHA-256
+  `dc818c790528ac0093eb4b9ec538995746d243a030ccf27524fc40a0b995b3b2`;
+  zero-call replay reproduced identical provider-stage bytes.
+- **Status:** OPEN PRODUCT BLOCKER. LABS-04 Grounded Case Factory is not
+  complete and Corpus Intelligence must not start.

@@ -813,6 +813,26 @@ final acceptance-plus-fixture hashes are content
 repository-root file-list
 `7fa26af92a436bbc908f2d94f288f66d4d225c4faaea330d7b3ff95fc3cf2d18`.
 
+The final gate passed 356/356 tests plus Ruff, strict mypy, frozen hashes,
+source/wheel builds, clean CPython 3.13 installation, and source/wheel parity;
+evidence is `/private/tmp/triana-labs-verify.lafJ4D`. The resumed HRAI run
+replayed PROPOSE and made exactly the remaining CRITIQUE and REVISE calls. It
+published every safe stage artifact but ended `INVALID_REVISED_LANE` with zero
+usable cases. The proposal had 20 claims and 20 citation references: four
+resolved, sixteen were unknown, and all resolving evidence came from one
+trace. The critique returned ten issues (five invalid-grounding and five
+insufficient-support). The revision doubled citation references to 40 but
+still had 32 unknown, eight resolving, and one represented trace, so the same
+20 support-cardinality defects remained. Deterministic code correctly refused
+to remap or invent grounding. Conservative reservations for the final logical
+run were USD 7.852090 and cumulative experiment reservations USD 13.784950,
+inside the USD 15 ceiling. A full offline replay used zero provider calls and
+USD 0.000000; all provider-stage bytes matched aggregate SHA-256
+`dc818c790528ac0093eb4b9ec538995746d243a030ccf27524fc40a0b995b3b2`.
+LABS-04 remains incomplete because the required three useful distinct cases do
+not exist; no additional provider call or silent deterministic repair is
+authorized.
+
 ### Lane A — deterministic contract and safety
 
 - strict config, input, portable artifact, citation, and reference schemas;
