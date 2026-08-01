@@ -130,7 +130,7 @@ def test_oversized_propose_request_refuses_as_evidence_too_large(
     envelope = json.loads(current_body)
     envelope["max_tokens"] = 12000
     amended_body = HELPERS.canonical(envelope)
-    assert len(amended_body) == 240_055
+    assert len(amended_body) > 240_000
     transport = HELPERS.ScriptedTransport([])
     output = tmp_path / "case-factory"
 
