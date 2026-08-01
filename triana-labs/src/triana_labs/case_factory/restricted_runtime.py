@@ -1319,9 +1319,17 @@ def _agent_tools(request: AgentBatchRequest, tools: RestrictedTools) -> list[Any
             tools.submit_case_batch,
             name="submit_case_batch",
             description="Submit one complete case batch for deterministic validation.",
-            args_schema=_object_schema({"submission": _submission_schema(request)}),
+            args_schema=_submission_tool_schema(request),
         ),
     ]
+
+
+def _submission_tool_schema(request: AgentBatchRequest) -> Json:
+    submission = _submission_schema(request)
+    definitions = submission.pop("$defs")
+    outer = _object_schema({"submission": submission})
+    outer["$defs"] = definitions
+    return outer
 
 
 def _submission_schema(request: AgentBatchRequest) -> Json:
@@ -1366,6 +1374,7 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
 
 def _terminal_schema() -> Json:
     return {
+        "title": "case_factory_agent_outcome",
         "type": "object",
         "additionalProperties": False,
         "properties": {
