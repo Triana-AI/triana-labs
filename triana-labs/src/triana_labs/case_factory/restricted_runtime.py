@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-import urllib.error
-import urllib.request
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -91,29 +90,91 @@ class RestrictedTools:
     catalog: Json
     budget: str
     submission: Json | None = None
+    log_path: Path | None = None
+    attempt_id: str | None = None
+    sequence: int = 0
 
     def search_evidence(self, query: str) -> Json:
-        if not bounded_text(query, 512):
-            raise Invalid
-        matches = []
-        for trace in self.catalog["traces"]:
-            for event in trace["events"]:
-                if query.casefold() in canonical(event).decode().casefold():
-                    matches.append(event["evidence_handle"])
-        return {"evidence_handles": matches[:20]}
+        def execute() -> Json:
+            if not bounded_text(query, 512):
+                raise Invalid
+            matches = []
+            for trace in self.catalog["traces"]:
+                for event in trace["events"]:
+                    if query.casefold() in canonical(event).decode().casefold():
+                        matches.append(event["evidence_handle"])
+            return {"evidence_handles": matches[:20]}
+
+        return self._execute("search_evidence", {"query": query}, execute)
 
     def get_trace_packet(self, trace_handle: str) -> Json:
-        for trace in self.catalog["traces"]:
-            if trace["trace_handle"] == trace_handle:
-                return cast(Json, trace)
-        raise Invalid
+        def execute() -> Json:
+            for trace in self.catalog["traces"]:
+                if trace["trace_handle"] == trace_handle:
+                    return cast(Json, trace)
+            raise Invalid
+
+        return self._execute(
+            "get_trace_packet", {"trace_handle": trace_handle}, execute
+        )
 
     def inspect_budget(self) -> Json:
-        return {"remaining_budget_usd": self.budget}
+        return self._execute(
+            "inspect_budget",
+            {},
+            lambda: {"remaining_budget_usd": self.budget},
+        )
 
     def submit_case_batch(self, submission: Json) -> Json:
-        self.submission = submission
-        return {"accepted_for_validation": True}
+        def execute() -> Json:
+            if self.submission is not None:
+                raise Invalid
+            self.submission = submission
+            return {"accepted_for_validation": True}
+
+        return self._execute("submit_case_batch", {"submission": submission}, execute)
+
+    def _execute(self, name: str, arguments: Json, execute: Any) -> Json:
+        self.sequence += 1
+        try:
+            result = cast(Json, execute())
+        except Exception as error:
+            self._record(name, arguments, "FAILED", "TOOL_EXECUTION_FAILED", None)
+            raise RestrictedToolFailure from error
+        self._record(name, arguments, "SUCCEEDED", None, result)
+        return result
+
+    def _record(
+        self,
+        name: str,
+        arguments: Json,
+        status: str,
+        reason: str | None,
+        result: Json | None,
+    ) -> None:
+        if self.log_path is None or self.attempt_id is None:
+            return
+        _private_append(
+            self.log_path,
+            canonical(
+                {
+                    "artifact_kind": "case_factory_tool_call",
+                    "schema_version": 1,
+                    "attempt_id": self.attempt_id,
+                    "sequence": self.sequence,
+                    "tool_name": name,
+                    "arguments": arguments,
+                    "status": status,
+                    "reason_code": reason,
+                    "result": result,
+                },
+                lf=True,
+            ),
+        )
+
+
+class RestrictedToolFailure(Exception):
+    """Safe sentinel raised when an allowlisted tool fails closed."""
 
 
 @dataclass
@@ -329,7 +390,15 @@ def _batch(
         )
         state.reserved += state.reservation
         state.calls += 1
-        tools = RestrictedTools(state.catalog, request.remaining_budget_usd)
+        attempt_id = _attempt_identity(state, batch_id, phase)
+        tools = RestrictedTools(
+            state.catalog,
+            request.remaining_budget_usd,
+            log_path=_run_root(state.cache, state.run_id)
+            / "agent"
+            / "tool_calls.jsonl",
+            attempt_id=attempt_id,
+        )
         response = transport.run(request, tools)
         status = _field(response, "status")
         reason = _field(response, "failure_reason_code")
@@ -524,17 +593,10 @@ def _attempt(
     reason: str | None,
     response: Any | None,
 ) -> Json:
-    index = len(state.attempts)
-    preimage = {
-        "run_id": state.run_id,
-        "batch_id": batch_id,
-        "phase": phase,
-        "attempt_index": index,
-    }
     return {
         "artifact_kind": "case_factory_agent_attempt",
         "schema_version": 1,
-        "attempt_id": domain_hash("restricted-agent-attempt", preimage),
+        "attempt_id": _attempt_identity(state, batch_id, phase),
         "batch_id": batch_id,
         "phase": phase,
         "case_slots": [int(item.removeprefix("case_")) for item in slots],
@@ -564,6 +626,18 @@ def _attempt(
         "reserved_cost_usd": _money(state.reservation),
         "latency_ms": _field(response, "latency_ms") if response is not None else None,
     }
+
+
+def _attempt_identity(state: _State, batch_id: str, phase: str) -> str:
+    return domain_hash(
+        "restricted-agent-attempt",
+        {
+            "run_id": state.run_id,
+            "batch_id": batch_id,
+            "phase": phase,
+            "attempt_index": len(state.attempts),
+        },
+    )
 
 
 def _preserve_boundary(
@@ -963,6 +1037,15 @@ def _private_write(path: Path, payload: bytes) -> None:
         os.fsync(stream.fileno())
 
 
+def _private_append(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(descriptor, "ab") as stream:
+        stream.write(payload)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
 def _publish(
     output: Path, artifacts: dict[str, bytes], publisher: ArtifactPublisher | None
 ) -> None:
@@ -1006,71 +1089,382 @@ def _field(value: Any, name: str) -> Any:
 
 
 class FoundryGLMRestrictedTransport:
-    """Pinned live transport for the already-conformant Foundry deployment."""
+    """Pinned Foundry model executed only through a restricted LangChain agent."""
 
     def __init__(self, endpoint: str, api_key: str) -> None:
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
 
     def run(self, request: AgentBatchRequest, tools: RestrictedTools) -> Any:
-        # DeepAgents is pinned as the sole agent runtime. Import lazily so the
-        # deterministic fake boundary never initializes framework internals.
-        import deepagents  # noqa: F401
-        import langgraph  # noqa: F401
+        import httpx
+        import openai
+        from langchain_core.exceptions import LangChainException
+        from langgraph.errors import GraphRecursionError
 
-        del tools
-        body = canonical(
-            {
-                "model": MODEL,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "Use only supplied evidence handles and case slots. Return strict JSON.",
-                    },
-                    {"role": "user", "content": canonical(request.__dict__).decode()},
-                ],
-                "temperature": 0,
-                "max_tokens": 12000,
-            }
-        )
-        call = urllib.request.Request(
-            self.endpoint + "/models/chat/completions?api-version=2024-05-01-preview",
-            data=body,
-            headers={"Content-Type": "application/json", "api-key": self.api_key},
-            method="POST",
-        )
-        started = __import__("time").monotonic_ns()
+        capture = _HTTPExchangeCapture()
+        model, http_client = _foundry_model(self.endpoint, self.api_key, capture)
+        agent_tools = _agent_tools(request, tools)
+        if tuple(item.name for item in agent_tools) != TOOLS:
+            raise Invalid
+        agent = _restricted_agent(model, agent_tools)
+        prompt = canonical(request.__dict__).decode()
+        started = time.monotonic_ns()
         try:
-            with urllib.request.urlopen(call, timeout=60) as response:
-                raw = response.read(1_000_001)
-                status_code = response.status
-        except urllib.error.HTTPError as error:
-            raw = error.read(1_000_001)
-            status_code = error.code
-        latency = (__import__("time").monotonic_ns() - started) // 1_000_000
-        if status_code != 200:
-            return _live_response("FAILED", body, raw, latency, "PROVIDER_REFUSED")
-        try:
-            envelope = strict_json(raw, allow_decimal=True)
-            content = envelope["choices"][0]["message"]["content"]
-            submission = strict_json(content.encode())
-            usage = envelope["usage"]
-        except (Invalid, KeyError, TypeError, IndexError):
+            state = agent.invoke({"messages": [{"role": "user", "content": prompt}]})
+        except RestrictedToolFailure:
             return _live_response(
-                "FAILED", body, raw, latency, "PROVIDER_INVALID_RESPONSE"
+                "FAILED",
+                capture.requests_bytes(prompt),
+                capture.responses_bytes(),
+                _latency(started),
+                "TOOL_EXECUTION_FAILED",
             )
-        return {
-            "status": "SUBMITTED",
-            "submission": submission,
-            "questions": [],
-            "failure_reason_code": None,
-            "request_bytes": body,
-            "response_bytes": raw,
-            "input_tokens": usage["prompt_tokens"],
-            "output_tokens": usage["completion_tokens"],
-            "actual_cost_usd": usage.get("cost"),
+        except (
+            openai.APIError,
+            httpx.HTTPError,
+            LangChainException,
+            GraphRecursionError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as error:
+            return _provider_failure(error, capture, prompt, started)
+        finally:
+            http_client.close()
+        latency = _latency(started)
+        request_bytes = capture.requests_bytes(prompt)
+        response_bytes = capture.responses_bytes()
+        try:
+            outcome = cast(Json, state["structured_response"])
+            status = cast(str, outcome["status"])
+            questions = cast(list[Json], outcome["questions"])
+            reason = cast(str | None, outcome["failure_reason_code"])
+            input_tokens, output_tokens = _usage(state)
+        except (KeyError, TypeError, ValueError):
+            return _live_response(
+                "FAILED",
+                request_bytes,
+                response_bytes,
+                latency,
+                "PROVIDER_INVALID_RESPONSE",
+            )
+        common = {
+            "request_bytes": request_bytes,
+            "response_bytes": response_bytes,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "actual_cost_usd": None,
             "latency_ms": latency,
         }
+        if status == "SUBMITTED":
+            if tools.submission is not None and not questions and reason is None:
+                return {
+                    "status": "SUBMITTED",
+                    "submission": tools.submission,
+                    "questions": [],
+                    "failure_reason_code": None,
+                    **common,
+                }
+        elif status == "NEEDS_INPUT":
+            if (
+                tools.submission is None
+                and _valid_questions(questions)
+                and reason is None
+            ):
+                return {
+                    "status": "NEEDS_INPUT",
+                    "submission": None,
+                    "questions": questions,
+                    "failure_reason_code": None,
+                    **common,
+                }
+        elif (
+            status == "FAILED"
+            and tools.submission is None
+            and not questions
+            and reason in _MODEL_FAILURE_REASONS
+        ):
+            return {
+                "status": "FAILED",
+                "submission": None,
+                "questions": [],
+                "failure_reason_code": reason,
+                **common,
+            }
+        return _live_response(
+            "FAILED",
+            request_bytes,
+            response_bytes,
+            latency,
+            "PROVIDER_INVALID_RESPONSE",
+        )
+
+
+_MODEL_FAILURE_REASONS = frozenset({"MATERIAL_INPUT_REQUIRED"})
+
+
+class _HTTPExchangeCapture:
+    def __init__(self) -> None:
+        self.requests: list[bytes] = []
+        self.responses: list[bytes] = []
+
+    def on_request(self, request: Any) -> None:
+        self.requests.append(bytes(request.content))
+
+    def on_response(self, response: Any) -> None:
+        response.read()
+        self.responses.append(bytes(response.content))
+
+    def requests_bytes(self, prompt: str) -> bytes:
+        if self.requests:
+            return b"\n".join(self.requests)
+        return canonical({"messages": [{"role": "user", "content": prompt}]})
+
+    def responses_bytes(self) -> bytes:
+        return b"\n".join(self.responses)
+
+
+def _foundry_model(
+    endpoint: str, api_key: str, capture: _HTTPExchangeCapture
+) -> tuple[Any, Any]:
+    import httpx
+    from langchain_openai import ChatOpenAI
+    from pydantic import SecretStr
+
+    class AllowlistedFoundryModel(ChatOpenAI):
+        def bind_tools(self, values: Any, **kwargs: Any) -> Any:  # type: ignore[override]
+            names = tuple(_model_tool_name(value) for value in values)
+            if names != TOOLS:
+                raise Invalid("RESTRICTED_TOOL_SURFACE_INVALID")
+            return super().bind_tools(values, **kwargs)
+
+    client = httpx.Client(
+        event_hooks={
+            "request": [capture.on_request],
+            "response": [capture.on_response],
+        }
+    )
+    return (
+        AllowlistedFoundryModel(
+            model=MODEL,
+            api_key=SecretStr(api_key),
+            base_url=endpoint.rstrip("/") + "/models",
+            default_headers={"api-key": api_key},
+            default_query={"api-version": "2024-05-01-preview"},
+            http_client=client,
+            max_retries=0,
+            temperature=0,
+            timeout=60,
+        ),
+        client,
+    )
+
+
+def _model_tool_name(value: Any) -> str:
+    if hasattr(value, "name"):
+        return cast(str, value.name)
+    return cast(str, value["function"]["name"])
+
+
+def _restricted_agent(model: Any, agent_tools: list[Any]) -> Any:
+    from langchain.agents import create_agent
+    from langchain.agents.structured_output import ProviderStrategy
+
+    return create_agent(
+        model=model,
+        tools=agent_tools,
+        system_prompt=(
+            "Act as a grounding researcher, then a case architect. Use only the "
+            "four supplied tools. Inspect evidence before drafting. Submit exactly "
+            "once through submit_case_batch, using only supplied evidence handles "
+            "and every supplied case slot. If material target relevance or case "
+            "construction information is missing, return NEEDS_INPUT with at most "
+            "three questions. After a successful submission return SUBMITTED. "
+            "Never invent IDs, retry, select another model, or claim acceptance."
+        ),
+        response_format=ProviderStrategy(_terminal_schema(), strict=True),
+    )
+
+
+def _agent_tools(request: AgentBatchRequest, tools: RestrictedTools) -> list[Any]:
+    from langchain_core.tools import StructuredTool
+
+    trace_handles = [
+        cast(str, trace["trace_handle"]) for trace in request.evidence_catalog["traces"]
+    ]
+    return [
+        StructuredTool.from_function(
+            tools.search_evidence,
+            name="search_evidence",
+            description="Find bounded evidence handles matching a semantic query.",
+            args_schema=_object_schema(
+                {"query": {"type": "string", "minLength": 1, "maxLength": 512}}
+            ),
+        ),
+        StructuredTool.from_function(
+            tools.get_trace_packet,
+            name="get_trace_packet",
+            description="Read one allowlisted synthetic trace packet by handle.",
+            args_schema=_object_schema(
+                {"trace_handle": {"type": "string", "enum": trace_handles}}
+            ),
+        ),
+        StructuredTool.from_function(
+            tools.inspect_budget,
+            name="inspect_budget",
+            description="Read the remaining reserved run budget.",
+            args_schema=_object_schema({}),
+        ),
+        StructuredTool.from_function(
+            tools.submit_case_batch,
+            name="submit_case_batch",
+            description="Submit one complete case batch for deterministic validation.",
+            args_schema=_object_schema({"submission": _submission_schema(request)}),
+        ),
+    ]
+
+
+def _submission_schema(request: AgentBatchRequest) -> Json:
+    schema_path = Path(__file__).parent / "schemas" / "proposal.schema.json"
+    schema = cast(Json, json.loads(schema_path.read_bytes()))
+    claims = schema["$defs"]["claimDraft"]
+    handles = [
+        event["evidence_handle"]
+        for trace in request.evidence_catalog["traces"]
+        for event in trace["events"]
+    ]
+    claims["properties"] = {
+        "claim_key": {"type": "string", "pattern": "^claim_[1-9][0-9]*$"},
+        "claim": {"type": "string", "minLength": 1},
+        "support_kind": {
+            "type": "string",
+            "enum": ["CORROBORATING", "CONFLICTING"],
+        },
+        "evidence_handles": {
+            "type": "array",
+            "items": {"type": "string", "enum": handles},
+            "minItems": 1,
+            "uniqueItems": True,
+        },
+    }
+    claims["required"] = [
+        "claim_key",
+        "claim",
+        "support_kind",
+        "evidence_handles",
+    ]
+    schema["$defs"]["caseDraft"]["properties"]["case_key"] = {
+        "type": "string",
+        "enum": list(request.case_slots),
+    }
+    count = len(request.case_slots)
+    for group in ("personas", "intents", "turn_policies", "cases"):
+        schema["properties"][group]["minItems"] = count
+        schema["properties"][group]["maxItems"] = count
+    return schema
+
+
+def _terminal_schema() -> Json:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": ["SUBMITTED", "NEEDS_INPUT", "FAILED"],
+            },
+            "questions": {
+                "type": "array",
+                "maxItems": 3,
+                "items": _object_schema(
+                    {
+                        "question_id": {
+                            "type": "string",
+                            "enum": ["Q001", "Q002", "Q003"],
+                        },
+                        "question": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4096,
+                        },
+                        "material_scope": {
+                            "type": "string",
+                            "enum": ["TARGET_RELEVANCE", "CASE_CONSTRUCTION"],
+                        },
+                    }
+                ),
+            },
+            "failure_reason_code": {
+                "anyOf": [
+                    {"type": "string", "enum": sorted(_MODEL_FAILURE_REASONS)},
+                    {"type": "null"},
+                ]
+            },
+        },
+        "required": ["status", "questions", "failure_reason_code"],
+    }
+
+
+def _object_schema(properties: Json) -> Json:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": properties,
+        "required": list(properties),
+    }
+
+
+def _valid_questions(questions: list[Json]) -> bool:
+    if not 1 <= len(questions) <= 3:
+        return False
+    expected = [f"Q{index:03d}" for index in range(1, len(questions) + 1)]
+    return [item.get("question_id") for item in questions] == expected and all(
+        bounded_text(item.get("question"), 4096)
+        and item.get("material_scope") in {"TARGET_RELEVANCE", "CASE_CONSTRUCTION"}
+        and set(item) == {"question_id", "question", "material_scope"}
+        for item in questions
+    )
+
+
+def _usage(state: Any) -> tuple[int | None, int | None]:
+    input_tokens = 0
+    output_tokens = 0
+    observed = False
+    for message in state.get("messages", []):
+        usage = getattr(message, "usage_metadata", None)
+        if usage:
+            input_tokens += int(usage.get("input_tokens", 0))
+            output_tokens += int(usage.get("output_tokens", 0))
+            observed = True
+    return (input_tokens, output_tokens) if observed else (None, None)
+
+
+def _latency(started: int) -> int:
+    return (time.monotonic_ns() - started) // 1_000_000
+
+
+def _provider_failure(
+    error: Exception,
+    capture: _HTTPExchangeCapture,
+    prompt: str,
+    started: int,
+) -> Json:
+    import httpx
+    import openai
+
+    if isinstance(error, (openai.APIConnectionError, httpx.TransportError)):
+        reason = "PROVIDER_TRANSPORT_FAILED"
+    elif isinstance(error, openai.APIStatusError):
+        reason = "PROVIDER_REFUSED"
+    else:
+        reason = "PROVIDER_INVALID_RESPONSE"
+    return _live_response(
+        "FAILED",
+        capture.requests_bytes(prompt),
+        capture.responses_bytes(),
+        _latency(started),
+        reason,
+    )
 
 
 def _live_response(
