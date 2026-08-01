@@ -1314,3 +1314,76 @@ LABS-04 remains incomplete: local machinery and conformance pass, but the
 ten-case usefulness smoke fails. No further provider call, fallback, silent
 question acceptance, Corpus Intelligence work, or checkpoint-completion claim
 is authorized by this packet.
+
+## LABS-04 one-case action-selection canary — 2026-08-01
+
+### Outcome and controlled hypothesis
+
+Prove whether GLM-5.2 can publish one deterministically valid grounded case
+when the resumed protocol makes the already-answered transition explicit and
+requires submission. The falsifiable hypothesis is: the zero-case failure was
+caused materially by an optional, ambiguous resumed action surface; after the
+three owner answers are authoritative and `NEEDS_INPUT` is unavailable, GLM
+will call `submit_case_batch` and one case will pass unchanged deterministic
+validation.
+
+This is not a prompt-search or ten-case optimization slice. Keep the current
+inline evidence envelope, four tools, schemas, model, provider, and semantic
+validator so the experiment changes only the action-selection variable. A
+failure remains a model/protocol verdict and authorizes no fallback.
+
+### Frozen wire and authority
+
+- A new run requests exactly one case. Its initial call may submit or ask at
+  most three material questions under the existing contract.
+- A resumed request explicitly identifies itself as resumed, carries the
+  complete owner answers, and states that they resolve the prior questions.
+- On resume, `NEEDS_INPUT` is absent from the model-visible terminal schema.
+  The model must interact with an allowlisted tool and can succeed only after
+  `submit_case_batch` executes once. Returning text, hidden reasoning,
+  `SUBMITTED` without the tool, or another question cannot publish a case.
+- `submit_case_batch` may terminate the graph after its deterministic
+  `accepted_for_validation` receipt; deterministic normalization and semantic
+  validation remain the sole acceptance path.
+- Every provider exchange is preserved under its attempt identity. A resumed
+  exchange must not overwrite the initial pause exchange.
+- The owner answers already accepted for this canary are mixed personas;
+  distinct missing-data, position-mismatch, social-engineering, ETL, and
+  prior-evaluation failure coverage plus a distinct success mode across the
+  future full run; and agent-correctness, tool-use, data-integrity,
+  security/refusal, and recovery evaluation dimensions. If the one-case run
+  asks materially different questions, Codex stops for Akarsh rather than
+  inventing answers.
+
+### Budget, privacy, refusal, and acceptance
+
+The per-end-to-end-run authorization ceiling is USD 10. The runtime config may
+accept `max_usd` up to `10.000000`; this supersedes the slice-local USD 3
+configuration limit. Provider-reported actual USD remains unknown and must not
+be fabricated. The canary retains pre-call reservation, usage, HTTP-exchange,
+latency, cached-token, and attempt evidence and makes no retry or provider
+fallback. Synthetic authorized HRAI evidence only; no real-data claim.
+
+Pass requires one `SUBMITTED` tool call, one valid and distinct published case,
+complete provenance/evidence handles, a secret-safe immutable artifact bundle,
+and the full repository gate with canonical Observer hashes unchanged. Any
+question after resume, no-tool terminal, invalid submission, provider/tool
+failure, budget refusal, or zero valid cases fails the canary. Ten-case
+generation, quality optimization, prompt search, alternate models, target
+execution, judges, memory, Corpus Intelligence, UI, CLI, and SDK changes remain
+out of scope.
+
+### Change budget and serial roles
+
+- Orchestrator-owned governance: `internal/SLICE_PACKET.md`,
+  `internal/LABS04_GROUNDING_HANDLE_CONTRACT.md`,
+  `internal/DECISION_LOG.md`, `internal/LABS04_TRIAGE.md`, and
+  `internal/WORKING_MEMORY.md` only as the observed result requires.
+- Independent test author: restricted-runtime acceptance tests and frozen
+  verifier aggregates only. Tests must be RED before production changes.
+- Implementation author: `triana-labs/src/triana_labs/case_factory/`
+  restricted runtime only; config fixture bytes only if required by the frozen
+  USD 10 ceiling.
+- No new dependency, schema file, unrelated cleanup, formatting sweep, or
+  production path is allowed. Test author and implementation author work
+  serially. Codex alone runs the live canary after local GREEN.

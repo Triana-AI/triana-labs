@@ -197,6 +197,14 @@ execution, judge, global memory, UI, real-data support, prompt search, or
 unrelated cleanup is authorized. Workers stop before editing outside their
 owned paths.
 
+The one-case action-selection canary amends the resumed interaction only. A
+resumed request is explicit, treats supplied owner answers as authoritative,
+does not expose `NEEDS_INPUT`, and cannot succeed without one executed
+`submit_case_batch` call. Provider exchanges are attempt-addressed so resume
+cannot overwrite the initial exchange. The per-run configured maximum may be
+at most USD 10; absent provider cost telemetry remains unknown rather than
+inferred. All deterministic acceptance and privacy rules remain unchanged.
+
 ## Assertion-level restricted-runtime wire
 
 This section closes the test-author entry gap and supersedes conflicting
