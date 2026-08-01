@@ -173,6 +173,14 @@ def _submission(request: Any, *, invented_handle: bool = False) -> dict[str, Any
     }
 
 
+def _submitted(
+    request: Any, tools: Any, *, invented_handle: bool = False
+) -> Any:
+    submission = _submission(request, invented_handle=invented_handle)
+    tools.submit_case_batch(submission)
+    return _response("SUBMITTED", submission=submission)
+
+
 def _restricted_config(tmp_path: Path, *, maximum: str = "3.000000") -> Path:
     value = config_value()
     value["generation"]["candidate_count"] = 10
@@ -204,9 +212,7 @@ def test_valid_grounded_ten_case_run_publishes_handle_free_portable_bundle(
     tmp_path: Path,
 ) -> None:
     observer, intelligence, config, cache = _inputs(tmp_path)
-    transport = ScriptedRestrictedTransport(
-        [lambda request, _: _response("SUBMITTED", submission=_submission(request))] * 2
-    )
+    transport = ScriptedRestrictedTransport([_submitted] * 2)
     output = tmp_path / "complete"
 
     result = _api().generate_restricted(
@@ -249,11 +255,11 @@ def test_invented_handle_fails_closed_after_one_repair(tmp_path: Path) -> None:
     observer, intelligence, config, cache = _inputs(tmp_path)
     transport = ScriptedRestrictedTransport(
         [
-            lambda request, _: _response(
-                "SUBMITTED", submission=_submission(request, invented_handle=True)
+            lambda request, tools: _submitted(
+                request, tools, invented_handle=True
             ),
-            lambda request, _: _response(
-                "SUBMITTED", submission=_submission(request, invented_handle=True)
+            lambda request, tools: _submitted(
+                request, tools, invented_handle=True
             ),
         ]
     )
@@ -363,7 +369,7 @@ def test_needs_input_resumes_once_to_new_output_without_repeating_batch_one(
     observer, intelligence, config, cache = _inputs(tmp_path)
     pause_transport = ScriptedRestrictedTransport(
         [
-            lambda request, _: _response("SUBMITTED", submission=_submission(request)),
+            _submitted,
             _response(
                 "NEEDS_INPUT",
                 questions=[
@@ -405,9 +411,7 @@ def test_needs_input_resumes_once_to_new_output_without_repeating_batch_one(
     questions = json.loads((paused / "questions.json").read_bytes())["questions"]
     assert 1 <= len(questions) <= 3
     before = {path.name: path.read_bytes() for path in paused.iterdir()}
-    resume_transport = ScriptedRestrictedTransport(
-        [lambda request, _: _response("SUBMITTED", submission=_submission(request))]
-    )
+    resume_transport = ScriptedRestrictedTransport([_submitted])
     resumed = tmp_path / "resumed"
 
     result = _api().resume_restricted(
