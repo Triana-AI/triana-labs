@@ -65,7 +65,11 @@ def test_nonretryable_provider_failures_are_fatal_and_safe(
         invoke(tmp_path, [response])
     assert caught.value.reason_code == reason
     assert caught.value.exit_code == 8
-    assert not (tmp_path / "case-factory").exists()
+    failure_manifest = json.loads(
+        (tmp_path / "case-factory" / "manifest.json").read_bytes()
+    )
+    assert failure_manifest["artifact_kind"] == "case_factory_failure_manifest"
+    assert failure_manifest["reason_code"] == "PROVIDER_FAILED"
 
 
 @pytest.mark.parametrize(
@@ -127,7 +131,10 @@ def test_transient_provider_state_never_retries(
     if failure_stage == "PROPOSE":
         assert isinstance(result, generate_module.GenerateFailure)
         assert (result.reason_code, result.exit_code) == ("PROVIDER_FAILED", 8)
-        assert publisher.artifacts is None
+        assert publisher.artifacts is not None
+        assert json.loads(publisher.artifacts["manifest.json"])["artifact_kind"] == (
+            "case_factory_failure_manifest"
+        )
         assert not output.exists()
         return
 

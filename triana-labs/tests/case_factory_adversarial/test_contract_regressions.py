@@ -213,7 +213,9 @@ def test_non_money_provider_cost_closes_as_typed_provider_failure(
         8,
     )
     assert len(transport.requests) == 1
-    assert not output.exists()
+    manifest = json.loads((output / "manifest.json").read_bytes())
+    assert manifest["artifact_kind"] == "case_factory_failure_manifest"
+    assert manifest["reason_code"] == "PROVIDER_FAILED"
 
 
 def test_atomic_publisher_fsyncs_staging_directory_before_rename(
