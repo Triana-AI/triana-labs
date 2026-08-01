@@ -250,6 +250,13 @@ def test_create_agent_binding_separates_initial_response_format_from_resumed_too
 
     assert initial["tool_choice"] not in {"required", "any"}
     assert initial["kwargs"]["response_format"]["type"] == "json_schema"
+    questions = initial["kwargs"]["response_format"]["json_schema"]["schema"][
+        "properties"
+    ]["questions"]
+    assert {key: questions[key] for key in ("minItems", "maxItems")} == {
+        "minItems": 1,
+        "maxItems": 3,
+    }
     assert resumed["tool_choice"] in {"required", "any"}
     assert "response_format" not in resumed["kwargs"]
 
