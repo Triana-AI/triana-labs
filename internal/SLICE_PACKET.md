@@ -1387,3 +1387,29 @@ out of scope.
 - No new dependency, schema file, unrelated cleanup, formatting sweep, or
   production path is allowed. Test author and implementation author work
   serially. Codex alone runs the live canary after local GREEN.
+
+### Canary verdict
+
+The controlled canary failed with zero cases but separated the causes. The
+initial call asked two relevant questions. With answers supplied, the first
+resumed version again selected terminal JSON without a tool; the frozen
+no-tool guard rejected it. The corrected required-tool binding was then
+explicitly refused by Foundry because required `tool_choice` cannot be combined
+with provider `response_format`. Independent RED/implementation separated the
+initial structured-clarification and resumed required-tool protocols.
+
+The final supported-protocol version proved GLM tool use but not submission.
+It retrieved the correct T011 packet, executed 18 tools (17 literal searches,
+16 empty), and made seven resumed HTTP model exchanges totaling 211,218 prompt
+tokens, 175,594 cached prompt tokens, and 2,773 completion tokens before
+Foundry rate-limited it. No `submit_case_batch` occurred and no case was
+published. The unchanged full gate passed 365 tests and all five canonical
+Observer hashes before the call.
+
+This falsifies the narrow hypothesis that removing the invalid terminal path
+is sufficient. It also proves the next work should not be blind prompt tuning:
+the advertised-semantic/literal-search mismatch, missing bounded
+research-to-submit transition, repeated full-context agent turns, and
+under-counted HTTP-level budget must be resolved as an explicit next slice.
+No retry, fallback, ten-case expansion, quality optimization, or Corpus
+Intelligence work is authorized by this packet.

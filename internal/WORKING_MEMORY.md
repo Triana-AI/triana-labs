@@ -535,3 +535,15 @@ repeated the same questions, so deterministic one-pause authority returned
 `QUESTION_LIMIT_EXCEEDED`. Exact details are TRIAGE-16 through TRIAGE-20.
 LABS-04 and Corpus Intelligence remain blocked; no further provider call is
 authorized under the USD 3 slice.
+
+Latest controlled canary (2026-08-01): one-case action selection is now
+mechanically correct and locally green, including provider-compatible
+separation of initial structured clarification from resumed required tools.
+The live supported-protocol run still produced zero cases. GLM retrieved the
+correct T011 evidence but looped through 17 literal searches and never
+submitted before the seventh resumed HTTP exchange hit Foundry rate limiting.
+The runtime reports logical agent attempts rather than underlying HTTP calls,
+so its USD 10 budget primitive is not yet agent-loop-safe. TRIAGE-21 through
+TRIAGE-24 preserve the evidence. Further provider calls and Corpus
+Intelligence remain blocked pending a deliberate retrieval/transition/budget
+slice.

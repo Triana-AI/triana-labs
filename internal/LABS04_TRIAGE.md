@@ -395,3 +395,63 @@ the live contract remains `internal/SLICE_PACKET.md` and
   this failure as its conformance fixture.
 - **Status:** OPEN PRODUCT BLOCKER. LABS-04 is locally green but fails the live
   usefulness criterion; Corpus Intelligence remains blocked.
+
+### TRIAGE-21 — resumed success was rejected but not mechanically tool-required
+
+- **Type:** implementation gap exposed by the controlled one-case canary.
+- **Observed:** after two authoritative answers, GLM returned terminal
+  `SUBMITTED` with the old questions and no tool call. Triana correctly rejected
+  it as `PROVIDER_INVALID_RESPONSE`, but the outbound resumed binding still had
+  `tool_choice: null`.
+- **Fix:** independent RED `a901e61`; production `932cf01` requires a tool only
+  on resume while preserving optional initial clarification, the exact four
+  tools, and submit return-direct.
+- **Status:** CLOSED LOCALLY and preserved at
+  `/private/tmp/triana-one-case-canary.Q3wQs9`; zero cases were published.
+
+### TRIAGE-22 — Foundry rejects required tools combined with response format
+
+- **Type:** provider protocol incompatibility missed by separate conformance.
+- **Observed:** the first mechanically required resumed request received
+  `invalid_request_error`: `tool_choice (required or a specific function)
+  cannot be combined with response_format` before model execution.
+- **Fix:** independent RED `eeda8feb`; production `e4ac931` retains structured
+  clarification only initially and omits provider-native response format on
+  resume, where submit return-direct is the terminal contract.
+- **Status:** CLOSED LOCALLY and provider incompatibility preserved at
+  `/private/tmp/triana-one-case-canary-required.6I5Sne`; zero cases were
+  published.
+
+### TRIAGE-23 — required research loop exhausted rate limit before submission
+
+- **Type:** current tool-design/model-policy usefulness blocker.
+- **Observed:** with the supported resumed protocol, GLM retrieved the correct
+  T011 trace and invoked tools 18 times, but never called `submit_case_batch`.
+  Seventeen calls were `search_evidence`; sixteen returned no handles because
+  the tool performs literal substring matching despite its semantic-query
+  description. Seven resumed HTTP exchanges processed 211,218 prompt tokens
+  (175,594 cached) and 2,773 completion tokens before Foundry returned
+  `RateLimitReached`.
+- **Classification evidence:** the model already named T011 and had its full
+  evidence packet, then continued increasingly shorter searches rather than
+  drafting. Required tool selection removed the invalid terminal escape but
+  supplied no bounded research-to-submit transition.
+- **Fix:** none in the controlled canary; context compaction, retrieval
+  semantics, deterministic research bounds, and submit-phase routing were
+  explicitly held constant to avoid pre-optimization.
+- **Status:** OPEN PRODUCT BLOCKER. Exact exchange/tool artifacts are preserved
+  at `/private/tmp/triana-one-case-canary-supported.M4LOL2`; zero cases were
+  published and no retry or fallback is authorized.
+
+### TRIAGE-24 — logical attempt accounting undercounts agent HTTP calls
+
+- **Type:** budget-observability defect exposed by the real tool loop.
+- **Observed:** the final artifact reports two provider calls and USD 2.000000
+  conservative reservation for initial plus resumed agent attempts, while the
+  resumed LangGraph attempt alone made seven HTTP model exchanges. Foundry
+  exposes tokens but no actual USD, so the USD 10 ceiling is not mechanically
+  enforced across internal agent turns.
+- **Fix:** none in this canary. Before another paid agent loop, accounting must
+  reserve and report each underlying HTTP exchange or enforce a demonstrably
+  conservative bounded-turn allowance; actual USD must remain unknown.
+- **Status:** OPEN SAFETY BLOCKER for further live optimization runs.
