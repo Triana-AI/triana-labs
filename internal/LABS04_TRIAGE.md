@@ -248,3 +248,19 @@ the live contract remains `internal/SLICE_PACKET.md` and
 1. **Usefulness verdict:** unavailable because no case bundle has yet been
    published by a live provider run.
    The rubric remains unchanged for a future valid bundle.
+
+### TRIAGE-12 — recoverable defect subset rejected before critique
+
+- **Type:** production predicate bug exposed by the preserved live response.
+- **Observed:** Azure returned valid five-by-five semantic arrays and exactly
+  20 `SUPPORT_CARDINALITY_MISMATCH` defects, but Triana returned
+  `PROVIDER_FAILED(8)` before CRITIQUE.
+- **Classification evidence:** the code compared the observed defect-code set
+  for equality with the complete three-code allowlist; a one-code recoverable
+  subset therefore failed. The exact response is secret-safe and cached.
+- **Fix:** require observed codes to be a subset of the closed recoverable set;
+  unknown codes still fail closed.
+- **Fix authority:** independent RED `5f30921`; one-line production
+  `1f35cb1`; fixture reconciliation `d25bbbc`.
+- **Regression/evidence:** 168/168 LABS-04 tests pass; no second provider call.
+- **Status:** CLOSED LOCALLY; exact-cache replay and usefulness review pending.

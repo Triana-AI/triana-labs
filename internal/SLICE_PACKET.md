@@ -801,6 +801,18 @@ The three verifier-enforced adversarial hashes are respectively
 and `d5d290fa6be8af5ec46618b1ce573bc6cf97624598c60491bab02d0eacd11636`.
 The final live HRAI usefulness verdict remains pending the complete local gate.
 
+The first live recovery call then exposed a single predicate defect without
+losing or repeating provider work: Azure returned a schema-valid five-case
+draft with 20 `SUPPORT_CARDINALITY_MISMATCH` defects, but production required
+the defect-code set to equal all three recoverable codes rather than be a
+subset. Independent RED `5f30921`, one-line production fix `1f35cb1`, and
+three-fixture reconciliation `d25bbbc` make 168/168 LABS-04 tests green. The
+paid response is preserved in the exact local cache for zero-call replay. The
+final acceptance-plus-fixture hashes are content
+`5385bf5d89c4308657fbe8197b845964440314046211faaeabf37edec51127d6` and
+repository-root file-list
+`7fa26af92a436bbc908f2d94f288f66d4d225c4faaea330d7b3ff95fc3cf2d18`.
+
 ### Lane A — deterministic contract and safety
 
 - strict config, input, portable artifact, citation, and reference schemas;
