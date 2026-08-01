@@ -65,6 +65,24 @@ def test_invalid_grounding_and_semantics_never_become_valid_cases(
     tmp_path: Path, kind: str
 ) -> None:
     api()
+    if kind in {"no-anchor", "unsupported-population", "nonadaptive"}:
+        publisher = CapturePublisher()
+        result, transport, _, _ = invoke(
+            tmp_path,
+            [
+                proposal_callback(mutate=mutation(kind)),
+                critique_callback,
+                proposal_callback(),
+            ],
+            publisher=publisher,
+        )
+        assert len(transport.requests) == 3
+        assert result.reason_code == "CONTROL_SEMANTICALLY_INVALID"
+        assert result.valid_case_count == 5
+        assert publisher.artifacts["control_case_candidates.jsonl"] == b""
+        assert len(publisher.artifacts["case_candidates.jsonl"].splitlines()) == 5
+        return
+
     with pytest.raises(Exception) as caught:
         invoke(tmp_path, [proposal_callback(mutate=mutation(kind))])
     assert caught.value.reason_code == "PROVIDER_FAILED"
