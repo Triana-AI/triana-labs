@@ -18,7 +18,12 @@ def test_project_metadata_and_dependencies_are_bounded() -> None:
     assert project["project"]["name"] == "triana-labs"
     assert project["project"]["requires-python"] == "==3.13.14"
     assert project["project"]["scripts"] == {"triana": "triana_labs.cli:main"}
-    assert project["project"]["dependencies"] == ["pydantic>=2,<3"]
+    assert project["project"]["dependencies"] == [
+        "langchain==1.3.14",
+        "langchain-openai==1.4.0",
+        "langgraph==1.2.9",
+        "pydantic>=2,<3",
+    ]
     assert set(project["dependency-groups"]["dev"]) == {
         "hypothesis>=6,<7",
         "mypy>=1,<2",
