@@ -512,7 +512,7 @@ def _batch(
             return "FAILED", "PROVIDER_INVALID_RESPONSE"
         submission = cast(Json, _field(response, "submission"))
         normalized, current = _normalize(submission, slots, state.handle_map)
-        _preserve_submission(stage_root, phase, submission, normalized, current)
+        lane: Lane | None = None
         if not current and normalized is not None:
             try:
                 lane = convert_lane(
@@ -526,19 +526,20 @@ def _batch(
                 )
             except Invalid:
                 current = [_defect("INTERNAL_INVARIANT_FAILED", "")]
-            else:
-                state.attempts.append(
-                    _attempt(
-                        state,
-                        batch_id,
-                        phase,
-                        slots,
-                        "SUCCEEDED",
-                        None,
-                        response,
-                    )
+        _preserve_submission(stage_root, phase, submission, normalized, current)
+        if lane is not None:
+            state.attempts.append(
+                _attempt(
+                    state,
+                    batch_id,
+                    phase,
+                    slots,
+                    "SUCCEEDED",
+                    None,
+                    response,
                 )
-                return "VALID", lane
+            )
+            return "VALID", lane
         state.attempts.append(
             _attempt(
                 state,
@@ -615,7 +616,17 @@ def _normalize(
                     )
                 )
                 continue
+            referenced_claims = _local_claim_keys(value)
             for claim_index, claim in enumerate(claims):
+                claim_key = claim.get("claim_key")
+                if isinstance(claim_key, str) and claim_key not in referenced_claims:
+                    defects.append(
+                        _defect(
+                            "BROKEN_LOCAL_REFERENCE",
+                            f"/{group}/{index}/grounding_claims/{claim_index}",
+                            [claim_key],
+                        )
+                    )
                 selected = claim.get("evidence_handles")
                 path = (
                     f"/{group}/{index}/grounding_claims/{claim_index}/evidence_handles"
@@ -642,6 +653,23 @@ def _normalize(
     return (None if defects else cast(Json, normalized)), sorted(
         defects, key=lambda item: (item["code"], item["path"], item["related_ids"])
     )
+
+
+def _local_claim_keys(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        keys = value.get("claim_keys")
+        result = (
+            {item for item in keys if isinstance(item, str)}
+            if isinstance(keys, list)
+            else set()
+        )
+        for name, item in value.items():
+            if name != "grounding_claims":
+                result.update(_local_claim_keys(item))
+        return result
+    if isinstance(value, list):
+        return set(chain.from_iterable(_local_claim_keys(item) for item in value))
+    return set()
 
 
 def _defect(code: str, path: str, related: list[str] | None = None) -> Json:
@@ -1398,7 +1426,9 @@ def _restricted_agent(
         middleware=[require_tool] if resumed else [],
         system_prompt=(
             "Act as a grounding researcher, then a case architect. Use only the "
-            "four supplied tools. Inspect evidence before drafting. Submit exactly "
+            "four supplied tools. Inspect evidence before drafting. Every declared "
+            "grounding claim in each object must be referenced by at least one local "
+            "claim_keys; omit unused claims. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
             f"and every supplied case slot. {instruction} After a successful "
             "submission, stop. "
