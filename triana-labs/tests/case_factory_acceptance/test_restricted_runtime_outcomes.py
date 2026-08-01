@@ -345,6 +345,64 @@ def test_unused_grounding_claim_is_repairable_and_truthfully_preserved(
     ]
 
 
+def test_unsorted_stressor_codes_are_repairable_and_truthfully_preserved(
+    tmp_path: Path,
+) -> None:
+    observer, intelligence, config, cache = _inputs(tmp_path)
+    expected = {
+        "code": "INVALID_CASE",
+        "path": "/cases/0/scenario/stressor_codes",
+        "message": "INVALID CASE",
+        "related_ids": ["STRESS_A", "STRESS_Z"],
+        "repairable": True,
+    }
+    repair_defects: list[dict[str, Any]] = []
+
+    def unsorted_stressors(request: Any, tools: Any) -> Any:
+        submission = _submission(request)
+        submission["cases"][0]["scenario"]["stressor_codes"] = [
+            "STRESS_Z",
+            "STRESS_A",
+        ]
+        tools.submit_case_batch(submission)
+        return _response("SUBMITTED", submission=submission)
+
+    def repaired(request: Any, tools: Any) -> Any:
+        repair_defects.extend(_field(request, "deterministic_defects"))
+        submission = _submission(request)
+        submission["cases"][0]["scenario"]["stressor_codes"] = [
+            "STRESS_A",
+            "STRESS_Z",
+        ]
+        tools.submit_case_batch(submission)
+        return _response("SUBMITTED", submission=submission)
+
+    transport = ScriptedRestrictedTransport([unsorted_stressors, repaired])
+    output = tmp_path / "unsorted-stressors"
+
+    result = _api().generate_restricted(
+        observer,
+        intelligence,
+        config,
+        output,
+        cache_path=cache,
+        transport=transport,
+        clock=_clock(),
+        environ=ENVIRON,
+        requested_case_count=1,
+    )
+
+    assert result.outcome == "COMPLETED"
+    assert repair_defects == [expected]
+    run_hex = _field(transport.requests[0], "run_id").removeprefix("sha256:")
+    stage_defects = json.loads(
+        (
+            cache / "runs" / run_hex / "provider/batch-001/generate/defects.json"
+        ).read_bytes()
+    )
+    assert stage_defects["defects"] == [expected]
+
+
 def test_unfunded_first_batch_refuses_before_transport(tmp_path: Path) -> None:
     observer, intelligence, _, cache = _inputs(tmp_path)
     config = _restricted_config(tmp_path, maximum="0.499999")
