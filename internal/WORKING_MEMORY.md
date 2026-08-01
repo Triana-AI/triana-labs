@@ -547,3 +547,11 @@ so its USD 10 budget primitive is not yet agent-loop-safe. TRIAGE-21 through
 TRIAGE-24 preserve the evidence. Further provider calls and Corpus
 Intelligence remain blocked pending a deliberate retrieval/transition/budget
 slice.
+
+Post-launch mandatory eval backlog accepted on 2026-08-01: build a representative
+retrieval-quality set; calibrate human case-usefulness review and any model
+judge; compare prompts/models on frozen inputs; measure case and trajectory
+duplication; test multi-turn rubric quality; and verify HTTP-level budget
+accounting across agent loops. These are deliberately not expanded before the
+first useful LABS-04 case bundle. The current launch hardening retains only
+focused regressions for the observed retrieval and research-transition bugs.

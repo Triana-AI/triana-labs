@@ -1413,3 +1413,41 @@ research-to-submit transition, repeated full-context agent turns, and
 under-counted HTTP-level budget must be resolved as an explicit next slice.
 No retry, fallback, ten-case expansion, quality optimization, or Corpus
 Intelligence work is authorized by this packet.
+
+## LABS-04 launch hardening — retrieval and forced submission
+
+The owner directed the current GLM-5.2 LangChain Case Factory to remain in
+place and prioritized making it produce cases over expanding evaluation work.
+This slice changes only the two causes proven by TRIAGE-23:
+
+1. Replace literal full-query substring search with deterministic ranked token
+   overlap that returns trace handles alongside evidence handles. Bound and
+   deduplicate searches; add no embedding model, vector store, dependency, or
+   generic semantic-search system.
+2. Make resumed research monotonic and bounded. After sufficient search,
+   require a trace read; after one successful trace read, require the named
+   `submit_case_batch` tool. Enforce at most three underlying model calls for
+   the resumed agent attempt and preserve the exact call/tool ledger.
+
+Keep GLM-5.2, `create_agent`, the four tool names, inline evidence, case
+schemas, one repair, deterministic acceptance, privacy, provenance, and
+fail-fast/no-fallback behavior unchanged. First replay the failed T011 queries
+offline, then run one live case; only a valid submitted case authorizes the
+existing five-case smoke. Launch passage still requires at least three valid,
+distinct grounded cases and owner review.
+
+Evaluation policy for this launch hardening is deliberately minimal: preserve
+one focused regression for retrieval and one for research-to-submit control,
+then use existing deterministic validation and the live artifact as the
+decisive evidence. Broader retrieval-quality sets, judge calibration,
+prompt/model comparisons, trajectory diversity evaluation, and comprehensive
+case-quality evaluation are mandatory post-launch backlog, not blockers for
+this experiment. The full repository gate runs once after the coherent patch,
+not after each implementation iteration.
+
+Change budget: the independent test author may touch only the existing
+one-case/restricted-runtime acceptance tests; the implementation author may
+touch only `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`.
+Verifier aggregate reconciliation and this governance amendment remain
+orchestrator/test-author owned. No dependency, new schema, CLI, UI, turn
+generator, LABS-05, memory, provider change, or unrelated cleanup is allowed.
