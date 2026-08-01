@@ -293,7 +293,7 @@ def _fit_propose(
 ) -> tuple[Json, list[Json], int]:
     while (
         len(_request("PROPOSE", {"evidence": evidence, "citations": citations}, schema))
-        > 100_000
+        > 240_000
     ):
         selected = evidence["selected_traces"]
         if len(selected) == 1:
@@ -325,7 +325,7 @@ def _stage(
 ) -> Any | None:
     run.unavailable_reason = None
     body = _request(stage, user, schema)
-    if len(body) > 100_000:
+    if len(body) > 240_000:
         if stage == "PROPOSE":
             raise GenerateFailure("EVIDENCE_TOO_LARGE", 3)
         run.unavailable_reason = {
@@ -333,15 +333,15 @@ def _stage(
             "REVISE": "REVISION_REQUEST_TOO_LARGE",
         }[stage]
         return None
-    for index in range(2):
+    for index in range(1):
         now = run.clock.monotonic_ns()
         if now < run.last:
             raise GenerateFailure("INTERNAL_INVARIANT_FAILED", 70)
         run.last = now
         if (
             now - run.start > 600_000_000_000
-            or run.calls >= 6
-            or run.cost + _reserved(body) > Decimal(10)
+            or run.calls >= 3
+            or run.cost + _reserved(body) > Decimal("8.7")
         ):
             run.attempts.append(
                 _attempt(
@@ -393,8 +393,7 @@ def _stage(
         )
         if status == "SUCCEEDED":
             return parsed
-        if status != "TRANSPORT_FAILED" or index == 1:
-            return None
+        return None
     return None
 
 
@@ -408,7 +407,7 @@ def _request(stage: str, user: Json, schema: Json) -> bytes:
             ],
             "temperature": 0.2,
             "seed": SEED,
-            "max_tokens": 4096,
+            "max_tokens": 12000,
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
@@ -786,7 +785,7 @@ def _effective(lane: Lane | None, clusters: list[Json]) -> int:
 
 
 def _reserved(body: bytes) -> Decimal:
-    return ((Decimal(len(body)) * 10 + Decimal(4096) * 40) / 1_000_000).quantize(
+    return ((Decimal(len(body)) * 10 + Decimal(12000) * 40) / 1_000_000).quantize(
         Decimal("0.000001"), rounding=ROUND_CEILING
     )
 
@@ -845,14 +844,14 @@ def _config(path: Path) -> Json:
             "seed": SEED,
         },
         "budget": {
-            "max_calls": 6,
+            "max_calls": 3,
             "normal_calls": 3,
-            "max_input_bytes_per_call": 100000,
-            "max_output_tokens_per_call": 4096,
+            "max_input_bytes_per_call": 240000,
+            "max_output_tokens_per_call": 12000,
             "max_wall_clock_seconds": 600,
             "request_timeout_seconds": 60,
-            "max_transport_retries_per_stage": 1,
-            "max_usd": "10.000000",
+            "max_transport_retries_per_stage": 0,
+            "max_usd": "8.700000",
             "conservative_input_usd_per_million_tokens": "10.000000",
             "conservative_output_usd_per_million_tokens": "40.000000",
             "pricing_source": "OPERATOR_CONSERVATIVE_BOUND",
