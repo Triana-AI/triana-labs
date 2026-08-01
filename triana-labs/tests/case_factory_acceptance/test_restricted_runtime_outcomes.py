@@ -403,6 +403,70 @@ def test_unsorted_stressor_codes_are_repairable_and_truthfully_preserved(
     assert stage_defects["defects"] == [expected]
 
 
+def test_generated_variation_claim_keys_are_repairable_and_truthfully_preserved(
+    tmp_path: Path,
+) -> None:
+    observer, intelligence, config, cache = _inputs(tmp_path)
+    expected = {
+        "code": "BROKEN_LOCAL_REFERENCE",
+        "path": "/cases/0/scenario/private_user_facts/0/claim_keys",
+        "message": "BROKEN LOCAL REFERENCE",
+        "related_ids": ["claim_1", "claim_2"],
+        "repairable": True,
+    }
+    repair_defects: list[dict[str, Any]] = []
+
+    def submission(request: Any, basis: str) -> dict[str, Any]:
+        value = _submission(request)
+        second_claim = deepcopy(value["cases"][0]["grounding_claims"][0])
+        second_claim.update(claim_key="claim_2", claim="Second observed fact")
+        value["cases"][0]["grounding_claims"].append(second_claim)
+        value["cases"][0]["scenario"]["private_user_facts"] = [
+            {
+                "text": "A locally grounded private fact",
+                "basis": basis,
+                "claim_keys": ["claim_2", "claim_1"],
+            }
+        ]
+        return value
+
+    def invalid(request: Any, tools: Any) -> Any:
+        value = submission(request, "GENERATED_VARIATION")
+        tools.submit_case_batch(value)
+        return _response("SUBMITTED", submission=value)
+
+    def repaired(request: Any, tools: Any) -> Any:
+        repair_defects.extend(_field(request, "deterministic_defects"))
+        value = submission(request, "OBSERVED")
+        tools.submit_case_batch(value)
+        return _response("SUBMITTED", submission=value)
+
+    transport = ScriptedRestrictedTransport([invalid, repaired])
+    output = tmp_path / "generated-claim-keys"
+
+    result = _api().generate_restricted(
+        observer,
+        intelligence,
+        config,
+        output,
+        cache_path=cache,
+        transport=transport,
+        clock=_clock(),
+        environ=ENVIRON,
+        requested_case_count=1,
+    )
+
+    assert result.outcome == "COMPLETED"
+    assert repair_defects == [expected]
+    run_hex = _field(transport.requests[0], "run_id").removeprefix("sha256:")
+    stage_defects = json.loads(
+        (
+            cache / "runs" / run_hex / "provider/batch-001/generate/defects.json"
+        ).read_bytes()
+    )
+    assert stage_defects["defects"] == [expected]
+
+
 def test_unfunded_first_batch_refuses_before_transport(tmp_path: Path) -> None:
     observer, intelligence, _, cache = _inputs(tmp_path)
     config = _restricted_config(tmp_path, maximum="0.499999")
