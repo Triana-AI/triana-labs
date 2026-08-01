@@ -482,3 +482,15 @@ explanation rather than proof of the exact failed response fields. The active
 failure history is in `internal/LABS04_TRIAGE.md`. Before any changed-version
 live run, reconcile consumed conservative reservations and the no-rerun rule
 against the original cumulative USD 10 ceiling; usefulness remains unproven.
+
+The post-repair versioned gate is fully GREEN: 352 tests, Ruff, strict mypy,
+lock integrity, all frozen hashes, source build, clean CPython 3.13 wheel
+installation, and source/wheel parity. Evidence is
+`/private/tmp/triana-labs-verify.jO4xK6`. The two preserved provider calls carry
+conservative reservations of USD 1.095500 and USD 2.418680, totaling USD
+3.514180. One further unchanged three-stage run could reserve USD 8.640000,
+for a cumulative maximum of USD 12.154180; no call is authorized under the
+current USD 10 ceiling. The recommended owner decision is one explicitly
+labeled changed-version repair-validation run with identical
+corpus/model/prompt/seed, no retry or alternate selection, prior failures
+preserved, and a USD 13 cumulative cap. This is pending, not accepted.

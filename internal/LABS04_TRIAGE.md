@@ -25,13 +25,13 @@ the live contract remains `internal/SLICE_PACKET.md` and
 
 | Surface | State | Evidence |
 |---|---|---|
-| Local repository gate | Focused GREEN; full post-repair gate pending | 164/164 LABS-04, 188/188 historical, Ruff, strict mypy |
+| Local repository gate | GREEN | 352 tests, Ruff, strict mypy, build, clean CPython 3.13 wheel, frozen hashes |
 | HRAI source accounting | GREEN | 50 lines = 25 adapter accepts + 25 explicit source rejections |
 | Observer/intelligence | GREEN with typed gaps | 25/25 Observer accepts; 22 structural clusters; three semantic gaps |
 | Corrected request preflight | GREEN, zero egress | 25 traces, 424 citations, zero exclusions, 193,868 bytes |
 | First Azure attempt | PRESERVED FAILURE | HTTP 200; 28,295 input; exactly 4,096 output; no artifacts |
 | Corrected Azure attempt | PRESERVED FAILURE | HTTP 200; 58,855 input; 4,877 output; no artifacts |
-| Current repair | LOCALLY GREEN | Independent RED `8da6fca`; production fix `18748af` |
+| Current repair | CLOSED | Independent RED `8da6fca`; production fix `18748af`; full gate green |
 | Product usefulness | UNPROVEN | No generated case bundle exists yet; owner rubric cannot be scored |
 
 ## Triage items
@@ -193,8 +193,8 @@ the live contract remains `internal/SLICE_PACKET.md` and
   production-only correction at `18748af`.
 - **Regression/evidence:** new fake-transport test is the sole intended RED:
   164 LABS-04 collected, 163 pass/one RED; 188 historical pass. No Azure call.
-- **Status:** CLOSED LOCALLY: 164/164 LABS-04 and 188/188 historical tests,
-  Ruff, strict mypy, and diff checks pass. Full repository gate is pending.
+- **Status:** CLOSED: 164/164 LABS-04 and 188/188 historical tests plus the
+  352-test versioned build/clean-wheel/hash gate pass.
 
 ### TRIAGE-10 — local preflight imported the public function as a module
 
@@ -212,11 +212,15 @@ the live contract remains `internal/SLICE_PACKET.md` and
 
 ## Remaining decisions requiring owner visibility
 
-1. **Changed-version live run after TRIAGE-09:** the failed response is
-   preserved and the bug may be repaired, but another Azure run must be
-   reconciled against both the no-rerun-to-green rule and the original
-   cumulative USD 10 ceiling. Codex will calculate consumed/reserved spend and
-   present the exact remaining-call envelope before making that call.
+1. **Changed-version live run after TRIAGE-09:** the two preserved calls reserve
+   USD 1.095500 and USD 2.418680, or USD 3.514180 cumulatively. One unchanged
+   three-stage run can reserve at most USD 8.640000, making the maximum
+   cumulative reservation USD 12.154180. The current owner-approved cumulative
+   ceiling is USD 10, so Codex will not make another call without an explicit
+   owner decision. The recommended bounded exception is exactly one
+   repair-validation run on the identical corpus/model/prompt/seed, no retry or
+   alternate selection, prior failures preserved, and a USD 13 cumulative
+   ceiling; any further live run requires a new decision.
 2. **Usefulness verdict:** even a mechanically valid bundle does not pass.
    Akarsh must review the blind cases on grounding, realism, adaptive
    multi-turn readiness, distinctness, target relevance, and unjustified
