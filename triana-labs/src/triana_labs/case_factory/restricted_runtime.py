@@ -84,6 +84,7 @@ class RestrictedResult:
     valid_case_count: int
     distinct_case_count: int
     provider_call_count: int
+    provider_http_exchange_count: int
     conservative_cost_usd: str
 
 
@@ -245,7 +246,9 @@ class _State:
     actual_known: bool
     attempts: list[Json]
     lanes: list[Lane]
+    gap_codes: list[str]
     calls: int
+    http_exchanges: int
     cache: Path
     sentinels: list[bytes]
     config_hash: str
@@ -300,6 +303,8 @@ def generate_restricted(
         True,
         [],
         [],
+        [],
+        0,
         0,
         cache_path,
         sentinels,
@@ -307,12 +312,13 @@ def generate_restricted(
         clock,
     )
     slots = [f"case_{index}" for index in range(1, requested_case_count + 1)]
-    for offset in range(0, len(slots), 5):
-        batch_slots = tuple(slots[offset : offset + 5])
+    batch_width = 1 if requested_case_count == 5 else 5
+    for offset in range(0, len(slots), batch_width):
+        batch_slots = tuple(slots[offset : offset + batch_width])
         result = _batch(
             state,
             transport,
-            offset // 5 + 1,
+            offset // batch_width + 1,
             batch_slots,
             [],
         )
@@ -329,14 +335,19 @@ def generate_restricted(
                 output_path,
                 publisher,
             )
-        return _terminal(
-            state,
-            cast(str, result[1]),
-            excluded,
-            output_path,
-            publisher,
-        )
-    return _terminal(state, None, excluded, output_path, publisher)
+        reason = cast(str, result[1])
+        if requested_case_count != 5:
+            return _terminal(state, reason, excluded, output_path, publisher)
+        state.gap_codes.append(reason)
+        if reason == "BUDGET_REFUSED":
+            break
+    return _terminal(
+        state,
+        state.gap_codes[-1] if state.gap_codes else None,
+        excluded,
+        output_path,
+        publisher,
+    )
 
 
 def resume_restricted(
@@ -368,40 +379,47 @@ def resume_restricted(
         {"question_id": item, "answer": answers[item]} for item in expected
     ]
     pending = resume["pending_case_slots"]
-    batch_number = len(resume["completed_case_slots"]) // 5 + 1
+    batch_width = 1 if state.requested == 5 else 5
+    batch_number = len(resume["completed_case_slots"]) // batch_width + 1
     first = True
     while pending:
-        batch_slots = tuple(pending[:5])
+        batch_slots = tuple(pending[:batch_width])
+        authoritative = state.requested == 5 or first
         result = _batch(
             state,
             transport,
             batch_number,
             batch_slots,
-            ordered_answers if first else [],
-            interaction_state="RESUMED" if first else "INITIAL",
-            answers_authoritative=first,
+            ordered_answers if authoritative else [],
+            interaction_state="RESUMED" if authoritative else "INITIAL",
+            answers_authoritative=authoritative,
         )
         first = False
-        if result[0] != "VALID":
+        if result[0] == "VALID":
+            state.lanes.append(cast(Lane, result[1]))
+        else:
             reason = (
                 "QUESTION_LIMIT_EXCEEDED"
                 if result[0] == "NEEDS_INPUT"
                 else cast(str, result[1])
             )
-            return _terminal(
-                state,
-                reason,
-                cast(int, value["excluded"]),
-                output_path,
-                publisher,
-            )
-        state.lanes.append(cast(Lane, result[1]))
-        pending = pending[5:]
+            if state.requested != 5:
+                return _terminal(
+                    state,
+                    reason,
+                    cast(int, value["excluded"]),
+                    output_path,
+                    publisher,
+                )
+            state.gap_codes.append(reason)
+            if reason == "BUDGET_REFUSED":
+                break
+        pending = pending[batch_width:]
         batch_number += 1
     del questions
     return _terminal(
         state,
-        None,
+        state.gap_codes[-1] if state.gap_codes else None,
         cast(int, value["excluded"]),
         output_path,
         publisher,
@@ -460,6 +478,7 @@ def _batch(
             attempt_id=attempt_id,
         )
         response = transport.run(request, tools)
+        state.http_exchanges += _response_http_exchanges(response)
         status = _field(response, "status")
         reason = _field(response, "failure_reason_code")
         request_bytes = cast(bytes, _field(response, "request_bytes"))
@@ -780,6 +799,7 @@ def _attempt(
         "actual_cost_usd": (
             _field(response, "actual_cost_usd") if response is not None else None
         ),
+        "provider_http_exchange_count": _response_http_exchanges(response),
         "reserved_cost_usd": _money(state.reservation),
         "latency_ms": _field(response, "latency_ms") if response is not None else None,
     }
@@ -854,25 +874,30 @@ def _terminal(
     output: Path,
     publisher: ArtifactPublisher | None,
 ) -> RestrictedResult:
+    gap_codes = sorted(set(state.gap_codes + ([reason] if reason else [])))
+    terminal_reason = reason or (gap_codes[-1] if gap_codes else None)
     lane = _merge(state.lanes)
     duplicates = apply_diversity(lane, state.citations) if lane.cases else []
     distinct = len(lane.cases) - sum(
         len(item["member_case_ids"]) - 1 for item in duplicates
     )
-    if reason is None:
+    if not gap_codes:
         outcome = "COMPLETED"
     else:
         outcome = "COMPLETED_WITH_GAPS" if lane.cases else "REJECTED"
-    artifacts = _portable(state, lane, duplicates, distinct, excluded, outcome, reason)
+    artifacts = _portable(
+        state, lane, duplicates, distinct, excluded, outcome, terminal_reason, gap_codes
+    )
     _publish(output, artifacts, publisher)
     return RestrictedResult(
         outcome,
-        reason,
+        terminal_reason,
         output / "manifest.json",
         state.requested,
         len(lane.cases),
         distinct,
         state.calls,
+        state.http_exchanges,
         _money(state.reserved),
     )
 
@@ -885,6 +910,7 @@ def _portable(
     excluded: int,
     outcome: str,
     reason: str | None,
+    gap_codes: list[str],
 ) -> dict[str, bytes]:
     records = {
         "control_personas.jsonl": [],
@@ -928,11 +954,15 @@ def _portable(
         "duplicate_clusters": duplicates,
         "attempt_count": len(state.attempts),
         "provider_call_count": state.calls,
+        "provider_http_exchange_count": state.http_exchanges,
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
-        "gap_codes": [reason] if reason else [],
+        "gap_codes": gap_codes,
         "machine_status": "PASSED"
-        if len(lane.cases) >= min(7, state.requested)
+        if len(lane.cases)
+        >= (
+            min(3, state.requested) if state.requested == 5 else min(7, state.requested)
+        )
         else "FAILED",
     }
     artifacts["case_factory_eval.json"] = canonical(evaluation, lf=True)
@@ -967,6 +997,7 @@ def _portable(
         "requested_case_count": state.requested,
         "valid_case_count": len(lane.cases),
         "distinct_case_count": distinct,
+        "provider_http_exchange_count": state.http_exchanges,
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
         "human_review_state": "PENDING",
@@ -1002,6 +1033,7 @@ def _pause(
         "pending_case_slots": pending,
         "attempt_ids": [item["attempt_id"] for item in state.attempts],
         "question_ids": question_ids,
+        "provider_http_exchange_count": state.http_exchanges,
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
     }
@@ -1043,6 +1075,7 @@ def _pause(
             "run_id": state.run_id,
             "outcome": "NEEDS_INPUT",
             "reason_code": "MATERIAL_INPUT_REQUIRED",
+            "provider_http_exchange_count": state.http_exchanges,
             "artifacts": {
                 name: artifact_hash(payload) for name, payload in artifacts.items()
             },
@@ -1058,6 +1091,7 @@ def _pause(
         sum(len(item.cases) for item in state.lanes),
         0,
         state.calls,
+        state.http_exchanges,
         _money(state.reserved),
     )
 
@@ -1077,7 +1111,9 @@ def _snapshot(state: _State, excluded: int) -> Json:
         "actual_known": state.actual_known,
         "attempts": state.attempts,
         "lanes": [_lane_value(item) for item in state.lanes],
+        "gap_codes": state.gap_codes,
         "calls": state.calls,
+        "http_exchanges": state.http_exchanges,
         "config_hash": state.config_hash,
         "excluded": excluded,
     }
@@ -1098,7 +1134,9 @@ def _restore(value: Json, cache: Path, clock: Clock) -> _State:
         value["actual_known"],
         value["attempts"],
         [_lane_from_value(item) for item in value["lanes"]],
+        value.get("gap_codes", []),
         value["calls"],
+        value.get("http_exchanges", 0),
         cache,
         [],
         value["config_hash"],
@@ -1155,7 +1193,7 @@ def _restricted_budget(config: Any) -> tuple[Decimal, Decimal]:
         reservation = Decimal(config["budget"]["reservation_usd_per_agent_call"])
     except (KeyError, TypeError, InvalidOperation) as error:
         raise Invalid from error
-    if maximum > Decimal(10) or maximum < 0 or reservation < 0:
+    if maximum > Decimal(25) or maximum < 0 or reservation < 0:
         raise Invalid
     return maximum, reservation
 
@@ -1252,6 +1290,19 @@ def _field(value: Any, name: str) -> Any:
     return value[name] if isinstance(value, dict) else getattr(value, name)
 
 
+def _response_http_exchanges(response: Any | None) -> int:
+    if response is None:
+        return 0
+    value = (
+        response.get("provider_http_exchange_count", 1)
+        if isinstance(response, dict)
+        else getattr(response, "provider_http_exchange_count", 1)
+    )
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise Invalid
+    return value
+
+
 class FoundryGLMRestrictedTransport:
     """Pinned Foundry model executed only through a restricted LangChain agent."""
 
@@ -1294,6 +1345,7 @@ class FoundryGLMRestrictedTransport:
                 capture.responses_bytes(),
                 _latency(started),
                 "TOOL_EXECUTION_FAILED",
+                len(capture.requests),
             )
         except (
             openai.APIError,
@@ -1318,6 +1370,7 @@ class FoundryGLMRestrictedTransport:
             "output_tokens": output_tokens,
             "actual_cost_usd": None,
             "latency_ms": latency,
+            "provider_http_exchange_count": len(capture.requests),
         }
         if tools.submission is not None:
             return {
@@ -1339,6 +1392,7 @@ class FoundryGLMRestrictedTransport:
                 response_bytes,
                 latency,
                 "PROVIDER_INVALID_RESPONSE",
+                len(capture.requests),
             )
         if status == "NEEDS_INPUT":
             if (
@@ -1372,6 +1426,7 @@ class FoundryGLMRestrictedTransport:
             response_bytes,
             latency,
             "PROVIDER_INVALID_RESPONSE",
+            len(capture.requests),
         )
 
 
@@ -1707,11 +1762,17 @@ def _provider_failure(
         capture.responses_bytes(),
         _latency(started),
         reason,
+        len(capture.requests),
     )
 
 
 def _live_response(
-    status: str, request: bytes, response: bytes, latency: int, reason: str
+    status: str,
+    request: bytes,
+    response: bytes,
+    latency: int,
+    reason: str,
+    provider_http_exchange_count: int,
 ) -> Json:
     return {
         "status": status,
@@ -1724,4 +1785,5 @@ def _live_response(
         "output_tokens": None,
         "actual_cost_usd": None,
         "latency_ms": latency,
+        "provider_http_exchange_count": provider_http_exchange_count,
     }
