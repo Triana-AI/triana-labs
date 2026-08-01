@@ -116,7 +116,13 @@ class RestrictedTools:
                     "searches_remaining": 2 - len(self.search_cache),
                 }
             if len(self.search_cache) >= 2:
-                raise Invalid
+                return {
+                    "trace_handles": [],
+                    "evidence_handles": [],
+                    "duplicate_query": False,
+                    "searches_used": 2,
+                    "searches_remaining": 0,
+                }
             query_tokens = frozenset(re.findall(r"[a-z0-9]+", query.casefold()))
             ranked: list[tuple[int, str, tuple[tuple[int, int, str], ...]]] = []
             for trace in self.catalog["traces"]:
@@ -1457,7 +1463,19 @@ def _restricted_agent(
             and message.status == "success"
             for message in request.messages
         )
-        tool_choice = "submit_case_batch" if trace_read else "required"
+        successful_searches = sum(
+            isinstance(message, ToolMessage)
+            and message.name == "search_evidence"
+            and message.status == "success"
+            for message in request.messages
+        )
+        tool_choice = (
+            "submit_case_batch"
+            if trace_read
+            else "get_trace_packet"
+            if successful_searches >= 2
+            else "required"
+        )
         return handler(request.override(tool_choice=tool_choice))
 
     instruction = (
@@ -1484,7 +1502,8 @@ def _restricted_agent(
             "claim_keys; omit unused claims. GENERATED_VARIATION must have empty "
             "claim_keys; OBSERVED text must use resolving local claim_keys. "
             "stressor_codes must match ^[A-Z][A-Z0-9_]{0,63}$, be unique, and be "
-            "lexicographically sorted. Submit exactly "
+            "lexicographically sorted. Make at most two search calls; then read a "
+            "returned trace. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
             f"and every supplied case slot. {instruction} After a successful "
             "submission, stop. "
