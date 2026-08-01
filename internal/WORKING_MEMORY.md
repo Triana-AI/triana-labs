@@ -494,3 +494,9 @@ current USD 10 ceiling. The recommended owner decision is one explicitly
 labeled changed-version repair-validation run with identical
 corpus/model/prompt/seed, no retry or alternate selection, prior failures
 preserved, and a USD 13 cumulative cap. This is pending, not accepted.
+
+Akarsh approved USD 15 cumulative and directed immediate execution of exactly
+one repair-validation run. The identical evidence/model/prompt/schema/seed,
+three-call/USD 8.70 per-run limit, zero retries, prior failure preservation, and
+no-subsequent-run boundary remain unchanged. Maximum cumulative conservative
+reservation is USD 12.154180.

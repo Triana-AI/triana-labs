@@ -1138,3 +1138,16 @@ Use `none` explicitly. No unrun check is reported as passing.
 
 Nothing in this packet authorizes LABS-05. The next checkpoint is proposed only
 after human-reviewed LABS-04 evidence demonstrates usable case designs.
+
+## 15. One-time repair-validation exception
+
+Akarsh approved exactly one changed-version live run after parser fix
+`18748af`, with an experiment-level cumulative conservative ceiling of USD 15.
+The run uses the identical pinned HRAI subset, Observer/intelligence bundles,
+Azure deployment/model/version, prompts, schemas, and seed. The existing
+per-run three-call/USD 8.70 limits and zero-retry behavior remain unchanged.
+Both earlier failed calls remain preserved; no alternate selection,
+rerun-to-improve, or subsequent provider call is authorized. Prior reservations
+total USD 3.514180 and the new worst case is USD 8.640000, for USD 12.154180
+maximum cumulative reservation. Success still requires published cases and the
+unchanged owner usefulness review; another failure stops the smoke.

@@ -212,15 +212,13 @@ the live contract remains `internal/SLICE_PACKET.md` and
 
 ## Remaining decisions requiring owner visibility
 
-1. **Changed-version live run after TRIAGE-09:** the two preserved calls reserve
+1. **Changed-version live run after TRIAGE-09 — APPROVED ONCE:** the two preserved calls reserve
    USD 1.095500 and USD 2.418680, or USD 3.514180 cumulatively. One unchanged
    three-stage run can reserve at most USD 8.640000, making the maximum
-   cumulative reservation USD 12.154180. The current owner-approved cumulative
-   ceiling is USD 10, so Codex will not make another call without an explicit
-   owner decision. The recommended bounded exception is exactly one
-   repair-validation run on the identical corpus/model/prompt/seed, no retry or
-   alternate selection, prior failures preserved, and a USD 13 cumulative
-   ceiling; any further live run requires a new decision.
+   cumulative reservation USD 12.154180. Akarsh approved a USD 15 cumulative
+   ceiling for exactly one immediate repair-validation run on the identical
+   corpus/model/prompt/schema/seed, no retry or alternate selection, and prior
+   failures preserved. Any further live run requires a new decision.
 2. **Usefulness verdict:** even a mechanically valid bundle does not pass.
    Akarsh must review the blind cases on grounding, realism, adaptive
    multi-turn readiness, distinctness, target relevance, and unjustified
