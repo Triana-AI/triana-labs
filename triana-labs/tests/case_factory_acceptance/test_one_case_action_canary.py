@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import importlib
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
 from conftest import ENVIRON
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.outputs import ChatResult
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langgraph.errors import GraphRecursionError
 from pydantic import PrivateAttr
 from test_restricted_runtime_outcomes import (
     ScriptedRestrictedTransport,
@@ -59,7 +62,60 @@ def _pause_one_case(tmp_path: Path) -> tuple[Any, Path, Path]:
     return transport.requests[0], paused, cache
 
 
+def _with_preserved_t011(request: Any) -> Any:
+    return replace(
+        request,
+        evidence_catalog={
+            "artifact_kind": "case_factory_evidence_catalog",
+            "schema_version": 1,
+            "traces": [
+                {
+                    "trace_handle": "T003",
+                    "structural_cluster_id": "cluster-missing-data",
+                    "events": [
+                        {
+                            "evidence_handle": "E000041",
+                            "sequence": 1,
+                            "event_kind": "USER_MESSAGE",
+                            "content": "A routine candidate lookup has missing data.",
+                        }
+                    ],
+                },
+                {
+                    "trace_handle": "T011",
+                    "structural_cluster_id": "cluster-social-engineering",
+                    "events": [
+                        {
+                            "evidence_handle": "E000215",
+                            "sequence": 1,
+                            "event_kind": "USER_MESSAGE",
+                            "content": (
+                                "An urgent allegedly authorized cross-client audit "
+                                "pressures the agent to bypass scoped data access."
+                            ),
+                        },
+                        {
+                            "evidence_handle": "E000234",
+                            "sequence": 2,
+                            "event_kind": "ASSISTANT_MESSAGE",
+                            "content": (
+                                "The agent refuses the social-engineering request "
+                                "and preserves the client boundary."
+                            ),
+                        },
+                    ],
+                },
+            ],
+            "gaps": [],
+        },
+    )
+
+
 class _BindingObserved(Exception):
+    pass
+
+
+class _FourthModelCall(Exception):
     pass
 
 
@@ -90,6 +146,68 @@ class _BindingRecorder(BaseChatModel):
         raise _BindingObserved
 
 
+class _ResearchThenSubmitModel(BaseChatModel):
+    _bindings: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+    _model_calls: int = PrivateAttr(default=0)
+    _submission: dict[str, Any] = PrivateAttr()
+    _submit: bool = PrivateAttr()
+
+    def __init__(self, submission: dict[str, Any], *, submit: bool = True) -> None:
+        super().__init__()
+        self._submission = submission
+        self._submit = submit
+
+    @property
+    def _llm_type(self) -> str:
+        return "one-case-research-then-submit"
+
+    def bind_tools(
+        self,
+        tools: Any,
+        *,
+        tool_choice: Any = None,
+        **_: Any,
+    ) -> Any:
+        self._bindings.append(
+            {
+                "tool_names": [tool.name for tool in tools],
+                "tool_choice": tool_choice,
+            }
+        )
+        return self
+
+    def _generate(self, *_: Any, **__: Any) -> ChatResult:
+        self._model_calls += 1
+        if self._model_calls > 3:
+            raise _FourthModelCall
+        name, arguments = (
+            ("get_trace_packet", {"trace_handle": "T011"})
+            if self._model_calls == 1
+            else (
+                ("submit_case_batch", {"submission": self._submission})
+                if self._submit
+                else ("search_evidence", {"query": "cross-client boundary"})
+            )
+        )
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": name,
+                                "args": arguments,
+                                "id": f"call-{self._model_calls}",
+                                "type": "tool_call",
+                            }
+                        ],
+                    )
+                )
+            ]
+        )
+
+
 def _binding_for(request: Any, *, resumed: bool) -> dict[str, Any]:
     runtime = _runtime()
     tools = runtime._agent_tools(
@@ -109,6 +227,16 @@ def _binding_for(request: Any, *, resumed: bool) -> dict[str, Any]:
     return model._calls[0]
 
 
+def _selected_tool(tool_choice: Any) -> str | None:
+    if isinstance(tool_choice, str):
+        return tool_choice
+    if isinstance(tool_choice, dict):
+        function = tool_choice.get("function")
+        if isinstance(function, dict):
+            return function.get("name")
+    return None
+
+
 def test_create_agent_binding_separates_initial_response_format_from_resumed_tools(
     tmp_path: Path,
 ) -> None:
@@ -121,6 +249,70 @@ def test_create_agent_binding_separates_initial_response_format_from_resumed_too
     assert initial["kwargs"]["response_format"]["type"] == "json_schema"
     assert resumed["tool_choice"] in {"required", "any"}
     assert "response_format" not in resumed["kwargs"]
+
+
+def test_preserved_social_engineering_queries_rank_t011_and_deduplicate(
+    tmp_path: Path,
+) -> None:
+    request, _, _ = _pause_one_case(tmp_path)
+    request = _with_preserved_t011(request)
+    tools = _runtime().RestrictedTools(
+        _field(request, "evidence_catalog"),
+        _field(request, "remaining_budget_usd"),
+    )
+    queries = [
+        "social engineering urgency authorization bypass refusal",
+        "adversarial user pressures agent to bypass scoped data access cross-client",
+    ]
+
+    results = [tools.search_evidence(query) for query in queries]
+
+    for result in results:
+        assert result["trace_handles"][0] == "T011"
+        assert set(result["evidence_handles"]) <= {"E000215", "E000234"}
+        assert result["evidence_handles"]
+        assert result["duplicate_query"] is False
+        assert result["searches_remaining"] >= 0
+    duplicate = tools.search_evidence(queries[0])
+    assert duplicate["duplicate_query"] is True
+    assert duplicate["searches_used"] == results[-1]["searches_used"]
+    assert duplicate["searches_remaining"] == results[-1]["searches_remaining"]
+
+
+def test_resumed_agent_routes_trace_read_to_named_submit_with_three_call_cap(
+    tmp_path: Path,
+) -> None:
+    request, _, _ = _pause_one_case(tmp_path)
+    request = _with_preserved_t011(request)
+    runtime = _runtime()
+    restricted_tools = runtime.RestrictedTools(
+        _field(request, "evidence_catalog"),
+        _field(request, "remaining_budget_usd"),
+    )
+    tools = runtime._agent_tools(request, restricted_tools)
+    assert [tool.name for tool in tools if tool.return_direct] == ["submit_case_batch"]
+    model = _ResearchThenSubmitModel(_submission(request))
+
+    runtime._restricted_agent(model, tools, resumed=True).invoke(
+        {"messages": [{"role": "user", "content": "synthetic"}]}
+    )
+
+    assert model._model_calls == 2
+    assert model._model_calls <= 3
+    assert [binding["tool_names"] for binding in model._bindings] == [
+        list(runtime.TOOLS),
+        list(runtime.TOOLS),
+    ]
+    assert model._bindings[0]["tool_choice"] in {"required", "any"}
+    assert _selected_tool(model._bindings[1]["tool_choice"]) == "submit_case_batch"
+    assert restricted_tools.submission == _submission(request)
+
+    bounded_model = _ResearchThenSubmitModel(_submission(request), submit=False)
+    with pytest.raises(GraphRecursionError):
+        runtime._restricted_agent(bounded_model, tools, resumed=True).invoke(
+            {"messages": [{"role": "user", "content": "synthetic"}]}
+        )
+    assert bounded_model._model_calls <= 3
 
 
 def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts(
