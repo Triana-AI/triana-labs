@@ -1473,3 +1473,90 @@ context/output redesign, another model, question-relevance enforcement, and
 further paid optimization are a successor scaling slice. Broad quality evals
 remain the mandatory post-launch backlog; deterministic validity and human
 review remain distinct.
+
+## LABS-04 closing slice — deterministic scale-out
+
+Status: **frozen for autonomous execution on 2026-08-02**
+
+The owner accepts the current one-case result at commit `ea94d26` as the
+semi-stable LABS-04 kernel and authorizes Codex to close the scaling experiment
+end to end. This slice does not reopen retrieval, prompting, provider choice,
+semantic schemas, or the four-tool agent. It replaces only the failed
+five-cases-in-one model submission with deterministic orchestration around the
+proven one-case execution.
+
+### Product outcome and experiment
+
+Run exactly five requested case slots against the same frozen, synthetic HRAI
+evidence and GLM-5.2 deployment. Each slot receives its own bounded Case
+Factory agent execution and must submit exactly one case. Owner answers are
+run-global authoritative input after the single initial pause; later slots may
+not ask new questions. A slot may use the existing one conditional semantic
+repair, but has no transport retry, fallback model, deterministic semantic
+synthesis, or silent remapping.
+
+Per-slot failure is fail-fast for that slot and is preserved with its exact
+attempt reason. Because slots are independent, one failed slot does not erase
+valid earlier slots or prevent still-funded later slots from running. The
+orchestrator merges every valid lane in stable slot order, applies the existing
+cross-slot deterministic duplicate arithmetic once, and publishes invalid,
+valid, and duplicate evidence together. Exhausted run budget stops all
+remaining slots visibly.
+
+The experiment passes its mechanical gate only when at least three of five
+requested cases are valid and distinct. `COMPLETED_WITH_GAPS` may pass that
+mechanical gate if every gap is preserved; it is not a semantic pass. The
+blind `human_review_template.json` remains `PENDING`, and only Akarsh may clear
+the usefulness gate. LABS-05 remains unauthorized until both gates clear.
+
+### Budget and custody
+
+The experiment-level conservative ceiling is USD 25.000000. This is a maximum,
+not a target. The runtime must distinguish logical agent attempts from the
+underlying provider HTTP exchanges, preserve both counts, and conservatively
+reserve enough for the bounded three-exchange agent loop before starting a
+slot. Cached/no-egress work is not reported as a paid exchange. Unknown actual
+provider cost stays `null`; Triana does not fabricate USD precision. Every
+request, response, parsed submission, normalized intermediate, deterministic
+defect, tool call, provider refusal, and partial portable result remains in
+the existing secret-safe custody paths.
+
+### Minimal acceptance contract
+
+The independent test author freezes only these regressions before production
+edits:
+
+1. five requested slots are sent as five stable one-slot batches and valid
+   lanes merge in slot order;
+2. a failed middle slot is preserved, later funded slots still run, and the
+   terminal bundle is `COMPLETED_WITH_GAPS` rather than zeroed or greenwashed;
+3. resume answers remain authoritative for every pending slot, so scale-out
+   cannot reopen clarification;
+4. logical attempt count and underlying HTTP-exchange count are distinct and
+   the USD 25 ceiling refuses before an unfunded slot;
+5. existing one-case behavior, all historical tests, and the five canonical
+   Observer hashes remain unchanged.
+
+The only paid acceptance is one five-slot GLM-5.2 run. No ten-case follow-up,
+alternate model, judge, broad quality eval, prompt tournament, Corpus
+Intelligence change, turn generator, target-agent execution, memory, UI, or
+LABS-05 implementation belongs to this slice.
+
+### Change budget and serial roles
+
+- Orchestrator-owned: this packet, append-only decision record, working memory,
+  triage/evidence reconciliation, verifier aggregates, and final go/no-go.
+- Independent test-author-owned: one focused scale-out acceptance test file and
+  only necessary frozen acceptance aggregate reconciliation.
+- Implementation-author-owned:
+  `triana-labs/src/triana_labs/case_factory/restricted_runtime.py` only.
+- Dependency allowance: none.
+- Explicitly untouched: schemas, prompts except mechanically required slot
+  wording, Observer/adapter/intelligence code, canonical artifacts, CLI, UI,
+  target runner, memory, and unrelated SPC files.
+
+Any need to alter a portable semantic schema, add a dependency, change the
+model/provider, weaken validation, or exceed the single USD 25 experiment is
+outside budget and stops the slice. Roles execute serially: independent test
+author, then implementation author, with Codex as orchestrator and final
+verdict owner for machinery only.

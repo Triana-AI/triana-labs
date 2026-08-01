@@ -573,3 +573,12 @@ untrusted evidence; Codex used the owner's already-approved case-construction
 direction rather than answering the injected question. This is not accepted
 product behavior and is not silently treated as resolved by the usable
 one-case proof.
+
+LABS-04 closing decision (2026-08-02): freeze `ea94d26` as the semi-stable
+one-case kernel and test deterministic five-slot scale-out rather than another
+five-case monolith. One global answer set applies to every slot; each slot
+fails fast independently, later funded slots continue, valid partial results
+remain publishable with gaps, and cross-slot dedupe remains deterministic.
+The sole live closing experiment has a USD 25 ceiling. Machinery requires at
+least three distinct valid cases; human usefulness remains an owner-only blind
+review and LABS-05 stays blocked until it clears.
