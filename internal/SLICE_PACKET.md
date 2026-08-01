@@ -1169,3 +1169,8 @@ under the generic `PROVIDER_FAILED(8)` result. No useful simulation designs
 were produced, so LABS-04 fails its live smoke and remains unpassed. Recovery
 requires a newly frozen eval-first slice; it cannot be represented as a prompt
 retry, semantic weakening, or another provider call under this packet.
+
+The owner-approved bounded recovery is frozen in
+`internal/LABS04_RECOVERY_CONTRACT.md`. It supersedes only post-egress artifact
+custody, exact response replay, cached-token accounting, typed semantic defects,
+and invalid-PROPOSE repair flow. It authorizes no other LABS-04 expansion.

@@ -513,3 +513,14 @@ output can be discarded before critique with only `PROVIDER_FAILED(8)`.
 LABS-04 produced no simulation designs and fails the current smoke; usefulness
 cannot be judged. Recovery is a new eval-first design decision, not another
 retry or silent semantic weakening. See TRIAGE-11.
+
+Akarsh approved the minimal recovery contract at
+`internal/LABS04_RECOVERY_CONTRACT.md`: secret-safe raw/intermediate artifact
+custody, typed path-specific defects, exact response replay, provider cached
+token accounting, and deterministic-defect-guided critique/revision without
+weakening final acceptance. Azure `cacheReadInputTokens` telemetry contained no
+observed hits for the three preserved calls. No UI, framework, model change,
+memory layer, generic provider abstraction, prompt optimization, or LABS-05
+work is authorized. One final live run may occur only after independent RED,
+full local GREEN, and replay-only proof; cumulative worst case remains below
+the existing USD 15 ceiling.

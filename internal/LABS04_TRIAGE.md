@@ -239,8 +239,8 @@ the live contract remains `internal/SLICE_PACKET.md` and
 - **Regression/evidence:** private terminal SHA-256
   `f129baff229940cf4faf18a4fcad6bebd417a23bcdfd72c6e2365ce3205b3e7b`;
   Azure minute metrics at 07:43Z; no output directory.
-- **Status:** OPEN. Grounded Case Factory usefulness is unproven and the current
-  checkpoint has failed its required live smoke.
+- **Status:** RECOVERY AUTHORIZED. Grounded Case Factory usefulness remains
+  unproven; the bounded contract is `internal/LABS04_RECOVERY_CONTRACT.md`.
 
 ## Remaining decisions requiring owner visibility
 
