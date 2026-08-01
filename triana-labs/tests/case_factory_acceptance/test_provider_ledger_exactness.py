@@ -15,8 +15,11 @@ from conftest import (
     byte_hash,
     canonical,
     config_value,
+    critique_callback,
     invoke,
     proposal_callback,
+    request_user_value,
+    valid_proposal,
 )
 
 
@@ -302,3 +305,76 @@ def test_success_usage_and_provider_cost_projection_are_exact(tmp_path: Path) ->
     assert ledger[1]["provider_reported_cost_usd"] == "0.125000"
     assert ledger[1]["input_tokens"] == 100
     assert ledger[1]["output_tokens"] == 50
+
+
+def test_valid_azure_response_extras_are_ignored_but_remain_hash_sensitive(
+    tmp_path: Path,
+) -> None:
+    raw_bodies: list[bytes] = []
+    response_hashes: list[str] = []
+
+    def proposal_with_extras(label: str) -> Any:
+        def respond(request: Any) -> tuple[int, bytes]:
+            proposal = valid_proposal(request_user_value(request)["citations"])
+            value = json.loads(azure_body(proposal))
+            value.update(
+                {
+                    "id": f"chatcmpl-{label}",
+                    "object": "chat.completion",
+                    "created": 1 if label == "first" else 2,
+                    "model": "gpt-4.1-mini-2025-04-14",
+                    "system_fingerprint": "fp_benign",
+                }
+            )
+            value["choices"][0].update({"index": 0, "logprobs": None})
+            value["choices"][0]["message"].update(
+                {"role": "assistant", "annotations": []}
+            )
+            value["usage"].update(
+                {
+                    "cost": 0.125,
+                    "prompt_tokens_details": {
+                        "audio_tokens": 0,
+                        "cached_tokens": 12,
+                    },
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": 0,
+                        "audio_tokens": 0,
+                        "reasoning_tokens": 7,
+                        "rejected_prediction_tokens": 0,
+                    },
+                }
+            )
+            body = canonical(value)
+            raw_bodies.append(body)
+            return 200, body
+
+        return respond
+
+    for label in ("first", "second"):
+        publisher = CapturePublisher()
+        result, _, _, _ = invoke(
+            tmp_path / label,
+            [proposal_with_extras(label), critique_callback, proposal_callback()],
+            publisher=publisher,
+        )
+        assert result.outcome == "COMPLETED"
+        attempt = attempts(publisher)[0]
+        assert attempt["status"] == "SUCCEEDED"
+        assert attempt["input_tokens"] == 100
+        assert attempt["output_tokens"] == 50
+        assert attempt["provider_reported_cost_usd"] == "0.125000"
+        assert not set(attempt) & {
+            "total_tokens",
+            "prompt_tokens_details",
+            "completion_tokens_details",
+            "id",
+            "system_fingerprint",
+        }
+        assert attempt["response_hash"] == byte_hash(
+            "provider-response", raw_bodies[-1]
+        )
+        response_hashes.append(attempt["response_hash"])
+
+    assert raw_bodies[0] != raw_bodies[1]
+    assert response_hashes[0] != response_hashes[1]
