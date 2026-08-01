@@ -739,6 +739,11 @@ the complete 14-file aggregates are content SHA-256
 and per-file hash-list SHA-256
 `399aa3010821083cd2e87a073fffe7381eeb11b75d0c4eee4eb90b8496dda315`.
 All 163 LABS-04 and 188 historical tests passed after this correction.
+For the acceptance-plus-fixture subset enforced separately by the versioned
+gate, the corrected content SHA-256 is
+`217083673e064de01af78970ef09a2e5d8bad6c1c36aee3746fbfca1103be18c`
+and its per-file hash-list SHA-256 is
+`51d67a9922c53f9b1b9da52ba0274c4494da946bd56f6a173c3cb1c74f5f6b4a`.
 
 ### Lane A — deterministic contract and safety
 
