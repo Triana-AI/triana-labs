@@ -288,6 +288,63 @@ def test_invented_handle_fails_closed_after_one_repair(tmp_path: Path) -> None:
     assert len(transport.requests) == 2
 
 
+def test_unused_grounding_claim_is_repairable_and_truthfully_preserved(
+    tmp_path: Path,
+) -> None:
+    observer, intelligence, config, cache = _inputs(tmp_path)
+    expected = {
+        "code": "BROKEN_LOCAL_REFERENCE",
+        "path": "/turn_policies/0/grounding_claims/1",
+        "message": "BROKEN LOCAL REFERENCE",
+        "related_ids": ["claim_5"],
+        "repairable": True,
+    }
+    repair_defects: list[dict[str, Any]] = []
+
+    def unused_claim(request: Any, tools: Any) -> Any:
+        submission = _submission(request)
+        claim = deepcopy(submission["turn_policies"][0]["grounding_claims"][0])
+        claim.update(claim_key="claim_5", claim="Unused observed tool-use claim")
+        submission["turn_policies"][0]["grounding_claims"].append(claim)
+        tools.submit_case_batch(submission)
+        return _response("SUBMITTED", submission=submission)
+
+    def repaired(request: Any, tools: Any) -> Any:
+        repair_defects.extend(_field(request, "deterministic_defects"))
+        return _submitted(request, tools)
+
+    transport = ScriptedRestrictedTransport([unused_claim, repaired])
+    output = tmp_path / "unused-claim"
+
+    result = _api().generate_restricted(
+        observer,
+        intelligence,
+        config,
+        output,
+        cache_path=cache,
+        transport=transport,
+        clock=_clock(),
+        environ=ENVIRON,
+        requested_case_count=1,
+    )
+
+    assert result.outcome == "COMPLETED"
+    assert repair_defects == [expected]
+    run_hex = _field(transport.requests[0], "run_id").removeprefix("sha256:")
+    stage_defects = json.loads(
+        (
+            cache / "runs" / run_hex / "provider/batch-001/generate/defects.json"
+        ).read_bytes()
+    )
+    assert stage_defects["defects"] == [expected]
+    assert [
+        item["status"] for item in _lines(output / "generation_attempts.jsonl")
+    ] == [
+        "INVALID",
+        "SUCCEEDED",
+    ]
+
+
 def test_unfunded_first_batch_refuses_before_transport(tmp_path: Path) -> None:
     observer, intelligence, _, cache = _inputs(tmp_path)
     config = _restricted_config(tmp_path, maximum="0.499999")
