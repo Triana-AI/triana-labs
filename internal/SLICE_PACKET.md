@@ -1451,3 +1451,25 @@ touch only `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`.
 Verifier aggregate reconciliation and this governance amendment remain
 orchestrator/test-author owned. No dependency, new schema, CLI, UI, turn
 generator, LABS-05, memory, provider change, or unrelated cleanup is allowed.
+
+### Launch-hardening exit evidence
+
+The smallest usefulness checkpoint is now proven. The final bounded one-case
+GLM-5.2 run searched the authorized synthetic HRAI corpus, read T011, executed
+the named submission tool, and published one valid, distinct grounded case
+without REPAIR, fallback, retry, or deterministic semantic synthesis. Its
+portable bundle is
+`/private/tmp/triana-one-case-canary-routed.H6xwOI`; manifest file SHA-256 is
+`40c09260d7428ea8a28f7b270846093ae824f370c9a9a8977d054af041604f8d`.
+The reconciled full gate passes 371 tests with all five canonical Observer
+hashes unchanged; evidence is `/private/tmp/triana-labs-verify.fw3qMD`.
+
+This closes launch hardening as a first usable repeatable artifact, not as
+five-case or launch-scale completion. The authorized five-at-once follow-up
+reached named submit after bounded research but GLM consumed 32,768 completion
+tokens and emitted empty tool arguments. That failure is preserved at
+`/private/tmp/triana-five-case-smoke-toolonly.YKOvAw`. Batch-size changes,
+context/output redesign, another model, question-relevance enforcement, and
+further paid optimization are a successor scaling slice. Broad quality evals
+remain the mandatory post-launch backlog; deterministic validity and human
+review remain distinct.

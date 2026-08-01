@@ -555,3 +555,21 @@ duplication; test multi-turn rubric quality; and verify HTTP-level budget
 accounting across agent loops. These are deliberately not expanded before the
 first useful LABS-04 case bundle. The current launch hardening retains only
 focused regressions for the observed retrieval and research-transition bugs.
+
+Latest launch-hardening result (2026-08-02): the first useful repeatable
+Grounded Case Factory artifact now exists. One GLM-5.2 case is valid and
+distinct with no gaps; exact bundle and gate evidence are recorded in
+TRIAGE-28. This clears the zero-case product blocker but does not prove batch
+scaling or human usefulness. A five-at-once follow-up reached forced submit but
+used 32,768 completion tokens and emitted empty tool arguments; see TRIAGE-29.
+The next scaling discussion must choose among smaller deterministic batches,
+context/output reduction, or a different capable provider. Do not make that
+choice implicitly inside bug fixing.
+
+Add to the mandatory later backlog: evaluate material relevance of model-authored
+clarification questions against the selected evidence and owner target. The
+five-case initial call asked an unrelated capital-city question carried through
+untrusted evidence; Codex used the owner's already-approved case-construction
+direction rather than answering the injected question. This is not accepted
+product behavior and is not silently treated as resolved by the usable
+one-case proof.

@@ -455,3 +455,74 @@ the live contract remains `internal/SLICE_PACKET.md` and
   reserve and report each underlying HTTP exchange or enforce a demonstrably
   conservative bounded-turn allowance; actual USD must remain unknown.
 - **Status:** OPEN SAFETY BLOCKER for further live optimization runs.
+
+### TRIAGE-25 — schema-valid drafts hid repairable wire defects
+
+- **Type:** deterministic diagnosis and artifact-custody bug.
+- **Observed:** the preserved one-case submission contained unused grounding
+  claims, generated-variation text with claim references, and unsorted stressor
+  codes. Normalization reported no defects, semantic conversion collapsed the
+  result to `INTERNAL_INVARIANT_FAILED`, and the stage defect file was written
+  too early with an empty array.
+- **Fix:** independent REDs `9256f6d`, `baf2fee`, and `31e39d0`; production
+  `b7e8bb3`, `645142f`, and `d9cd48f` now preserve exact repairable paths before
+  conversion and hand the same defects to REPAIR.
+- **Status:** CLOSED. Offline replay of both preserved submissions reports all
+  eight exact defects; applying only those mechanical repairs converts one
+  valid case with zero remaining defects.
+
+### TRIAGE-26 — submit schema admitted stressor codes the validator rejects
+
+- **Type:** provider-schema/deterministic-contract mismatch.
+- **Observed:** GENERATE and REPAIR both submitted sorted lowercase stressor
+  codes. The provider-visible tool schema accepted arbitrary strings while the
+  frozen validator requires `^[A-Z][A-Z0-9_]{0,63}$`; both batches were rejected.
+- **Fix:** RED `b46f945`; production `7b3a418` applies the frozen pattern,
+  uniqueness, and 20-item maximum to the dynamic submit schema and prompt.
+- **Status:** CLOSED. The subsequent one-case run emitted uppercase safe codes.
+
+### TRIAGE-27 — parallel excess search terminated the agent
+
+- **Type:** bounded-tool routing bug.
+- **Observed:** GLM emitted three parallel searches in one model turn. Two
+  consumed the allowed search budget; the third raised
+  `TOOL_EXECUTION_FAILED` before middleware could force a trace read.
+- **Fix:** superseding RED `06c955a`; production `6f5ff08` returns the existing
+  bounded empty result for excess parallel searches, then routes the remaining
+  two model calls to named `get_trace_packet` and named `submit_case_batch`.
+- **Status:** CLOSED. The three-model-call cap, four-tool surface, no retry, and
+  no fallback remain unchanged.
+
+### TRIAGE-28 — first usable grounded case bundle
+
+- **Type:** live usefulness evidence.
+- **Observed:** GLM searched the synthetic HRAI evidence, read T011, executed
+  `submit_case_batch`, and passed deterministic conversion without REPAIR.
+  The bundle contains one attempted, valid, and distinct case; no gaps or
+  duplicate clusters; machine status `PASSED`; human review remains `PENDING`.
+- **Evidence:** `/private/tmp/triana-one-case-canary-routed.H6xwOI`; manifest
+  file SHA-256 `40c09260d7428ea8a28f7b270846093ae824f370c9a9a8977d054af041604f8d`;
+  case artifact hash
+  `sha256:b9f3c70c7e36ce35c399573c5cb80031612841a7ba09f7ee1bf1f5141e53310d`.
+- **Status:** CLOSED AS FIRST USABILITY PROOF, not full launch passage. The
+  complete versioned gate passes 371 tests at
+  `/private/tmp/triana-labs-verify.fw3qMD`; all five canonical Observer hashes
+  remain unchanged.
+
+### TRIAGE-29 — five-at-once smoke exceeds current GLM submission behavior
+
+- **Type:** open model/context scaling failure, plus initial-terminal schema
+  mismatches corrected during diagnosis.
+- **Observed:** two initial runs exposed provider-visible clarification gaps:
+  empty `NEEDS_INPUT` questions and no-tool `SUBMITTED`; RED/production pairs
+  `4abd686`/`2e8aa16` and `eaca32d`/`a2664ad` aligned the schema. The corrected
+  run paused with one irrelevant evidence-contaminated question. After the
+  owner's already-approved five-pattern direction was supplied, GLM completed
+  bounded search and trace reads, selected `submit_case_batch`, consumed exactly
+  32,768 completion tokens, and emitted empty `{}` arguments; Triana rejected
+  `PROVIDER_INVALID_RESPONSE` and published zero cases.
+- **Evidence:** preserved at
+  `/private/tmp/triana-five-case-smoke-toolonly.YKOvAw`; no retry, fallback, or
+  deterministic synthesis occurred.
+- **Status:** OPEN POST-PROOF SCALING WORK. Do not change batching, context,
+  model, question-relevance policy, or output strategy inside launch hardening.
