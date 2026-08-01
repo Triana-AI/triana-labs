@@ -194,3 +194,158 @@ One pinned DeepAgents/LangGraph dependency set is allowed after live
 conformance. No target-agent execution, judge, global memory, UI, real-data
 support, prompt search, or unrelated cleanup is authorized. Workers stop
 before editing outside their owned paths.
+
+## Assertion-level restricted-runtime wire
+
+This section closes the test-author entry gap and supersedes conflicting
+five-case, three-stage, Azure OpenAI lineage, and provider-envelope details in
+the parent packet. It adds no CLI surface. The existing `generate(...)` remains
+unchanged; the restricted path is an internal API:
+
+```python
+def generate_restricted(
+    observer_manifest: Path,
+    intelligence_manifest: Path,
+    config_path: Path,
+    output_path: Path,
+    *,
+    cache_path: Path,
+    transport: RestrictedAgentTransport,
+    clock: Clock,
+    environ: Mapping[str, str],
+    publisher: ArtifactPublisher | None = None,
+    requested_case_count: int = 10,
+) -> GenerateResult: ...
+
+def resume_restricted(
+    pause_manifest: Path,
+    answers: Mapping[str, str],
+    output_path: Path,
+    *,
+    cache_path: Path,
+    transport: RestrictedAgentTransport,
+    clock: Clock,
+    publisher: ArtifactPublisher | None = None,
+) -> GenerateResult: ...
+```
+
+Requested count is `1..25`; globally numbered `case_1..case_N` slots form
+consecutive batches of at most five. Resume always writes a distinct new output
+directory and never mutates its pause bundle. `GenerateResult.outcome` is
+`COMPLETED | COMPLETED_WITH_GAPS | NEEDS_INPUT | REJECTED`.
+
+### Transport seam
+
+The framework-neutral fake/live boundary is:
+
+```python
+class RestrictedAgentTransport(Protocol):
+    def run(
+        self, request: AgentBatchRequest, tools: RestrictedTools
+    ) -> AgentBatchResponse: ...
+```
+
+`AgentBatchRequest` is closed and contains exactly `run_id`, `batch_id`,
+`phase`, `case_slots`, `evidence_catalog`, `answers`, `prior_submission`,
+`deterministic_defects`, and `remaining_budget_usd`. `run_id` is
+`sha256:<64 lowercase hex>`; `batch_id` is `batch-001` upward; `phase` is
+`GENERATE | REPAIR`; remaining budget is a six-place decimal string. Answers
+are ordered closed objects with `question_id` and `answer`. GENERATE has empty
+answers/defects and null prior submission except a resumed paused batch, which
+has its explicit answers. REPAIR has a non-null prior submission and non-empty
+sorted defects.
+
+`AgentBatchResponse` is closed and contains exactly `status`, `submission`,
+`questions`, `failure_reason_code`, `request_bytes`, `response_bytes`,
+`input_tokens`, `output_tokens`, `actual_cost_usd`, and `latency_ms`. Status is
+`SUBMITTED | NEEDS_INPUT | FAILED`. SUBMITTED alone has a submission;
+NEEDS_INPUT alone has one to three questions; FAILED alone has a closed failure
+reason. Raw bytes are private diagnostic inputs, are secret-scanned before
+preservation, and never enter portable identity. The runtime supplies exactly
+the four frozen tools; wrappers record every invocation and the transport
+cannot bypass them.
+
+### Attempts, diagnostics, and terminal bundles
+
+Each `generation_attempts.jsonl` record is closed and contains exactly:
+`artifact_kind: case_factory_agent_attempt`, `schema_version: 1`, `attempt_id`,
+`batch_id`, `phase`, `case_slots`, `status`, `reason_code`, `request_hash`,
+`response_hash`, `input_tokens`, `output_tokens`, `actual_cost_usd`,
+`reserved_cost_usd`, and `latency_ms`. Status is `SUCCEEDED | INVALID |
+NEEDS_INPUT | TOOL_FAILED | PROVIDER_FAILED | BUDGET_REFUSED`. Nullable values
+are null only when the corresponding boundary was not reached.
+
+Each private tool-call record contains exactly `artifact_kind:
+case_factory_tool_call`, `schema_version: 1`, `attempt_id`, `sequence`,
+`tool_name`, `arguments`, `status`, `reason_code`, and `result`. Tool names are
+the four allowlisted names; tool status is `SUCCEEDED | FAILED`.
+
+Secret-safe diagnostics live only below
+`<cache_path>/runs/<run-id-hex>/` at:
+
+```text
+agent/tool_calls.jsonl
+provider/batch-NNN/generate/{request,response,parsed,normalized,defects}.json
+provider/batch-NNN/repair/{request,response,parsed,normalized,defects}.json
+```
+
+Absent phases have no directory. Response, parsed, and normalized files exist
+only if that boundary was reached; defects exist for every parsed submission.
+Every terminal result other than NEEDS_INPUT publishes the existing portable
+bundle. Control JSONL files are empty, `comparison_available` is false in eval
+and review, and valid earlier batches remain visible after a later stop. No
+portable file contains run-local handles, local slots, questions, raw provider
+bytes, or tool transcripts. Attempt stages and semantic lineage stages are
+`GENERATE | REPAIR`; provider lineage names Fireworks GLM-5.2 through Foundry.
+
+Closed top-level reasons are `INVALID_CASE_BATCH | BUDGET_REFUSED |
+TOOL_EXECUTION_FAILED | PROVIDER_TRANSPORT_FAILED | PROVIDER_REFUSED |
+PROVIDER_INVALID_RESPONSE | MATERIAL_INPUT_REQUIRED | QUESTION_LIMIT_EXCEEDED |
+RESUME_INPUT_INVALID | INTERNAL_INVARIANT_FAILED`. Deterministic defects remain
+separate. Unknown handles are `UNKNOWN_EVIDENCE_HANDLE`; after at most one
+failed repair, the terminal reason is `INVALID_CASE_BATCH`, never a provider
+failure. Tool and provider failures retain the narrow safe reason in their
+private record while the top-level reason uses the closed code.
+
+### Pause and immutable resume
+
+A NEEDS_INPUT output contains exactly `manifest.json`,
+`generation_attempts.jsonl`, `evidence_index.json`, `questions.json`, and
+`resume_state.json`. Questions have `artifact_kind:
+case_factory_questions`, `schema_version: 1`, `run_id`, and one to three closed
+objects containing `question_id` (`Q001..Q003`), `question`, and
+`material_scope: TARGET_RELEVANCE | CASE_CONSTRUCTION`.
+
+Resume state has exactly `artifact_kind: case_factory_resume_state`,
+`schema_version: 1`, `run_id`, `input_manifest_hash`,
+`intelligence_manifest_hash`, `config_hash`, `requested_case_count`,
+`completed_case_slots`, `pending_case_slots`, `attempt_ids`, `question_ids`,
+`reserved_cost_usd`, and `actual_cost_usd`. A logical run may pause once.
+Resume answers must contain every and only listed question ID with non-empty
+bounded text; otherwise it publishes no new output and refuses before transport
+with `RESUME_INPUT_INVALID`. Resume reuses completed batches/attempts
+byte-for-byte and starts at the paused batch. It never repeats a completed
+provider or tool call. A second question request or a fourth total question is
+`QUESTION_LIMIT_EXCEEDED` with no assumption, retry, or fallback.
+
+### Budget and batched projection
+
+Restricted config adds only:
+
+```json
+{"budget":{"max_usd":"3.000000","reservation_usd_per_agent_call":"0.500000"}}
+```
+
+Both are six-place nonnegative decimals and `max_usd` cannot exceed
+`3.000000`. Before every GENERATE or REPAIR call, deterministic code refuses if
+`reserved_so_far + reservation_per_call > max_usd`; exact equality is funded.
+Refusal appends a BUDGET_REFUSED attempt, publishes typed partial evidence,
+does not call transport, and never reduces requested count. Actual provider
+cost is separately recorded and never rewrites the reservation ledger.
+
+The old PROPOSE/CRITIQUE/REVISE attempt projection becomes per-batch
+GENERATE/REPAIR. Portable semantic schemas remain unchanged after handle
+normalization. Manifest requested count is N. A later budget/provider/tool stop
+with earlier valid batches is `COMPLETED_WITH_GAPS`; without any valid batch it
+is `REJECTED`. Invalid batches are never partially accepted. The ten-case live
+exit still requires at least seven distinct grounded reviewable cases.

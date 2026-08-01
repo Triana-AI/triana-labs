@@ -1266,3 +1266,12 @@ conformance, but it earns no provider-compatibility or usable-artifact claim
 until the disposable GLM probe and ten-case smoke pass. A failed conformance
 probe stops provider work and leaves the local result explicitly provisional;
 it does not authorize fallback, retries, or acceptance weakening.
+
+The independent entry-gate STOP found that outcome names alone did not define
+an observable black-box wire. The assertion-level section of
+`internal/LABS04_GROUNDING_HANDLE_CONTRACT.md` now freezes the internal
+generate/resume signatures, fake transport envelope, attempts and private
+diagnostics, closed reasons, immutable one-pause resume behavior, USD 3
+pre-call reservation rule, and batched projection. Resume writes a new output
+bundle; mutating a pause bundle is forbidden. The five-test author may now
+encode only that wire.
