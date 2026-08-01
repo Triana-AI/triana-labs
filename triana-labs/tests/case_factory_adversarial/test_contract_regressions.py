@@ -124,6 +124,7 @@ def _large_proposal(request: Any) -> tuple[int, bytes]:
         "claim_keys": [],
     }
     proposal["personas"][0]["constraints"] = [generated] * 20
+    proposal["personas"][0]["communication_tendencies"] = [generated] * 20
     proposal["intents"][0]["known_constraints"] = [generated] * 20
     return 200, HELPERS.azure_body(proposal)
 
@@ -139,7 +140,7 @@ def _large_critique(_request: Any) -> tuple[int, bytes]:
             "explanation": "x" * 4096,
             "citation_ids": [],
         }
-        for index in range(30)
+        for index in range(60)
     ]
     return 200, HELPERS.azure_body({"issues": issues})
 

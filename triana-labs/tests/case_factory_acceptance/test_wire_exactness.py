@@ -59,7 +59,7 @@ def jsonl(payload: bytes) -> list[dict[str, Any]]:
 
 
 def reserved_cost(body: bytes) -> str:
-    raw = (Decimal(len(body)) * Decimal(10) + Decimal(4096) * Decimal(40)) / Decimal(
+    raw = (Decimal(len(body)) * Decimal(10) + Decimal(12000) * Decimal(40)) / Decimal(
         1_000_000
     )
     return format(raw.quantize(Decimal("0.000001"), rounding=ROUND_CEILING), "f")
@@ -191,8 +191,11 @@ def test_exact_request_bytes_hashes_prompts_schemas_lineage_and_costs(
             "type": "json_schema",
             "json_schema": {"name": name, "strict": True, "schema": schema},
         }
+        assert envelope["max_tokens"] == 12000
+        assert len(request.body) <= 240000
         assert request.body == canonical(envelope)
         assert attempt["request_hash"] == byte_hash("provider-request", request.body)
+        assert attempt["attempt_index"] == 0
         assert attempt["conservative_cost_usd"] == reserved_cost(request.body)
         assert request.url == (
             "https://operator.example.azure.com/openai/v1/chat/completions"

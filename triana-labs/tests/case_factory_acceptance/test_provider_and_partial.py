@@ -1,4 +1,4 @@
-"""Fake-provider mapping, retries, budgets, partial publication, and cleanup."""
+"""Fake-provider mapping, no-retry budgets, partial publication, and cleanup."""
 
 from __future__ import annotations
 
@@ -11,13 +11,16 @@ from conftest import (
     ENVIRON,
     CapturePublisher,
     ScriptedClock,
+    ScriptedTransport,
     api,
     azure_body,
+    build_upstream,
     critique_callback,
     invoke,
     proposal_callback,
     request_user_value,
     valid_proposal,
+    write_config,
 )
 
 
@@ -66,53 +69,84 @@ def test_nonretryable_provider_failures_are_fatal_and_safe(
 
 
 @pytest.mark.parametrize(
-    "retryable", [(429, b"rate"), (503, b"server"), TimeoutError("private")]
+    ("transient", "provider_reason"),
+    [
+        ((429, b"rate"), "PROVIDER_RATE_LIMITED"),
+        ((503, b"server"), "PROVIDER_SERVER_FAILED"),
+        (TimeoutError("private"), "PROVIDER_TRANSPORT_FAILED"),
+    ],
 )
-@pytest.mark.parametrize("retry_stage", ["PROPOSE", "CRITIQUE", "REVISE"])
-def test_retry_preserves_first_attempt_and_never_exceeds_bound(
-    tmp_path: Path, retryable: Any, retry_stage: str
+@pytest.mark.parametrize("failure_stage", ["PROPOSE", "CRITIQUE", "REVISE"])
+def test_transient_provider_state_never_retries(
+    tmp_path: Path,
+    transient: Any,
+    provider_reason: str,
+    failure_stage: str,
 ) -> None:
-    api()
+    observer, intelligence = build_upstream(tmp_path)
+    generate_module, _ = api()
     publisher = CapturePublisher()
     callbacks = {
         "PROPOSE": [
-            retryable,
+            transient,
             proposal_callback(),
             critique_callback,
             proposal_callback(),
         ],
         "CRITIQUE": [
             proposal_callback(),
-            retryable,
+            transient,
             critique_callback,
             proposal_callback(),
         ],
         "REVISE": [
             proposal_callback(),
             critique_callback,
-            retryable,
+            transient,
             proposal_callback(),
         ],
-    }[retry_stage]
-    result, transport, _, _ = invoke(tmp_path, callbacks, publisher=publisher)
-    assert result.provider_call_count == 4
+    }[failure_stage]
+    transport = ScriptedTransport(callbacks)
+    output = tmp_path / "case-factory"
+    try:
+        result = generate_module.generate(
+            observer,
+            intelligence,
+            write_config(tmp_path),
+            output,
+            transport=transport,
+            environ=ENVIRON,
+            publisher=publisher,
+        )
+    except generate_module.GenerateFailure as error:
+        result = error
+
+    expected_calls = {"PROPOSE": 1, "CRITIQUE": 2, "REVISE": 3}[failure_stage]
+    assert len(transport.requests) == expected_calls
+    if failure_stage == "PROPOSE":
+        assert isinstance(result, generate_module.GenerateFailure)
+        assert (result.reason_code, result.exit_code) == ("PROVIDER_FAILED", 8)
+        assert publisher.artifacts is None
+        assert not output.exists()
+        return
+
+    expected_reason = {
+        "CRITIQUE": "CRITIQUE_UNAVAILABLE",
+        "REVISE": "REVISION_UNAVAILABLE",
+    }[failure_stage]
+    assert result.reason_code == expected_reason
+    assert result.provider_call_count == expected_calls
+    assert publisher.artifacts is not None
     attempts = [
         json.loads(line)
         for line in publisher.artifacts["generation_attempts.jsonl"].splitlines()
     ]
-    retried_attempts = [item for item in attempts if item["stage"] == retry_stage]
-    assert [item["attempt_index"] for item in retried_attempts] == [0, 1]
-    assert retried_attempts[0]["status"] == "TRANSPORT_FAILED"
-    assert retried_attempts[1]["status"] == "SUCCEEDED"
-    propose_success_index = next(
-        index
-        for index, item in enumerate(attempts)
-        if item["stage"] == "PROPOSE" and item["status"] == "SUCCEEDED"
-    )
-    control_attempt_ids = [
-        item["attempt_id"] for item in attempts[: propose_success_index + 1]
-    ]
-    full_attempt_ids = [item["attempt_id"] for item in attempts]
+    failed_attempts = [item for item in attempts if item["stage"] == failure_stage]
+    assert len(failed_attempts) == 1
+    assert failed_attempts[0]["attempt_index"] == 0
+    assert failed_attempts[0]["status"] == "TRANSPORT_FAILED"
+    assert failed_attempts[0]["reason_code"] == provider_reason
+    control_attempt_ids = [attempts[0]["attempt_id"]]
     for name in (
         "control_personas.jsonl",
         "control_intents.jsonl",
@@ -121,16 +155,7 @@ def test_retry_preserves_first_attempt_and_never_exceeds_bound(
     ):
         for line in publisher.artifacts[name].splitlines():
             assert json.loads(line)["lineage"]["attempt_ids"] == control_attempt_ids
-    for name in (
-        "personas.jsonl",
-        "intents.jsonl",
-        "turn_policies.jsonl",
-        "case_candidates.jsonl",
-    ):
-        for line in publisher.artifacts[name].splitlines():
-            assert json.loads(line)["lineage"]["attempt_ids"] == full_attempt_ids
-    assert len(transport.requests) == 4
-    assert len(transport.requests) <= 6
+    assert publisher.artifacts["case_candidates.jsonl"] == b""
 
 
 @pytest.mark.parametrize(

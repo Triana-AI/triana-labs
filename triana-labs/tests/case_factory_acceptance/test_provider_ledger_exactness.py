@@ -1,4 +1,4 @@
-"""Exact provider mapping, retry ledgers, and between-stage exhaustion."""
+"""Exact provider mapping, single-attempt ledgers, and stage exhaustion."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from conftest import (
     azure_body,
     byte_hash,
     canonical,
+    config_value,
     invoke,
     proposal_callback,
 )
@@ -27,7 +28,7 @@ def attempts(publisher: CapturePublisher) -> list[dict[str, Any]]:
 
 
 def reserved_cost(body: bytes) -> str:
-    raw = (Decimal(len(body)) * Decimal(10) + Decimal(4096) * Decimal(40)) / Decimal(
+    raw = (Decimal(len(body)) * Decimal(10) + Decimal(12000) * Decimal(40)) / Decimal(
         1_000_000
     )
     return format(raw.quantize(Decimal("0.000001"), rounding=ROUND_CEILING), "f")
@@ -49,6 +50,26 @@ def refusal_body() -> bytes:
             },
         }
     )
+
+
+def test_corrected_three_call_budget_is_exact_and_within_usd_ceiling() -> None:
+    budget = config_value()["budget"]
+    assert budget == {
+        "max_calls": 3,
+        "normal_calls": 3,
+        "max_input_bytes_per_call": 240000,
+        "max_output_tokens_per_call": 12000,
+        "max_wall_clock_seconds": 600,
+        "request_timeout_seconds": 60,
+        "max_transport_retries_per_stage": 0,
+        "max_usd": "8.700000",
+        "conservative_input_usd_per_million_tokens": "10.000000",
+        "conservative_output_usd_per_million_tokens": "40.000000",
+        "pricing_source": "OPERATOR_CONSERVATIVE_BOUND",
+    }
+    assert reserved_cost(b"x" * 240000) == "2.880000"
+    assert Decimal(reserved_cost(b"x" * 240000)) * 3 == Decimal("8.640000")
+    assert Decimal("8.640000") <= Decimal(budget["max_usd"])
 
 
 NONRETRYABLE = [
@@ -197,7 +218,7 @@ def test_nonretryable_critique_attempt_is_exact_and_inspectable(
         ),
     ],
 )
-def test_retry_exhaustion_retains_both_attempts_with_exact_mapping(
+def test_transient_critique_failure_has_one_exact_attempt_without_retry(
     tmp_path: Path, failure: Any, reason: str, hash_present: bool
 ) -> None:
     publisher = CapturePublisher()
@@ -207,10 +228,10 @@ def test_retry_exhaustion_retains_both_attempts_with_exact_mapping(
         publisher=publisher,
     )
     assert result.reason_code == "CRITIQUE_UNAVAILABLE"
-    assert len(transport.requests) == 3
+    assert len(transport.requests) == 2
     failed = attempts(publisher)[1:]
-    assert len(failed) == 2
-    assert [item["attempt_index"] for item in failed] == [0, 1]
+    assert len(failed) == 1
+    assert [item["attempt_index"] for item in failed] == [0]
     assert all(item["stage"] == "CRITIQUE" for item in failed)
     assert all(item["status"] == "TRANSPORT_FAILED" for item in failed)
     assert all(item["reason_code"] == reason for item in failed)
@@ -221,7 +242,6 @@ def test_retry_exhaustion_retains_both_attempts_with_exact_mapping(
             assert item["response_hash"] == byte_hash("provider-response", failure[1])
         else:
             assert item["response_hash"] is None
-    assert failed[0]["attempt_id"] != failed[1]["attempt_id"]
     assert result.conservative_cost_usd == format(
         sum(Decimal(reserved_cost(request.body)) for request in transport.requests),
         ".6f",

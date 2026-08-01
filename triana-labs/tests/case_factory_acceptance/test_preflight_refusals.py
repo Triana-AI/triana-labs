@@ -62,7 +62,7 @@ def invoke_preflight(
         (("generation", "seed"), 7),
         (("provider", "deployment"), "different"),
         (("provider", "model_name"), "different"),
-        (("budget", "max_usd"), "9.999999"),
+        (("budget", "max_usd"), "8.699999"),
         (("budget", "conservative_input_usd_per_million_tokens"), None),
         (("authorization", "allow_provider_egress"), False),
     ],

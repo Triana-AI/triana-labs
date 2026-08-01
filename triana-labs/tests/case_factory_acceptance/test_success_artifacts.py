@@ -148,8 +148,8 @@ def test_request_uses_literal_schema_and_projects_only_allowlisted_evidence(
         assert envelope["response_format"]["json_schema"]["schema"] == expected
         assert envelope["temperature"] == 0.2
         assert envelope["seed"] == 2026080104
-        assert envelope["max_tokens"] == 4096
-        assert len(request.body) <= 100000
+        assert envelope["max_tokens"] == 12000
+        assert len(request.body) <= 240000
     evidence = request_user_value(transport.requests[0])["evidence"]
     payload = canonical(evidence)
     for private in (

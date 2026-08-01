@@ -107,12 +107,12 @@ def _large_valid_trace() -> dict[str, Any]:
         {
             "sequence": 4 + index,
             "event_kind": "ASSISTANT_MESSAGE",
-            "content": "x" * 4096,
-            "is_final": index == 20,
+            "content": "a",
+            "is_final": index == 715,
         }
-        for index in range(21)
+        for index in range(716)
     ]
-    terminal = dict(trace["events"][-1], sequence=25)
+    terminal = dict(trace["events"][-1], sequence=720)
     trace["events"] = [*prefix, *assistants, terminal]
     return trace
 
@@ -124,10 +124,13 @@ def test_oversized_propose_request_refuses_as_evidence_too_large(
     generate_module, _ = HELPERS.api()
     evidence, citations, _, _ = generate_module.build_evidence(observer, intelligence)
     schema = json.loads((generate_module.SCHEMAS / "proposal.schema.json").read_bytes())
-    body = generate_module._request(
+    current_body = generate_module._request(
         "PROPOSE", {"evidence": evidence, "citations": citations}, schema
     )
-    assert len(body) == 100_348
+    envelope = json.loads(current_body)
+    envelope["max_tokens"] = 12000
+    amended_body = HELPERS.canonical(envelope)
+    assert len(amended_body) == 240_055
     transport = HELPERS.ScriptedTransport([])
     output = tmp_path / "case-factory"
 

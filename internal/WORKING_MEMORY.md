@@ -443,6 +443,14 @@ reservation is USD 8.64; adding the first call's USD 1.095500 reservation gives
 USD 9.735500 cumulative. The full 25-trace/424-citation HRAI proposal is 193,867
 bytes and fits the corrected bound. Independent tests must refreeze every
 changed budget/wire literal before production or another provider call.
+The corrected independent suite is now frozen: 163 LABS-04 cases produce 131
+intended RED/32 pass against unchanged production while 188 historical tests
+remain green. The full 14-file test/fixture content hash is
+`877924718cb90cbcf05fe8179c3fefdb5f44f75e89f7e84b66d232e6fc81d1b9`;
+the per-file hash-list hash is
+`22c42e65e3ebb902cd8c558586a9bfddfb76cd742bdd3f2f3074aa4088ac7a65`.
+Production may now implement only the three-call/no-retry/240,000-byte/
+12,000-token/USD 8.70 correction. No further provider call precedes GREEN.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

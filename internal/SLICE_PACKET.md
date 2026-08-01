@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **LIVE PROVIDER RED — REMAINING BUDGET RESHAPED**
+Status: **LIVE PROVIDER RED — CORRECTED BUDGET TESTS FROZEN**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -709,6 +709,22 @@ owner-approved USD 10. The 193,867-byte full 25-trace HRAI proposal now fits;
 no evidence reduction is expected at PROPOSE. This correction supersedes only
 the request/output/call/retry/USD literals and their exact test bytes. New
 independent RED must be frozen before production or another provider call.
+
+The independent test author corrected only nine LABS-04 test files against the
+new literals and no-retry semantics. Codex reproduced 163 LABS-04 cases as 131
+intended RED failures and 32 passes against unchanged production, with all 188
+historical tests green. The complete 14-file LABS-04 test/fixture freeze has
+sorted concatenated content SHA-256
+`877924718cb90cbcf05fe8179c3fefdb5f44f75e89f7e84b66d232e6fc81d1b9`
+and sorted per-file hash-list SHA-256
+`22c42e65e3ebb902cd8c558586a9bfddfb76cd742bdd3f2f3074aa4088ac7a65`.
+It contains 4,285 physical lines. Exact 240,000 acceptance, 240,001 whole-trace
+tail fitting, a 240,055 sole-trace refusal, three single attempts, no transient
+retry, 12,000-token request bytes/reservation, USD 8.64 preflight, and USD 8.70
+cap are now immutable before production resumes. These two aggregate hashes
+supersede the earlier LABS-04 acceptance-only aggregates and all three prior
+adversarial-file hashes; no behavioral assertion outside the corrected wire is
+weakened.
 
 ### Lane A — deterministic contract and safety
 
