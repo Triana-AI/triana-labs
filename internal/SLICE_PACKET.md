@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **SMOKE-DISCOVERED REQUEST-SELECTION RED — TESTS FROZEN**
+Status: **REQUEST-SELECTION CORRECTION GREEN — FULL GATE/SMOKE PENDING**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -682,6 +682,16 @@ priority-preserving tail removal without admitting a 26th replacement trace.
 The oracle independently reconstructs every citation, gap, exclusion, order,
 and input-order invariant. The existing 100,348-byte oversized single-trace
 refusal remains green. These test bytes are immutable before production resumes.
+
+The implementation author changed only `case_factory/generate.py` to fit the
+fresh provider projection after exact schema/citation construction. The author
+and Codex independently reproduced 3/3 tail-fit, 20/20 total adversarial,
+142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN. Production
+is 1,810 counted lines with no dependency. A fresh pinned-HRAI preflight now
+retains nine traces and 198 citations, records 16 explicit byte-limit
+exclusions, and constructs a 93,166-byte PROPOSE request. Azure call count is
+still zero. The versioned verifier now also freezes the tail-fit test hash;
+the complete gate and provider smoke remain required before mechanical exit.
 
 ### Lane A — deterministic contract and safety
 

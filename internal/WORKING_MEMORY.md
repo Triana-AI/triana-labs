@@ -426,6 +426,12 @@ Codex reproduced one passing exact-100,000 boundary and two intended RED cases
 for exact-100,001 and repeated tail removal. The prior single-trace refusal and
 the 347-case suite excluding this deliberate RED remain green. Production may
 now implement only the corrected request-fitting wire.
+The implementation-author correction changes only `generate.py`. The author
+and Codex independently reproduced 3/3 new tail-fit, 20/20 adversarial,
+142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN at 1,810
+production lines. Pinned-HRAI preflight now yields nine selected traces, 198
+citations, 16 explicit byte-limit exclusions, and a 93,166-byte request with
+Azure calls still zero. Full verifier and the actual provider smoke remain.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No

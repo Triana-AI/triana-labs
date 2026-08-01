@@ -15,6 +15,7 @@ from typing import Any, cast
 from urllib.parse import urlsplit
 
 from triana_labs import __version__
+from triana_labs.case_factory.evidence import _citations as build_citations
 from triana_labs.case_factory.evidence import build as build_evidence
 from triana_labs.case_factory.primitives import (
     SAFE_ID,
@@ -122,12 +123,15 @@ def generate(
     except Invalid as error:
         failure_reason = str(error) or "MANIFEST_INVALID"
         raise GenerateFailure(failure_reason, _exit(failure_reason)) from error
-    if contains_secret(canonical(evidence), sentinels):
-        raise GenerateFailure("SECRET_SENTINEL_DETECTED", 4)
     schemas = {
         name: json.loads((SCHEMAS / f"{name}.schema.json").read_bytes())
         for name in ("proposal", "critique")
     }
+    evidence, citations, excluded = _fit_propose(
+        evidence, citations, schemas["proposal"], excluded
+    )
+    if contains_secret(canonical(evidence), sentinels):
+        raise GenerateFailure("SECRET_SENTINEL_DETECTED", 4)
     hashes = (evidence["input_manifest_hash"], evidence["intelligence_manifest_hash"])
     evidence_hash = domain_hash("provider-evidence", evidence)
     prompt_hash = domain_hash(
@@ -282,6 +286,35 @@ def generate(
         run.calls,
         _money(run.cost),
     )
+
+
+def _fit_propose(
+    evidence: Json, citations: list[Json], schema: Json, excluded: int
+) -> tuple[Json, list[Json], int]:
+    while (
+        len(_request("PROPOSE", {"evidence": evidence, "citations": citations}, schema))
+        > 100_000
+    ):
+        selected = evidence["selected_traces"]
+        if len(selected) == 1:
+            break
+        removed = selected.pop()
+        evidence["gaps"].append(
+            {
+                "reason_code": "EVIDENCE_BYTE_LIMIT_REACHED",
+                "trace_id": removed["trace_id"],
+            }
+        )
+        evidence["gaps"].sort(
+            key=lambda item: (
+                item["reason_code"],
+                item.get("trace_id", ""),
+                item.get("event_sequence", -1),
+            )
+        )
+        citations = build_citations(selected)
+        excluded += 1
+    return evidence, citations, excluded
 
 
 def _stage(

@@ -113,6 +113,9 @@ triana_verify_tracked_hash \
 triana_verify_tracked_hash \
   triana-labs/tests/case_factory_adversarial/test_uncovered_contract_edges.py \
   4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a
+triana_verify_tracked_hash \
+  triana-labs/tests/case_factory_adversarial/test_request_tail_fit.py \
+  9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd
 
 mkdir "${triana_evidence_root}/first" "${triana_evidence_root}/second"
 set +e
