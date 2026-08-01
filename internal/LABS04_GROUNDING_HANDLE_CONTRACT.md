@@ -19,19 +19,20 @@ portable record identity, evidence resolution, support-state derivation,
 reference validation, defect paths, lane acceptance, diversity, lineage, and
 all arithmetic. A human still owns usefulness acceptance.
 
-Triana adopts DeepAgents/LangGraph as a restricted runtime in this slice. It
-exposes only `search_evidence`, `get_trace_packet`, `inspect_budget`, and
-`submit_case_batch`; shell, web, arbitrary filesystem access, runtime routing,
-and durable model-written memory are disabled. Strict structured output
-constrains handles and slots; deterministic guardrails validate the result;
-all stages, tool calls, questions, and defects are preserved for evaluation
-and replay.
+Triana adopts LangChain `create_agent`, backed by LangGraph, as the restricted
+runtime in this slice. It exposes only `search_evidence`, `get_trace_packet`,
+`inspect_budget`, and `submit_case_batch`; shell, web, arbitrary filesystem
+access, delegation, runtime routing, and durable model-written memory are not
+installed. Strict structured output constrains handles and slots;
+deterministic guardrails validate the result; all stages, tool calls, questions,
+and defects are preserved for evaluation and replay.
 
-The active flow is one restricted DeepAgent run per batch with a grounding
-researcher and case architect, followed by deterministic validation and at
-most one Repair handoff for that batch. The prior independent LLM CRITIQUE
-stage is removed; it duplicated deterministic criticism, cost, and the same
-identity failure channel without contributing acceptance authority.
+The active flow is one restricted `create_agent` graph per batch, prompted to
+perform grounding research then case architecture, followed by deterministic
+validation and at most one new Repair invocation for that batch. The prior
+independent LLM CRITIQUE stage is removed; it duplicated deterministic
+criticism, cost, and the same identity failure channel without contributing
+acceptance authority.
 
 The agent may return `NEEDS_INPUT` with at most three bounded questions whose
 answers materially change target relevance or case construction. The complete
@@ -190,10 +191,11 @@ triana-labs/src/triana_labs/case_factory/schemas/proposal.schema.json
 triana-labs/src/triana_labs/case_factory/schemas/critique.schema.json
 ```
 
-One pinned DeepAgents/LangGraph dependency set is allowed after live
-conformance. No target-agent execution, judge, global memory, UI, real-data
-support, prompt search, or unrelated cleanup is authorized. Workers stop
-before editing outside their owned paths.
+One pinned LangChain/LangChain-OpenAI/LangGraph dependency set is allowed after
+live conformance. DeepAgents remains future design only. No target-agent
+execution, judge, global memory, UI, real-data support, prompt search, or
+unrelated cleanup is authorized. Workers stop before editing outside their
+owned paths.
 
 ## Assertion-level restricted-runtime wire
 

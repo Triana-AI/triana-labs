@@ -1275,3 +1275,42 @@ diagnostics, closed reasons, immutable one-pause resume behavior, USD 3
 pre-call reservation rule, and batched projection. Resume writes a new output
 bundle; mutating a pause bundle is forbidden. The five-test author may now
 encode only that wire.
+
+## LABS-04 lean-agent correction and live verdict — 2026-08-01
+
+The owner accepted LangChain `create_agent`, backed by LangGraph, for the
+current exact-four-tool Case Factory and returned DeepAgents to the future
+multi-agent simulation design. This supersedes only the current-runtime name
+and dependency in the preceding amendment. The deterministic controller,
+transport seam, five outcome tests, GLM deployment, privacy boundary, USD 3
+ceiling, and completion criteria remain unchanged.
+
+Provider conformance passed with exactly two synthetic calls: tool calling and
+strict structured output both returned HTTP 200, 305 aggregate tokens, visible
+usage/cached-token fields, zero retry/fallback, and USD 1 conservative
+reservation. Codex rejected the first implementation's import-only DeepAgents
+adapter before smoke. The corrected runtime executes an actual `create_agent`
+graph and asserts the model-visible tool tuple is exactly `search_evidence`,
+`get_trace_packet`, `inspect_budget`, and `submit_case_batch`.
+
+The live HRAI run did not produce cases. Preserved changed-version failures
+proved and corrected three adapter defects before the final model verdict:
+nested proposal `$defs` were not visible at the outer submit-tool schema;
+NEEDS_INPUT redundantly carrying `MATERIAL_INPUT_REQUIRED` was rejected instead
+of normalized; and a hardcoded 60-second transport timeout was too short for a
+122,499-byte grounded request. Each correction was reproduced offline, made no
+fallback, and retained the preceding artifact.
+
+After Akarsh answered the three preserved material questions, the final
+180-second, zero-retry resume completed an HTTP response in 79.957 seconds.
+GLM-5.2 used 33,973 input tokens (33,972 cached) and 13,122 output tokens,
+called no tool, and repeated the same three questions. Deterministic one-pause
+authority therefore returned `QUESTION_LIMIT_EXCEEDED`; zero cases were
+published. Cumulative conservative reservation stayed at the approved USD 3
+ceiling after releasing the proven zero-egress schema-compilation reservation.
+Actual provider USD remains unknown because Foundry returned no cost field.
+
+LABS-04 remains incomplete: local machinery and conformance pass, but the
+ten-case usefulness smoke fails. No further provider call, fallback, silent
+question acceptance, Corpus Intelligence work, or checkpoint-completion claim
+is authorized by this packet.

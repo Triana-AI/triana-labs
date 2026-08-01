@@ -524,3 +524,14 @@ memory layer, generic provider abstraction, prompt optimization, or LABS-05
 work is authorized. One final live run may occur only after independent RED,
 full local GREEN, and replay-only proof; cumulative worst case remains below
 the existing USD 15 ceiling.
+
+Latest LABS-04 state (2026-08-01): the grounding-handle correction is locally
+implemented through LangChain `create_agent`/LangGraph with exactly four tools;
+DeepAgents is parked for future multi-agent simulation. Provider conformance
+passed, 361 tests pass, and the five canonical Observer artifacts remain
+unchanged. The bounded GLM-5.2 HRAI smoke nevertheless produced zero cases:
+after Akarsh answered three material questions, the model used no tools and
+repeated the same questions, so deterministic one-pause authority returned
+`QUESTION_LIMIT_EXCEEDED`. Exact details are TRIAGE-16 through TRIAGE-20.
+LABS-04 and Corpus Intelligence remain blocked; no further provider call is
+authorized under the USD 3 slice.

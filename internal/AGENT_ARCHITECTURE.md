@@ -6,7 +6,7 @@ This document separates the agent needed now from the agentic simulation
 system Triana may earn later. The current implementation contract remains
 `internal/LABS04_GROUNDING_HANDLE_CONTRACT.md`.
 
-## Current: restricted DeepAgents Case Factory
+## Current: restricted LangChain Case Factory
 
 ```text
 verified synthetic traces
@@ -18,10 +18,10 @@ deterministic evidence/catalog builder
   - preserve canonical provenance privately
           |
           v
-restricted DeepAgent supervisor (pinned GLM-5.2)
-  - grounding researcher subagent
-  - case architect subagent
-  - conditional repair subagent
+restricted create_agent graph (pinned GLM-5.2)
+  - grounding-researcher instructions
+  - case-architect instructions
+  - conditional deterministic repair invocation
   - four allowlisted tools only
           |
           v
@@ -39,11 +39,11 @@ deterministic guardrail
 preserved bundle + human usefulness review
 ```
 
-DeepAgents/LangGraph owns the bounded model/tool loop, context isolation, and
-subagent handoffs. It is not a general coding agent: shell, web, arbitrary
-filesystem access, unrestricted planning, runtime model routing, and automatic
-durable-memory writes are disabled. Triana's deterministic controller remains
-outside the framework and owns transitions and acceptance.
+LangChain `create_agent`, backed by LangGraph, owns the bounded model/tool loop
+and strict terminal response. It receives exactly four Triana tools and adds no
+coding, shell, web, filesystem, todo, memory, or delegation tools. Triana's
+deterministic controller remains outside the framework and owns batching,
+repair invocation, questions, budgets, transitions, and acceptance.
 
 The ordinary harness functions are the present tools:
 
@@ -131,11 +131,17 @@ accepted-eval authority. Raw model reflection never compounds automatically.
 
 ## Agent SDK boundary
 
-DeepAgents/LangGraph is accepted as the restricted runtime from LABS-04 onward
-because evidence retrieval, bounded tools, questions, and specialist context
-isolation already cross the agent-runtime threshold. Re-evaluate the framework
-only if it fails the frozen provider/tool/structured-output conformance gate or
-cannot preserve Triana's authority boundary.
+LangChain `create_agent` plus LangGraph is the current restricted runtime.
+DeepAgents 0.6.12 was evaluated and deliberately not used in LABS-04: its
+filesystem, todo, execution, summarization, and `task` scaffolding must be
+excluded to recover the exact-four tool surface, while enabling its dynamic
+subagents necessarily adds `task` as a fifth tool. That complexity supplies no
+current capability because Triana deterministically owns batching and repair.
+
+DeepAgents remains the leading future candidate when target-agent simulation
+actually requires runtime delegation, long-lived sessions, and governed
+memory. Re-evaluate it on the same conformance suite rather than inheriting it
+from this checkpoint.
 
 The following remain the reasons for using an agent runtime rather than
 building one:
@@ -148,8 +154,8 @@ building one:
 - concurrent simulations whose lifecycle is difficult to express in the
   deterministic controller.
 
-Before any later framework replacement, compare it with DeepAgents on the same
-conformance suite. A replacement must preserve multi-provider access,
+Before any later framework expansion, compare it on the same conformance suite.
+It must preserve multi-provider access,
 deterministic authority, local evidence custody, exact replay, cost accounting,
 and typed failure artifacts. Framework convenience is not sufficient evidence.
 

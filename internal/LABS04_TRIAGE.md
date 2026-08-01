@@ -329,6 +329,69 @@ the live contract remains `internal/SLICE_PACKET.md` and
 - **Process correction:** Codex incorrectly opened and automated the Foundry
   sign-in path after the CLI permission failure. Akarsh rejected that behavior;
   `AGENTS.md` now prohibits UI automation for authenticated flows.
-- **Status:** BLOCKED ON OWNER-RUN MANUAL FOUNDRY DEPLOYMENT. No model was
-  deployed, no credentials were entered by Codex, and no provider cost was
-  incurred.
+- **Status:** CLOSED EXTERNALLY. Akarsh completed the manual deployment; the
+  subsequent tool-call and strict-structured-output conformance probes both
+  passed without Codex automating an authenticated UI. The later usefulness
+  failure is recorded separately in TRIAGE-20.
+
+### TRIAGE-16 — import-only agent integration bypassed the accepted runtime
+
+- **Type:** implementation-author architecture defect caught by orchestration.
+- **Observed:** commit `4682982` imported DeepAgents and LangGraph, deleted the
+  supplied tools, and sent a direct urllib chat request.
+- **Fix:** Codex rejected the live adapter. Owner discussion selected LangChain
+  `create_agent`/LangGraph for the exact-four current loop and parked
+  DeepAgents for future delegation. Commit `dcf1005` executes a real graph,
+  asserts exactly four model-visible tools, adds strict submission/status
+  schemas, tool-call custody, zero retry, and typed transport failures.
+- **Status:** CLOSED LOCALLY; 5/5 restricted and 173/173 LABS-04 tests passed.
+
+### TRIAGE-17 — nested submit schema failed before HTTP
+
+- **Type:** live-adapter JSON Schema assembly bug.
+- **Observed:** the first live graph smoke failed in 3 ms with no HTTP request;
+  offline reproduction reported `KeyError: Reference '#/$defs/caseDraft' not
+  found.`
+- **Fix:** commit `4b73d5d` hoists proposal definitions to the outer tool-args
+  root and titles the terminal schema. The identical request then reached an
+  intentional localhost transport failure with no provider call.
+- **Status:** CLOSED; original zero-egress artifact preserved.
+
+### TRIAGE-18 — valid pause rejected for redundant reason label
+
+- **Type:** adapter normalization bug exposed by a live strict response.
+- **Observed:** GLM returned exactly three closed NEEDS_INPUT questions but also
+  supplied `failure_reason_code: MATERIAL_INPUT_REQUIRED`; transport demanded
+  null and mislabeled the response `PROVIDER_INVALID_RESPONSE`.
+- **Fix:** commit `d15bc68` accepts that one redundant pause label, normalizes
+  it to null in the transport response, and preserves raw bytes. Exact cached
+  replay published an immutable NEEDS_INPUT bundle without a provider call.
+- **Status:** CLOSED; Akarsh answered all three questions.
+
+### TRIAGE-19 — grounded resume exceeded hardcoded 60-second timeout
+
+- **Type:** transport configuration defect.
+- **Observed:** the answered 122,499-byte request failed after 60.791 seconds
+  with zero response bytes and no tool call.
+- **Fix:** commit `d085493` makes timeout explicit and bounded `1..600`, with a
+  GLM default of 180 seconds; retries remain zero and no output-token ceiling
+  was added.
+- **Status:** CLOSED LOCALLY; changed-version request reached a provider result.
+
+### TRIAGE-20 — GLM ignored answered questions and used no evidence tools
+
+- **Type:** open model/prompt usefulness failure and current product blocker.
+- **Observed:** after receiving all three owner answers, GLM returned in 79.957
+  seconds with 33,973 input tokens (33,972 cached), 13,122 output tokens, no
+  tool calls, and the same three questions. Triana returned
+  `QUESTION_LIMIT_EXCEEDED`; zero cases were published.
+- **Classification evidence:** exact secret-safe requests/responses, immutable
+  pause/resume artifacts, attempts, usage, and hashes are preserved below
+  `/var/folders/9p/yg9qq11906q49n6p614_f44r0000gn/T/`
+  `triana-labs04-needs-input-replay.kjqkl7u_`. No fallback or retry occurred.
+- **Fix:** none within the USD 3 slice. Do not silently treat repeated questions
+  as answers or claim generated cases. A future correction must change the
+  model/prompt interaction under a separately authorized budget and preserve
+  this failure as its conformance fixture.
+- **Status:** OPEN PRODUCT BLOCKER. LABS-04 is locally green but fails the live
+  usefulness criterion; Corpus Intelligence remains blocked.
