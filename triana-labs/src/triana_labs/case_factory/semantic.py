@@ -177,13 +177,14 @@ def convert_lane(
     intelligence_hash: str,
     *,
     strict_cases: bool,
+    expected_case_count: int = 5,
 ) -> Lane:
     if (
         not all(
             1 <= len(draft[name]) <= 10
             for name in ("personas", "intents", "turn_policies")
         )
-        or len(draft["cases"]) != 5
+        or len(draft["cases"]) != expected_case_count
     ):
         raise Invalid
     citation_map = {item["citation_id"]: item for item in citations}

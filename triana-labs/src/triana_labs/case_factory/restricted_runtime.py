@@ -65,6 +65,8 @@ class AgentBatchRequest:
     prior_submission: Json | None
     deterministic_defects: list[Json]
     remaining_budget_usd: str
+    interaction_state: str
+    answers_authoritative: bool
 
 
 class RestrictedAgentTransport(Protocol):
@@ -325,6 +327,8 @@ def resume_restricted(
             batch_number,
             batch_slots,
             ordered_answers if first else [],
+            interaction_state="RESUMED" if first else "INITIAL",
+            answers_authoritative=first,
         )
         first = False
         if result[0] != "VALID":
@@ -359,6 +363,9 @@ def _batch(
     number: int,
     slots: tuple[str, ...],
     answers: list[Json],
+    *,
+    interaction_state: str = "INITIAL",
+    answers_authoritative: bool = False,
 ) -> tuple[str, Lane | list[Json] | str]:
     batch_id = f"batch-{number:03d}"
     prior: Json | None = None
@@ -387,6 +394,8 @@ def _batch(
             prior,
             defects,
             _money(state.maximum - state.reserved),
+            interaction_state,
+            answers_authoritative,
         )
         state.reserved += state.reservation
         state.calls += 1
@@ -404,7 +413,9 @@ def _batch(
         reason = _field(response, "failure_reason_code")
         request_bytes = cast(bytes, _field(response, "request_bytes"))
         response_bytes = cast(bytes, _field(response, "response_bytes"))
-        _preserve_boundary(state, batch_id, phase, request_bytes, response_bytes)
+        stage_root = _preserve_boundary(
+            state, batch_id, phase, attempt_id, request_bytes, response_bytes
+        )
         actual_value = _field(response, "actual_cost_usd")
         if actual_value is None:
             state.actual_known = False
@@ -442,9 +453,22 @@ def _batch(
                 )
             )
             return "NEEDS_INPUT", questions
+        if status == "SUBMITTED" and tools.submission is None:
+            state.attempts.append(
+                _attempt(
+                    state,
+                    batch_id,
+                    phase,
+                    slots,
+                    "PROVIDER_FAILED",
+                    "PROVIDER_INVALID_RESPONSE",
+                    response,
+                )
+            )
+            return "FAILED", "PROVIDER_INVALID_RESPONSE"
         submission = cast(Json, _field(response, "submission"))
         normalized, current = _normalize(submission, slots, state.handle_map)
-        _preserve_submission(state, batch_id, phase, submission, normalized, current)
+        _preserve_submission(stage_root, phase, submission, normalized, current)
         if not current and normalized is not None:
             try:
                 lane = convert_lane(
@@ -454,6 +478,7 @@ def _batch(
                     cast(str, state.evidence["input_manifest_hash"]),
                     cast(str, state.evidence["intelligence_manifest_hash"]),
                     strict_cases=True,
+                    expected_case_count=len(slots),
                 )
             except Invalid:
                 current = [_defect("INTERNAL_INVARIANT_FAILED", "")]
@@ -484,7 +509,8 @@ def _batch(
         if phase == "REPAIR":
             return "FAILED", "INVALID_CASE_BATCH"
         prior, defects = submission, current
-        answers = []
+        if not answers_authoritative:
+            answers = []
     return "FAILED", "INTERNAL_INVARIANT_FAILED"
 
 
@@ -641,10 +667,20 @@ def _attempt_identity(state: _State, batch_id: str, phase: str) -> str:
 
 
 def _preserve_boundary(
-    state: _State, batch_id: str, phase: str, request: bytes, response: bytes
-) -> None:
-    root = (
+    state: _State,
+    batch_id: str,
+    phase: str,
+    attempt_id: str,
+    request: bytes,
+    response: bytes,
+) -> Path:
+    legacy = (
         _run_root(state.cache, state.run_id) / "provider" / batch_id / phase.casefold()
+    )
+    root = (
+        legacy
+        if not legacy.exists()
+        else legacy.parent / f"{phase.casefold()}-{attempt_id.removeprefix('sha256:')}"
     )
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     if contains_secret(request, state.sentinels) or contains_secret(
@@ -653,19 +689,16 @@ def _preserve_boundary(
         raise Invalid
     _private_write(root / "request.json", request)
     _private_write(root / "response.json", response)
+    return root
 
 
 def _preserve_submission(
-    state: _State,
-    batch_id: str,
+    root: Path,
     phase: str,
     submission: Json,
     normalized: Json | None,
     defects: list[Json],
 ) -> None:
-    root = (
-        _run_root(state.cache, state.run_id) / "provider" / batch_id / phase.casefold()
-    )
     _private_write(root / "parsed.json", canonical(submission, lf=True))
     if normalized is not None:
         _private_write(root / "normalized.json", canonical(normalized, lf=True))
@@ -991,7 +1024,7 @@ def _restricted_budget(config: Any) -> tuple[Decimal, Decimal]:
         reservation = Decimal(config["budget"]["reservation_usd_per_agent_call"])
     except (KeyError, TypeError, InvalidOperation) as error:
         raise Invalid from error
-    if maximum > Decimal(3) or maximum < 0 or reservation < 0:
+    if maximum > Decimal(10) or maximum < 0 or reservation < 0:
         raise Invalid
     return maximum, reservation
 
@@ -1117,7 +1150,8 @@ class FoundryGLMRestrictedTransport:
         agent_tools = _agent_tools(request, tools)
         if tuple(item.name for item in agent_tools) != TOOLS:
             raise Invalid
-        agent = _restricted_agent(model, agent_tools)
+        resumed = request.interaction_state == "RESUMED"
+        agent = _restricted_agent(model, agent_tools, resumed=resumed)
         prompt = canonical(request.__dict__).decode()
         started = time.monotonic_ns()
         try:
@@ -1145,20 +1179,7 @@ class FoundryGLMRestrictedTransport:
         latency = _latency(started)
         request_bytes = capture.requests_bytes(prompt)
         response_bytes = capture.responses_bytes()
-        try:
-            outcome = cast(Json, state["structured_response"])
-            status = cast(str, outcome["status"])
-            questions = cast(list[Json], outcome["questions"])
-            reason = cast(str | None, outcome["failure_reason_code"])
-            input_tokens, output_tokens = _usage(state)
-        except (KeyError, TypeError, ValueError):
-            return _live_response(
-                "FAILED",
-                request_bytes,
-                response_bytes,
-                latency,
-                "PROVIDER_INVALID_RESPONSE",
-            )
+        input_tokens, output_tokens = _usage(state)
         common = {
             "request_bytes": request_bytes,
             "response_bytes": response_bytes,
@@ -1167,16 +1188,28 @@ class FoundryGLMRestrictedTransport:
             "actual_cost_usd": None,
             "latency_ms": latency,
         }
-        if status == "SUBMITTED":
-            if tools.submission is not None and not questions and reason is None:
-                return {
-                    "status": "SUBMITTED",
-                    "submission": tools.submission,
-                    "questions": [],
-                    "failure_reason_code": None,
-                    **common,
-                }
-        elif status == "NEEDS_INPUT":
+        if tools.submission is not None:
+            return {
+                "status": "SUBMITTED",
+                "submission": tools.submission,
+                "questions": [],
+                "failure_reason_code": None,
+                **common,
+            }
+        try:
+            outcome = cast(Json, state["structured_response"])
+            status = cast(str, outcome["status"])
+            questions = cast(list[Json], outcome["questions"])
+            reason = cast(str | None, outcome["failure_reason_code"])
+        except (KeyError, TypeError, ValueError):
+            return _live_response(
+                "FAILED",
+                request_bytes,
+                response_bytes,
+                latency,
+                "PROVIDER_INVALID_RESPONSE",
+            )
+        if status == "NEEDS_INPUT":
             if (
                 tools.submission is None
                 and _valid_questions(questions)
@@ -1280,10 +1313,20 @@ def _model_tool_name(value: Any) -> str:
     return cast(str, value["function"]["name"])
 
 
-def _restricted_agent(model: Any, agent_tools: list[Any]) -> Any:
+def _restricted_agent(
+    model: Any, agent_tools: list[Any], *, resumed: bool = False
+) -> Any:
     from langchain.agents import create_agent
     from langchain.agents.structured_output import ProviderStrategy
 
+    instruction = (
+        "This interaction is RESUMED. The supplied answers are authoritative and "
+        "resolve every prior question. NEEDS_INPUT is unavailable. You must call "
+        "submit_case_batch exactly once; text or a SUBMITTED terminal response "
+        "without that tool cannot publish a case."
+        if resumed
+        else "Ask NEEDS_INPUT only when material target or construction input is missing."
+    )
     return create_agent(
         model=model,
         tools=agent_tools,
@@ -1291,12 +1334,13 @@ def _restricted_agent(model: Any, agent_tools: list[Any]) -> Any:
             "Act as a grounding researcher, then a case architect. Use only the "
             "four supplied tools. Inspect evidence before drafting. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
-            "and every supplied case slot. If material target relevance or case "
-            "construction information is missing, return NEEDS_INPUT with at most "
-            "three questions. After a successful submission return SUBMITTED. "
+            f"and every supplied case slot. {instruction} After a successful "
+            "submission, stop. "
             "Never invent IDs, retry, select another model, or claim acceptance."
         ),
-        response_format=ProviderStrategy(_terminal_schema(), strict=True),
+        response_format=ProviderStrategy(
+            _terminal_schema(resumed=resumed), strict=True
+        ),
     )
 
 
@@ -1334,6 +1378,7 @@ def _agent_tools(request: AgentBatchRequest, tools: RestrictedTools) -> list[Any
             name="submit_case_batch",
             description="Submit one complete case batch for deterministic validation.",
             args_schema=_submission_tool_schema(request),
+            return_direct=True,
         ),
     ]
 
@@ -1386,7 +1431,10 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
     return schema
 
 
-def _terminal_schema() -> Json:
+def _terminal_schema(*, resumed: bool = False) -> Json:
+    statuses = (
+        ["SUBMITTED", "FAILED"] if resumed else ["SUBMITTED", "NEEDS_INPUT", "FAILED"]
+    )
     return {
         "title": "case_factory_agent_outcome",
         "type": "object",
@@ -1394,7 +1442,7 @@ def _terminal_schema() -> Json:
         "properties": {
             "status": {
                 "type": "string",
-                "enum": ["SUBMITTED", "NEEDS_INPUT", "FAILED"],
+                "enum": statuses,
             },
             "questions": {
                 "type": "array",
