@@ -1322,10 +1322,7 @@ def _restricted_agent(
 
     @wrap_model_call
     def require_tool(request: Any, handler: Any) -> Any:
-        settings = {**request.model_settings, "tool_choice": "required"}
-        return handler(
-            request.override(tool_choice="required", model_settings=settings)
-        )
+        return handler(request.override(tool_choice="required"))
 
     instruction = (
         "This interaction is RESUMED. The supplied answers are authoritative and "
@@ -1335,6 +1332,11 @@ def _restricted_agent(
         if resumed
         else "Ask NEEDS_INPUT only when material target or construction input is missing."
     )
+    response_format: dict[str, Any] = {}
+    if not resumed:
+        response_format["response_format"] = ProviderStrategy(
+            _terminal_schema(resumed=False), strict=True
+        )
     return create_agent(
         model=model,
         tools=agent_tools,
@@ -1347,9 +1349,7 @@ def _restricted_agent(
             "submission, stop. "
             "Never invent IDs, retry, select another model, or claim acceptance."
         ),
-        response_format=ProviderStrategy(
-            _terminal_schema(resumed=resumed), strict=True
-        ),
+        **response_format,
     )
 
 
