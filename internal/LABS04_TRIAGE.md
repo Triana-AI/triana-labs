@@ -31,6 +31,7 @@ the live contract remains `internal/SLICE_PACKET.md` and
 | Corrected request preflight | GREEN, zero egress | 25 traces, 424 citations, zero exclusions, 193,868 bytes |
 | First Azure attempt | PRESERVED FAILURE | HTTP 200; 28,295 input; exactly 4,096 output; no artifacts |
 | Corrected Azure attempt | PRESERVED FAILURE | HTTP 200; 58,855 input; 4,877 output; no artifacts |
+| Final repair-validation attempt | PRESERVED FAILURE | HTTP 200; 58,855 input; 4,444 output; one call; no artifacts |
 | Current repair | CLOSED | Independent RED `8da6fca`; production fix `18748af`; full gate green |
 | Product usefulness | UNPROVEN | No generated case bundle exists yet; owner rubric cannot be scored |
 
@@ -210,16 +211,42 @@ the live contract remains `internal/SLICE_PACKET.md` and
   424 citations, zero exclusions/gaps, 193,868 bytes, no secret in request.
 - **Status:** CLOSED.
 
+### TRIAGE-11 — provider-schema success does not imply semantic acceptance
+
+- **Type:** open product/wire design failure exposed by live smoke.
+- **Observed:** the one-time post-`18748af` repair-validation run again returned
+  `PROVIDER_FAILED(8)` after exactly one Azure HTTP 200 request with 58,855
+  processed prompt tokens and 4,444 generated tokens. It made no second-stage
+  call and published no artifacts.
+- **Classification evidence:** the response was below the 12,000 output limit,
+  the Azure envelope parser now passes its independently frozen official-extra
+  regression, and the full package gate is green. Raw provider bodies are
+  intentionally not retained, so the exact failing field remains unknown and
+  cannot honestly be claimed. Code inspection nevertheless proves the
+  published proposal JSON Schema omits many deterministic postconditions that
+  `convert_lane` enforces after parsing: 1–10 semantic assets, exactly five
+  cases, local-key formats and uniqueness, sorted/unique citations and gaps,
+  support-state trace cardinality, cross-asset references, nonempty reaction
+  rules, complete claim use, and observed anchors. Azure structured output can
+  satisfy the schema while still being discarded before CRITIQUE.
+- **Fix:** none authorized or attempted. The final live call is preserved and
+  no subsequent provider call is allowed. A recovery checkpoint must make
+  model-visible schema and deterministic acceptance agree, and must preserve
+  invalid drafts as diagnosable typed evidence instead of collapsing every
+  proposal defect to `PROVIDER_FAILED(8)`.
+- **Fix authority:** requires a new owner-approved design/test slice; Codex may
+  not silently weaken semantic validity or spend again.
+- **Regression/evidence:** private terminal SHA-256
+  `f129baff229940cf4faf18a4fcad6bebd417a23bcdfd72c6e2365ce3205b3e7b`;
+  Azure minute metrics at 07:43Z; no output directory.
+- **Status:** OPEN. Grounded Case Factory usefulness is unproven and the current
+  checkpoint has failed its required live smoke.
+
 ## Remaining decisions requiring owner visibility
 
-1. **Changed-version live run after TRIAGE-09 — APPROVED ONCE:** the two preserved calls reserve
-   USD 1.095500 and USD 2.418680, or USD 3.514180 cumulatively. One unchanged
-   three-stage run can reserve at most USD 8.640000, making the maximum
-   cumulative reservation USD 12.154180. Akarsh approved a USD 15 cumulative
-   ceiling for exactly one immediate repair-validation run on the identical
-   corpus/model/prompt/schema/seed, no retry or alternate selection, and prior
-   failures preserved. Any further live run requires a new decision.
-2. **Usefulness verdict:** even a mechanically valid bundle does not pass.
-   Akarsh must review the blind cases on grounding, realism, adaptive
-   multi-turn readiness, distinctness, target relevance, and unjustified
-   assumptions using `LABS04_USEFULNESS_V1`.
+1. **Recovery design:** decide whether to align the provider schema with every
+   deterministic semantic condition, or preserve a schema-valid draft and
+   expose typed defects to the critic/reviser. This requires eval-first design;
+   simply weakening `convert_lane` or making another call is not authorized.
+2. **Usefulness verdict:** unavailable because no case bundle was published.
+   The rubric remains unchanged for a future valid bundle.

@@ -500,3 +500,16 @@ one repair-validation run. The identical evidence/model/prompt/schema/seed,
 three-call/USD 8.70 per-run limit, zero retries, prior failure preservation, and
 no-subsequent-run boundary remain unchanged. Maximum cumulative conservative
 reservation is USD 12.154180.
+
+The final authorized repair-validation call also failed: one Azure HTTP 200,
+58,855 processed prompt tokens, 4,444 generated tokens, 57.2 seconds, no second
+stage, and no artifacts. No further provider call is authorized. The exact raw
+failure is unknowable because response bytes are intentionally not retained.
+The decisive design evidence is that provider strict JSON covers a materially
+weaker proposal schema than deterministic `convert_lane` acceptance; many
+required counts, formats, ordering, cardinality, reference, claim-use, reaction,
+and observed-anchor rules exist only after generation. Thus schema-valid model
+output can be discarded before critique with only `PROVIDER_FAILED(8)`.
+LABS-04 produced no simulation designs and fails the current smoke; usefulness
+cannot be judged. Recovery is a new eval-first design decision, not another
+retry or silent semantic weakening. See TRIAGE-11.

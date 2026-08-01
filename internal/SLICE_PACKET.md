@@ -1151,3 +1151,21 @@ rerun-to-improve, or subsequent provider call is authorized. Prior reservations
 total USD 3.514180 and the new worst case is USD 8.640000, for USD 12.154180
 maximum cumulative reservation. Success still requires published cases and the
 unchanged owner usefulness review; another failure stops the smoke.
+
+The authorized repair-validation run stopped the smoke with another preserved
+`PROVIDER_FAILED(8)`: exactly one Azure HTTP 200 request, 58,855 processed
+prompt tokens, 4,444 generated tokens, 57.2 seconds, no second-stage call, and
+no artifacts. It did not hit the output ceiling. Raw response bytes are not
+retained, so the exact rejected field is unknown. No subsequent provider call
+is authorized.
+
+This result exposes a contract-design gap independent of the unknown raw
+failure: strict provider output covers only `proposal.schema.json`, while
+post-parse conversion additionally requires exact asset/case counts, local-key
+formats and uniqueness, sorted references/gaps, support cardinality, valid
+cross-asset references, complete claim use, reaction rules, and observed
+anchors. A schema-conforming draft can therefore be discarded before CRITIQUE
+under the generic `PROVIDER_FAILED(8)` result. No useful simulation designs
+were produced, so LABS-04 fails its live smoke and remains unpassed. Recovery
+requires a newly frozen eval-first slice; it cannot be represented as a prompt
+retry, semantic weakening, or another provider call under this packet.
