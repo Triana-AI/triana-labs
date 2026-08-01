@@ -1483,7 +1483,8 @@ def _restricted_agent(
             "grounding claim in each object must be referenced by at least one local "
             "claim_keys; omit unused claims. GENERATED_VARIATION must have empty "
             "claim_keys; OBSERVED text must use resolving local claim_keys. "
-            "stressor_codes must be unique and lexicographically sorted. Submit exactly "
+            "stressor_codes must match ^[A-Z][A-Z0-9_]{0,63}$, be unique, and be "
+            "lexicographically sorted. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
             f"and every supplied case slot. {instruction} After a successful "
             "submission, stop. "
@@ -1573,6 +1574,10 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
         "type": "string",
         "enum": list(request.case_slots),
     }
+    stressors = schema["$defs"]["scenarioDraft"]["properties"]["stressor_codes"]
+    stressors["items"] = {"type": "string", "pattern": SAFE_CODE.pattern}
+    stressors["maxItems"] = 20
+    stressors["uniqueItems"] = True
     count = len(request.case_slots)
     for group in ("personas", "intents", "turn_policies", "cases"):
         schema["properties"][group]["minItems"] = count
