@@ -6,6 +6,10 @@ Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
 Canonical base: `83454e3`
 Slice ID: `LABS-04-grounded-case-factory`
+
+Active failure and repair evidence is maintained in
+`internal/LABS04_TRIAGE.md`. That ledger records classification and status but
+does not supersede this packet or the exact wire contract.
 Owner: Akarsh
 Orchestrator: Codex
 
