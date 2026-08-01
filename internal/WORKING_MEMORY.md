@@ -469,3 +469,16 @@ All 163 LABS-04 and 188 historical tests are green. This is an operational
 guard only; checkpoint success still depends on live HRAI outputs clearing the
 frozen grounding, realism, adaptive multi-turn readiness, distinctness,
 target-relevance, and unjustified-assumption usefulness review.
+
+The corrected HRAI run was preserved as another `PROVIDER_FAILED(8)`: one
+Azure HTTP 200 request, 58,855 input tokens, 4,877 output tokens, 42.7 seconds,
+and no published cases. It did not hit the 12,000-token ceiling. Code inspection
+then found a wire violation: valid Azure `usage` extras were rejected although
+wire section 8 requires extra response metadata to be ignored after validated
+projection. Independent RED `8da6fca` and production fix `18748af` now prove
+164/164 LABS-04 plus 188/188 historical GREEN without another provider call.
+Because raw responses are deliberately not retained, this defect is a strong
+explanation rather than proof of the exact failed response fields. The active
+failure history is in `internal/LABS04_TRIAGE.md`. Before any changed-version
+live run, reconcile consumed conservative reservations and the no-rerun rule
+against the original cumulative USD 10 ceiling; usefulness remains unproven.

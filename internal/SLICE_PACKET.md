@@ -756,6 +756,34 @@ for uncovered edges, and
 `9e0540e18ea540cb37041570758a69c002a5fc63b49d8cfae16c466f04f6866c`
 for request tail fitting.
 
+The corrected HRAI preflight retained all 25 accepted traces, all 424
+citations, zero exclusions, and built a 193,868-byte request with no secret
+sentinel. The preserved corrected live attempt then made exactly one HTTP 200
+request before returning `PROVIDER_FAILED(8)` after 42.7 seconds and publishing
+no cases. Azure minute telemetry records 58,855 input and 4,877 output tokens,
+well below the 12,000 output ceiling. The raw response is intentionally not
+retained, so its exact finish reason and fields cannot be quoted.
+
+Inspection exposed an independent production defect against wire section 8:
+the parser rejected `usage` unless it had exactly the three core token keys or
+those keys plus `cost`, even though this contract requires benign Azure extras
+to be ignored after projecting validated fields and Azure documents optional
+usage-detail objects. The independent regression at `8da6fca` freezes a valid
+structured response with documented usage details and benign metadata: core
+usage/cost alone is projected portably while the raw response hash remains
+sensitive to extras. Its test SHA-256 is
+`e4c626083bb6139604e8fd27965bc8f59ad4caa23fe44f01ed5f883ae6776632`;
+the 164-case acceptance subset is frozen at content SHA-256
+`5b0cdb61674dea350bcc35c05e853a69c25d4950ab141422159daa8cb98e3896`
+and per-file hash-list SHA-256
+`5c5e42090f577004b4f0821f16e52d6dc28fd242bfa27e78229ea36e21b8ff03`.
+The production-only fix at `18748af` projects and validates only core usage and
+optional cost after strict raw parsing, secret scanning, and response hashing.
+All 164 LABS-04 and 188 historical tests, Ruff, and strict mypy pass locally.
+This proven parser bug is a strong explanation for the preserved live failure,
+not a claim about unretained raw fields. A changed-version live run still
+requires explicit cumulative-budget and no-rerun reconciliation.
+
 ### Lane A — deterministic contract and safety
 
 - strict config, input, portable artifact, citation, and reference schemas;
