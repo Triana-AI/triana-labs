@@ -111,6 +111,62 @@ class Run:
     stage_artifacts: dict[str, bytes]
 
 
+def generate_restricted(
+    observer_manifest: Path,
+    intelligence_manifest: Path,
+    config_path: Path,
+    output_path: Path,
+    *,
+    cache_path: Path,
+    transport: Any,
+    clock: Clock,
+    environ: Mapping[str, str],
+    publisher: ArtifactPublisher | None = None,
+    requested_case_count: int = 10,
+) -> Any:
+    """Run the restricted handle-grounded Case Factory path."""
+
+    from triana_labs.case_factory.restricted_runtime import generate_restricted
+
+    return generate_restricted(
+        observer_manifest,
+        intelligence_manifest,
+        config_path,
+        output_path,
+        cache_path=cache_path,
+        transport=transport,
+        clock=clock,
+        environ=environ,
+        publisher=publisher,
+        requested_case_count=requested_case_count,
+    )
+
+
+def resume_restricted(
+    pause_manifest: Path,
+    answers: Mapping[str, str],
+    output_path: Path,
+    *,
+    cache_path: Path,
+    transport: Any,
+    clock: Clock,
+    publisher: ArtifactPublisher | None = None,
+) -> Any:
+    """Resume one immutable restricted run into a new output bundle."""
+
+    from triana_labs.case_factory.restricted_runtime import resume_restricted
+
+    return resume_restricted(
+        pause_manifest,
+        answers,
+        output_path,
+        cache_path=cache_path,
+        transport=transport,
+        clock=clock,
+        publisher=publisher,
+    )
+
+
 def generate(
     observer_manifest: Path,
     intelligence_manifest: Path,
