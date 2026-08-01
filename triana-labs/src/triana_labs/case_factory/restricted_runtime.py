@@ -609,6 +609,7 @@ def _normalize(
             defects.append(_defect("BROKEN_LOCAL_REFERENCE", f"/{group}"))
             continue
         for index, value in enumerate(values):
+            defects.extend(_generated_claim_key_defects(value, f"/{group}/{index}"))
             if group == "cases":
                 scenario = value.get("scenario")
                 stressors = (
@@ -695,6 +696,33 @@ def _local_claim_keys(value: Any) -> set[str]:
     if isinstance(value, list):
         return set(chain.from_iterable(_local_claim_keys(item) for item in value))
     return set()
+
+
+def _generated_claim_key_defects(value: Any, path: str) -> list[Json]:
+    defects: list[Json] = []
+    if isinstance(value, dict):
+        keys = value.get("claim_keys")
+        if (
+            {"basis", "claim_keys", "text"} <= value.keys()
+            and value.get("basis") == "GENERATED_VARIATION"
+            and isinstance(keys, list)
+            and keys
+            and all(isinstance(item, str) for item in keys)
+        ):
+            defects.append(
+                _defect(
+                    "BROKEN_LOCAL_REFERENCE",
+                    f"{path}/claim_keys",
+                    sorted(keys),
+                )
+            )
+        for name, item in value.items():
+            token = str(name).replace("~", "~0").replace("/", "~1")
+            defects.extend(_generated_claim_key_defects(item, f"{path}/{token}"))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            defects.extend(_generated_claim_key_defects(item, f"{path}/{index}"))
+    return defects
 
 
 def _defect(code: str, path: str, related: list[str] | None = None) -> Json:
@@ -1453,8 +1481,9 @@ def _restricted_agent(
             "Act as a grounding researcher, then a case architect. Use only the "
             "four supplied tools. Inspect evidence before drafting. Every declared "
             "grounding claim in each object must be referenced by at least one local "
-            "claim_keys; omit unused claims. stressor_codes must be unique and "
-            "lexicographically sorted. Submit exactly "
+            "claim_keys; omit unused claims. GENERATED_VARIATION must have empty "
+            "claim_keys; OBSERVED text must use resolving local claim_keys. "
+            "stressor_codes must be unique and lexicographically sorted. Submit exactly "
             "once through submit_case_batch, using only supplied evidence handles "
             f"and every supplied case slot. {instruction} After a successful "
             "submission, stop. "
