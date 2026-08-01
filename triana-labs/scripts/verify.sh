@@ -75,7 +75,7 @@ triana_case_factory_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_content_hash="3abcc67f2fd7c05fe2b850bae29a71aeed30ccb0e62adee16889dc3ca0b25b3e"
+triana_expected_case_factory_content_hash="88fab9ba0cdd293c0d16c32dc717cf3074287a544d5e5e3cd81091b999f9a4c6"
 if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
   echo "frozen case factory acceptance content hash mismatch" >&2
   exit 1
@@ -91,7 +91,7 @@ triana_case_factory_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_file_hash="b65c36c1fc0b495f52c6ac87010b17429885079a7ee05f7e6ff59c0cadf022ab"
+triana_expected_case_factory_file_hash="cee6bdf976cc09c653a2fc0b19c5e61ee9fa195ee273e9c914b69acc9a85eb99"
 if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
   echo "frozen case factory acceptance file hash mismatch" >&2
   exit 1
