@@ -582,3 +582,12 @@ remain publishable with gaps, and cross-slot dedupe remains deterministic.
 The sole live closing experiment has a USD 25 ceiling. Machinery requires at
 least three distinct valid cases; human usefulness remains an owner-only blind
 review and LABS-05 stays blocked until it clears.
+
+LABS-04 closing result (2026-08-02): exact-five deterministic scale-out passed
+with five valid distinct cases, no gaps, no repair, and no duplicate clusters.
+The run made six logical invocations and fourteen captured provider HTTP
+exchanges, reserving USD 12 conservatively under the USD 25 ceiling; actual
+cost is unknown. The 375-test full gate and all five canonical Observer hashes
+are green. The only remaining LABS-04 gate is Akarsh's
+`LABS04_USEFULNESS_V1` review; no paid rerun or further L4 engineering is
+needed before that judgment.

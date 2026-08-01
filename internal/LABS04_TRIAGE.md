@@ -526,3 +526,22 @@ the live contract remains `internal/SLICE_PACKET.md` and
   deterministic synthesis occurred.
 - **Status:** OPEN POST-PROOF SCALING WORK. Do not change batching, context,
   model, question-relevance policy, or output strategy inside launch hardening.
+
+### TRIAGE-30 — deterministic one-case scale-out closes the machinery gate
+
+- **Type:** live scale-out success evidence.
+- **Observed:** the exact-five close ran one initial clarification followed by
+  five independent one-case GENERATE slots. All five submitted, passed strict
+  deterministic grounding and identity conversion, and remained distinct;
+  there were no gaps, repairs, or duplicate clusters.
+- **Accounting:** six logical invocations, fourteen captured provider HTTP
+  exchanges, USD 12.000000 conservative reservation under USD 25.000000, and
+  unknown actual USD. Every manifest-declared artifact hash matches.
+- **Evidence:** portable bundle at
+  `/private/var/folders/9p/yg9qq11906q49n6p614_f44r0000gn/T/`
+  `triana-labs04-scaleout-close.c5y15ryg/resumed`; manifest SHA-256
+  `817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`;
+  complete verifier `/private/tmp/triana-labs-verify.4j1O0j`.
+- **Status:** CLOSED FOR MACHINERY. LABS-04 is `AWAITING_HUMAN_REVIEW`; do not
+  run another provider experiment or start LABS-05 before the owner usefulness
+  ruling.

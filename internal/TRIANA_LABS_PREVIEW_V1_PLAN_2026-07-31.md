@@ -51,24 +51,25 @@ verified synthetic Observer bundle + linked structural intelligence
   -> five proposed adaptive simulation cases and a blind review packet
 ```
 
-LABS-04 uses the owner's existing Azure OpenAI `gpt-4.1-mini` deployment,
-model version `2025-04-14`, through strict structured outputs. After the first
-preserved live call exhausted the original 4,096-token output ceiling, corrected
-execution uses exactly three calls with no retry and a USD 8.70 run ceiling;
-the preserved call plus corrected-run worst case remains below the original
-cumulative USD 10 ceiling. The non-test smoke corpus
+LABS-04's completed closing experiment uses the owner's Microsoft Foundry
+Fireworks `FW-GLM-5.2` deployment, version `1`, through a restricted four-tool
+LangChain `create_agent` runtime. Deterministic orchestration replaces the
+failed five-case monolith with five bounded one-case slots; no retry or model
+fallback exists. Logical invocations and actual provider HTTP exchanges are
+reported separately under a USD 25 conservative ceiling. The non-test smoke corpus
 is the first 50 physical lines of the tracked HRAI v2 `run_200`
 historical-traffic export at source commit
 `728f6c5058efe40a16e2aecc9b528b3353f4df4f`, selected SHA-256
 `4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`,
 labeled synthetic rather than real-user evidence.
 
-Mechanically green generation is not product passage. At least three distinct
-valid cases must survive deterministic gates and the owner must clear the
-frozen blind usefulness rubric. Until then the checkpoint is
-`AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn runtime,
-judges, memory, UI, real-data support, DeepEval, and generic agent frameworks
-remain unauthorized.
+Mechanically green generation is not product passage. The 2026-08-02 closing
+run produced five requested, valid, and distinct cases with no gaps, repairs,
+or duplicate clusters and therefore clears the deterministic machinery gate.
+The owner must still clear the frozen blind usefulness rubric. Until then the
+checkpoint is `AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn
+runtime, judges, memory, UI, real-data support, DeepEval, and generic agent
+frameworks remain unauthorized.
 
 ## 1. The commitment
 

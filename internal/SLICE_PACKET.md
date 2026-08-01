@@ -1594,3 +1594,37 @@ counter wire. Freeze it as follows:
 Adding this accounting field is the only portable envelope expansion allowed
 by the closing slice. Semantic case/persona/intent/turn-policy schemas remain
 untouched.
+
+### Closing exit evidence
+
+The deterministic scale-out machinery passes. The sole authorized Foundry
+GLM-5.2 closing experiment used the frozen synthetic HRAI Observer and
+intelligence manifests and produced five requested, valid, and distinct cases
+in five independent one-case slots. It used no REPAIR, retry, fallback, model
+change, deterministic semantic synthesis, or citation remapping. There are no
+gap codes and no duplicate clusters.
+
+Portable bundle:
+`/private/var/folders/9p/yg9qq11906q49n6p614_f44r0000gn/T/`
+`triana-labs04-scaleout-close.c5y15ryg/resumed`.
+
+- manifest file SHA-256:
+  `817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`;
+- case-candidate file SHA-256:
+  `06a3a2267f39041d98e08ef24466ffbc695e7833ebb16bd536f19f71c37ecbe4`;
+- all 12 manifest-declared artifact hashes independently match;
+- six logical invocations: one initial clarification and five successful
+  GENERATE slots;
+- fourteen captured provider HTTP exchanges;
+- USD `12.000000` conservative reservation under the USD `25.000000` ceiling;
+  actual provider cost remains `null`;
+- full repository verifier: 375 tests, unchanged five canonical Observer
+  hashes, deterministic replay, build, clean-wheel install, and source/wheel
+  parity at `/private/tmp/triana-labs-verify.4j1O0j`.
+
+The five case themes are missing-data handling, wrong-position recovery,
+cross-client social-engineering refusal, ETL/tool data integrity, and
+prior-record verification. This description is an inspection aid, not an
+owner usefulness ruling. Apply the already frozen `LABS04_USEFULNESS_V1`
+rubric in Lane C above. LABS-04 is now mechanically complete and
+`AWAITING_HUMAN_REVIEW`; LABS-05 may start only after Akarsh clears that gate.

@@ -52,13 +52,16 @@ Those surfaces require later evidence and a new accepted checkpoint.
 
 The owner froze LABS-04 on 2026-08-01 as the first checkpoint in this launch
 cut. It consumes only the shipped synthetic Observer and structural
-intelligence bundles and uses one explicitly authorized Azure OpenAI
-`gpt-4.1-mini` deployment to propose personas, intents, adaptive turn policies,
-and five simulation cases. Deterministic code owns evidence projection,
-citations, support, identities, duplicate arithmetic, budget, lineage, and
-publication. Model output remains `PROPOSED`; semantic usefulness requires a
-blind owner review. Fewer than three distinct valid cases or a failed review
-blocks multi-turn runtime work.
+intelligence bundles. The completed closing experiment uses the explicitly
+authorized Microsoft Foundry Fireworks `FW-GLM-5.2` deployment through a
+restricted LangChain `create_agent` four-tool runtime. One initial
+clarification is followed by five independent bounded one-case slots;
+deterministic code owns evidence projection, citations, support, identities,
+slot orchestration, duplicate arithmetic, budget, HTTP accounting, lineage,
+and publication. Model output remains `PROPOSED`; semantic usefulness requires
+a blind owner review. The 2026-08-02 close produced five valid distinct cases
+with no gaps and therefore clears machinery, but LABS-04 remains
+`AWAITING_HUMAN_REVIEW`. A failed review still blocks multi-turn runtime work.
 
 The required smoke input is the first 50 physical lines of the existing
 tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
@@ -66,7 +69,7 @@ tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
 labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or real-user
 evidence. LABS-04 does not expand the privacy boundary, execute the target
 agent, create memory, adopt an agent framework, or authorize LABS-05. The
-exact contract, USD 10 ceiling, edge cases, outputs, and independent test-first
+exact contract, final USD 25 ceiling, edge cases, outputs, and independent test-first
 roles live in `internal/SLICE_PACKET.md` and
 `internal/LABS04_WIRE_CONTRACT.md`.
 

@@ -37,14 +37,15 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
-LABS-04 is the next authorized, not-yet-implemented boundary:
+LABS-04 is the implemented, mechanically passed, owner-review-pending boundary:
 
 ```text
 verified synthetic Observer + intelligence manifests
   -> allowlisted semantic evidence projection
-  -> Azure OpenAI gpt-4.1-mini propose / critique / revise
-  -> deterministic citation, support, identity, duplicate, budget, and lineage gates
-  -> proposed personas, intents, adaptive turn policies, and five case candidates
+  -> one Foundry GLM-5.2 restricted four-tool clarification/research/submit loop
+  -> five deterministic independent one-case slots
+  -> deterministic citation, support, identity, duplicate, budget, HTTP-accounting, and lineage gates
+  -> proposed personas, intents, adaptive turn policies, and five distinct case candidates
   -> blind human usefulness review
 ```
 
@@ -54,8 +55,10 @@ IDs, tool arguments/results, terminal reasons, paths, secrets, and opaque
 metadata remain outside it. The provider has proposal authority only. A valid
 citation proves existence, not semantic entailment; all assets remain
 `PROPOSED` and a human review is required before the checkpoint can pass.
-LABS-04 adds no target-agent runner, persistent memory, model judge, generic
-agent framework, real-data path, or UI.
+LABS-04 uses LangChain `create_agent` only as the bounded tool-loop harness; it
+does not delegate deterministic authority to the framework. It adds no
+target-agent runner, persistent memory, model judge, real-data path, or UI.
+The closing experiment is `AWAITING_HUMAN_REVIEW`, so LABS-05 remains blocked.
 
 ## Authority map
 
