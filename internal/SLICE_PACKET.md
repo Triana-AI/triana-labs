@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **SMOKE-DISCOVERED REQUEST-SELECTION RED — CORRECTION FROZEN**
+Status: **SMOKE-DISCOVERED REQUEST-SELECTION RED — TESTS FROZEN**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -672,6 +672,16 @@ traces, truncates evidence, raises the budget, or changes the frozen oversized
 single-trace refusal. On the pinned corpus this deterministic rule is expected
 to retain nine priority traces and 198 citations in a 93,166-byte request; that
 measurement is pre-test evidence, not a passing smoke claim.
+
+The independent test author encoded the corrected wire in one synthetic-only
+268-line adversarial file with SHA-256
+`9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd`.
+Codex reproduced three collected cases as one GREEN exact-100,000-byte boundary
+and two RED failures: exact 100,001-byte two-trace tail fitting, and repeated
+priority-preserving tail removal without admitting a 26th replacement trace.
+The oracle independently reconstructs every citation, gap, exclusion, order,
+and input-order invariant. The existing 100,348-byte oversized single-trace
+refusal remains green. These test bytes are immutable before production resumes.
 
 ### Lane A — deterministic contract and safety
 

@@ -420,6 +420,12 @@ the 90,000-byte root pass, then tail-removes selected traces with existing
 `EVIDENCE_BYTE_LIMIT_REACHED` gaps until the exact request fits 100,000 bytes;
 one oversized trace remains a typed refusal. Pre-test replay predicts nine
 retained priority traces, 198 citations, and 93,166 request bytes for HRAI.
+The independent tail-fit suite is frozen at SHA-256
+`9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd`.
+Codex reproduced one passing exact-100,000 boundary and two intended RED cases
+for exact-100,001 and repeated tail removal. The prior single-trace refusal and
+the 347-case suite excluding this deliberate RED remain green. Production may
+now implement only the corrected request-fitting wire.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
