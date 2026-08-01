@@ -389,3 +389,52 @@ def test_invalid_propose_defects_reach_repair_and_valid_revision_is_revised_only
     review = _json(output / "human_review_template.json")
     assert review["comparison_available"] is False
     assert len(review["review_items"]) == 5
+
+
+def test_single_frozen_recoverable_defect_reaches_critique_and_revise(
+    tmp_path: Path,
+) -> None:
+    expected_defects: list[dict[str, Any]] = []
+
+    def invalid_proposal(request: Any) -> tuple[int, bytes]:
+        nonlocal expected_defects
+        user = request_user_value(request)
+        proposal = valid_proposal(user["citations"])
+        claim = proposal["personas"][0]["grounding_claims"][0]
+        citation_id = claim["citation_ids"][0]
+        claim.update(support_state="SUPPORTED", citation_ids=[citation_id])
+        expected_defects = [
+            {
+                "code": "SUPPORT_CARDINALITY_MISMATCH",
+                "path": "/personas/0/grounding_claims/0",
+                "message": "SUPPORTED requires citations from at least two traces",
+                "related_ids": [citation_id],
+                "repairable": True,
+            }
+        ]
+        return 200, azure_body(proposal)
+
+    def critique(request: Any) -> tuple[int, bytes]:
+        assert request_user_value(request)["deterministic_defects"] == expected_defects
+        return 200, azure_body({"issues": []})
+
+    def revise(request: Any) -> tuple[int, bytes]:
+        user = request_user_value(request)
+        assert user["deterministic_defects"] == expected_defects
+        return 200, azure_body(valid_proposal(user["citations"]))
+
+    generate_module, _ = api()
+    observer, intelligence = build_upstream(tmp_path / "upstream")
+    transport = ScriptedTransport([invalid_proposal, critique, revise])
+    result = generate_module.generate(
+        observer,
+        intelligence,
+        write_config(tmp_path),
+        tmp_path / "repaired-output",
+        cache_path=tmp_path / "private-cache",
+        transport=transport,
+        environ=ENVIRON,
+    )
+    assert len(transport.requests) == 3
+    assert result.reason_code == "CONTROL_SEMANTICALLY_INVALID"
+    assert result.valid_case_count == 5
