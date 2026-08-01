@@ -1619,6 +1619,7 @@ def _terminal_schema(*, resumed: bool = False) -> Json:
             },
             "questions": {
                 "type": "array",
+                **({"minItems": 1} if not resumed else {}),
                 "maxItems": 3,
                 "items": _object_schema(
                     {
