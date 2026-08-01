@@ -173,9 +173,7 @@ def _submission(request: Any, *, invented_handle: bool = False) -> dict[str, Any
     }
 
 
-def _submitted(
-    request: Any, tools: Any, *, invented_handle: bool = False
-) -> Any:
+def _submitted(request: Any, tools: Any, *, invented_handle: bool = False) -> Any:
     submission = _submission(request, invented_handle=invented_handle)
     tools.submit_case_batch(submission)
     return _response("SUBMITTED", submission=submission)
@@ -255,12 +253,8 @@ def test_invented_handle_fails_closed_after_one_repair(tmp_path: Path) -> None:
     observer, intelligence, config, cache = _inputs(tmp_path)
     transport = ScriptedRestrictedTransport(
         [
-            lambda request, tools: _submitted(
-                request, tools, invented_handle=True
-            ),
-            lambda request, tools: _submitted(
-                request, tools, invented_handle=True
-            ),
+            lambda request, tools: _submitted(request, tools, invented_handle=True),
+            lambda request, tools: _submitted(request, tools, invented_handle=True),
         ]
     )
     output = tmp_path / "invalid"

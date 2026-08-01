@@ -72,9 +72,7 @@ def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts
         ]["enum"]
         assert "NEEDS_INPUT" not in resumed_statuses
         submission = _submission(request)
-        assert tools.submit_case_batch(submission) == {
-            "accepted_for_validation": True
-        }
+        assert tools.submit_case_batch(submission) == {"accepted_for_validation": True}
         return _response("SUBMITTED", submission=submission)
 
     transport = ScriptedRestrictedTransport([submit])
@@ -94,8 +92,8 @@ def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts
     attempts = _lines(output / "generation_attempts.jsonl")
     assert len(attempts) == 2
     assert len({item["attempt_id"] for item in attempts}) == 2
-    run_root = cache / "runs" / _field(initial_request, "run_id").removeprefix(
-        "sha256:"
+    run_root = (
+        cache / "runs" / _field(initial_request, "run_id").removeprefix("sha256:")
     )
     responses = list((run_root / "provider").glob("**/response.json"))
     assert len(responses) == 2
@@ -105,12 +103,7 @@ def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts
 def test_resumed_no_tool_terminal_cannot_publish(tmp_path: Path) -> None:
     _, paused, cache = _pause_one_case(tmp_path)
     transport = ScriptedRestrictedTransport(
-        [
-            lambda request, _: _response(
-                "SUBMITTED", submission=_submission(request)
-            )
-        ]
-        * 2
+        [lambda request, _: _response("SUBMITTED", submission=_submission(request))] * 2
     )
 
     result = _runtime().resume_restricted(
