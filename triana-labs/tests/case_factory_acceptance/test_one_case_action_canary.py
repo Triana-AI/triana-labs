@@ -109,7 +109,7 @@ def _binding_for(request: Any, *, resumed: bool) -> dict[str, Any]:
     return model._calls[0]
 
 
-def test_resumed_create_agent_binding_requires_one_of_four_tools(
+def test_create_agent_binding_separates_initial_response_format_from_resumed_tools(
     tmp_path: Path,
 ) -> None:
     request, _, _ = _pause_one_case(tmp_path)
@@ -118,7 +118,9 @@ def test_resumed_create_agent_binding_requires_one_of_four_tools(
     resumed = _binding_for(request, resumed=True)
 
     assert initial["tool_choice"] not in {"required", "any"}
+    assert initial["kwargs"]["response_format"]["type"] == "json_schema"
     assert resumed["tool_choice"] in {"required", "any"}
+    assert "response_format" not in resumed["kwargs"]
 
 
 def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts(
