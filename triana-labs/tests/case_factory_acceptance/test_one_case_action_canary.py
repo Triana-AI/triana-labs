@@ -251,6 +251,16 @@ def test_create_agent_binding_separates_initial_response_format_from_resumed_too
     assert "response_format" not in resumed["kwargs"]
 
 
+def test_submit_schema_matches_frozen_stressor_code_contract(tmp_path: Path) -> None:
+    request, _, _ = _pause_one_case(tmp_path)
+    schema = _runtime()._submission_schema(request)
+    stressors = schema["$defs"]["scenarioDraft"]["properties"]["stressor_codes"]
+
+    assert stressors["items"]["pattern"] == r"^[A-Z][A-Z0-9_]{0,63}$"
+    assert stressors["maxItems"] == 20
+    assert stressors["uniqueItems"] is True
+
+
 def test_preserved_social_engineering_queries_rank_t011_and_deduplicate(
     tmp_path: Path,
 ) -> None:
