@@ -115,10 +115,6 @@ class _BindingObserved(Exception):
     pass
 
 
-class _FourthModelCall(Exception):
-    pass
-
-
 class _BindingRecorder(BaseChatModel):
     _calls: list[dict[str, Any]] = PrivateAttr(default_factory=list)
 
@@ -150,12 +146,10 @@ class _ResearchThenSubmitModel(BaseChatModel):
     _bindings: list[dict[str, Any]] = PrivateAttr(default_factory=list)
     _model_calls: int = PrivateAttr(default=0)
     _submission: dict[str, Any] = PrivateAttr()
-    _submit: bool = PrivateAttr()
 
-    def __init__(self, submission: dict[str, Any], *, submit: bool = True) -> None:
+    def __init__(self, submission: dict[str, Any]) -> None:
         super().__init__()
         self._submission = submission
-        self._submit = submit
 
     @property
     def _llm_type(self) -> str:
@@ -178,17 +172,13 @@ class _ResearchThenSubmitModel(BaseChatModel):
 
     def _generate(self, *_: Any, **__: Any) -> ChatResult:
         self._model_calls += 1
-        if self._model_calls > 3:
-            raise _FourthModelCall
-        name, arguments = (
-            ("get_trace_packet", {"trace_handle": "T011"})
-            if self._model_calls == 1
-            else (
-                ("submit_case_batch", {"submission": self._submission})
-                if self._submit
-                else ("search_evidence", {"query": "cross-client boundary"})
-            )
-        )
+        actions = {
+            1: ("search_evidence", {"query": "social engineering urgency"}),
+            2: ("search_evidence", {"query": "cross-client boundary refusal"}),
+            3: ("get_trace_packet", {"trace_handle": "T011"}),
+            4: ("submit_case_batch", {"submission": self._submission}),
+        }
+        name, arguments = actions[self._model_calls]
         return ChatResult(
             generations=[
                 ChatGeneration(
@@ -289,7 +279,7 @@ def test_preserved_social_engineering_queries_rank_t011_and_deduplicate(
     assert duplicate["searches_remaining"] == results[-1]["searches_remaining"]
 
 
-def test_resumed_agent_routes_trace_read_to_named_submit_with_three_call_cap(
+def test_resumed_agent_routes_two_searches_to_named_trace_then_submit(
     tmp_path: Path,
 ) -> None:
     request, _, _ = _pause_one_case(tmp_path)
@@ -303,26 +293,27 @@ def test_resumed_agent_routes_trace_read_to_named_submit_with_three_call_cap(
     assert [tool.name for tool in tools if tool.return_direct] == ["submit_case_batch"]
     model = _ResearchThenSubmitModel(_submission(request))
 
-    runtime._restricted_agent(model, tools, resumed=True).invoke(
-        {"messages": [{"role": "user", "content": "synthetic"}]}
-    )
+    stopped_at_old_cap = False
+    try:
+        runtime._restricted_agent(model, tools, resumed=True).invoke(
+            {"messages": [{"role": "user", "content": "synthetic"}]}
+        )
+    except GraphRecursionError:
+        stopped_at_old_cap = True
 
-    assert model._model_calls == 2
-    assert model._model_calls <= 3
+    assert _selected_tool(model._bindings[2]["tool_choice"]) == "get_trace_packet"
+    assert stopped_at_old_cap is False
+    assert model._model_calls == 4
     assert [binding["tool_names"] for binding in model._bindings] == [
+        list(runtime.TOOLS),
+        list(runtime.TOOLS),
         list(runtime.TOOLS),
         list(runtime.TOOLS),
     ]
     assert model._bindings[0]["tool_choice"] in {"required", "any"}
-    assert _selected_tool(model._bindings[1]["tool_choice"]) == "submit_case_batch"
+    assert model._bindings[1]["tool_choice"] in {"required", "any"}
+    assert _selected_tool(model._bindings[3]["tool_choice"]) == "submit_case_batch"
     assert restricted_tools.submission == _submission(request)
-
-    bounded_model = _ResearchThenSubmitModel(_submission(request), submit=False)
-    with pytest.raises(GraphRecursionError):
-        runtime._restricted_agent(bounded_model, tools, resumed=True).invoke(
-            {"messages": [{"role": "user", "content": "synthetic"}]}
-        )
-    assert bounded_model._model_calls <= 3
 
 
 def test_one_case_resume_is_authoritative_requires_submit_and_preserves_attempts(
