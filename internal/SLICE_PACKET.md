@@ -1,6 +1,6 @@
 # Active implementation slice — LABS-04 Grounded Case Factory
 
-Status: **IMPLEMENTATION CANDIDATE REJECTED — ADVERSARIAL RED FROZEN**
+Status: **IMPLEMENTATION CANDIDATE REJECTED — SECOND ADVERSARIAL RED FROZEN**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -610,6 +610,20 @@ of a TOCTOU-created output target. The adversarial file SHA-256 is
 `d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276`.
 All six failures were independently reproduced by Codex before production
 correction. These assertions are immutable until a new explicit freeze.
+
+The implementation author's first correction made those six assertions green,
+but a second independent isolated pass found ten further contract violations.
+The added 305-line file
+`tests/case_factory_adversarial/test_uncovered_contract_edges.py` has SHA-256
+`4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a`.
+Codex reproduced the combined adversarial state as 17 collected, seven passed,
+and ten RED: destination visibility before atomic publication; replacement of
+a destination inode swapped immediately before publication; misclassification
+of an exactly 100,348-byte PROPOSE request; missed exact API-key leakage in an
+otherwise ignored response field; three invalid secret-configuration cases;
+two malformed lowercase DNS hosts; and escaped interruption after a valid
+proposal. The already-correct pre-proposal interruption behavior remains
+frozen. Both adversarial files are immutable until a new explicit freeze.
 
 ### Lane A — deterministic contract and safety
 

@@ -381,6 +381,15 @@ and output-target TOCTOU replacement. The independent tester authored the new
 292-line file; Codex reproduced exact 6/6 RED and SHA-256
 `d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276`
 before returning production to the implementation author.
+The first production correction made those six cases green. A second isolated
+tester pass then added a 305-line file with SHA-256
+`4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a`;
+Codex reproduced the combined suite at 17 collected, seven passed, and ten RED.
+The remaining failures cover true atomic no-replace publication, pre-egress
+PROPOSE size classification, exact API-key response scanning, secret and DNS
+configuration validation, and post-proposal interruption custody. Production
+must not replace these with check-then-rename, a visible claim directory, or
+another unsafe fallback.
 Mechanical GREEN may later be produced unattended, but the product checkpoint
 remains
 `AWAITING_HUMAN_REVIEW` until Akarsh clears the frozen usefulness rubric. No
