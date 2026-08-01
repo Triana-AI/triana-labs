@@ -33,7 +33,15 @@ class _SafeArgumentParser(argparse.ArgumentParser):
         # message preserves the one-event log contract and prevents paths or values
         # from leaking before command execution begins.
         del message
-        if _usage_command == "corpus.derive":
+        if _usage_command == "cases.generate":
+            event = _case_terminal_log(
+                event_name="triana.cases.generate.rejected",
+                severity="ERROR",
+                outcome="REJECTED",
+                reason_code="CLI_USAGE_ERROR",
+                duration_ms=0,
+            )
+        elif _usage_command == "corpus.derive":
             event = _corpus_terminal_log(
                 event_name="triana.corpus.derive.rejected",
                 severity="ERROR",
@@ -83,6 +91,15 @@ def _build_parser() -> _SafeArgumentParser:
     derive_parser.add_argument(
         "--out", required=True, help="New directory for intelligence artifacts."
     )
+    cases = commands.add_parser("cases", help="Generate grounded case proposals.")
+    case_commands = cases.add_subparsers(dest="case_command")
+    generate_parser = case_commands.add_parser(
+        "generate", help="Generate proposed simulation cases from synthetic evidence."
+    )
+    generate_parser.add_argument("observer_manifest")
+    generate_parser.add_argument("--intelligence", required=True)
+    generate_parser.add_argument("--config", required=True)
+    generate_parser.add_argument("--out", required=True)
     return parser
 
 
@@ -141,11 +158,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     global _usage_command
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
-    _usage_command = (
-        "corpus.derive"
-        if raw_arguments[:2] == ["corpus", "derive"]
-        else "traces.observe"
-    )
+    if raw_arguments[:2] == ["cases", "generate"]:
+        _usage_command = "cases.generate"
+    elif raw_arguments[:2] == ["corpus", "derive"]:
+        _usage_command = "corpus.derive"
+    else:
+        _usage_command = "traces.observe"
     parser = _build_parser()
     arguments = parser.parse_args(raw_arguments)
 
@@ -267,6 +285,73 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 10
 
+    if arguments.command == "cases" and arguments.case_command == "generate":
+        from triana_labs.case_factory import GenerateFailure, generate
+
+        start = time.monotonic_ns()
+        try:
+            generated = generate(
+                Path(arguments.observer_manifest),
+                Path(arguments.intelligence),
+                Path(arguments.config),
+                Path(arguments.out),
+            )
+        except GenerateFailure as failure:
+            _write_json(
+                sys.stderr,
+                _case_terminal_log(
+                    event_name="triana.cases.generate.rejected",
+                    severity="ERROR",
+                    outcome="REJECTED",
+                    reason_code=failure.reason_code,
+                    duration_ms=_duration_ms(start),
+                ),
+            )
+            return failure.exit_code
+        except Exception:  # noqa: BLE001 - redact the outer process boundary.
+            _write_json(
+                sys.stderr,
+                _case_terminal_log(
+                    event_name="triana.cases.generate.rejected",
+                    severity="ERROR",
+                    outcome="REJECTED",
+                    reason_code="INTERNAL_INVARIANT_FAILED",
+                    duration_ms=_duration_ms(start),
+                ),
+            )
+            return 70
+        _write_json(
+            sys.stdout,
+            {
+                "outcome": generated.outcome,
+                "manifest_path": str(generated.manifest_path),
+                "valid_case_count": generated.valid_case_count,
+                "distinct_case_count": generated.distinct_case_count,
+                "provider_call_count": generated.provider_call_count,
+                "conservative_cost_usd": generated.conservative_cost_usd,
+            },
+        )
+        _write_json(
+            sys.stderr,
+            _case_terminal_log(
+                event_name=(
+                    "triana.cases.generate.completed"
+                    if generated.outcome == "COMPLETED"
+                    else "triana.cases.generate.completed_with_gaps"
+                ),
+                severity="INFO",
+                outcome=generated.outcome,
+                reason_code=generated.reason_code,
+                duration_ms=_duration_ms(start),
+                attempted_case_count=generated.attempted_case_count,
+                valid_case_count=generated.valid_case_count,
+                distinct_case_count=generated.distinct_case_count,
+                provider_call_count=generated.provider_call_count,
+                conservative_cost_usd=generated.conservative_cost_usd,
+            ),
+        )
+        return 0 if generated.outcome == "COMPLETED" else 10
+
     parser.print_help()
     return 0
 
@@ -309,5 +394,39 @@ def _corpus_terminal_log(
                 "gap_count": gap_count,
                 "trace_count": trace_count,
             }
+        )
+    return event
+
+
+def _case_terminal_log(
+    *,
+    event_name: str,
+    severity: str,
+    outcome: str,
+    reason_code: str | None,
+    duration_ms: int,
+    attempted_case_count: int | None = None,
+    valid_case_count: int | None = None,
+    distinct_case_count: int | None = None,
+    provider_call_count: int | None = None,
+    conservative_cost_usd: str | None = None,
+) -> dict[str, Any]:
+    event: dict[str, Any] = {
+        "command": "cases.generate",
+        "duration_ms": duration_ms,
+        "event_name": event_name,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "service": _SERVICE,
+        "service_version": __version__,
+        "severity": severity,
+    }
+    if attempted_case_count is not None:
+        event.update(
+            attempted_case_count=attempted_case_count,
+            valid_case_count=valid_case_count,
+            distinct_case_count=distinct_case_count,
+            provider_call_count=provider_call_count,
+            conservative_cost_usd=conservative_cost_usd,
         )
     return event
