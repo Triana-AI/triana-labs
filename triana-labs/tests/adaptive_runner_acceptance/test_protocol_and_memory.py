@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -96,6 +97,47 @@ def test_real_jsonl_factory_classifies_and_redacts_stderr(tmp_path: Path) -> Non
     gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
     assert "TARGET_STDERR" in {gap["reason_code"] for gap in gaps}
     assert b"PRIVATE_TARGET_EXCEPTION" not in b"".join(run.publisher.artifacts.values())
+
+
+def test_real_jsonl_factory_times_out_on_unterminated_partial_line() -> None:
+    module = api()
+    target = config_value(target_mode="partial_stall")["target"]
+    target["timeout_seconds"] = 0.05
+    identity = module.TargetSourceIdentity(
+        target["source_commit"], "sha256:" + "6" * 64, "sha256:" + "7" * 64
+    )
+    launch = module.TargetLaunch(
+        "episode-partial-line",
+        SELECTED_CASE_IDS[0],
+        target,
+        config_value()["world"],
+        "sha256:" + "8" * 64,
+        identity,
+        ENVIRON,
+    )
+    session = module.JsonlTargetProcessFactory().start(launch)
+    started = time.monotonic()
+    try:
+        with pytest.raises(module.TargetProtocolFailure) as caught:
+            session.exchange(
+                {
+                    "agent_model": target["agent_model"],
+                    "allowed_tools": config_value()["world"]["allowed_tools"],
+                    "case_id": SELECTED_CASE_IDS[0],
+                    "episode_id": "episode-partial-line",
+                    "kind": "hello",
+                    "prompt_version": target["prompt_version"],
+                    "protocol": target["protocol"],
+                    "source_commit": target["source_commit"],
+                    "world_hash": "sha256:" + "8" * 64,
+                    "world_kind": config_value()["world"]["kind"],
+                }
+            )
+    finally:
+        session.terminate()
+    elapsed = time.monotonic() - started
+    assert caught.value.reason_code == "TARGET_TIMEOUT"
+    assert elapsed < 0.5
 
 
 def test_fallback_and_unallowlisted_environment_never_reach_launch(

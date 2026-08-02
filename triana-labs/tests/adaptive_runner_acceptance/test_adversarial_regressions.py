@@ -7,9 +7,10 @@ import math
 import os
 import subprocess
 import sys
+import types
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from conftest import (
@@ -119,7 +120,16 @@ def test_exact_target_secret_is_never_retained_but_safe_usage_is(
 
 @pytest.mark.parametrize(
     "bad_cost",
-    ["-1.000000", "1.0", "1.0000000", "NaN", "Infinity", 1.0, math.nan],
+    [
+        "-1.000000",
+        "1.0",
+        "1.0000000",
+        "NaN",
+        "Infinity",
+        1.0,
+        math.nan,
+        pytest.param("1" * 16_378 + ".000000", id="oversized-decimal"),
+    ],
 )
 def test_invalid_target_reported_cost_is_protocol_error_and_never_retained(
     tmp_path: Path, bad_cost: Any
@@ -372,6 +382,54 @@ def test_close_counts_reject_bool_even_when_bool_equals_observed_integer(
     assert "TARGET_PROTOCOL_ERROR" in attempt["gap_codes"]
 
 
+@pytest.mark.parametrize(
+    ("status", "reason", "termination"),
+    [
+        ("PROVIDER_FAILED", "PROVIDER_ERROR", "TARGET_PROVIDER_ERROR"),
+        ("INTERNAL_FAILED", "TARGET_INTERNAL_FAILED", "TARGET_PROTOCOL_ERROR"),
+    ],
+)
+def test_typed_target_failure_retains_executed_tool_custody_and_close_counts(
+    tmp_path: Path, status: str, reason: str, termination: str
+) -> None:
+    event = _safe_tool_event()
+
+    def mutate(request: dict[str, Any], response: dict[str, Any]) -> None:
+        if request["kind"] == "turn" and request["turn_index"] == 1:
+            response.update(
+                assistant_content="",
+                reason_code=reason,
+                status=status,
+                tool_events=[event],
+            )
+        elif request["kind"] == "close":
+            response["tool_call_count"] = 1
+
+    run = invoke(tmp_path, response_mutator=mutate)
+    attempt = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])[0]
+    tools = jsonl(run.publisher.artifacts["target_tool_events.jsonl"])
+    manifest = json.loads(run.publisher.artifacts["manifest.json"])
+    first_episode = run.target.launches[0].episode_id
+    first_transcript = [
+        item
+        for item in jsonl(run.publisher.artifacts["transcripts.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+    assert attempt["termination_reason"] == termination
+    assert attempt["target_tool_call_count"] == 1
+    assert len(tools) == 1
+    assert {key: tools[0][key] for key in event} == event
+    assert tools[0]["episode_id"] == first_episode
+    assert tools[0]["assistant_turn_ordinal"] == 2
+    assert tools[0]["target_protocol"] == config_value()["target"]["protocol"]
+    assert tools[0]["target_source_commit"] == config_value()["target"]["source_commit"]
+    assert tools[0]["world_hash"].startswith("sha256:")
+    assert tools[0]["record_id"].startswith("target-tool-event-")
+    assert manifest["target_tool_call_count"] >= 1
+    assert not any(item["role"] == "ASSISTANT" for item in first_transcript)
+    assert attempt["gap_codes"] == [termination]
+
+
 def _initialize_git_checkout(path: Path) -> str:
     path.mkdir()
     subprocess.run(["git", "init", "-q", path], check=True)
@@ -400,7 +458,7 @@ def _initialize_git_checkout(path: Path) -> str:
     ).stdout.strip()
 
 
-@pytest.mark.parametrize("race", ["argv", "adapter", "cwd"])
+@pytest.mark.parametrize("race", ["argv", "adapter", "cwd", "tracked"])
 def test_target_launch_rechecks_verified_source_before_child_execution(
     tmp_path: Path, race: str
 ) -> None:
@@ -440,10 +498,12 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
         target["argv"][1] = os.fspath(alternate)
     elif race == "adapter":
         adapter.write_text("raise SystemExit(97)\n")
-    else:
+    elif race == "cwd":
         moved = tmp_path / "moved-checkout"
         checkout.rename(moved)
         checkout.mkdir()
+    else:
+        (checkout / "tracked.txt").write_text("mutated after verification\n")
     launch = module.TargetLaunch(
         "episode-race",
         "case-b2b9570f6e763ca0",
@@ -456,3 +516,159 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
     with pytest.raises(module.TargetProtocolFailure) as caught:
         module.JsonlTargetProcessFactory().start(launch)
     assert caught.value.reason_code == "TARGET_PROTOCOL_ERROR"
+
+
+def test_config_regular_file_substitution_after_check_refuses_before_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from conftest import CapturePublisher, FixtureLoader, SourceVerifier, write_inputs
+
+    module = api()
+    inputs = write_inputs(tmp_path / "input-race")
+    replacement = tmp_path / "replacement-config.json"
+    replacement.write_bytes(inputs.config.read_bytes())
+    original_is_symlink = Path.is_symlink
+    swapped = False
+
+    def check_then_swap(path: Path) -> bool:
+        nonlocal swapped
+        result = original_is_symlink(path)
+        if path == inputs.config and not swapped:
+            swapped = True
+            path.unlink()
+            path.symlink_to(replacement)
+        return result
+
+    monkeypatch.setattr(Path, "is_symlink", check_then_swap)
+    target = TargetFactory()
+    simulator = Simulator(module)
+    with pytest.raises(module.AdaptiveRunFailure) as caught:
+        module.run(
+            inputs.manifest,
+            inputs.review,
+            inputs.config,
+            inputs.output,
+            simulator=simulator,
+            target_factory=target,
+            clock=Clock(),
+            environ={**ENVIRON, "LABS05_FAKE_API_KEY": SECRET},
+            publisher=CapturePublisher(),
+            source_verifier=SourceVerifier(module),
+            case_loader=FixtureLoader(module),
+        )
+    assert caught.value.reason_code == "CONFIG_INVALID"
+    assert swapped
+    assert not target.launches
+    assert not simulator.requests
+
+
+def test_cli_refuses_config_swap_between_transport_and_evidence_reads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from conftest import write_inputs
+
+    import triana_labs.adaptive_runner as adaptive
+    from triana_labs import cli
+
+    inputs = write_inputs(tmp_path / "cli-input-race")
+    replacement = tmp_path / "replacement-cli-config.json"
+    changed = config_value()
+    changed["target"]["argv"][-1] = "synthetic-equivalent-alternate-mode"
+    replacement.write_bytes(
+        json.dumps(changed, separators=(",", ":"), sort_keys=True).encode() + b"\n"
+    )
+    original_read = cli._read_bytes
+    reads = 0
+
+    def read_then_swap(path: Path, reason: str) -> bytes:
+        nonlocal reads
+        payload = original_read(path, reason)
+        if path == inputs.config and reads == 0:
+            reads += 1
+            path.unlink()
+            path.symlink_to(replacement)
+        return payload
+
+    invoked: list[bool] = []
+
+    def forbidden_run(*args: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        invoked.append(True)
+        raise AssertionError("config substitution must refuse before execution")
+
+    monkeypatch.setattr(cli, "_read_bytes", read_then_swap)
+    monkeypatch.setattr(adaptive, "run", forbidden_run)
+    monkeypatch.setenv("LABS05_FAKE_API_KEY", SECRET)
+    result = cli._run_episodes(
+        types.SimpleNamespace(
+            manifest=str(inputs.manifest),
+            review=str(inputs.review),
+            config=str(inputs.config),
+            out=str(inputs.output),
+        )
+    )
+    captured = capsys.readouterr()
+    assert result == 2
+    assert not invoked
+    assert '"reason_code":"CONFIG_INVALID"' in captured.err
+
+
+@pytest.mark.parametrize("bad_usage", [True, "7", -1])
+def test_foundry_transport_rejects_non_normalized_usage_without_network(
+    monkeypatch: pytest.MonkeyPatch, bad_usage: Any
+) -> None:
+    module = api()
+    boundaries = __import__(
+        "triana_labs.adaptive_runner.boundaries", fromlist=["FoundrySimulatorTransport"]
+    )
+    response_value = {
+        "consumed_observation_hash": "sha256:" + "a" * 64,
+        "next_user_content": "bounded synthetic follow-up",
+        "proposed_stop": False,
+        "stop_reason": None,
+    }
+    envelope = {
+        "choices": [{"message": {"content": json.dumps(response_value)}}],
+        "usage": {"completion_tokens": 0, "prompt_tokens": bad_usage},
+    }
+
+    class Response:
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            del args
+
+        def read(self, limit: int) -> bytes:
+            assert limit == 1_000_001
+            return json.dumps(envelope).encode()
+
+    class Opener:
+        calls = 0
+
+        def open(self, request: Any, *, timeout: int) -> Response:
+            del request
+            assert timeout == 180
+            self.calls += 1
+            return Response()
+
+    opener = Opener()
+    monkeypatch.setattr(boundaries.urllib.request, "build_opener", lambda *args: opener)
+    result = boundaries.FoundrySimulatorTransport(
+        config_value()["simulator"], SECRET
+    ).complete({"latest_observation": {"synthetic": True}})
+    assert opener.calls == 1
+    assert result == module.SimulatorResponse(
+        "INVALID",
+        result.request_bytes,
+        result.response_bytes,
+        None,
+        None,
+        None,
+        None,
+        0,
+        0,
+        1,
+        None,
+        "SIMULATOR_INVALID_RESPONSE",
+    )

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from typing import Any
 
 
@@ -33,6 +34,10 @@ def _malform(mode: str) -> bool:
         _emit({"kind": "unexpected"})
     elif mode == "nonzero":
         raise SystemExit(17)
+    elif mode == "partial_stall":
+        os.write(sys.stdout.fileno(), b'{"kind":"ready"')
+        sys.stdout.flush()
+        time.sleep(1)
     else:
         return False
     sys.stdout.flush()

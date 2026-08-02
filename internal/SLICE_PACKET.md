@@ -350,12 +350,13 @@ prompt-lineage, accounting, validation, timeout, privacy, adapter-world, and
 pre-execution budget defects. The same independent author added only
 contract-derived regressions and corrected the prompt expectation to the
 canonical executable v3 identity. Codex read the new assertions and fixtures
-and independently reproduced the post-candidate RED:
+and independently reproduced the final post-candidate RED after a second
+behavioral audit:
 
 ```text
-93 tests collected
-81 expected candidate failures
-12 passes
+106 tests collected
+12 expected candidate failures
+94 passes
 0 collection errors
 0 skips
 Ruff check GREEN
@@ -363,13 +364,16 @@ Ruff format check GREEN
 ```
 
 The failures are production mismatches rather than fixture/import/setup
-failures. The eight test-owned Python files contain 2,201 physical lines. Their
+failures. All previously frozen 93 tests pass; the twelve RED cases cover
+behavioral world fidelity, failure tool custody, input/source substitution,
+strict transport normalization, verified-cwd imports, and partial-line timeout.
+The eight test-owned Python files contain 2,611 physical lines. Their
 sorted concatenated content SHA-256 is
-`1900fb9f739aaf18b32048c7808487651b689708c2b1f500816a2ef1b8ded982`.
+`a1f816bd139aa497bae177cb6a5702f3003d6ff0b818959717d771f19fd25418`.
 The SHA-256 of the sorted per-file `shasum -a 256` stream is
-`9784bd8a784366d0331a14cbfc498cf26e97efb05e9913a0c98384677d62d93f`.
+`03ffe7b1f936354b0621402e536ff2cd61f9cee015962460b4167b9281d53c18`.
 The raw fake-target file SHA-256 is
-`a67250c83eabdd541918787bc45e8256f22a5a351fddb26b6086960369e3f29d`.
+`dae9c31328f83c078969c68210cf4650510471bf5e78ee7ffb6e10d59c370dce`.
 Any change under either test-owned path invalidates this freeze and stops
 production until independently re-reviewed and re-hashed.
 
