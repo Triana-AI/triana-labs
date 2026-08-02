@@ -51,6 +51,7 @@ run(
     environ: Mapping[str, str],
     publisher: ArtifactPublisher | None = None,
     source_verifier: TargetSourceVerifier | None = None,
+    case_loader: CaseFactoryInputLoader | None = None,
 ) -> AdaptiveRunResult
 ```
 
@@ -65,8 +66,22 @@ uses the real Git/file verifier. `Clock` supplies deterministic monotonic
 nanoseconds. `ArtifactPublisher`, when supplied, replaces only the final
 atomic-publication operation for failure injection.
 
-These dependencies may reproduce only the external boundary. They cannot
-bypass manifest/review/config validation, identity, budgets, sequencing,
+`CaseFactoryInputLoader` is the read-only external input-reader/validator
+boundary. When null, production reads and validates the exact LABS-04 manifest,
+every declared artifact digest, and the case file bytes. An injected loader
+returns a closed `VerifiedCaseFactoryInput` with the exact manifest-file hash,
+case-candidate-file hash, manifest semantic hash, and exactly three already
+schema-validated case projections in the frozen selected order. The controller
+still verifies those two exact file-hash literals, case IDs/membership/order,
+closed projection shapes, and every downstream identity. CLI tests always use
+the production loader for input/tamper/hash refusal; the injected loader exists
+only so controller mechanics can be tested without requiring infeasible hash
+preimages or vendoring the external LABS-04 bundle.
+
+These dependencies may reproduce only their named external boundary. The case
+loader replaces manifest/artifact schema and byte-integrity reading only; it
+does not replace the controller's exact lineage/membership checks. No injected
+dependency can bypass review/config validation, identity, budgets, sequencing,
 adaptation binding, normalization, dedupe, custody, gaps, or publication
 arithmetic. The CLI has no flag or environment variable for test mode.
 
