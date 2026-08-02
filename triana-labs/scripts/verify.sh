@@ -107,7 +107,7 @@ triana_adaptive_runner_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_content_hash="e3afc901836e140caf25549d683e102c34d13925ac8b83ebddb22b0aa40546b7"
+triana_expected_adaptive_runner_content_hash="ebed19c2da7a34078fa5005cde165366d9c47193c54f37340bdf04cb66e9041d"
 if [[ "${triana_adaptive_runner_content_hash}" != "${triana_expected_adaptive_runner_content_hash}" ]]; then
   echo "frozen adaptive runner acceptance content hash mismatch" >&2
   exit 1
@@ -123,7 +123,7 @@ triana_adaptive_runner_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_file_hash="96409aa8c638c278560b6e35fd151308ecfe007250a7a253d70b2bebbdd62aed"
+triana_expected_adaptive_runner_file_hash="773063e7f5701626c43fb57a4e25f81e1f64a8e7fed80dd320d2ec4c40786642"
 if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runner_file_hash}" ]]; then
   echo "frozen adaptive runner acceptance file hash mismatch" >&2
   exit 1

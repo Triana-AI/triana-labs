@@ -355,8 +355,8 @@ behavioral audit:
 
 ```text
 106 tests collected
-13 expected candidate failures
-93 passes
+0 failures
+106 passes
 0 collection errors
 0 skips
 Ruff check GREEN
@@ -364,16 +364,16 @@ Ruff format check GREEN
 ```
 
 The failures are production mismatches rather than fixture/import/setup
-failures. All previously frozen 93 tests pass; the thirteen RED cases cover
+failures. All previously frozen tests remain present. The final suite covers
 behavioral world fidelity, failure tool custody, input/source substitution,
 strict transport normalization, verified-cwd imports, and partial-line timeout.
 The tracked-source race uses a regular disposable executable and proves an
 unmodified control handshake before mutation. The eight test-owned Python
-files contain 2,637 physical lines. Their
+files contain 2,651 physical lines. Their
 sorted concatenated content SHA-256 is
-`e3afc901836e140caf25549d683e102c34d13925ac8b83ebddb22b0aa40546b7`.
+`ebed19c2da7a34078fa5005cde165366d9c47193c54f37340bdf04cb66e9041d`.
 The SHA-256 of the sorted per-file `shasum -a 256` stream is
-`96409aa8c638c278560b6e35fd151308ecfe007250a7a253d70b2bebbdd62aed`.
+`773063e7f5701626c43fb57a4e25f81e1f64a8e7fed80dd320d2ec4c40786642`.
 The raw fake-target file SHA-256 is
 `dae9c31328f83c078969c68210cf4650510471bf5e78ee7ffb6e10d59c370dce`.
 Any change under either test-owned path invalidates this freeze and stops

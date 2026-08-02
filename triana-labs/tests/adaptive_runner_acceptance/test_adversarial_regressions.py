@@ -395,20 +395,28 @@ def test_typed_target_failure_retains_executed_tool_custody_and_close_counts(
     tmp_path: Path, status: str, reason: str, termination: str
 ) -> None:
     event = _safe_tool_event()
+    failed_episode_id: str | None = None
 
     def mutate(request: dict[str, Any], response: dict[str, Any]) -> None:
-        if request["kind"] == "turn" and request["turn_index"] == 1:
+        nonlocal failed_episode_id
+        if (
+            request["kind"] == "turn"
+            and request["turn_index"] == 1
+            and failed_episode_id is None
+        ):
+            failed_episode_id = request["episode_id"]
             response.update(
                 assistant_content="",
                 reason_code=reason,
                 status=status,
                 tool_events=[event],
             )
-        elif request["kind"] == "close":
+        elif request["kind"] == "close" and request["episode_id"] == failed_episode_id:
             response["tool_call_count"] = 1
 
     run = invoke(tmp_path, response_mutator=mutate)
-    attempt = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])[0]
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    attempt = attempts[0]
     tools = jsonl(run.publisher.artifacts["target_tool_events.jsonl"])
     manifest = json.loads(run.publisher.artifacts["manifest.json"])
     first_episode = run.target.launches[0].episode_id
@@ -417,6 +425,7 @@ def test_typed_target_failure_retains_executed_tool_custody_and_close_counts(
         for item in jsonl(run.publisher.artifacts["transcripts.jsonl"])
         if item["episode_id"] == first_episode
     ]
+    assert failed_episode_id == first_episode
     assert attempt["termination_reason"] == termination
     assert attempt["target_tool_call_count"] == 1
     assert len(tools) == 1
@@ -430,6 +439,11 @@ def test_typed_target_failure_retains_executed_tool_custody_and_close_counts(
     assert manifest["target_tool_call_count"] >= 1
     assert not any(item["role"] == "ASSISTANT" for item in first_transcript)
     assert attempt["gap_codes"] == [termination]
+    assert [item["termination_reason"] for item in attempts[1:]] == [
+        "TURN_LIMIT_REACHED",
+        "TURN_LIMIT_REACHED",
+    ]
+    assert all(item["status"] == "VALID" for item in attempts[1:])
 
 
 def _initialize_git_checkout(path: Path) -> str:
