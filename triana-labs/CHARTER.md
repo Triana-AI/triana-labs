@@ -60,8 +60,11 @@ deterministic code owns evidence projection, citations, support, identities,
 slot orchestration, duplicate arithmetic, budget, HTTP accounting, lineage,
 and publication. Model output remains `PROPOSED`; semantic usefulness requires
 a blind owner review. The 2026-08-02 close produced five valid distinct cases
-with no gaps and therefore clears machinery, but LABS-04 remains
-`AWAITING_HUMAN_REVIEW`. A failed review still blocks multi-turn runtime work.
+with no gaps and therefore cleared machinery. Akarsh then answered yes to all
+six frozen usefulness questions for all five cases and confirmed that no
+accepted case depends on a hidden or fabricated fact. LABS-04 therefore passed
+`LABS04_USEFULNESS_V1`; this ruling authorizes discussion and freezing of
+LABS-05, but not implementation before a new owner-approved slice packet.
 The closure includes a supported, strict config-dispatched
 `triana cases generate` path for the pinned restricted runtime plus immutable
 `triana cases resume`; legacy configs remain explicit and no fallback exists.

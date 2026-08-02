@@ -69,15 +69,18 @@ or duplicate clusters and therefore clears the deterministic machinery gate.
 The supported closure routes `triana cases generate` to this runtime only from
 an explicit restricted config and adds immutable `triana cases resume`; legacy
 config dispatch remains explicit and there is no fallback.
-The owner must still clear the frozen blind usefulness rubric. Until then the
-checkpoint is `AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn
-runtime, judges, memory, UI, real-data support, DeepEval, and generic agent
-frameworks remain unauthorized.
+On 2026-08-02, the owner answered yes to all six frozen usefulness questions
+for all five cases and confirmed that no accepted case depends on a hidden or
+fabricated fact. LABS-04 therefore passed `LABS04_USEFULNESS_V1`. This clears
+the gate to discuss and freeze LABS-05; it does not itself authorize target-
+agent execution or multi-turn implementation before a replacement owner-
+approved slice packet. Judges, memory, UI, real-data support, DeepEval, and
+generic agent frameworks remain unauthorized.
 
 ### Proposed Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
 
 LABS-05 is not frozen or authorized. Its canonical restart context is
-`internal/LABS05_HANDOFF_2026-08-02.md`. Subject to the owner clearing
+`internal/LABS05_HANDOFF_2026-08-02.md`. With the owner having cleared
 `LABS04_USEFULNESS_V1`, the recommended minimum experiment runs an
 owner-reviewed subset of grounded cases as genuinely adaptive multi-turn
 episodes against one explicitly named existing conversational/tool agent. A

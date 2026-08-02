@@ -2,7 +2,7 @@
 
 Date: 2026-08-02
 
-Status: deterministic machinery passed; human usefulness review pending
+Status: deterministic machinery and owner usefulness review passed
 
 Portable evidence bundle:
 `~/Documents/Triana-LABS04-scaleout-close-2026-08-02`
@@ -48,7 +48,7 @@ it does not block this five-case proof if the owner finds the panel useful.
 | Configured ceiling | USD 25.00 |
 | Actual billed cost | Unknown; never inferred from the reservation |
 | Final outcome | `COMPLETED` |
-| Human review state | `PENDING` |
+| Human review state | `PASSED` (`LABS04_USEFULNESS_V1`) |
 
 ## How distinct are the five cases?
 
@@ -159,12 +159,17 @@ For each case, answer yes/no and add one sentence where the answer is no:
 
 | Question | Case 1 | Case 2 | Case 3 | Case 4 | Case 5 |
 |---|---|---|---|---|---|
-| Would I actually run this against an agent? |  |  |  |  |  |
-| Is the opening task understandable without reading raw JSON? |  |  |  |  |  |
-| Does the user behavior plausibly change across multiple turns? |  |  |  |  |  |
-| Is the expected behavior concrete enough to judge later? |  |  |  |  |  |
-| Is this materially different from the other four? |  |  |  |  |  |
-| Are its citations/support sufficient for this synthetic proof? |  |  |  |  |  |
+| Would I actually run this against an agent? | Yes | Yes | Yes | Yes | Yes |
+| Is the opening task understandable without reading raw JSON? | Yes | Yes | Yes | Yes | Yes |
+| Does the user behavior plausibly change across multiple turns? | Yes | Yes | Yes | Yes | Yes |
+| Is the expected behavior concrete enough to judge later? | Yes | Yes | Yes | Yes | Yes |
+| Is this materially different from the other four? | Yes | Yes | Yes | Yes | Yes |
+| Are its citations/support sufficient for this synthetic proof? | Yes | Yes | Yes | Yes | Yes |
+
+Owner ruling (`LABS04_USEFULNESS_V1`, 2026-08-02): all five cases are accepted
+as useful. Akarsh additionally confirmed that none of the five accepted cases
+depends on a hidden or fabricated fact. There were no rejected cases and
+therefore no rejection reasons.
 
 LABS-04 clears the human gate only if at least three cases are accepted as
 useful and no accepted case depends on a hidden or fabricated fact. Rejected
@@ -179,5 +184,6 @@ weakened to make a rejection disappear.
 - Deterministic distinctness is not human usefulness or semantic coverage.
 - The final panel concentrates on 8 of 25 selected traces and mostly
   single-observation support.
-- LABS-05 must not reinterpret these proposed cases as accepted truth; it may
-  execute only the cases the owner explicitly accepts.
+- LABS-05 must not reinterpret the cases' proposed semantics as general truth;
+  it may execute the five cases explicitly accepted by the owner for this
+  synthetic proof.

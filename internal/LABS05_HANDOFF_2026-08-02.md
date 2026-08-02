@@ -44,8 +44,11 @@ Before LABS-05 code, replace the closed LABS-04 packet in
 - Accounting: six logical restricted-runtime invocations, fourteen captured
   provider HTTP exchanges, USD `12.000000` conservative reservation under a
   USD `25.000000` ceiling, and unknown actual cost.
-- Product status: LABS-04 machinery is complete; the checkpoint is
-  `AWAITING_HUMAN_REVIEW` under `LABS04_USEFULNESS_V1`.
+- Product status: LABS-04 machinery is complete. On 2026-08-02, Akarsh answered
+  yes to all six frozen usefulness questions for all five cases and confirmed
+  that none depends on a hidden or fabricated fact. The checkpoint passed
+  `LABS04_USEFULNESS_V1`; LABS-05 still requires a separately owner-approved
+  replacement slice packet before implementation.
 
 ## 2. What exists now
 
@@ -188,8 +191,9 @@ session must discuss and freeze the material choices below before tests/code.
 
 ## 6. Material decisions still required for LABS-05
 
-1. **LABS-04 owner review:** approve/reject cases under the frozen rubric. No
-   agent may approve on Akarsh's behalf.
+1. **LABS-04 owner review:** resolved on 2026-08-02; Akarsh accepted all five
+   cases under all six frozen questions and confirmed no hidden or fabricated
+   fact dependency.
 2. **Target agent and protocol:** name the exact existing agent and choose one
    invocation surface (recommended: local subprocess JSONL unless the real
    target already has a more bounded supported interface).

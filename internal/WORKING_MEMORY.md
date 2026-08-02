@@ -43,10 +43,12 @@ Historical research and suspended-product handoff:
 
 ## Current objective
 
-Immediate objective after LABS-04: obtain Akarsh's
-`LABS04_USEFULNESS_V1` ruling, then freeze the smallest LABS-05 Adaptive
-Multi-Turn Runner. The canonical restart context and carried backlog are in
-`internal/LABS05_HANDOFF_2026-08-02.md`. No LABS-05 implementation is active.
+Immediate objective after LABS-04: freeze the smallest LABS-05 Adaptive
+Multi-Turn Runner. Akarsh passed `LABS04_USEFULNESS_V1` on 2026-08-02 by
+answering yes to all six frozen questions for all five cases and confirming
+that none depends on a hidden or fabricated fact. The canonical restart
+context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
+No LABS-05 implementation is active.
 
 The older long-horizon objective below remains strategic context, not the next
 implementation authorization.
