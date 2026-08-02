@@ -15,11 +15,12 @@ Before LABS-05 code, replace the closed LABS-04 packet in
 
 ## 1. Exact ground truth
 
-- Branch close commit: `54c94c0` (`docs(labs): close scale-out machinery`).
-- Full verifier: 375 tests, Ruff, strict mypy, deterministic Observer replay,
+- Scale-out evidence close commit: `54c94c0`; supported CLI commits:
+  `17238b7`, `46e58f3`, and verifier reconciliation `6f93ed7`.
+- Full verifier: 408 tests, Ruff, strict mypy, deterministic Observer replay,
   five unchanged canonical Observer hashes, sdist/wheel build, clean CPython
   3.13 installation, and source/wheel parity.
-- Final verifier evidence: `/private/tmp/triana-labs-verify.LEf5KS`.
+- Final verifier evidence: `/private/tmp/triana-labs-verify.88h0RL`.
 - LABS-04 live bundle:
   `/private/var/folders/9p/yg9qq11906q49n6p614_f44r0000gn/T/`
   `triana-labs04-scaleout-close.c5y15ryg/resumed`.
@@ -31,6 +32,12 @@ Before LABS-05 code, replace the closed LABS-04 packet in
   `817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`.
 - Case-candidate file SHA-256:
   `06a3a2267f39041d98e08ef24466ffbc695e7833ebb16bd536f19f71c37ecbe4`.
+- Readable denominator/case review:
+  `internal/LABS04_CASE_REVIEW_2026-08-02.md`; it records that zero production
+  traces were used, 50 synthetic source records yielded 25 adapter outputs,
+  all 25 were Observer-eligible, and the final panel cites 8 unique traces
+  across 6 structural clusters. A byte-identical owner copy is at
+  `/Users/akarshgajbhiye/Documents/LABS04_CASE_REVIEW_2026-08-02.md`.
 - All 12 manifest-declared artifact hashes match their files.
 - Result: five requested, five valid, five deterministically distinct, zero
   gaps, zero repairs, and zero duplicate clusters.
@@ -47,13 +54,15 @@ Before LABS-05 code, replace the closed LABS-04 packet in
 | LABS-01 Trace Observer | Validates synthetic `PreviewTrace` JSONL and publishes five deterministic corpus artifacts | Synthetic only; five canonical artifact hashes are frozen |
 | LABS-02 reference adapter | Copyable HRAI normalized-trace-v2 → `PreviewTrace` JSONL executable example | File contract, not an SDK or supported HRAI integration; 25/50 selected smoke records accepted and 25 explicitly rejected |
 | LABS-03 structural Corpus Intelligence | Verifies Observer bundles and derives 22 structural clusters plus explicit semantic gaps | No semantic persona/intent/policy derivation by deterministic code |
-| LABS-04 Grounded Case Factory | Internal restricted GLM-5.2 agent runtime produces grounded proposed personas, intents, turn policies, and cases with deterministic acceptance | Internal POC path; no target execution, public restricted-runtime CLI, real-data path, memory, judge, or UI |
+| LABS-04 Grounded Case Factory | Supported strict config-dispatched `cases generate` plus immutable `cases resume` expose the restricted GLM-5.2 runtime and grounded proposals | Synthetic only; no target execution, real-data path, memory, judge, or UI |
 
-The public CLI command `triana cases generate` still invokes the older
-Case Factory path in `case_factory/generate.py`. The successful GLM-5.2 path is
-the internal `generate_restricted` / `resume_restricted` API in
-`case_factory/restricted_runtime.py`. Do not claim the restricted path is a
-finished onboarding surface or silently redirect the CLI inside LABS-05.
+The public CLI now dispatches from the exact config artifact kind. The checked-in
+`restricted-case-factory-config.json` selects only the pinned GLM-5.2 runtime;
+existing `case_factory_config` inputs retain the legacy path. Unknown kinds or
+malformed provider state refuse without fallback. `cases resume` requires the
+same exact config bytes, complete bounded answers, the immutable pause bundle,
+and the same private cache. This closes LABS-04's synthetic CLI surface; it does
+not authorize target-agent execution or real/customer traces.
 
 ## 3. Decisions that must not be reopened without new evidence
 
@@ -253,7 +262,8 @@ remain parked.
 
 1. Read `AGENTS.md`, the charter, current plan, Product, Architecture,
    Contracts, Working Memory, Provenance, full Decision Log, Engineering, the
-   closed Slice Packet, this handoff, Agent Architecture, and LABS-04 triage.
+   closed Slice Packet, readable case review, this handoff, Agent Architecture,
+   and LABS-04 triage.
 2. Inspect Git and verify the LABS-04 closing commits and untracked user files.
 3. Perform or obtain the owner usefulness ruling; append it to the decision log
    and update charter/plan in the same change.
@@ -274,6 +284,7 @@ Read AGENTS.md, triana-labs/CHARTER.md, the current plan named by the charter,
 docs/PRODUCT.md, docs/ARCHITECTURE.md, docs/CONTRACTS.md,
 internal/WORKING_MEMORY.md, docs/PROVENANCE.md, the full
 internal/DECISION_LOG.md, docs/ENGINEERING.md, internal/SLICE_PACKET.md,
+internal/LABS04_CASE_REVIEW_2026-08-02.md,
 internal/LABS05_HANDOFF_2026-08-02.md, internal/AGENT_ARCHITECTURE.md, and
 internal/LABS04_TRIAGE.md.
 
@@ -281,9 +292,11 @@ Ground truth: LABS-04 deterministic machinery is complete. The sole scale-out
 run produced 5 requested / 5 valid / 5 distinct grounded synthetic cases, no
 gaps, repairs, or duplicates, using 6 logical invocations and 14 provider HTTP
 exchanges with USD 12 conservative reservation under USD 25. The final suite
-has 375 passing tests and the five canonical Observer hashes are unchanged.
-The restricted GLM-5.2 runtime is an internal generate_restricted/resume_restricted
-path; the public triana cases generate CLI still uses the older path. Do not
+has 408 passing tests and the five canonical Observer hashes are unchanged.
+The public triana cases generate command now selects the restricted GLM-5.2
+runtime only through an explicit strict restricted config; legacy config
+dispatch remains explicit. triana cases resume verifies exact config bytes,
+answers, immutable pause evidence, and private cache with no fallback. Do not
 rediscover or rerun LABS-04 provider experiments.
 The portable owner-review bundle is durably copied to
 ~/Documents/Triana-LABS04-scaleout-close-2026-08-02/ with all hashes verified.

@@ -58,6 +58,12 @@ citation proves existence, not semantic entailment; all assets remain
 LABS-04 uses LangChain `create_agent` only as the bounded tool-loop harness; it
 does not delegate deterministic authority to the framework. It adds no
 target-agent runner, persistent memory, model judge, real-data path, or UI.
+The supported CLI dispatches by a closed config artifact kind: restricted
+configs construct only the pinned Foundry GLM-5.2 transport, while legacy
+configs retain the older engine. `cases resume` verifies exact config bytes,
+the immutable pause bundle, complete bounded answers, and the same private
+cache before transport construction. Unknown or malformed state refuses; no
+engine, credential, model, or provider fallback exists.
 The closing experiment is `AWAITING_HUMAN_REVIEW`, so LABS-05 remains blocked.
 
 The proposed LABS-05 boundary is documented, but not authorized, in

@@ -595,8 +595,10 @@ LABS-04 closing result (2026-08-02): exact-five deterministic scale-out passed
 with five valid distinct cases, no gaps, no repair, and no duplicate clusters.
 The run made six logical invocations and fourteen captured provider HTTP
 exchanges, reserving USD 12 conservatively under the USD 25 ceiling; actual
-cost is unknown. The 375-test full gate and all five canonical Observer hashes
-are green. The only remaining LABS-04 gate is Akarsh's
+cost is unknown. The supported restricted `cases generate` and immutable
+`cases resume` CLI closure is implemented with explicit legacy dispatch,
+strict config/environment refusal, and no fallback. The 408-test full gate and
+all five canonical Observer hashes are green. The only remaining LABS-04 gate is Akarsh's
 `LABS04_USEFULNESS_V1` review; no paid rerun or further L4 engineering is
 needed before that judgment.
 

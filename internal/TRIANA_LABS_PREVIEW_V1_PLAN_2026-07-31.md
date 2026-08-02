@@ -66,6 +66,9 @@ labeled synthetic rather than real-user evidence.
 Mechanically green generation is not product passage. The 2026-08-02 closing
 run produced five requested, valid, and distinct cases with no gaps, repairs,
 or duplicate clusters and therefore clears the deterministic machinery gate.
+The supported closure routes `triana cases generate` to this runtime only from
+an explicit restricted config and adds immutable `triana cases resume`; legacy
+config dispatch remains explicit and there is no fallback.
 The owner must still clear the frozen blind usefulness rubric. Until then the
 checkpoint is `AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn
 runtime, judges, memory, UI, real-data support, DeepEval, and generic agent

@@ -48,7 +48,9 @@ code from Akarsh's Kairos repositories only through the provenance process in
 10. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup and workflow.
 11. [`internal/SLICE_PACKET.md`](internal/SLICE_PACKET.md) — closed LABS-04
     implementation packet and exact evidence history.
-12. [`internal/LABS05_HANDOFF_2026-08-02.md`](internal/LABS05_HANDOFF_2026-08-02.md)
+12. [`internal/LABS04_CASE_REVIEW_2026-08-02.md`](internal/LABS04_CASE_REVIEW_2026-08-02.md)
+    — readable denominator, distinctness, case, and human-review companion.
+13. [`internal/LABS05_HANDOFF_2026-08-02.md`](internal/LABS05_HANDOFF_2026-08-02.md)
     — current restart context, LABS-05 decisions, backlog, and copyable prompt.
 
 Working product instruments:
@@ -92,17 +94,20 @@ The immediate first value moment is:
 
 The shared Slice 0A deterministic kernel is implemented in `triana-core/`.
 Triana Labs now has a synthetic-only local path through a reference transform,
-the Trace Observer, structural Corpus Intelligence, and an internal Grounded
-Case Factory. LABS-04's restricted Foundry GLM-5.2 experiment produced five
-valid distinct grounded cases with no gaps and passed the complete 375-test
-gate. Human usefulness review remains pending. Labs still does not accept
+the Trace Observer, structural Corpus Intelligence, and a supported Grounded
+Case Factory CLI. LABS-04's restricted Foundry GLM-5.2 experiment produced five
+valid distinct grounded cases with no gaps, and the supported generate/resume
+closure passed the complete 408-test gate. Human usefulness review remains
+pending. Labs still does not accept
 real/local-sensitive traces, execute a target agent, compare releases, create
 persistent memory, or render HTML.
 
-The successful restricted Case Factory is currently an internal API, not the
-public onboarding surface: `triana cases generate` still invokes the older
-Case Factory path. Do not claim LABS-04 productization or begin LABS-05 until
-the owner review and a new slice packet are frozen.
+`triana cases generate` now dispatches explicitly from the config artifact
+kind: the secret-free restricted example selects the pinned GLM-5.2 path while
+existing legacy configs retain the older path. `triana cases resume` continues
+an immutable restricted pause from exact config bytes and owner answers. This
+is synthetic-only CLI productization, not real-data support or LABS-05; target
+execution still waits for owner review and a new slice packet.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.
@@ -174,6 +179,31 @@ turn-policy, language, and distress semantics are explicitly not derived. The
 output contains `manifest.json`, `clusters.json`, `derivation_report.json`, and
 the three typed asset indexes under `personas/`, `intents/`, and
 `turn_policies/`.
+
+Generate five grounded proposals through the pinned restricted runtime after
+setting the two operator-owned environment variables named by the example:
+
+```bash
+uv run --locked triana cases generate \
+  /private/tmp/triana-observed/manifest.json \
+  --intelligence /private/tmp/triana-intelligence/manifest.json \
+  --config examples/restricted-case-factory-config.json \
+  --cache-dir /private/tmp/triana-case-cache \
+  --out /private/tmp/triana-cases
+```
+
+If the command exits 11 with `NEEDS_INPUT`, answer every emitted question in
+one strict JSON object and resume into a new directory with the same config and
+private cache:
+
+```bash
+uv run --locked triana cases resume \
+  /private/tmp/triana-cases/manifest.json \
+  --answers /path/to/answers.json \
+  --config examples/restricted-case-factory-config.json \
+  --cache-dir /private/tmp/triana-case-cache \
+  --out /private/tmp/triana-cases-resumed
+```
 
 Use `./scripts/verify.sh` from `triana-labs/` to run governance, frozen-test
 integrity, formatting, lint, strict typing, all tests, deterministic

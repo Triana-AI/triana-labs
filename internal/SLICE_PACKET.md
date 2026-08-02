@@ -1,6 +1,6 @@
 # Closed implementation slice — LABS-04 Grounded Case Factory
 
-Status: **MACHINERY PASSED — AWAITING OWNER REVIEW — NO ACTIVE LABS-05 SLICE**
+Status: **CLOSED — SUPPORTED RESTRICTED CLI GREEN — OWNER REVIEW PENDING**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -19,6 +19,172 @@ gate and a new LABS-05 packet replaces it. Fresh sessions must read
 intermediate amendments below as the current state.
 Owner: Akarsh
 Orchestrator: Codex
+
+## 0. LABS-04 closure addendum — supported restricted CLI
+
+The 2026-08-02 scale-out experiment proved the restricted GLM-5.2 runtime but
+did not expose it through the supported CLI: `triana cases generate` still
+entered the older three-stage Case Factory. The addendum below was required
+before handoff and is now implemented and green; LABS-04 has no remaining
+engineering gate before owner review.
+
+The public command remains:
+
+```text
+triana cases generate <observer-manifest> \
+  --intelligence <intelligence-manifest> \
+  --config <case-factory-config.json> \
+  --cache-dir <private-cache-directory> \
+  --out <new-directory>
+```
+
+Dispatch is explicit and fail-fast. A config whose `artifact_kind` is
+`case_factory_restricted_config` invokes the pinned restricted GLM-5.2 runtime;
+an existing `case_factory_config` continues to invoke the legacy runtime. No
+unknown kind, malformed config, missing endpoint/key environment variable, or
+provider/model mismatch falls back to either engine.
+
+The restricted config adds only the operator boundary needed by the CLI:
+
+```json
+{
+  "artifact_kind": "case_factory_restricted_config",
+  "schema_version": 1,
+  "provider": {
+    "provider_kind": "MICROSOFT_FOUNDRY_FIREWORKS",
+    "deployment": "FW-GLM-5.2",
+    "model_version": "1",
+    "endpoint_env": "TRIANA_FOUNDRY_ENDPOINT",
+    "api_key_env": "TRIANA_FOUNDRY_API_KEY",
+    "secret_sentinel_envs": [],
+    "request_timeout_seconds": 180
+  },
+  "generation": {"candidate_count": 5},
+  "budget": {
+    "max_usd": "25.000000",
+    "reservation_usd_per_agent_call": "2.000000"
+  }
+}
+```
+
+`candidate_count` is accepted only in the implemented restricted range. The
+model identity is pinned by Triana and must match the config exactly; it is not
+a model router. Credentials are read only from the named environment variables
+and never written to portable artifacts or terminal output.
+
+One new sibling command closes human-question continuation without hidden
+automation:
+
+```text
+triana cases resume <pause-manifest> \
+  --answers <answers.json> \
+  --config <same-case-factory-config.json> \
+  --cache-dir <same-private-cache-directory> \
+  --out <new-directory>
+```
+
+`answers.json` is one strict JSON object mapping every emitted `question_id` to
+one bounded string. Resume verifies the exact config hash recorded by the pause
+bundle before any provider call. Missing, extra, duplicate, non-string, or
+oversized answers refuse. The original pause bundle remains immutable.
+
+Acceptance ownership is serial: the independent test author freezes CLI
+dispatch, redaction, fail-fast, pause/resume, and wheel-parity tests before the
+implementation author edits production code. The orchestrator runs the full
+verification gate and reconciles the change budget.
+
+Closure change budget:
+
+- production: `triana-labs/src/triana_labs/cli.py` and the smallest necessary
+  Case Factory public/config helper files;
+- tests: one new or extended Case Factory acceptance-test module, authored
+  before production edits;
+- examples/docs: one secret-free restricted config example, this packet,
+  canonical Labs status/handoff documents, decision memory, and the readable
+  LABS-04 case review;
+- explicitly untouched: `triana-core/`, Observer/adapter/intelligence behavior,
+  frozen schema artifacts and five canonical hashes, LABS-05 runtime, provider
+  prompts, semantic validators, and the successful evidence bundle;
+- dependencies: none;
+- scope expansion: none without owner confirmation.
+
+Reproducible acceptance: fake transport only for automated tests; prove both
+config kinds dispatch to their intended engines, prove restricted pause/resume
+and all refusal/redaction paths, run the full repository verifier, and preserve
+the successful 5/5 scale-out bundle and frozen hashes. No second live provider
+run is required for CLI wiring.
+
+### 0.1 Exact restricted CLI wire clarification
+
+This subsection closes the assertion-level details raised by the independent
+test-author entry audit. It changes no provider or case-generation semantics.
+
+Restricted `generate` and `resume` stdout contain exactly these keys:
+`outcome,reason_code,manifest_path,questions_path,attempted_case_count,
+valid_case_count,distinct_case_count,provider_call_count,
+provider_http_exchange_count,conservative_cost_usd`. `questions_path` is the
+published `questions.json` path only for `NEEDS_INPUT`; otherwise it is null.
+Legacy generate retains its existing receipt unchanged.
+
+Restricted stderr contains exactly one safe terminal event with the existing
+service identity plus `command,event_name,severity,outcome,reason_code,
+duration_ms,attempted_case_count,valid_case_count,distinct_case_count,
+provider_call_count,provider_http_exchange_count,conservative_cost_usd` when a
+result exists. Generate uses command `cases.generate` and event names
+`triana.cases.generate.completed`, `.completed_with_gaps`, `.needs_input`, or
+`.rejected`. Resume uses command `cases.resume` and the corresponding
+`triana.cases.resume.*` names. Pre-result refusals omit all count/cost fields.
+Paths, config values, answers, exception text, endpoints, and secrets never
+enter stderr.
+
+Exit codes are exact: `COMPLETED=0`, `COMPLETED_WITH_GAPS=10`,
+`NEEDS_INPUT=11`, terminal restricted `REJECTED=8`, CLI/config/answer usage
+refusal `=2`, unavailable or corrupt immutable resume/private state `=5`, and
+an unexpected outer-boundary invariant `=70`. Closed pre-result reasons are
+`CLI_USAGE_ERROR`, `CONFIG_INVALID`, `PROVIDER_CONFIGURATION_MISSING`,
+`RESUME_INPUT_INVALID`, and `RESUME_STATE_UNAVAILABLE`. No exception text is
+used as a reason code.
+
+Resume compares `resume_state.config_hash` to the SHA-256 artifact hash of the
+exact config file bytes. Reformatting an otherwise equivalent config therefore
+does not resume a run created from different bytes. It refuses before transport
+construction or egress on mismatch. The config is also passed explicitly to
+resume so the operator cannot unknowingly use ambient provider settings.
+
+Restricted config JSON is UTF-8, duplicate-key rejecting, float rejecting, and
+closed at every object. The exact top-level keys are `artifact_kind,
+schema_version,provider,generation,budget`. Provider keys are exactly
+`provider_kind,deployment,model_version,endpoint_env,api_key_env,
+secret_sentinel_envs,request_timeout_seconds`; generation contains exactly
+`candidate_count`; budget contains exactly `max_usd,
+reservation_usd_per_agent_call`. The three pinned provider identity values must
+equal the example above. `schema_version` is integer 1; booleans never count as
+integers. For this supported closure `candidate_count` is exactly 5.
+`request_timeout_seconds` is an integer from 1 through 600. Money values remain
+decimal strings accepted by the restricted runtime, with `0 <= max_usd <= 25`
+and nonnegative reservation.
+
+Environment-variable names are operator-chosen references matching
+`[A-Z][A-Z0-9_]{0,127}`; the sample names are not mandatory. Sentinel names are
+unique and follow the same rule. The referenced endpoint and API key must both
+exist. The endpoint must be absolute HTTPS, contain a hostname, contain no
+userinfo, query, fragment, explicit port, or path other than empty or `/`, and
+is normalized by removing the trailing slash. The API key must be a nonempty,
+non-whitespace string. Missing/invalid referenced values return
+`PROVIDER_CONFIGURATION_MISSING` without egress; malformed config structure or
+endpoint form returns `CONFIG_INVALID`.
+
+The frozen test seam is a module-private CLI transport-construction helper that
+accepts the already-validated config and environment mapping and returns the
+`FoundryGLMRestrictedTransport`. In-process acceptance tests may monkeypatch
+that helper with a fake restricted transport; the subprocess/build-parity tests
+must not expose a public fake flag or environment bypass.
+
+The exact helper symbol and signature are
+`_build_restricted_transport(config: dict[str, Any], environ: Mapping[str, str])
+-> FoundryGLMRestrictedTransport`. An exact config-byte hash mismatch during
+resume is `CONFIG_INVALID` with exit 2; it is not an answer error or an
+unavailable-cache error.
 
 Exact wire authority: `internal/LABS04_WIRE_CONTRACT.md`. That document closes
 field-level schemas, canonical bytes, identity preimages, provider envelopes,
@@ -1625,9 +1791,15 @@ Portable bundle:
 - fourteen captured provider HTTP exchanges;
 - USD `12.000000` conservative reservation under the USD `25.000000` ceiling;
   actual provider cost remains `null`;
-- full repository verifier: 375 tests, unchanged five canonical Observer
+- full repository verifier after supported CLI closure: 408 tests, unchanged five canonical Observer
   hashes, deterministic replay, build, clean-wheel install, and source/wheel
-  parity at `/private/tmp/triana-labs-verify.4j1O0j`.
+  parity at `/private/tmp/triana-labs-verify.88h0RL`;
+- supported CLI acceptance: strict config-kind dispatch, pinned restricted
+  transport construction, redacted receipts/events/exits, immutable
+  pause/resume, exact config-byte and answer/cache validation, and source/wheel
+  help parity; legacy config dispatch remains unchanged;
+- no second provider call, prompt/validator change, dependency, privacy
+  expansion, target-agent execution, or LABS-05 code was required.
 
 The five case themes are missing-data handling, wrong-position recovery,
 cross-client social-engineering refusal, ETL/tool data integrity, and
@@ -1635,3 +1807,5 @@ prior-record verification. This description is an inspection aid, not an
 owner usefulness ruling. Apply the already frozen `LABS04_USEFULNESS_V1`
 rubric in Lane C above. LABS-04 is now mechanically complete and
 `AWAITING_HUMAN_REVIEW`; LABS-05 may start only after Akarsh clears that gate.
+The readable review companion is
+`internal/LABS04_CASE_REVIEW_2026-08-02.md`.

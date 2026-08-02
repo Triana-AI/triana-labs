@@ -62,6 +62,9 @@ and publication. Model output remains `PROPOSED`; semantic usefulness requires
 a blind owner review. The 2026-08-02 close produced five valid distinct cases
 with no gaps and therefore clears machinery, but LABS-04 remains
 `AWAITING_HUMAN_REVIEW`. A failed review still blocks multi-turn runtime work.
+The closure includes a supported, strict config-dispatched
+`triana cases generate` path for the pinned restricted runtime plus immutable
+`triana cases resume`; legacy configs remain explicit and no fallback exists.
 
 The required smoke input is the first 50 physical lines of the existing
 tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
