@@ -85,6 +85,139 @@ dependency can bypass review/config validation, identity, budgets, sequencing,
 adaptation binding, normalization, dedupe, custody, gaps, or publication
 arithmetic. The CLI has no flag or environment variable for test mode.
 
+### 1.2 Exact internal protocol and result shapes
+
+The production module exposes these frozen Python shapes. Dataclasses are
+frozen. `JsonObject` below means a closed `Mapping[str, JsonValue]` already
+validated by its named wire schema; implementations may use a concrete dict
+internally but may not add observable fields.
+
+```python
+@dataclass(frozen=True)
+class VerifiedCaseProjection:
+    case: JsonObject
+    persona: JsonObject
+    intent: JsonObject
+    turn_policy: JsonObject
+
+@dataclass(frozen=True)
+class VerifiedCaseFactoryInput:
+    manifest_file_hash: str
+    case_candidate_file_hash: str
+    input_manifest_hash: str
+    intelligence_manifest_hash: str
+    cases: tuple[VerifiedCaseProjection, ...]
+
+@dataclass(frozen=True)
+class TargetSourceIdentity:
+    source_commit: str
+    source_tree_hash: str
+    adapter_file_hash: str
+
+@dataclass(frozen=True)
+class SimulatorResponse:
+    status: str
+    request_bytes: bytes | None
+    response_bytes: bytes | None
+    next_user_content: str | None
+    consumed_observation_hash: str | None
+    proposed_stop: bool | None
+    stop_reason: str | None
+    input_tokens: int
+    output_tokens: int
+    provider_http_exchange_count: int
+    provider_reported_cost_usd: str | None
+    reason_code: str | None
+
+@dataclass(frozen=True)
+class TargetLaunch:
+    episode_id: str
+    case_id: str
+    target_config: JsonObject
+    world: JsonObject
+    world_hash: str
+    source_identity: TargetSourceIdentity
+    environment: Mapping[str, str]
+
+@dataclass(frozen=True)
+class AdaptiveRunResult:
+    outcome: str
+    reason_code: str | None
+    exit_code: int
+    manifest_path: Path
+    attempted_episode_count: int
+    valid_episode_count: int
+    effective_trajectory_count: int
+    simulator_http_exchange_count: int
+    target_http_exchange_count: int
+    all_http_exchange_count: int
+    reserved_cost_usd: str
+    actual_cost_usd: str | None
+```
+
+Each `VerifiedCaseProjection` object is the exact already-validated LABS-04
+record from `case_candidates.jsonl` plus its resolved exact persona, intent,
+and turn-policy records. Their shapes remain the existing LABS-04 closed
+schemas; the injected loader may supply newly authored synthetic objects that
+satisfy those schemas, but must state the frozen external file hashes above.
+The controller revalidates top-level artifact kinds/schema/fidelity/proposal
+state, case-to-asset IDs, input/intelligence hashes, selected case IDs/order,
+and the scenario/turn-policy fields it projects. It does not trust loader
+ordering or references merely because the dataclass was constructed.
+
+`source_tree_hash` and `adapter_file_hash` are digest strings. Production
+derives the tree identity from the pinned Git commit and the adapter digest
+from exact bytes; the injected verifier supplies them deterministically.
+
+Protocols are exactly:
+
+```python
+class CaseFactoryInputLoader(Protocol):
+    def load(self, manifest: Path) -> VerifiedCaseFactoryInput: ...
+
+class TargetSourceVerifier(Protocol):
+    def verify(self, target_config: JsonObject) -> TargetSourceIdentity: ...
+
+class SimulatorTransport(Protocol):
+    def complete(self, request: JsonObject) -> SimulatorResponse: ...
+
+class TargetSession(Protocol):
+    def exchange(self, request: JsonObject) -> JsonObject: ...
+    def terminate(self) -> None: ...
+
+class TargetProcessFactory(Protocol):
+    def start(self, launch: TargetLaunch) -> TargetSession: ...
+
+class Clock(Protocol):
+    def monotonic_ns(self) -> int: ...
+
+class ArtifactPublisher(Protocol):
+    def publish(self, output_path: Path, artifacts: Mapping[str, bytes]) -> None: ...
+```
+
+`TargetSession.exchange` requests and returns only the exact hello/turn/close
+JSON objects in section 4. `terminate` is called exactly once in a `finally`
+path for every successfully started session, including failure/interruption.
+`ArtifactPublisher.publish` receives exactly the eight final relative artifact
+names and their complete bytes; the default owns staging/fsync/no-replace.
+
+Prepublication refusal raises only:
+
+```python
+class AdaptiveRunFailure(Exception):
+    reason_code: str
+    exit_code: int
+```
+
+The constructor is `AdaptiveRunFailure(reason_code: str, exit_code: int)`.
+It exposes no unsafe exception detail. After any simulator/target egress, the
+runner returns an `AdaptiveRunResult` pointing to safely published partial
+custody whenever publication succeeds. Publication failure raises the closed
+output failure. Test doubles may raise `OSError`, `TimeoutError`,
+`KeyboardInterrupt`, or return a closed failure response; production maps only
+those observable categories to the frozen reasons and never serializes the
+exception text.
+
 ## 2. Owner review artifact
 
 The exact closed shape is:
