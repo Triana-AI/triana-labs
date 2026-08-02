@@ -32,6 +32,44 @@ The selected case file must have exact file SHA-256
 The manifest file must have exact SHA-256
 `817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`.
 
+### 1.1 Internal deterministic test seam
+
+The public CLI always constructs real configured boundaries. The independent
+suite uses this exact internal signature so it remains self-contained without
+vendoring the external LABS-04 bundle, reading HRAI, or calling a provider:
+
+```python
+run(
+    case_factory_manifest: Path,
+    owner_review: Path,
+    config_path: Path,
+    output_path: Path,
+    *,
+    simulator: SimulatorTransport,
+    target_factory: TargetProcessFactory,
+    clock: Clock,
+    environ: Mapping[str, str],
+    publisher: ArtifactPublisher | None = None,
+    source_verifier: TargetSourceVerifier | None = None,
+) -> AdaptiveRunResult
+```
+
+`SimulatorTransport.complete(request)` returns one strict normalized provider
+response with exact request/response bytes and usage/accounting fields.
+`target_factory(launch)` returns one fresh session per episode exposing
+`exchange(request) -> response` and `terminate() -> None`; the factory and
+session retain all calls for test inspection. `TargetSourceVerifier` receives
+the closed target config and either returns the verified source identity or
+raises the typed source refusal. When `source_verifier` is null, production
+uses the real Git/file verifier. `Clock` supplies deterministic monotonic
+nanoseconds. `ArtifactPublisher`, when supplied, replaces only the final
+atomic-publication operation for failure injection.
+
+These dependencies may reproduce only the external boundary. They cannot
+bypass manifest/review/config validation, identity, budgets, sequencing,
+adaptation binding, normalization, dedupe, custody, gaps, or publication
+arithmetic. The CLI has no flag or environment variable for test mode.
+
 ## 2. Owner review artifact
 
 The exact closed shape is:
