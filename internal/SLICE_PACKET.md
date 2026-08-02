@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-02
 
-Status: **FROZEN FOR INDEPENDENT RED; NO LIVE PROVIDER RUN AUTHORIZED**
+Status: **INDEPENDENT RED FROZEN; PRODUCTION AUTHOR AUTHORIZED AFTER TEST COMMIT**
 
 Slice ID: `LABS-05-ADAPTIVE-RUNNER-V1`
 
@@ -337,6 +337,50 @@ At minimum tests prove:
 
 Valid RED means collection succeeds and failures arise only because the new
 `episodes run` behavior/package is absent. Import/setup failures are invalid.
+
+The independent author completed this contract against authority head
+`baa0fe3`. Codex read every assertion and fixture and independently reproduced:
+
+```text
+42 tests collected
+42 expected failures
+0 passes
+0 collection errors
+0 skips
+Ruff check GREEN
+Ruff format check GREEN
+```
+
+Direct seam failures state that `triana_labs.adaptive_runner` is absent; CLI
+failures state that `episodes run` is absent. There is no fixture/import/setup
+failure. The six test-owned Python files contain 1,370 physical lines. Their
+sorted concatenated content SHA-256 is
+`88960cc93916c8b51721299b93479a2a5672ccb1f13e104d40ae39ca3dfe5dad`.
+The SHA-256 of the sorted per-file `shasum -a 256` stream is
+`2d30c12505b8fab6c154b26f8264b6b721604a63c6d9c6179d546f2c73400101`.
+The raw fake-target file SHA-256 is
+`a67250c83eabdd541918787bc45e8256f22a5a351fddb26b6086960369e3f29d`.
+Any change under either test-owned path invalidates this freeze and stops
+production until independently re-reviewed and re-hashed.
+
+After a production candidate passes the frozen suite, the independent test
+author attacks this additional orchestrator-declared matrix before exit:
+
+1. near-text paraphrases with identical ordered tool name/status sequences
+   cluster, while identical text with a different tool status remains distinct;
+2. a target `closed` cumulative HTTP/tool count mismatch invalidates the episode;
+3. an exact configured secret returned in assistant/tool or ignored target
+   fields is never retained or rendered;
+4. a destination inode/symlink raced immediately before publication cannot be
+   replaced or followed;
+5. a target argv/adapter/cwd identity changed after source verification refuses
+   before child execution;
+6. zero-egress and post-egress target failures retain distinct ledger counts
+   and never infer actual cost.
+
+These attacks may add only contract-derived test-author regressions after
+Codex reproduces a real candidate violation. They cannot change acceptance
+meaning or weaken the frozen 42 cases.
 
 ## 13. Roles and change budget
 

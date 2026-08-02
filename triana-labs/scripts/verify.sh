@@ -97,6 +97,38 @@ if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file
   exit 1
 fi
 
+triana_adaptive_runner_content_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/adaptive_runner_acceptance \
+    triana-labs/tests/adaptive_runner_fixtures \
+    | LC_ALL=C sort \
+    | xargs cat \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_adaptive_runner_content_hash="88960cc93916c8b51721299b93479a2a5672ccb1f13e104d40ae39ca3dfe5dad"
+if [[ "${triana_adaptive_runner_content_hash}" != "${triana_expected_adaptive_runner_content_hash}" ]]; then
+  echo "frozen adaptive runner acceptance content hash mismatch" >&2
+  exit 1
+fi
+
+triana_adaptive_runner_file_hash="$(
+  cd "${triana_repository_root}"
+  git ls-files \
+    triana-labs/tests/adaptive_runner_acceptance \
+    triana-labs/tests/adaptive_runner_fixtures \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_adaptive_runner_file_hash="2d30c12505b8fab6c154b26f8264b6b721604a63c6d9c6179d546f2c73400101"
+if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runner_file_hash}" ]]; then
+  echo "frozen adaptive runner acceptance file hash mismatch" >&2
+  exit 1
+fi
+
 triana_verify_tracked_hash() {
   local path="$1"
   local expected="$2"
@@ -213,6 +245,13 @@ uv run --locked triana cases generate \
 diff \
   "${triana_evidence_root}/source-case-help.txt" \
   "${triana_evidence_root}/installed-case-help.txt"
+uv run --locked triana episodes run \
+  --help >"${triana_evidence_root}/source-episode-help.txt"
+"${triana_evidence_root}/clean-venv/bin/triana" episodes run \
+  --help >"${triana_evidence_root}/installed-episode-help.txt"
+diff \
+  "${triana_evidence_root}/source-episode-help.txt" \
+  "${triana_evidence_root}/installed-episode-help.txt"
 set +e
 "${triana_evidence_root}/clean-venv/bin/triana" \
   traces observe \

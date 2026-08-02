@@ -61,6 +61,15 @@ target state are episode-only and discarded after publication; HRAI persistent
 memory is disabled; persistent/global evaluated memory remains deferred until
 a reviewed result has a concrete next-run consumer.
 
+Independent LABS-05 RED freeze: 42 tests collect cleanly and all 42 fail only
+because the new package/CLI is absent. The six files/1,370 lines are frozen at
+content SHA-256
+`88960cc93916c8b51721299b93479a2a5672ccb1f13e104d40ae39ca3dfe5dad`
+and per-file-list SHA-256
+`2d30c12505b8fab6c154b26f8264b6b721604a63c6d9c6179d546f2c73400101`.
+Production may edit only the packet-owned paths and no provider call is
+authorized.
+
 The older long-horizon objective below remains strategic context, not the next
 implementation authorization.
 
