@@ -1,6 +1,6 @@
 # Triana agent architecture
 
-Status: current LABS-04 launch design and parked post-LABS-04 direction.
+Status: LABS-04 implemented design and proposed LABS-05 direction.
 
 This document separates the agent needed now from the agentic simulation
 system Triana may earn later. The current implementation contract remains
@@ -60,26 +60,33 @@ functions the model cannot invoke or override.
 
 Run memory is the immutable evidence catalog, generated draft, normalized
 intermediate representation, defects, attempts, cost ledger, and final bundle.
-Exact-response and intermediate-representation caching reuses identical work.
-The model cannot write durable memory.
+The restricted runtime preserves exact responses and intermediate
+representations for custody and diagnosis, but it does not yet provide
+cross-run provider-response caching. LABS-05 must define caching separately and
+must never reuse a stale target-agent response. The model cannot write durable
+memory.
 
-Case quantity is requested rather than hard-coded: 1--25, default 10, emitted
-in deterministic batches of at most five. Each batch has one generation call
-and at most one repair call. The harness stops with typed partial evidence when
-budget cannot fund the next complete call; it does not silently shrink the
-request, change models, or retry to green. The launch smoke requests 10 and
-requires at least seven distinct grounded reviewable cases.
+Case quantity is requested rather than hard-coded: 1--25, default 10. The
+completed scale-out experiment special-cases exactly five requested cases into
+five deterministic one-case slots; other counts retain the earlier batches of
+at most five. Each slot/batch has one generation invocation and at most one
+repair invocation. The harness preserves typed partial evidence when budget
+cannot fund the next invocation; it does not silently shrink the request,
+change models, or retry to green. The closing smoke requested five and produced
+five valid distinct grounded cases.
 
 The current provider is Fireworks GLM-5.2 through Microsoft Foundry, selected
-only after a live tool/structured-output conformance probe. The synthetic-only
-provider-named egress and USD 3 experiment ceiling are explicit. There is no
-runtime model router or fallback. DeepSeek-V4-Flash remains a later comparison,
-not a fallback inside this run.
+only after live tool/structured-output conformance. The synthetic-only
+provider-named egress and final USD 25 closing ceiling are explicit; the run
+reserved USD 12 and reports actual cost as unknown. There is no runtime model
+router or fallback. DeepSeek-V4-Flash remains a later comparison, not a
+fallback inside this run.
 
 ## Future: agentic simulation system
 
-This direction is parked until grounded designs are useful and target-agent
-execution begins.
+This is the proposed LABS-05 direction. It remains unimplemented until the
+owner usefulness review passes and a new slice packet freezes the exact target
+agent, protocol, episode, world/tool, budget, harness, and acceptance choices.
 
 ```text
                     deterministic run controller
@@ -164,3 +171,7 @@ and typed failure artifacts. Framework convenience is not sufficient evidence.
 No target-agent execution, online turn generator, model judge, autonomous
 memory curator, runtime routing/fallback, hosted ingestion, real-data support,
 or generic skill registry is part of LABS-04.
+
+LABS-05 restart rules and backlog live in
+`internal/LABS05_HANDOFF_2026-08-02.md`; this architecture does not itself
+authorize those capabilities.

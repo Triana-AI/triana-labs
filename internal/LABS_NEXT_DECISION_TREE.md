@@ -14,7 +14,10 @@ is recorded through the repository protocol.
 The 2026-08-01 decision-log entry accepting single-agent
 `GENERATED_MULTI_TURN_SIMULATION` supersedes this tree's proposed next sequence.
 The tree remains useful as a record of parked alternatives, but it is not the
-current launch plan.
+current launch plan. After the LABS-04 close, the authoritative fresh-session
+handoff and LABS-05 decision boundary are
+`internal/LABS05_HANDOFF_2026-08-02.md`; do not promote a branch from this tree
+without the new owner-approved slice packet.
 
 ## Decision legend
 

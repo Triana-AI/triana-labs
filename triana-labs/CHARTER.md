@@ -68,10 +68,16 @@ tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
 `4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`,
 labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or real-user
 evidence. LABS-04 does not expand the privacy boundary, execute the target
-agent, create memory, adopt an agent framework, or authorize LABS-05. The
+agent, create persistent memory, expose a generic agent framework, or by
+itself authorize LABS-05. The
 exact contract, final USD 25 ceiling, edge cases, outputs, and independent test-first
 roles live in `internal/SLICE_PACKET.md` and
 `internal/LABS04_WIRE_CONTRACT.md`.
+
+The canonical restart context for the owner review and proposed LABS-05
+Adaptive Multi-Turn Runner is `internal/LABS05_HANDOFF_2026-08-02.md`. It does
+not authorize implementation; a new owner-approved slice packet must replace
+the closed LABS-04 packet first.
 
 ## Scope decisions (Akarsh, 2026-07-31)
 

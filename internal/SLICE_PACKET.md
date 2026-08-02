@@ -1,6 +1,6 @@
-# Active implementation slice — LABS-04 Grounded Case Factory
+# Closed implementation slice — LABS-04 Grounded Case Factory
 
-Status: **LIVE PROVIDER RED — CORRECTED BUDGET TESTS FROZEN**
+Status: **MACHINERY PASSED — AWAITING OWNER REVIEW — NO ACTIVE LABS-05 SLICE**
 
 Date: 2026-08-01
 Branch: `codex/labs-04-semantic-eval`
@@ -10,6 +10,13 @@ Slice ID: `LABS-04-grounded-case-factory`
 Active failure and repair evidence is maintained in
 `internal/LABS04_TRIAGE.md`. That ledger records classification and status but
 does not supersede this packet or the exact wire contract.
+
+LABS-04 implementation and the sole scale-out provider experiment are closed;
+the final result is in the Closing exit evidence section. This file remains the
+historical live contract until, and only until, the owner clears the usefulness
+gate and a new LABS-05 packet replaces it. Fresh sessions must read
+`internal/LABS05_HANDOFF_2026-08-02.md` and must not treat historical RED or
+intermediate amendments below as the current state.
 Owner: Akarsh
 Orchestrator: Codex
 

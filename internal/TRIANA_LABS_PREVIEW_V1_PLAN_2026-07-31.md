@@ -71,6 +71,22 @@ checkpoint is `AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn
 runtime, judges, memory, UI, real-data support, DeepEval, and generic agent
 frameworks remain unauthorized.
 
+### Proposed Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
+
+LABS-05 is not frozen or authorized. Its canonical restart context is
+`internal/LABS05_HANDOFF_2026-08-02.md`. Subject to the owner clearing
+`LABS04_USEFULNESS_V1`, the recommended minimum experiment runs an
+owner-reviewed subset of grounded cases as genuinely adaptive multi-turn
+episodes against one explicitly named existing conversational/tool agent. A
+new slice packet must freeze the target protocol, reset/tool/world boundary,
+episode/termination shape, simulator harness, hard budgets, typed partials,
+trajectory dedupe, transcript artifacts, and minimum human-inspection proof
+before tests or implementation.
+
+Persistent/global memory, model judges, UI, real-data support,
+baseline/candidate comparison, hosted execution, generic SDKs, and broad eval
+expansion remain outside that proposed checkpoint.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

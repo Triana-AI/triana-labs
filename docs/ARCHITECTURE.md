@@ -60,6 +60,16 @@ does not delegate deterministic authority to the framework. It adds no
 target-agent runner, persistent memory, model judge, real-data path, or UI.
 The closing experiment is `AWAITING_HUMAN_REVIEW`, so LABS-05 remains blocked.
 
+The proposed LABS-05 boundary is documented, but not authorized, in
+`internal/LABS05_HANDOFF_2026-08-02.md`: one deterministic episode controller,
+one reviewed grounded case at a time, one adaptive simulated user, and one
+explicitly named target-agent protocol. Episode identity, termination,
+budgets, HTTP accounting, tool normalization, transcript custody, trajectory
+dedupe, and typed gaps remain deterministic. The simulator may propose the
+next user turn after observing the latest target response/tool event; it may
+not mutate rulings or persistent memory. No runner implementation begins until
+the owner review and a replacement slice packet are complete.
+
 ## Authority map
 
 ```text

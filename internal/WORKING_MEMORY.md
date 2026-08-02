@@ -1,6 +1,6 @@
 # Working memory
 
-Updated: 2026-07-31
+Updated: 2026-08-02
 
 ## Active strategic position
 
@@ -42,6 +42,14 @@ Historical research and suspended-product handoff:
 - `docs/PRODUCT.md`
 
 ## Current objective
+
+Immediate objective after LABS-04: obtain Akarsh's
+`LABS04_USEFULNESS_V1` ruling, then freeze the smallest LABS-05 Adaptive
+Multi-Turn Runner. The canonical restart context and carried backlog are in
+`internal/LABS05_HANDOFF_2026-08-02.md`. No LABS-05 implementation is active.
+
+The older long-horizon objective below remains strategic context, not the next
+implementation authorization.
 
 Ship a public, local-first Preview that a developer with a conversational AI
 agent can install and use without founder-written integration code. The
@@ -591,3 +599,9 @@ cost is unknown. The 375-test full gate and all five canonical Observer hashes
 are green. The only remaining LABS-04 gate is Akarsh's
 `LABS04_USEFULNESS_V1` review; no paid rerun or further L4 engineering is
 needed before that judgment.
+
+Fresh-session rule: use `internal/LABS05_HANDOFF_2026-08-02.md` for the exact
+LABS-04 result, current implementation boundary, failed paths, proposed
+LABS-05 checkpoint, seven material owner decisions, and categorized backlog.
+Earlier open-blocker paragraphs in this working memory are chronological
+history and are superseded by the final LABS-04 close where they conflict.
