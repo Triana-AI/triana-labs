@@ -355,33 +355,36 @@ behavioral audit:
 
 ```text
 108 tests collected
-1 expected failure
-107 passes
+0 failures
+108 passes
 0 collection errors
 0 skips
 Ruff check GREEN
 Ruff format check GREEN
 ```
 
-The failure is a production mismatch rather than a fixture/import/setup
-failure: after the candidate repaired A1, the same guard was restricted to
-that turn, so an A2 response crossing the episode deadline still permits a U3
-simulator call. The two regressions require termination before new egress while
-preserving completed target custody and allowing later funded slots to
-continue. All previously frozen tests remain present. The final suite covers
+The final candidate repairs both post-target deadline boundaries: no later
+simulator egress occurs after A1 or A2 crosses the episode deadline, completed
+target custody is preserved, and later funded slots may continue. All
+previously frozen tests remain present. The final suite covers
 behavioral world fidelity, failure tool custody, input/source substitution,
 strict transport normalization, verified-cwd imports, and partial-line timeout.
 The tracked-source race uses a regular disposable executable and proves an
 unmodified control handshake before mutation. The eight test-owned Python
-files contain 2,796 physical lines. Their
+files contain 2,792 physical lines. Their
 sorted concatenated content SHA-256 is
-`8836ce674ee6c625d8bd8b173940edf784f1a116915a9e42ea98601b05a34440`.
+`e3eb48819cc0bd098a0ed6b270317d964512f29181a56f391cad30347377f196`.
 The SHA-256 of the sorted per-file `shasum -a 256` stream is
-`7264737cbd8e84e4b2f5f02094ec5306942d400b81f74560f8f6983e34382e91`.
+`347bf5d65b743e40291ba8f526ef34ccac06ab9368fd3593bb4cce16be3eab27`.
 The raw fake-target file SHA-256 is
 `dae9c31328f83c078969c68210cf4650510471bf5e78ee7ffb6e10d59c370dce`.
 Any change under either test-owned path invalidates this freeze and stops
 production until independently re-reviewed and re-hashed.
+
+The final four-line import relocation changes no assertion: it binds four
+test helpers during local conftest collection instead of importing ambiguous
+bare `conftest` names at test runtime. Codex independently reproduced 108/108
+focused passes and 516/516 full-suite passes after the correction.
 
 After a production candidate passes the frozen suite, the independent test
 author attacks this additional orchestrator-declared matrix before exit:
