@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import shutil
 import subprocess
 import sys
 import types
@@ -15,6 +16,7 @@ from typing import Any, Self
 import pytest
 from conftest import (
     ENVIRON,
+    FAKE_TARGET,
     Clock,
     Simulator,
     TargetFactory,
@@ -468,9 +470,13 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
     )
     checkout = tmp_path / "checkout"
     head = _initialize_git_checkout(checkout)
-    executable = Path(sys.executable)
+    executable = tmp_path / "python-regular"
+    interpreter = os.fspath(Path(sys.executable).resolve())
+    assert '"' not in interpreter
+    executable.write_text(f'#!/bin/sh\nexec "{interpreter}" "$@"\n')
+    executable.chmod(0o755)
     adapter = tmp_path / "adapter.py"
-    adapter.write_text("raise SystemExit(99)\n")
+    shutil.copy2(FAKE_TARGET, adapter)
     adapter_hash = (
         "sha256:" + __import__("hashlib").sha256(adapter.read_bytes()).hexdigest()
     )
@@ -492,9 +498,38 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
     target["source_commit"] = head
     target["argv"] = [os.fspath(executable), os.fspath(adapter)]
     target["cwd"] = os.fspath(checkout)
+    world = config_value()["world"]
+    world_hash = "sha256:" + "b" * 64
+    launch = module.TargetLaunch(
+        "episode-race",
+        "case-b2b9570f6e763ca0",
+        target,
+        world,
+        world_hash,
+        identity,
+        ENVIRON,
+    )
+    hello = {
+        "agent_model": target["agent_model"],
+        "allowed_tools": world["allowed_tools"],
+        "case_id": launch.case_id,
+        "episode_id": launch.episode_id,
+        "kind": "hello",
+        "prompt_version": target["prompt_version"],
+        "protocol": target["protocol"],
+        "source_commit": target["source_commit"],
+        "world_hash": world_hash,
+        "world_kind": world["kind"],
+    }
+    control = module.JsonlTargetProcessFactory().start(launch)
+    try:
+        assert control.exchange(hello)["kind"] == "ready"
+    finally:
+        control.terminate()
     if race == "argv":
         alternate = tmp_path / "alternate.py"
-        alternate.write_text("raise SystemExit(98)\n")
+        shutil.copy2(FAKE_TARGET, alternate)
+        alternate.write_text(alternate.read_text() + "\n# different adapter identity\n")
         target["argv"][1] = os.fspath(alternate)
     elif race == "adapter":
         adapter.write_text("raise SystemExit(97)\n")
@@ -504,15 +539,6 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
         checkout.mkdir()
     else:
         (checkout / "tracked.txt").write_text("mutated after verification\n")
-    launch = module.TargetLaunch(
-        "episode-race",
-        "case-b2b9570f6e763ca0",
-        target,
-        config_value()["world"],
-        "sha256:" + "b" * 64,
-        identity,
-        ENVIRON,
-    )
     with pytest.raises(module.TargetProtocolFailure) as caught:
         module.JsonlTargetProcessFactory().start(launch)
     assert caught.value.reason_code == "TARGET_PROTOCOL_ERROR"
