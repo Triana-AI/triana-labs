@@ -84,10 +84,11 @@ LABS-05 is frozen in `internal/SLICE_PACKET.md` and
 as U1/A1/U2/A2/U3/A3 episodes. U2 and U3 are proposed by pinned Foundry
 Fireworks `FW-GLM-5.2` only after consuming the immediately preceding HRAI
 response and normalized tool observations. The one target is HRAI Recruiter
-Chat ReAct at commit `728f6c5`, historical Qwen 235B identity, behind the
-strict target-specific JSONL subprocess. Every episode gets a fresh synthetic
-read-only world, empty target memory, four allowlisted read-only tools, and no
-fallback.
+Chat ReAct at commit `728f6c5`, historical Qwen 235B identity and the
+executable `candidate-screening-v3-decision-followthrough` prompt at that
+commit, behind the strict target-specific JSONL subprocess. Every episode gets
+a fresh synthetic read-only world, empty target memory, four allowlisted
+read-only tools, and no fallback.
 
 The deterministic controller owns identity, sequencing, latest-observation
 binding, termination, budgets, logical versus HTTP accounting, atomic evidence

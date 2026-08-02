@@ -29,8 +29,14 @@ trajectory fingerprints, duplicate arithmetic, lineage, and typed gaps.
 The target is the HRAI Recruiter Chat ReAct protocol at HRAI commit
 `728f6c5058efe40a16e2aecc9b528b3353f4df4f`, historical agent model
 `qwen.qwen3-235b-a22b-2507-v1:0`, prompt version
-`candidate-screening-v2-reliability`. It runs behind the exact Triana-owned
-JSONL subprocess protocol in the normative wire. Model fallback is disabled.
+`candidate-screening-v3-decision-followthrough`. It runs behind the exact
+Triana-owned JSONL subprocess protocol in the normative wire. Model fallback
+is disabled.
+
+The historical `run_200` manifest labels its absent code tarball
+`candidate-screening-v2-reliability`; that tarball is not present at the pinned
+commit. LABS-05 therefore uses the prompt builder that is actually executable
+and inspectable at that commit and does not claim the manifest-only v2 lineage.
 
 This is not a generic agent SDK, product-wide runner, judge, memory system, or
 release comparison. The target adapter uses a fresh synthetic read-only world

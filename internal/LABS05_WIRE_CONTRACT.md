@@ -296,7 +296,7 @@ The exact closed shape is:
     "protocol": "HRAI_RECRUITER_CHAT_REACT_JSONL_V1",
     "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
     "agent_model": "qwen.qwen3-235b-a22b-2507-v1:0",
-    "prompt_version": "candidate-screening-v2-reliability",
+    "prompt_version": "candidate-screening-v3-decision-followthrough",
     "fallback_model": null,
     "argv": ["<absolute executable>", "<absolute adapter script>"],
     "cwd": "<absolute pinned HRAI checkout>",
@@ -375,7 +375,7 @@ Request:
   "case_id": "case-...",
   "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
   "agent_model": "qwen.qwen3-235b-a22b-2507-v1:0",
-  "prompt_version": "candidate-screening-v2-reliability",
+  "prompt_version": "candidate-screening-v3-decision-followthrough",
   "world_kind": "HRAI_SYNTHETIC_READ_ONLY_V1",
   "world_hash": "sha256:<digest>",
   "allowed_tools": ["get_candidate_by_email", "get_existing_evaluation", "get_hiring_rubric", "query_database"]
@@ -392,7 +392,7 @@ Response:
   "case_id": "case-...",
   "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
   "agent_model": "qwen.qwen3-235b-a22b-2507-v1:0",
-  "prompt_version": "candidate-screening-v2-reliability",
+  "prompt_version": "candidate-screening-v3-decision-followthrough",
   "world_hash": "sha256:<digest>",
   "memory_state": "EMPTY",
   "fallback_enabled": false

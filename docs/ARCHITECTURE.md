@@ -82,8 +82,9 @@ accepted LABS-04 case + reproducible owner ruling
   -> owner adaptation review
 ```
 
-The HRAI target is pinned to commit `728f6c5`, historical Qwen 235B model and
-prompt identity, but runs through a Triana-owned target-specific JSONL adapter
+The HRAI target is pinned to commit `728f6c5`, historical Qwen 235B model, and
+the executable `candidate-screening-v3-decision-followthrough` prompt at that
+commit, but runs through a Triana-owned target-specific JSONL adapter
 against a fresh in-memory synthetic read-only world. HRAI persistent memory,
 database writes, web, email, evaluation submission, and sub-agents are absent.
 The target process and episode state are discarded after each episode.

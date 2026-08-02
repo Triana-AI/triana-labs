@@ -85,8 +85,10 @@ LABS-05 is frozen for test-first implementation on 2026-08-02. It executes
 exactly the owner-reviewed LABS-04 cases for context recovery, cross-client
 refusal, and bounded status verification as three six-role-turn episodes. The
 simulated user uses Foundry Fireworks `FW-GLM-5.2`; the target is HRAI Recruiter
-Chat ReAct at commit `728f6c5`, historical Qwen 235B agent identity, behind a
-strict Triana-owned JSONL subprocess and fresh synthetic read-only world.
+Chat ReAct at commit `728f6c5`, historical Qwen 235B agent identity and the
+executable `candidate-screening-v3-decision-followthrough` prompt at that
+commit, behind a strict Triana-owned JSONL subprocess and fresh synthetic
+read-only world.
 
 Deterministic code owns episode/turn/tool identity, latest-observation binding,
 termination, all budgets, HTTP accounting, artifact custody, trajectory
