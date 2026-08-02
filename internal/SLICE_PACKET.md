@@ -354,9 +354,9 @@ and independently reproduced the final post-candidate RED after a second
 behavioral audit:
 
 ```text
-107 tests collected
+108 tests collected
 1 expected failure
-106 passes
+107 passes
 0 collection errors
 0 skips
 Ruff check GREEN
@@ -364,19 +364,20 @@ Ruff format check GREEN
 ```
 
 The failure is a production mismatch rather than a fixture/import/setup
-failure: after A1 consumes the episode deadline, the candidate performs a
-simulator call before its next time check. The regression requires termination
-before new egress while preserving A1 custody and allowing later funded slots
-to continue. All previously frozen tests remain present. The final suite covers
+failure: after the candidate repaired A1, the same guard was restricted to
+that turn, so an A2 response crossing the episode deadline still permits a U3
+simulator call. The two regressions require termination before new egress while
+preserving completed target custody and allowing later funded slots to
+continue. All previously frozen tests remain present. The final suite covers
 behavioral world fidelity, failure tool custody, input/source substitution,
 strict transport normalization, verified-cwd imports, and partial-line timeout.
 The tracked-source race uses a regular disposable executable and proves an
 unmodified control handshake before mutation. The eight test-owned Python
-files contain 2,714 physical lines. Their
+files contain 2,796 physical lines. Their
 sorted concatenated content SHA-256 is
-`97a3051a018953a444a5023c929c56c5a83b204000ef3aa40d20bb4355874eef`.
+`8836ce674ee6c625d8bd8b173940edf784f1a116915a9e42ea98601b05a34440`.
 The SHA-256 of the sorted per-file `shasum -a 256` stream is
-`aa63f386819461acfe97006f9a94823af703898f15f20b1e9bd7fe33d9682169`.
+`7264737cbd8e84e4b2f5f02094ec5306942d400b81f74560f8f6983e34382e91`.
 The raw fake-target file SHA-256 is
 `dae9c31328f83c078969c68210cf4650510471bf5e78ee7ffb6e10d59c370dce`.
 Any change under either test-owned path invalidates this freeze and stops
