@@ -6,7 +6,14 @@ import time
 from pathlib import Path
 
 import pytest
-from conftest import ENVIRON, SELECTED_CASE_IDS, api, config_value, invoke, jsonl
+from conftest import (
+    ENVIRON,
+    SELECTED_CASE_IDS,
+    api,
+    executable_config_value,
+    invoke,
+    jsonl,
+)
 
 
 def test_each_episode_gets_fresh_target_state_and_discards_memory(
@@ -18,8 +25,8 @@ def test_each_episode_gets_fresh_target_state_and_discards_memory(
     assert len({launch.episode_id for launch in run.target.launches}) == 3
     for launch, session in zip(run.target.launches, run.target.sessions, strict=True):
         assert launch.environment == ENVIRON
-        assert launch.world["persistent_memory"] == "DISABLED"
-        assert launch.world["reset_policy"] == "FRESH_PER_EPISODE"
+        assert launch.target_config["connector_kind"] == "HTTP_JSON_V1"
+        assert launch.target_config["state_isolation"] == "STATELESS_TRANSCRIPT"
         assert [request["kind"] for request in session.exchanges] == [
             "hello",
             "turn",
@@ -78,7 +85,7 @@ def test_real_jsonl_factory_fails_closed_on_raw_protocol_defects(
     module = api()
     completed = invoke(
         tmp_path,
-        config=config_value(target_mode=mode),
+        config=executable_config_value(target_mode=mode),
         target=module.JsonlTargetProcessFactory(),
     )
     assert completed.result.outcome == "COMPLETED_WITH_GAPS"
@@ -91,7 +98,7 @@ def test_real_jsonl_factory_classifies_and_redacts_stderr(tmp_path: Path) -> Non
     module = api()
     run = invoke(
         tmp_path,
-        config=config_value(target_mode="stderr"),
+        config=executable_config_value(target_mode="stderr"),
         target=module.JsonlTargetProcessFactory(),
     )
     gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
@@ -101,7 +108,7 @@ def test_real_jsonl_factory_classifies_and_redacts_stderr(tmp_path: Path) -> Non
 
 def test_real_jsonl_factory_times_out_on_unterminated_partial_line() -> None:
     module = api()
-    target = config_value(target_mode="partial_stall")["target"]
+    target = executable_config_value(target_mode="partial_stall")["target"]
     target["timeout_seconds"] = 0.05
     identity = module.TargetSourceIdentity(
         target["source_commit"], "sha256:" + "6" * 64, "sha256:" + "7" * 64
@@ -110,7 +117,7 @@ def test_real_jsonl_factory_times_out_on_unterminated_partial_line() -> None:
         "episode-partial-line",
         SELECTED_CASE_IDS[0],
         target,
-        config_value()["world"],
+        {},
         "sha256:" + "8" * 64,
         identity,
         ENVIRON,
@@ -121,16 +128,14 @@ def test_real_jsonl_factory_times_out_on_unterminated_partial_line() -> None:
         with pytest.raises(module.TargetProtocolFailure) as caught:
             session.exchange(
                 {
-                    "agent_model": target["agent_model"],
-                    "allowed_tools": config_value()["world"]["allowed_tools"],
                     "case_id": SELECTED_CASE_IDS[0],
+                    "connector_id": target["connector_id"],
+                    "connector_kind": target["connector_kind"],
                     "episode_id": "episode-partial-line",
                     "kind": "hello",
-                    "prompt_version": target["prompt_version"],
                     "protocol": target["protocol"],
                     "source_commit": target["source_commit"],
-                    "world_hash": "sha256:" + "8" * 64,
-                    "world_kind": config_value()["world"]["kind"],
+                    "target_identity": target["target_identity"],
                 }
             )
     finally:
@@ -145,6 +150,6 @@ def test_fallback_and_unallowlisted_environment_never_reach_launch(
 ) -> None:
     run = invoke(tmp_path)
     for launch in run.target.launches:
-        assert launch.target_config["fallback_model"] is None
+        assert "fallback" not in launch.target_config
         assert set(launch.environment) == set(ENVIRON)
         assert "LABS05_FAKE_API_KEY" not in launch.environment

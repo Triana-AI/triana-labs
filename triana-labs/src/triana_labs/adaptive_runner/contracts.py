@@ -109,9 +109,10 @@ class ArtifactPublisher(Protocol):
 
 
 class TargetProtocolFailure(Exception):
-    def __init__(self, reason_code: str) -> None:
+    def __init__(self, reason_code: str, *, observed_http: int = 0) -> None:
         super().__init__(reason_code)
         self.reason_code = reason_code
+        self.observed_http = observed_http
 
 
 class AdaptiveRunFailure(Exception):

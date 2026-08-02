@@ -15,20 +15,26 @@ is now the owner-approved contract and records local implementation closure.
 
 ## 0. LABS-05 local closure
 
+Owner-approved supersession is locally complete. The accepted replacement is
+`internal/LABS05_TARGET_CONNECTOR_V1.md`: restricted HTTP/JSON plus a strict
+customer executable bridge, with HRAI treated as an opaque existing localhost
+endpoint that owns its prompt/model/tools/internal state. The four-tool HRAI
+reconstruction is rejected and removed from the supported boundary.
+
 - Supported local surface: `triana episodes run MANIFEST --review REVIEW
   --config CONFIG --out OUT`.
-- Implementation: deterministic adaptive controller plus strict Triana-owned
-  HRAI Recruiter Chat ReAct JSONL subprocess and fresh synthetic read-only
-  four-tool world; no persistent memory, retry, or fallback.
-- Verification: 108/108 focused acceptance cases and 516/516 repository cases;
+- Implementation: deterministic adaptive controller plus restricted
+  `HTTP_JSON_V1` and strict `EXECUTABLE_JSONL_V1` opaque-target connectors; no
+  Triana persistent/global memory, retry, redirect, proxy, or fallback.
+- Verification: 131/131 focused acceptance cases and 539/539 repository cases;
   Ruff, strict mypy, deterministic replay, all five unchanged Observer hashes,
   build, clean CPython 3.13.14 wheel install, source/wheel parity, governance,
-  and secret scan passed. Evidence: `/private/tmp/triana-labs-verify.LZNfkB`.
-- Status boundary: local implementation is complete; no live target/provider
-  run occurred, no three-trajectory passage claim exists, and
+  and secret scan passed. Evidence: `/private/tmp/triana-labs-verify.VyGGgn`.
+- Status boundary: local implementation is complete; the real-endpoint smoke
+  did not reach chat, no three-trajectory passage claim exists, and
   `LABS05_ADAPTATION_V1` remains pending.
-- Next human gate: Akarsh must explicitly authorize the bounded synthetic-only
-  live run (maximum 42 HTTP exchanges, USD 23, 600 seconds) before egress.
+- Next human gate: repair or supply reachable HRAI Postgres/Redis, then obtain
+  a separate authorization for a bounded synthetic-only live run before egress.
 - Live diagnostic evidence after local closure: one owner-authorized localhost
   OpenRouter attempt authenticated after a key refresh but exhausted the
   target's four-model-call ceiling before A1. The pinned v3 evaluation prompt
@@ -36,6 +42,15 @@ is now the owner-approved contract and records local implementation closure.
   four-read-only-tool adapter. No U2/U3, remote DB/Redis, real data, fallback,
   or persistent memory occurred. This is a typed compatibility gap, not LABS-05
   passage; the smallest repair requires a new owner-frozen prompt/tool choice.
+- Current real-endpoint evidence: on 2026-08-03 Akarsh authorized starting
+  unchanged HRAI commit `728f6c5` with its configured startup side effects and
+  one synthetic read-only connector turn. Postgres timed out during startup;
+  `/health` made one target-internal OpenRouter diagnostic whose usage/cost is
+  unavailable; `POST /sessions` then returned HTTP 500 because Redis DNS
+  failed. No session, chat turn, tool call, or target response occurred. HRAI
+  shut down cleanly. The non-JSON 500 exposed one Triana classification defect,
+  now covered by the 131st independent regression. The smoke is a typed target
+  infrastructure failure, not LABS-05 passage, and authorizes no rerun.
 
 ## 1. Exact ground truth
 

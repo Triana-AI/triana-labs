@@ -18,7 +18,7 @@ from typing import Any
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 PROJECT_ROOT = REPOSITORY_ROOT / "triana-labs"
 FIXTURE_ROOT = PROJECT_ROOT / "tests" / "adaptive_runner_fixtures"
-FAKE_TARGET = FIXTURE_ROOT / "fake_hrai_jsonl.py"
+FAKE_TARGET = FIXTURE_ROOT / "fake_executable_connector.py"
 WIRE = "LABS05_WIRE_V1"
 MANIFEST_FILE_HASH = (
     "sha256:817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9"
@@ -326,17 +326,28 @@ class Session:
             raise KeyboardInterrupt
         if request["kind"] == "hello":
             response = {
-                "agent_model": request["agent_model"],
-                "case_id": request["case_id"],
-                "episode_id": request["episode_id"],
-                "fallback_enabled": False,
-                "kind": "ready",
-                "memory_state": "EMPTY",
-                "prompt_version": request["prompt_version"],
-                "protocol": request["protocol"],
-                "source_commit": request["source_commit"],
-                "world_hash": request["world_hash"],
+                key: deepcopy(value)
+                for key, value in request.items()
+                if key
+                in {
+                    "agent_model",
+                    "case_id",
+                    "connector_config_hash",
+                    "connector_id",
+                    "connector_kind",
+                    "episode_id",
+                    "prompt_version",
+                    "protocol",
+                    "source_commit",
+                    "target_identity",
+                    "world_hash",
+                }
             }
+            response.update(
+                fallback_enabled=False,
+                kind="ready",
+                memory_state="EMPTY",
+            )
             if self.mode == "unknown_field":
                 response["unexpected"] = "private"
             if self.mode == "identity_mismatch":
@@ -363,7 +374,7 @@ class Session:
                     {
                         "arguments": {},
                         "cached": False,
-                        "name": "query_database",
+                        "name": "opaque_target_tool",
                         "ordinal": ordinal,
                         "reason_code": None,
                         "result": {"row": ordinal},
@@ -486,10 +497,11 @@ def review_value() -> dict[str, Any]:
 
 
 def config_value(*, target_mode: str = "success") -> dict[str, Any]:
+    del target_mode
     return {
         "artifact_kind": "adaptive_runner_config",
         "budget": {
-            "all_http_exchanges": 42,
+            "all_http_exchanges": 15,
             "episode_count": 3,
             "episode_timeout_seconds": 180,
             "max_usd": "23.000000",
@@ -499,12 +511,8 @@ def config_value(*, target_mode: str = "success") -> dict[str, Any]:
             "simulator_input_tokens_per_exchange": 131072,
             "simulator_output_tokens_per_exchange": 4096,
             "simulator_reservation_usd_per_exchange": "1.000000",
-            "target_http_exchanges": 36,
-            "target_http_exchanges_per_turn": 4,
-            "target_input_tokens_per_episode": 393216,
-            "target_output_tokens_per_episode": 24576,
+            "target_http_exchanges": 9,
             "target_reservation_usd_per_turn": "1.888888",
-            "target_tool_calls_per_episode": 12,
         },
         "privacy_class": "SYNTHETIC",
         "protocol_version": WIRE,
@@ -523,28 +531,80 @@ def config_value(*, target_mode: str = "success") -> dict[str, Any]:
             "timeout_seconds": 180,
         },
         "target": {
-            "agent_model": "qwen.qwen3-235b-a22b-2507-v1:0",
-            "argv": [sys.executable, str(FAKE_TARGET), target_mode],
-            "cwd": str(PROJECT_ROOT),
-            "env_names": ["AWS_PROFILE", "AWS_REGION"],
-            "fallback_model": None,
-            "prompt_version": "candidate-screening-v3-decision-followthrough",
-            "protocol": "HRAI_RECRUITER_CHAT_REACT_JSONL_V1",
-            "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
+            "allowed_host": "synthetic-target.invalid",
+            "auth": {"kind": "NONE"},
+            "base_url": "https://synthetic-target.invalid",
+            "connector_id": "synthetic-stateless-v1",
+            "connector_kind": "HTTP_JSON_V1",
+            "data_class": "SYNTHETIC_LOCAL_TARGET",
+            "session": {"mode": "STATELESS_TRANSCRIPT"},
+            "state_isolation": "STATELESS_TRANSCRIPT",
+            "target_identity": {
+                "agent_id": "SYNTHETIC_TRANSCRIPT_AGENT",
+                "model": None,
+                "prompt": None,
+                "protocol": "STATELESS_DIALOG_V2",
+                "tools": None,
+                "version": "2",
+            },
             "timeout_seconds": 180,
-        },
-        "world": {
-            "allowed_tools": [
-                "get_candidate_by_email",
-                "get_existing_evaluation",
-                "get_hiring_rubric",
-                "query_database",
-            ],
-            "kind": "HRAI_SYNTHETIC_READ_ONLY_V1",
-            "persistent_memory": "DISABLED",
-            "reset_policy": "FRESH_PER_EPISODE",
+            "turn": {
+                "operation": {
+                    "assignments": [
+                        {"pointer": "/payload/dialog", "source": "transcript"},
+                        {"pointer": "/payload/latest", "source": "user_turn"},
+                    ],
+                    "constant_json": {"payload": {"dialog": [], "latest": ""}},
+                    "method": "POST",
+                    "path_template": "/v2/respond",
+                },
+                "response_mapping": {
+                    "assistant_content_pointer": "/result/agent/text",
+                    "error_pointer": None,
+                    "internal_usage": {
+                        "http_exchanges_pointer": "/meter/calls",
+                        "input_tokens_pointer": "/meter/in",
+                        "output_tokens_pointer": "/meter/out",
+                    },
+                    "target_status_pointer": None,
+                    "termination_pointer": "/result/ended",
+                    "tool_events": {
+                        "arguments_pointer": "/arguments",
+                        "list_pointer": "/result/events",
+                        "name_pointer": "/tool",
+                        "status_pointer": "/status",
+                    },
+                },
+            },
         },
     }
+
+
+def executable_config_value(*, target_mode: str = "success") -> dict[str, Any]:
+    value = config_value()
+    value["target"] = {
+        "argv": [sys.executable, str(FAKE_TARGET), target_mode],
+        "connector_id": "synthetic-executable-bridge-v1",
+        "connector_kind": "EXECUTABLE_JSONL_V1",
+        "cwd": str(PROJECT_ROOT),
+        "data_class": "SYNTHETIC_LOCAL_TARGET",
+        "env_names": ["AWS_PROFILE", "AWS_REGION"],
+        "protocol": "TARGET_CONNECTOR_JSONL_V1",
+        "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
+        "state_isolation": "EPISODE_PROCESS",
+        "target_identity": {
+            "agent_id": "SYNTHETIC_CUSTOMER_BRIDGE",
+            "model": None,
+            "prompt": None,
+            "protocol": "SYNTHETIC_BRIDGE_V1",
+            "tools": None,
+            "version": "1",
+        },
+        "timeout_seconds": 180,
+    }
+    value["budget"]["all_http_exchanges"] = 6
+    value["budget"]["target_http_exchanges"] = 0
+    return value
 
 
 @dataclass(frozen=True)

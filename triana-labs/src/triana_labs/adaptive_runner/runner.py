@@ -44,12 +44,6 @@ CASE_IDS = (
     "case-62ca79446e3a22d5",
     "case-9a0d8a895afcd860",
 )
-TOOLS = (
-    "get_candidate_by_email",
-    "get_existing_evaluation",
-    "get_hiring_rubric",
-    "query_database",
-)
 OUTPUTS = (
     "episode_attempts.jsonl",
     "transcripts.jsonl",
@@ -252,7 +246,7 @@ def _validate_review(value: dict[str, Any]) -> None:
 
 def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
     top = set(
-        "artifact_kind schema_version protocol_version privacy_class selected_case_ids simulator target world budget".split()  # noqa: SIM905
+        "artifact_kind schema_version protocol_version privacy_class selected_case_ids simulator target budget".split()  # noqa: SIM905
     )
     if not _closed(value, top):
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
@@ -300,46 +294,80 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
     ):
         raise AdaptiveRunFailure("SIMULATOR_ENDPOINT_REFUSED", 4)
     target = value["target"]
-    target_keys = set(
-        "protocol source_commit agent_model prompt_version fallback_model argv cwd env_names timeout_seconds".split()  # noqa: SIM905
-    )
-    if not _closed(target, target_keys):
-        raise AdaptiveRunFailure("CONFIG_INVALID", 2)
-    argv = target.get("argv")
-    names = target.get("env_names")
-    if not (
-        target["protocol"] == "HRAI_RECRUITER_CHAT_REACT_JSONL_V1"
-        and target["source_commit"] == "728f6c5058efe40a16e2aecc9b528b3353f4df4f"
-        and target["agent_model"] == "qwen.qwen3-235b-a22b-2507-v1:0"
-        and target["prompt_version"] == "candidate-screening-v3-decision-followthrough"
-        and target["fallback_model"] is None
-        and _strict_int(target["timeout_seconds"], 180)
-        and isinstance(argv, list)
-        and 2 <= len(argv) <= 8
-        and all(
-            isinstance(item, str) and 1 <= len(item.encode()) <= 4096 for item in argv
+    kind = target.get("connector_kind") if isinstance(target, dict) else None
+    if kind == "HTTP_JSON_V1":
+        from .http_target import validate_http_target
+
+        validate_http_target(target, environ)
+        target_http = 15 if target["session"]["mode"] == "REMOTE_SESSION" else 9
+    elif kind == "EXECUTABLE_JSONL_V1":
+        keys = set(
+            "connector_id connector_kind data_class state_isolation target_identity protocol source_commit argv cwd env_names timeout_seconds".split()  # noqa: SIM905
         )
-        and all(os.path.isabs(item) for item in argv[:2])
-        and sum(len(item.encode()) for item in argv) <= 16_384
-        and isinstance(target["cwd"], str)
-        and os.path.isabs(target["cwd"])
-        and isinstance(names, list)
-        and len(names) == len(set(names))
-        and all(isinstance(name, str) and _ENV.fullmatch(name) for name in names)
-    ):
-        raise AdaptiveRunFailure("CONFIG_INVALID", 2)
-    world = value["world"]
-    if not (
-        _closed(world, {"kind", "reset_policy", "persistent_memory", "allowed_tools"})
-        and world["kind"] == "HRAI_SYNTHETIC_READ_ONLY_V1"
-        and world["reset_policy"] == "FRESH_PER_EPISODE"
-        and world["persistent_memory"] == "DISABLED"
-        and world["allowed_tools"] == list(TOOLS)
-    ):
-        raise AdaptiveRunFailure("CONFIG_INVALID", 2)
-    expected_budget = json.loads(
-        '{"all_http_exchanges":42,"episode_count":3,"episode_timeout_seconds":180,"max_usd":"23.000000","role_turns_per_episode":6,"run_timeout_seconds":600,"simulator_http_exchanges":6,"simulator_input_tokens_per_exchange":131072,"simulator_output_tokens_per_exchange":4096,"simulator_reservation_usd_per_exchange":"1.000000","target_http_exchanges":36,"target_http_exchanges_per_turn":4,"target_input_tokens_per_episode":393216,"target_output_tokens_per_episode":24576,"target_reservation_usd_per_turn":"1.888888","target_tool_calls_per_episode":12}'
-    )
+        argv, names, identity = (
+            target.get("argv"),
+            target.get("env_names"),
+            target.get("target_identity"),
+        )
+        if not (
+            _closed(target, keys)
+            and target["data_class"] == "SYNTHETIC_LOCAL_TARGET"
+            and target["state_isolation"] == "EPISODE_PROCESS"
+            and isinstance(target["connector_id"], str)
+            and _PORTABLE_ID.fullmatch(target["connector_id"])
+            and isinstance(target["protocol"], str)
+            and _PORTABLE_ID.fullmatch(target["protocol"])
+            and isinstance(target["source_commit"], str)
+            and re.fullmatch(r"[0-9a-f]{40}", target["source_commit"])
+            and _closed(
+                identity,
+                {"agent_id", "protocol", "version", "model", "prompt", "tools"},
+            )
+            and all(
+                _text(identity[key], nonempty=True)
+                for key in ("agent_id", "protocol", "version")
+            )
+            and all(
+                identity[key] is None or _text(identity[key], nonempty=True)
+                for key in ("model", "prompt", "tools")
+            )
+            and not _has_secret(
+                identity,
+                tuple(item.encode() for item in environ.values() if item),
+            )
+            and _strict_int(target["timeout_seconds"], 180)
+            and isinstance(argv, list)
+            and 2 <= len(argv) <= 8
+            and all(
+                isinstance(item, str) and 1 <= len(item.encode()) <= 4096
+                for item in argv
+            )
+            and all(os.path.isabs(item) for item in argv[:2])
+            and sum(len(item.encode()) for item in argv) <= 16_384
+            and isinstance(target["cwd"], str)
+            and os.path.isabs(target["cwd"])
+            and isinstance(names, list)
+            and len(names) == len(set(names))
+            and all(isinstance(name, str) and _ENV.fullmatch(name) for name in names)
+        ):
+            raise AdaptiveRunFailure("TARGET_CONNECTOR_CONFIG_INVALID", 2)
+        target_http = 0
+    else:
+        raise AdaptiveRunFailure("TARGET_CONNECTOR_CONFIG_INVALID", 2)
+    expected_budget = {
+        "all_http_exchanges": target_http + 6,
+        "episode_count": 3,
+        "episode_timeout_seconds": 180,
+        "max_usd": "23.000000",
+        "role_turns_per_episode": 6,
+        "run_timeout_seconds": 600,
+        "simulator_http_exchanges": 6,
+        "simulator_input_tokens_per_exchange": 131072,
+        "simulator_output_tokens_per_exchange": 4096,
+        "simulator_reservation_usd_per_exchange": "1.000000",
+        "target_http_exchanges": target_http,
+        "target_reservation_usd_per_turn": "1.888888",
+    }
     if value["budget"] != expected_budget:
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
 
@@ -402,6 +430,11 @@ class _Episode:
     target_input: int = 0
     target_output: int = 0
     tool_count: int = 0
+    reported_http: int = 0
+    reported_model: int = 0
+    reported_input: int = 0
+    reported_output: int = 0
+    reported_cost: Decimal | None = None
     reserved: Decimal = Decimal(0)
     actual: Decimal | None = None
 
@@ -441,29 +474,24 @@ def _turn_record(
     }
 
 
-def _validate_ready(value: JsonObject, hello: JsonObject) -> None:
-    keys = set(
-        "kind protocol episode_id case_id source_commit agent_model prompt_version world_hash memory_state fallback_enabled".split()  # noqa: SIM905
-    )
+def _validate_ready(value: JsonObject, hello: JsonObject) -> int:
+    keys = set(hello) | {"memory_state", "fallback_enabled"}
+    create_http = value.get("create_http_exchange_count", 0)
+    if "create_http_exchange_count" in value:
+        keys.add("create_http_exchange_count")
     if (
         not _closed(value, keys)
         or not all(
-            value.get(key) == hello.get(key)
-            for key in (
-                "protocol",
-                "episode_id",
-                "case_id",
-                "source_commit",
-                "agent_model",
-                "prompt_version",
-                "world_hash",
-            )
+            value.get(key) == item for key, item in hello.items() if key != "kind"
         )
         or value.get("kind") != "ready"
         or value.get("memory_state") != "EMPTY"
         or value.get("fallback_enabled") is not False
+        or not _integer(create_http)
+        or create_http > 1
     ):
         raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+    return int(create_http)
 
 
 def _validate_turn(
@@ -471,12 +499,19 @@ def _validate_turn(
     request: JsonObject,
     remaining: dict[str, int],
     prior_tool_count: int,
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    keys = set(
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any] | None, list[str]]:
+    base_keys = set(
         "kind episode_id turn_index status assistant_content tool_events usage reason_code".split()  # noqa: SIM905
     )
+    extended = {
+        "termination_signal",
+        "reported_internal_usage",
+        "telemetry_gaps",
+        "response_provenance",
+    }
     if (
-        not _closed(value, keys)
+        not isinstance(value, dict)
+        or set(value) not in {frozenset(base_keys), frozenset(base_keys | extended)}
         or value.get("kind") != "turn_result"
         or value.get("episode_id") != request["episode_id"]
         or value.get("turn_index") != request["turn_index"]
@@ -499,7 +534,29 @@ def _validate_turn(
         raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
     if (status == "SUCCEEDED") != bool(content):
         raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+    gaps = list(value.get("telemetry_gaps", []))
+    allowed_gaps = {
+        "TARGET_TOOL_TRACE_UNAVAILABLE",
+        "TARGET_INTERNAL_ACCOUNTING_UNAVAILABLE",
+        "TARGET_INTERNAL_BUDGET_ENFORCEMENT_UNVERIFIED",
+        "TARGET_STATE_ISOLATION_UNAVAILABLE",
+    }
+    if len(gaps) != len(set(gaps)) or not all(item in allowed_gaps for item in gaps):
+        raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
     usage = value["usage"]
+    if usage is None:
+        usage = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "provider_http_exchange_count": 0,
+            "provider_reported_cost_usd": None,
+        }
+        gaps.extend(
+            [
+                "TARGET_INTERNAL_ACCOUNTING_UNAVAILABLE",
+                "TARGET_INTERNAL_BUDGET_ENFORCEMENT_UNVERIFIED",
+            ]
+        )
     if not _closed(
         usage,
         {
@@ -516,6 +573,9 @@ def _validate_turn(
     if not _money(usage["provider_reported_cost_usd"]):
         raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
     events = value["tool_events"]
+    if events is None:
+        events = []
+        gaps.append("TARGET_TOOL_TRACE_UNAVAILABLE")
     if not isinstance(events, list):
         raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
     event_keys = set(
@@ -525,7 +585,7 @@ def _validate_turn(
     if (
         any(
             not _closed(item, event_keys)
-            or item.get("name") not in TOOLS
+            or not _text(item.get("name"), nonempty=True)
             or not isinstance(item.get("tool_event_id"), str)
             or _PORTABLE_ID.fullmatch(item["tool_event_id"]) is None
             or not _integer(item.get("ordinal"))
@@ -554,7 +614,31 @@ def _validate_turn(
         or len(events) > remaining["tool_calls"]
     ):
         raise AdaptiveRunFailure("BUDGET_EXHAUSTED", 9)
-    return events, dict(usage)
+    reported = value.get("reported_internal_usage")
+    if reported is not None:
+        if not isinstance(reported, dict) or not set(reported) <= {
+            "model_exchanges",
+            "http_exchanges",
+            "input_tokens",
+            "output_tokens",
+            "cost_usd",
+        }:
+            raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+        for key, item in reported.items():
+            if key == "cost_usd":
+                if not _money(item) or item is None:
+                    raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+            elif not _integer(item):
+                raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+    if set(value) == base_keys | extended:
+        if (
+            value["termination_signal"] is not None
+            and type(value["termination_signal"]) is not bool
+        ):
+            raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+        if not _bounded_json(value["response_provenance"]):
+            raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
+    return events, dict(usage), reported, list(dict.fromkeys(gaps))
 
 
 def _target_reason(status: str) -> str:
@@ -639,12 +723,13 @@ def _run_episode(
             base, episode, 1, "USER", opening, "CASE_OPENING", episode.attempt_id
         )
     )
-    world = dict(config["world"])
-    world["case_projection"] = {
-        "case": case.case,
-        "persona": case.persona,
-        "intent": case.intent,
-        "turn_policy": case.turn_policy,
+    world = {
+        "case_projection": {
+            "case": case.case,
+            "persona": case.persona,
+            "intent": case.intent,
+            "turn_policy": case.turn_policy,
+        }
     }
     world_hash = _hash(_canonical(world))
     launch = TargetLaunch(
@@ -661,19 +746,39 @@ def _run_episode(
     started = clock.monotonic_ns()
     try:
         session = target_factory.start(launch)
-        hello = {
+        target = config["target"]
+        hello: dict[str, Any] = {
             "kind": "hello",
-            "protocol": config["target"]["protocol"],
+            "protocol": target.get("protocol", "LABS05_TARGET_SESSION_V1"),
             "episode_id": episode_id,
             "case_id": episode.case_id,
-            "source_commit": config["target"]["source_commit"],
-            "agent_model": config["target"]["agent_model"],
-            "prompt_version": config["target"]["prompt_version"],
-            "world_kind": config["world"]["kind"],
-            "world_hash": world_hash,
-            "allowed_tools": list(TOOLS),
+            "connector_id": target["connector_id"],
+            "connector_kind": target["connector_kind"],
+            "connector_config_hash": identity_seed["connector_config_hash"],
+            "target_identity": target["target_identity"],
         }
-        _validate_ready(session.exchange(hello), hello)
+        if target["connector_kind"] == "EXECUTABLE_JSONL_V1":
+            hello["source_commit"] = target["source_commit"]
+        create_http = _validate_ready(session.exchange(hello), hello)
+        episode.target_http += create_http
+        if create_http:
+            episode.ledger.append(
+                _ledger(
+                    base,
+                    episode,
+                    "TARGET",
+                    0,
+                    "SUCCEEDED",
+                    _canonical(hello),
+                    None,
+                    create_http,
+                    0,
+                    0,
+                    Decimal(0),
+                    None,
+                    None,
+                )
+            )
         for target_index in range(1, 4):
             if (clock.monotonic_ns() - started) > 180_000_000_000:
                 episode.gaps.append("EPISODE_TIMEOUT")
@@ -693,6 +798,10 @@ def _run_episode(
                 "turn_index": target_index,
                 "user_turn_id": user["record_id"],
                 "content": user["content"],
+                "transcript": [
+                    {"role": item["role"], "content": item["content"]}
+                    for item in episode.transcripts
+                ],
                 "remaining_budget": remaining,
             }
             reservation = Decimal("1.888888")
@@ -726,6 +835,12 @@ def _run_episode(
                     if isinstance(failure, TargetProtocolFailure)
                     else "TARGET_PROTOCOL_ERROR"
                 )
+                observed_http = (
+                    failure.observed_http
+                    if isinstance(failure, TargetProtocolFailure)
+                    else 0
+                )
+                episode.target_http += observed_http
                 episode.ledger.append(
                     _ledger(
                         base,
@@ -735,7 +850,7 @@ def _run_episode(
                         "FAILED",
                         _canonical(request),
                         None,
-                        0,
+                        observed_http,
                         0,
                         0,
                         reservation,
@@ -756,7 +871,7 @@ def _run_episode(
             try:
                 if _has_secret(response, sentinels):
                     raise TargetProtocolFailure("TARGET_PROTOCOL_ERROR")
-                events, usage = _validate_turn(
+                events, usage, reported, telemetry_gaps = _validate_turn(
                     response, request, remaining, episode.tool_count
                 )
             except (AdaptiveRunFailure, TargetProtocolFailure) as failure:
@@ -791,6 +906,18 @@ def _run_episode(
             episode.target_input += usage["input_tokens"]
             episode.target_output += usage["output_tokens"]
             episode.tool_count += len(events)
+            episode.gaps.extend(
+                gap for gap in telemetry_gaps if gap not in episode.gaps
+            )
+            if reported is not None:
+                episode.reported_http += reported.get("http_exchanges", 0)
+                episode.reported_model += reported.get("model_exchanges", 0)
+                episode.reported_input += reported.get("input_tokens", 0)
+                episode.reported_output += reported.get("output_tokens", 0)
+                if reported.get("cost_usd") is not None:
+                    episode.reported_cost = (
+                        episode.reported_cost or Decimal(0)
+                    ) + Decimal(reported["cost_usd"])
             assistant_ordinal = target_index * 2
             episode.ledger.append(
                 _ledger(
@@ -817,11 +944,10 @@ def _run_episode(
                         "record_id": _id("target-tool-event", [episode_id, raw]),
                         "episode_id": episode_id,
                         "assistant_turn_ordinal": assistant_ordinal,
-                        "target_protocol": config["target"]["protocol"],
-                        "target_source_commit": source.source_commit,
-                        "target_model": config["target"]["agent_model"],
-                        "target_prompt_version": config["target"]["prompt_version"],
-                        "world_hash": world_hash,
+                        "connector_kind": target["connector_kind"],
+                        "connector_id": target["connector_id"],
+                        "connector_config_hash": identity_seed["connector_config_hash"],
+                        "target_identity": target["target_identity"],
                     }
                 )
             if actual is not None:
@@ -1003,6 +1129,25 @@ def _run_episode(
     except TargetProtocolFailure as failure:
         episode.gaps.append(failure.reason_code)
         episode.termination = failure.reason_code
+        episode.target_http += failure.observed_http
+        if failure.observed_http:
+            episode.ledger.append(
+                _ledger(
+                    base,
+                    episode,
+                    "TARGET",
+                    0,
+                    "FAILED",
+                    None,
+                    None,
+                    failure.observed_http,
+                    0,
+                    0,
+                    Decimal(0),
+                    None,
+                    failure.reason_code,
+                )
+            )
     finally:
         if session is not None:
             try:
@@ -1013,34 +1158,94 @@ def _run_episode(
                         "last_turn_index": last_turn,
                     }
                 )
-                expected = {
-                    "kind",
-                    "episode_id",
-                    "last_turn_index",
-                    "memory_state",
+                base_closed = {"kind", "episode_id", "last_turn_index", "memory_state"}
+                counted = base_closed | {
                     "provider_http_exchange_count",
                     "tool_call_count",
                 }
+                close_http = closed.get("close_http_exchange_count", 0)
+                if "close_http_exchange_count" in closed:
+                    counted.add("close_http_exchange_count")
+                episode.target_http += close_http if _integer(close_http) else 0
+                if close_http:
+                    episode.ledger.append(
+                        _ledger(
+                            base,
+                            episode,
+                            "TARGET",
+                            last_turn * 2 + 1,
+                            "SUCCEEDED",
+                            None,
+                            _canonical(closed),
+                            close_http,
+                            0,
+                            0,
+                            Decimal(0),
+                            None,
+                            None,
+                        )
+                    )
                 if not (
-                    _closed(closed, expected)
+                    isinstance(closed, dict)
+                    and set(closed) in {frozenset(base_closed), frozenset(counted)}
                     and closed.get("kind") == "closed"
                     and closed.get("episode_id") == episode_id
                     and closed.get("last_turn_index") == last_turn
                     and _integer(closed.get("last_turn_index"))
                     and closed.get("memory_state") == "DISCARDED"
-                    and _integer(closed.get("provider_http_exchange_count"))
-                    and _integer(closed.get("tool_call_count"))
-                    and closed.get("provider_http_exchange_count")
-                    == episode.target_http
-                    and closed.get("tool_call_count") == episode.tool_count
+                    and _integer(close_http)
+                    and close_http <= 1
+                    and (
+                        set(closed) == base_closed
+                        or _integer(closed.get("provider_http_exchange_count"))
+                        and _integer(closed.get("tool_call_count"))
+                        and closed.get("provider_http_exchange_count")
+                        == episode.target_http
+                        and closed.get("tool_call_count") == episode.tool_count
+                    )
                 ):
                     if "TARGET_PROTOCOL_ERROR" not in episode.gaps:
                         episode.gaps.append("TARGET_PROTOCOL_ERROR")
                     episode.valid, episode.termination = False, "TARGET_PROTOCOL_ERROR"
-            except (OSError, TimeoutError, TargetProtocolFailure, KeyError, TypeError):
-                if not episode.gaps:
-                    episode.gaps.append("TARGET_PROTOCOL_ERROR")
-                    episode.termination, episode.valid = "TARGET_PROTOCOL_ERROR", False
+            except (
+                OSError,
+                TimeoutError,
+                TargetProtocolFailure,
+                KeyError,
+                TypeError,
+            ) as failure:
+                reason = (
+                    failure.reason_code
+                    if isinstance(failure, TargetProtocolFailure)
+                    else "TARGET_PROTOCOL_ERROR"
+                )
+                observed_http = (
+                    failure.observed_http
+                    if isinstance(failure, TargetProtocolFailure)
+                    else 0
+                )
+                episode.target_http += observed_http
+                if observed_http:
+                    episode.ledger.append(
+                        _ledger(
+                            base,
+                            episode,
+                            "TARGET",
+                            last_turn * 2 + 1,
+                            "FAILED",
+                            None,
+                            None,
+                            observed_http,
+                            0,
+                            0,
+                            Decimal(0),
+                            None,
+                            reason,
+                        )
+                    )
+                if reason not in episode.gaps:
+                    episode.gaps.append(reason)
+                episode.termination, episode.valid = reason, False
             finally:
                 session.terminate()
     if episode.valid:
@@ -1185,6 +1390,13 @@ def _artifacts(
             "target_input_tokens": episode.target_input,
             "target_output_tokens": episode.target_output,
             "target_tool_call_count": episode.tool_count,
+            "target_reported_internal_http_exchange_count": episode.reported_http,
+            "target_reported_internal_model_exchange_count": episode.reported_model,
+            "target_reported_internal_input_tokens": episode.reported_input,
+            "target_reported_internal_output_tokens": episode.reported_output,
+            "target_reported_internal_cost_usd": f"{episode.reported_cost:.6f}"
+            if episode.reported_cost is not None
+            else None,
             "reserved_cost_usd": f"{episode.reserved:.6f}",
             "actual_cost_usd": f"{episode.actual:.6f}"
             if episode.actual is not None
@@ -1272,6 +1484,23 @@ def _artifacts(
         "target_input_tokens": sum(item.target_input for item in episodes),
         "target_output_tokens": sum(item.target_output for item in episodes),
         "target_tool_call_count": sum(item.tool_count for item in episodes),
+        "target_reported_internal_http_exchange_count": sum(
+            item.reported_http for item in episodes
+        ),
+        "target_reported_internal_model_exchange_count": sum(
+            item.reported_model for item in episodes
+        ),
+        "target_reported_internal_input_tokens": sum(
+            item.reported_input for item in episodes
+        ),
+        "target_reported_internal_output_tokens": sum(
+            item.reported_output for item in episodes
+        ),
+        "target_reported_internal_cost_usd": (
+            f"{sum((item.reported_cost or Decimal(0) for item in episodes), Decimal(0)):.6f}"
+            if any(item.reported_cost is not None for item in episodes)
+            else None
+        ),
         "reserved_cost_usd": f"{reserved:.6f}",
         "actual_cost_usd": f"{sum(actuals, Decimal(0)):.6f}" if actuals else None,
         "human_review_state": "PENDING",
@@ -1321,18 +1550,10 @@ def run(
     config, config_bytes = _read_object(config_path, "CONFIG_INVALID", 2)
     _validate_review(review)
     _validate_config(config, environ)
-    if case_loader is None or source_verifier is None:
-        # The real boundaries live in boundaries.py; importing lazily preserves the test seam.
-        from .boundaries import CaseFactoryLoader, GitTargetSourceVerifier
+    if case_loader is None:
+        from .boundaries import CaseFactoryLoader
 
-        case_loader = case_loader or CaseFactoryLoader()
-        active_source_verifier: TargetSourceVerifier = (
-            source_verifier
-            if source_verifier is not None
-            else GitTargetSourceVerifier()
-        )
-    else:
-        active_source_verifier = source_verifier
+        case_loader = CaseFactoryLoader()
     try:
         source_input = case_loader.load(case_factory_manifest)
     except AdaptiveRunFailure:
@@ -1342,19 +1563,34 @@ def run(
     _validate_cases(source_input)
     if not environ.get(config["simulator"]["api_key_env"]):
         raise AdaptiveRunFailure("SIMULATOR_AUTHORIZATION_REFUSED", 4)
-    if any(not environ.get(name) for name in config["target"]["env_names"]):
-        raise AdaptiveRunFailure("TARGET_SOURCE_MISMATCH", 4)
-    source_identity = active_source_verifier.verify(config["target"])
-    if source_identity.source_commit != config["target"]["source_commit"]:
-        raise AdaptiveRunFailure("TARGET_SOURCE_MISMATCH", 4)
     review_hash, config_hash = _hash(review_bytes), _hash(config_bytes)
     base = _lineage(source_input.manifest_file_hash, review_hash, config_hash)
-    environment = {name: environ[name] for name in config["target"]["env_names"]}
+    target = config["target"]
+    connector_hash = _hash(_canonical(target))
+    if target["connector_kind"] == "EXECUTABLE_JSONL_V1":
+        if any(not environ.get(name) for name in target["env_names"]):
+            raise AdaptiveRunFailure("TARGET_SOURCE_MISMATCH", 4)
+        if source_verifier is None:
+            from .boundaries import GitTargetSourceVerifier
+
+            source_verifier = GitTargetSourceVerifier()
+        source_identity = source_verifier.verify(target)
+        if source_identity.source_commit != target["source_commit"]:
+            raise AdaptiveRunFailure("TARGET_SOURCE_MISMATCH", 4)
+        environment = {name: environ[name] for name in target["env_names"]}
+    else:
+        source_identity = TargetSourceIdentity(
+            "HTTP_JSON_V1", connector_hash, connector_hash
+        )
+        names = [name for name in ("AWS_PROFILE", "AWS_REGION") if environ.get(name)]
+        if target["auth"]["kind"] == "HEADER_ENV":
+            names.append(target["auth"]["env_name"])
+        environment = {name: environ[name] for name in names}
     sentinels = tuple(
         value.encode("utf-8")
         for value in (
             environ[config["simulator"]["api_key_env"]],
-            *(environment[name] for name in config["target"]["env_names"]),
+            *environment.values(),
         )
         if value
     )
@@ -1365,6 +1601,10 @@ def run(
         "intelligence_manifest_hash": source_input.intelligence_manifest_hash,
         "owner_review_hash": review_hash,
         "config_hash": config_hash,
+        "connector_config_hash": connector_hash,
+        "connector_kind": target["connector_kind"],
+        "target_identity": target["target_identity"],
+        "state_isolation": target["state_isolation"],
         "target_source_tree_hash": source_identity.source_tree_hash,
         "target_adapter_file_hash": source_identity.adapter_file_hash,
     }

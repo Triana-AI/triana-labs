@@ -1,8 +1,15 @@
 # LABS-05 Adaptive Multi-Turn Runner wire contract
 
-Version: `LABS05_WIRE_V1`
+Version: `LABS05_WIRE_V1` with owner-approved Target Connector V1 supersession
 
-Status: frozen 2026-08-02
+Status: episode/artifact contract retained; target-specific portions superseded
+by `internal/LABS05_TARGET_CONNECTOR_V1.md` on 2026-08-02
+
+The newer target connector document is normative wherever this file names the
+HRAI-specific subprocess, pinned four-tool synthetic world, target source
+verifier, target-provider HTTP accounting, or target persistent-memory
+assumption. All other episode, simulator, identity, termination, custody,
+dedupe, publication, and owner-review rules remain normative.
 
 This document is normative for the independent acceptance author and the
 production author. Objects are closed: unknown fields and duplicate JSON keys

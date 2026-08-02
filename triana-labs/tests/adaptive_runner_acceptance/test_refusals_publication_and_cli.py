@@ -18,6 +18,7 @@ from conftest import (
     TargetFactory,
     api,
     config_value,
+    executable_config_value,
     invoke,
     jsonl,
     review_value,
@@ -69,8 +70,10 @@ def call_run(
     [
         (lambda value: value.update(privacy_class="REAL"), "UNSUPPORTED_PRIVACY_CLASS"),
         (
-            lambda value: value["target"].update(fallback_model="fallback-model"),
-            "CONFIG_INVALID",
+            lambda value: value["target"].update(
+                fallback={"connector_kind": "HTTP_JSON_V1"}
+            ),
+            "TARGET_CONNECTOR_CONFIG_INVALID",
         ),
         (
             lambda value: value.update(persistent_memory={"enabled": True}),
@@ -128,7 +131,11 @@ def test_missing_simulator_secret_and_target_source_mismatch_refuse_pre_egress(
     assert missing.value.exit_code == 4
 
     with pytest.raises(Exception) as source:
-        call_run(tmp_path / "source", verifier_fail=True)
+        call_run(
+            tmp_path / "source",
+            config=executable_config_value(),
+            verifier_fail=True,
+        )
     assert source.value.reason_code == "TARGET_SOURCE_MISMATCH"
     assert source.value.exit_code == 4
 

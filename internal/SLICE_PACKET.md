@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-02
 
-Status: **LOCAL IMPLEMENTATION GREEN; LIVE CANARY REQUIRES OWNER AUTHORIZATION**
+Status: **TARGET CONNECTOR V1 LOCAL GREEN; LIVE HRAI INFRASTRUCTURE GAP**
 
 Slice ID: `LABS-05-ADAPTIVE-RUNNER-V1`
 
@@ -12,7 +12,28 @@ local `main` at `ff8ca24`.
 Authority: `triana-labs/CHARTER.md` -> `internal/DECISION_LOG.md` ->
 `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`.
 
-Normative wire: `internal/LABS05_WIRE_CONTRACT.md`.
+Normative wire: `internal/LABS05_TARGET_CONNECTOR_V1.md`, which supersedes the
+target-specific portions of `internal/LABS05_WIRE_CONTRACT.md` while retaining
+the accepted episode/simulator/artifact contract.
+
+## 0. Owner-approved target-boundary supersession
+
+After the local implementation and one diagnostic exposed the mismatch between
+an external HRAI endpoint and Triana's reconstructed four-tool subprocess, the
+owner approved the framework pattern used by Braintrust, DeepEval, LangSmith,
+and Promptfoo: Triana owns the adaptive outer loop and a customer connector
+invokes an opaque existing agent. LABS-05 now ships a restricted HTTP/JSON
+connector plus the existing strict executable boundary generalized as a bridge.
+HRAI becomes the first HTTP configuration; it is not reconstructed inside
+Triana. The exact contract, accounting correction, memory/state distinction,
+acceptance additions, and replacement change budget are frozen in
+`internal/LABS05_TARGET_CONNECTOR_V1.md`.
+
+The earlier local GREEN and 516-test evidence remain valid historical evidence
+for the deterministic runner but do not close this superseding target boundary.
+No live run occurs until independent RED, production GREEN, the full gate, and
+separate owner authorization. Those local gates are now complete; the first
+authorized real-endpoint smoke is recorded below and did not reach chat.
 
 Restart evidence: `internal/LABS05_HANDOFF_2026-08-02.md` and
 `internal/LABS04_CASE_REVIEW_2026-08-02.md`.
@@ -320,6 +341,56 @@ turn, skipped slot, silent repair, rerun-to-green, or persistent-memory lookup.
 
 ## 12. Independent acceptance contract
 
+Target Connector V1 initial superseding freeze: the independent author retained the
+applicable outer-loop suite, replaced HRAI/four-tool assumptions, and added a
+real localhost HTTP fixture plus a target-neutral executable bridge. The nine
+owned Python files contain 3,071 physical lines and collect 123 tests. Against
+the historical HRAI-specific production candidate they produce 108 expected
+behavioral failures and 15 control passes, with zero collection/setup errors
+and zero skips. Codex independently reproduced those exact counts with
+localhost socket permission, plus GREEN Ruff check/format and diff check.
+
+The sorted concatenated Python content SHA-256 is
+`574bae8a507d364766354e9172359174d62481ccf5699384c4e78f2de898e507`.
+The SHA-256 of the sorted per-file `shasum -a 256` stream is
+`1fa162bb9068ea15fa59289871b81a973a09017771c9bded5a732f65f01b8042`.
+Any test-owned byte change invalidates this freeze and returns the suite to the
+independent author. Production may now change only the Target Connector V1
+production-owned paths.
+
+Post-candidate superseding freeze: Codex's source/lifecycle audit found an
+unopened-session close defect, loose optional target-identity validation, and
+an unused legacy four-tool literal. The independent author preserved all prior
+123 cases and added seven checks. The final nine owned Python files contain
+3,200 physical lines and collect 130 tests. Against the first connector
+candidate, 124 pass and exactly six are expected RED: two create-failure
+lifecycle cases, one legacy-source case, and three optional-identity cases.
+The failed-chat plus successful-close accounting regression is already GREEN
+and proves exact first-episode/whole-run observed counts without a spurious
+protocol gap. Codex independently reproduced the six-failure RED shape and
+the hashes below.
+
+The final sorted concatenated Python content SHA-256 is
+`b9f0f1415dfd8e6d0b4f8c9f88d9200ab5a3d9ebe4bb3c5858dae87528802e09`.
+The final sorted per-file hash-stream SHA-256 is
+`67ea8a94ac2f1edd1f4533de8e2db6eb5b4f654d3456f101f6c240adfd7a6a46`.
+These hashes supersede the initial Target Connector V1 test freeze. Production
+is reauthorized only for the six isolated defects.
+
+The owner-authorized real HRAI smoke exposed one further response-ordering
+defect: a non-JSON HTTP 500 from session creation was classified as an invalid
+response before the create operation could own its typed failure. The
+independent author added one exact regression. The final nine test-owned Python
+files contain 3,216 physical lines and collect 131 tests. Their sorted
+concatenated content SHA-256 is
+`ef3f7fa3abb574df0113efa9505fa5e89de1b9964fd7b286fe608bb51fb51efe`;
+their sorted per-file hash-stream SHA-256 is
+`f4699df16b456eab327e445509e98d4cc7bb237727263ebfd858da9c13ee6844`.
+Codex independently reproduced exactly one RED, the implementation author
+changed only HTTP response ordering, and Codex independently reproduced 131
+GREEN tests before the 539-test complete gate. These hashes supersede every
+earlier Target Connector V1 freeze.
+
 The independent test author derives assertions from this packet and
 `internal/LABS05_WIRE_CONTRACT.md`, never from production schemas or output.
 At minimum tests prove:
@@ -507,39 +578,49 @@ destination/method/license/ancestry record must be complete in
 
 ## 16. Structured handoff
 
-Local implementation closure on 2026-08-02:
+Target Connector V1 closure on 2026-08-03:
 
 ```text
-What changed: added the strict `episodes run` CLI, deterministic adaptive
-controller/contracts/boundaries/process package, and target-specific HRAI
-Recruiter Chat JSONL adapter with an explicit package marker.
-Why each changed file was necessary: CLI dispatches the supported surface;
-adaptive_runner owns validation, identity, execution, accounting, custody,
-dedupe, publication, and typed refusal; the example owns only the pinned HRAI
-protocol projection.
-Change-budget reconciliation: eight production surfaces (one modified CLI and
-seven new Python files), exactly 2,500 new nonblank/noncomment production
-lines, no dependency or lock change, and no edit outside the frozen budget.
-What was verified: `./scripts/verify.sh` passed with 516 tests, Ruff, strict
-mypy over 29 source files, deterministic replay, five unchanged Observer
-hashes, frozen LABS-05 test hashes, sdist/wheel build, clean CPython 3.13.14
-install, source/wheel parity, governance, and secret scan. Evidence:
-/private/tmp/triana-labs-verify.LZNfkB.
-What remains unverified: live Foundry simulator and pinned HRAI/Qwen execution;
-the three live trajectories; LABS05_ADAPTATION_V1.
-Assumptions made: exact 180 seconds remains permitted; elapsed time greater
-than 180 seconds produces EPISODE_TIMEOUT after preserving completed custody.
-Unexpected findings: final audit added post-A1/A2 deadline regressions; full
-verification required an explicit example package boundary and path-stable
-test fixture imports.
+What changed: retained the deterministic `episodes run` adaptive controller;
+replaced the rejected target-specific HRAI reconstruction with restricted
+`HTTP_JSON_V1` and strict `EXECUTABLE_JSONL_V1` opaque-target connectors;
+removed the legacy four-tool adapter; froze exact endpoint, accounting,
+privacy, state, failure, and no-fallback behavior.
+Why each changed file was necessary: CLI dispatches the supported config;
+adaptive_runner owns validation, identity, outer execution/accounting, custody,
+dedupe, publication, and typed refusal; http_target owns declarative HTTP/JSON
+session and transcript mapping; canonical documents own the supersession and
+live evidence; acceptance fixtures/tests independently own the contract.
+Change-budget reconciliation: seven production surfaces against a twelve-file
+ceiling and 2,916 nonblank/noncomment production lines against 3,200; no
+dependency, lock, pyproject, Release Review V1, or unrelated-file change.
+What was verified: `./scripts/verify.sh` passed with 539 tests, including 131
+frozen connector acceptance tests, Ruff, strict mypy over 28 source files,
+deterministic replay, five unchanged Observer hashes, sdist/wheel build, clean
+CPython 3.13.14 install, source/wheel parity, governance, and secret scan.
+Evidence: `/private/tmp/triana-labs-verify.VyGGgn`.
+What remains unverified: a successful real HRAI chat turn, live Foundry
+simulator execution, three valid distinct trajectories, and
+`LABS05_ADAPTATION_V1`.
+Assumptions made: non-2xx bodies are failure evidence whose operation-specific
+status is classified before successful-body JSON validation; response size and
+secret-reflection checks still precede status handoff.
+Unexpected findings: unchanged HRAI startup could not reach configured
+Postgres, `/health` made an unaccounted target-internal OpenRouter diagnostic,
+and session creation returned non-JSON HTTP 500 because configured Redis DNS
+failed. The latter exposed and closed one Triana classification defect.
 Dependencies added and why: none.
-Out-of-scope problems deliberately left alone: judges, persistent/global
-memory, UI, real data, baseline/candidate diff, generic SDKs, broad eval,
-hosted execution, and the unrelated untracked research/SPC files.
-Known risks or uncertainty: exact live target/provider callback accounting and
-external protocol compatibility remain unverified until the bounded canary.
-Human action still required: authorize or decline the live synthetic-only run;
-after a valid run, complete the frozen turn-level owner adaptation review.
+Out-of-scope problems deliberately left alone: HRAI infrastructure repair,
+judges, persistent/global Triana memory, UI, real data, baseline/candidate diff,
+generic SDKs, broad eval, hosted execution, and unrelated untracked research/
+SPC files.
+Known risks or uncertainty: target-internal calls, tokens, cost, retries, tool
+trace, budget enforcement, and global-state isolation remain typed unavailable
+unless a target reports them. The failed smoke proves endpoint reachability but
+not successful protocol compatibility.
+Human action still required: repair or supply reachable HRAI Postgres/Redis;
+then separately authorize any new live run. After an exact valid three-episode
+run, complete the frozen turn-level owner adaptation review.
 ```
 
 Every worker and Codex returns:

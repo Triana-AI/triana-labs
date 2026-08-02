@@ -80,22 +80,21 @@ and generic agent frameworks remain unauthorized.
 ### Frozen Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
 
 LABS-05 is frozen in `internal/SLICE_PACKET.md` and
-`internal/LABS05_WIRE_CONTRACT.md`. It runs exactly three owner-reviewed cases
-as U1/A1/U2/A2/U3/A3 episodes. U2 and U3 are proposed by pinned Foundry
-Fireworks `FW-GLM-5.2` only after consuming the immediately preceding HRAI
-response and normalized tool observations. The one target is HRAI Recruiter
-Chat ReAct at commit `728f6c5`, historical Qwen 235B identity and the
-executable `candidate-screening-v3-decision-followthrough` prompt at that
-commit, behind the strict target-specific JSONL subprocess. Every episode gets
-a fresh synthetic read-only world, empty target memory, four allowlisted
-read-only tools, and no fallback.
+`internal/LABS05_TARGET_CONNECTOR_V1.md`. It runs exactly three owner-reviewed
+cases as U1/A1/U2/A2/U3/A3 episodes. U2 and U3 are proposed by pinned Foundry
+Fireworks `FW-GLM-5.2` only after consuming the immediately preceding opaque
+target response and normalized reported tool observations. The first named
+target is the existing HRAI Recruiter Chat ReAct HTTP protocol at commit
+`728f6c5`, invoked through restricted `HTTP_JSON_V1`; strict
+`EXECUTABLE_JSONL_V1` is the customer bridge for other endpoints. The target
+owns its prompt, model, tools, orchestration, and target-side state.
 
 The deterministic controller owns identity, sequencing, latest-observation
 binding, termination, budgets, logical versus HTTP accounting, atomic evidence
 custody, trajectory fingerprints, dedupe, and typed gaps. The exact ceiling is
 six simulator and thirty-six target HTTP exchanges, forty-two total, USD
 `23.000000`, 180 seconds per episode, and 600 seconds total. Automated
-implementation uses fakes only; a live run is separately owner-authorized.
+verification uses fakes only; a live run is separately owner-authorized.
 Passage requires three valid inspectable nonduplicate trajectories and the
 owner's `LABS05_ADAPTATION_V1` turn-level ruling.
 
@@ -103,10 +102,21 @@ Persistent/global memory, model judges, UI, real-data support,
 baseline/candidate comparison, hosted execution, generic SDKs, and broad eval
 expansion remain outside this checkpoint.
 
-Local implementation completed on 2026-08-02 with 108 focused and 516
-repository-wide tests plus the complete versioned verification gate GREEN.
-The supported surface remains synthetic-only. The bounded live canary and
-`LABS05_ADAPTATION_V1` are separate owner gates and have not occurred.
+The superseding local implementation completed on 2026-08-03 with 131 focused
+connector acceptance tests and 539 repository-wide tests plus the complete
+versioned verification gate GREEN. The supported surface remains
+synthetic-only. HRAI is the first localhost HTTP mapping, not a Triana-owned
+four-tool reconstruction.
+
+Target-internal model calls, retries, token/cost usage, tool traces, and global
+state remain target-owned and become typed unavailable evidence when the
+endpoint does not report or isolate them. A2A and generic SDK/framework
+adoption remain deferred. The owner-authorized one-turn localhost smoke did not
+reach chat: HRAI startup could not reach its configured Postgres endpoint and
+session creation returned HTTP 500 when its Redis hostname failed DNS. No
+session, chat turn, or tool call occurred. The smoke therefore does not clear
+the three-trajectory or `LABS05_ADAPTATION_V1` gates; no rerun is authorized by
+this record.
 
 ## 1. The commitment
 

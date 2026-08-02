@@ -126,7 +126,7 @@ def test_fresh_runs_repeat_byte_for_byte_and_material_config_changes_identity(
     assert first.publisher.artifacts == second.publisher.artifacts
 
     changed_config = json.loads(first.inputs.config.read_bytes())
-    changed_config["target"]["argv"][-1] = "success-alternate"
+    changed_config["target"]["target_identity"]["version"] = "2-material-change"
     changed = invoke(tmp_path / "changed", config=changed_config)
     original_attempts = jsonl(first.publisher.artifacts["episode_attempts.jsonl"])
     changed_attempts = jsonl(changed.publisher.artifacts["episode_attempts.jsonl"])

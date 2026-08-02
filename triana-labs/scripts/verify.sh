@@ -98,32 +98,34 @@ if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file
 fi
 
 triana_adaptive_runner_content_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/adaptive_runner_acceptance \
-    triana-labs/tests/adaptive_runner_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/adaptive_runner_acceptance \
+    tests/adaptive_runner_fixtures \
+    -type f -name '*.py' \
     | LC_ALL=C sort \
     | xargs cat \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_content_hash="e3eb48819cc0bd098a0ed6b270317d964512f29181a56f391cad30347377f196"
+triana_expected_adaptive_runner_content_hash="ef3f7fa3abb574df0113efa9505fa5e89de1b9964fd7b286fe608bb51fb51efe"
 if [[ "${triana_adaptive_runner_content_hash}" != "${triana_expected_adaptive_runner_content_hash}" ]]; then
   echo "frozen adaptive runner acceptance content hash mismatch" >&2
   exit 1
 fi
 
 triana_adaptive_runner_file_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/adaptive_runner_acceptance \
-    triana-labs/tests/adaptive_runner_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/adaptive_runner_acceptance \
+    tests/adaptive_runner_fixtures \
+    -type f -name '*.py' \
     | LC_ALL=C sort \
     | xargs shasum -a 256 \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_file_hash="347bf5d65b743e40291ba8f526ef34ccac06ab9368fd3593bb4cce16be3eab27"
+triana_expected_adaptive_runner_file_hash="f4699df16b456eab327e445509e98d4cc7bb237727263ebfd858da9c13ee6844"
 if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runner_file_hash}" ]]; then
   echo "frozen adaptive runner acceptance file hash mismatch" >&2
   exit 1

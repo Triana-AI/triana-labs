@@ -25,6 +25,7 @@ from conftest import (
     TargetFactory,
     api,
     config_value,
+    executable_config_value,
     invoke,
     jsonl,
     write_inputs,
@@ -53,7 +54,7 @@ def _safe_tool_event(**changes: Any) -> dict[str, Any]:
     event = {
         "arguments": {"query": "select bounded synthetic status"},
         "cached": False,
-        "name": "query_database",
+        "name": "opaque_target_tool",
         "ordinal": 1,
         "reason_code": None,
         "result": {"state": "SUCCEEDED"},
@@ -432,9 +433,9 @@ def test_typed_target_failure_retains_executed_tool_custody_and_close_counts(
     assert {key: tools[0][key] for key in event} == event
     assert tools[0]["episode_id"] == first_episode
     assert tools[0]["assistant_turn_ordinal"] == 2
-    assert tools[0]["target_protocol"] == config_value()["target"]["protocol"]
-    assert tools[0]["target_source_commit"] == config_value()["target"]["source_commit"]
-    assert tools[0]["world_hash"].startswith("sha256:")
+    assert tools[0]["connector_kind"] == "HTTP_JSON_V1"
+    assert tools[0]["connector_id"] == config_value()["target"]["connector_id"]
+    assert tools[0]["connector_config_hash"].startswith("sha256:")
     assert tools[0]["record_id"].startswith("target-tool-event-")
     assert manifest["target_tool_call_count"] >= 1
     assert not any(item["role"] == "ASSISTANT" for item in first_transcript)
@@ -508,11 +509,11 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
         executable_hash,
         adapter_hash,
     )
-    target = config_value()["target"]
+    target = executable_config_value()["target"]
     target["source_commit"] = head
     target["argv"] = [os.fspath(executable), os.fspath(adapter)]
     target["cwd"] = os.fspath(checkout)
-    world = config_value()["world"]
+    world: dict[str, Any] = {}
     world_hash = "sha256:" + "b" * 64
     launch = module.TargetLaunch(
         "episode-race",
@@ -524,16 +525,14 @@ def test_target_launch_rechecks_verified_source_before_child_execution(
         ENVIRON,
     )
     hello = {
-        "agent_model": target["agent_model"],
-        "allowed_tools": world["allowed_tools"],
         "case_id": launch.case_id,
+        "connector_id": target["connector_id"],
+        "connector_kind": target["connector_kind"],
         "episode_id": launch.episode_id,
         "kind": "hello",
-        "prompt_version": target["prompt_version"],
         "protocol": target["protocol"],
         "source_commit": target["source_commit"],
-        "world_hash": world_hash,
-        "world_kind": world["kind"],
+        "target_identity": target["target_identity"],
     }
     control = module.JsonlTargetProcessFactory().start(launch)
     try:
@@ -609,7 +608,7 @@ def test_cli_refuses_config_swap_between_transport_and_evidence_reads(
     inputs = write_inputs(tmp_path / "cli-input-race")
     replacement = tmp_path / "replacement-cli-config.json"
     changed = config_value()
-    changed["target"]["argv"][-1] = "synthetic-equivalent-alternate-mode"
+    changed["target"]["target_identity"]["version"] = "alternate-valid-version"
     replacement.write_bytes(
         json.dumps(changed, separators=(",", ":"), sort_keys=True).encode() + b"\n"
     )

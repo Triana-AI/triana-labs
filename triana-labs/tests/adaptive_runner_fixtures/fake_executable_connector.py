@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Deterministic raw JSONL target used only by LABS-05 acceptance tests."""
+"""Strict target-neutral JSONL bridge used only by connector acceptance."""
 
 from __future__ import annotations
 
@@ -45,7 +44,6 @@ def _malform(mode: str) -> bool:
 
 
 def _serve(mode: str) -> None:
-    total_http = 0
     for raw_line in sys.stdin:
         request = json.loads(raw_line)
         if _malform(mode):
@@ -53,48 +51,40 @@ def _serve(mode: str) -> None:
         kind = request["kind"]
         if kind == "hello":
             ready = {
-                "agent_model": request["agent_model"],
-                "case_id": request["case_id"],
-                "episode_id": request["episode_id"],
-                "fallback_enabled": False,
-                "kind": "ready",
-                "memory_state": "EMPTY",
-                "prompt_version": request["prompt_version"],
-                "protocol": request["protocol"],
-                "source_commit": request["source_commit"],
-                "world_hash": request["world_hash"],
+                key: value
+                for key, value in request.items()
+                if key
+                in {
+                    "case_id",
+                    "connector_config_hash",
+                    "connector_id",
+                    "connector_kind",
+                    "episode_id",
+                    "protocol",
+                    "source_commit",
+                    "target_identity",
+                }
             }
+            ready.update(fallback_enabled=False, kind="ready", memory_state="EMPTY")
             if mode == "identity_mismatch":
                 ready["episode_id"] = "episode-wrong"
             if mode == "unknown_field":
                 ready["private_payload"] = "must-refuse"
             _emit(ready)
         elif kind == "turn":
-            total_http += 1
-            status = "SUCCEEDED"
-            reason: str | None = None
-            content = f"assistant {request['turn_index']} observed {request['content']}"
-            if mode == "tool_refused":
-                status, reason, content = "TOOL_REFUSED", "TOOL_NOT_ALLOWED", ""
-            elif mode == "provider_failed":
-                status, reason, content = "PROVIDER_FAILED", "PROVIDER_ERROR", ""
+            turn_index = request["turn_index"]
             result = {
-                "assistant_content": content,
+                "assistant_content": f"bridge {turn_index} observed {request['content']}",
                 "episode_id": request["episode_id"],
                 "kind": "turn_result",
-                "reason_code": reason,
-                "status": status,
-                "tool_events": [],
-                "turn_index": request["turn_index"],
-                "usage": {
-                    "input_tokens": 10,
-                    "output_tokens": 5,
-                    "provider_http_exchange_count": 1,
-                    "provider_reported_cost_usd": None,
-                },
+                "reason_code": None,
+                "status": "SUCCEEDED",
+                "tool_events": None,
+                "turn_index": turn_index,
+                "usage": None,
             }
             if mode == "out_of_order":
-                result["turn_index"] = request["turn_index"] + 1
+                result["turn_index"] += 1
             _emit(result)
         elif kind == "close":
             _emit(
@@ -103,8 +93,6 @@ def _serve(mode: str) -> None:
                     "kind": "closed",
                     "last_turn_index": request["last_turn_index"],
                     "memory_state": "DISCARDED",
-                    "provider_http_exchange_count": total_http,
-                    "tool_call_count": 0,
                 }
             )
 

@@ -513,6 +513,7 @@ def _run_episodes(arguments: argparse.Namespace) -> int:
 
     from triana_labs.adaptive_runner import (
         AdaptiveRunFailure,
+        HttpJsonTargetFactory,
         JsonlTargetProcessFactory,
         run,
     )
@@ -531,13 +532,25 @@ def _run_episodes(arguments: argparse.Namespace) -> int:
         api_key = os.environ.get(key_name, "") if isinstance(key_name, str) else ""
         if _read_bytes(config_path, "CONFIG_INVALID") != config_bytes:
             raise _CliRefusal("CONFIG_INVALID", 2)
+        target_config = config.get("target")
+        connector_kind = (
+            target_config.get("connector_kind")
+            if isinstance(target_config, dict)
+            else None
+        )
+        if connector_kind == "HTTP_JSON_V1":
+            target_factory: Any = HttpJsonTargetFactory()
+        elif connector_kind == "EXECUTABLE_JSONL_V1":
+            target_factory = JsonlTargetProcessFactory()
+        else:
+            raise _CliRefusal("TARGET_CONNECTOR_CONFIG_INVALID", 2)
         result = run(
             Path(arguments.manifest),
             Path(arguments.review),
             config_path,
             Path(arguments.out),
             simulator=FoundrySimulatorTransport(simulator_config, api_key),
-            target_factory=JsonlTargetProcessFactory(),
+            target_factory=target_factory,
             clock=SystemClock(),
             environ=os.environ,
         )

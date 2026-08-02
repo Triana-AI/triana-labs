@@ -81,35 +81,47 @@ closed evidence remains in the LABS-05 handoff.
 
 ### Second launch checkpoint — Adaptive Multi-Turn Runner
 
-LABS-05 is frozen for test-first implementation on 2026-08-02. It executes
+LABS-05 was frozen for test-first implementation on 2026-08-02. It executes
 exactly the owner-reviewed LABS-04 cases for context recovery, cross-client
 refusal, and bounded status verification as three six-role-turn episodes. The
-simulated user uses Foundry Fireworks `FW-GLM-5.2`; the target is HRAI Recruiter
-Chat ReAct at commit `728f6c5`, historical Qwen 235B agent identity and the
-executable `candidate-screening-v3-decision-followthrough` prompt at that
-commit, behind a strict Triana-owned JSONL subprocess and fresh synthetic
-read-only world.
+simulated user uses Foundry Fireworks `FW-GLM-5.2`; the first named target is
+the existing HRAI Recruiter Chat ReAct HTTP protocol at commit `728f6c5`.
+Triana owns the adaptive outer loop and invokes the opaque target through the
+restricted `HTTP_JSON_V1` connector. A strict `EXECUTABLE_JSONL_V1` customer
+bridge is the bounded escape hatch for endpoints that cannot use declarative
+HTTP/JSON. Triana does not reconstruct the target's prompt, model, tools,
+orchestration, or memory.
 
 Deterministic code owns episode/turn/tool identity, latest-observation binding,
-termination, all budgets, HTTP accounting, artifact custody, trajectory
+termination, all budgets, outer HTTP accounting, artifact custody, trajectory
 fingerprints, duplicate arithmetic, and typed gaps. The simulator proposes
-only U2 and U3. The target receives no persistent memory and exposes only four
-read-only projected tools. There is no retry or target/model/provider fallback.
+only U2 and U3. Triana persistent/global memory remains deferred; target state
+stays target-owned and unknown isolation is a typed gap. There is no Triana
+retry, redirect, proxy, or target/model/provider fallback.
 
-Local implementation uses fakes only. A live three-episode run requires a
-separate owner authorization after local GREEN. Passage then requires three
-valid nonduplicate inspectable trajectories and Akarsh's
-`LABS05_ADAPTATION_V1` review. Judges, persistent/global memory, UI, real-data
-support, baseline/candidate diff, generic SDKs, broad evaluation, and hosted
-execution remain deferred. The exact contract is `internal/SLICE_PACKET.md`
-plus `internal/LABS05_WIRE_CONTRACT.md`; restart history remains
+Automated implementation verification uses fakes only. A live three-episode
+run requires separate owner authorization. Passage then requires three valid
+nonduplicate inspectable trajectories and Akarsh's `LABS05_ADAPTATION_V1`
+review. Judges, persistent/global memory, UI, real-data support,
+baseline/candidate diff, generic SDKs, broad evaluation, and hosted execution
+remain deferred. The exact contract is `internal/SLICE_PACKET.md` plus
+`internal/LABS05_TARGET_CONNECTOR_V1.md`; restart history remains
 `internal/LABS05_HANDOFF_2026-08-02.md`.
 
-Local implementation reached GREEN on 2026-08-02: the supported synthetic-only
-CLI, deterministic controller, strict subprocess, and target-specific adapter
-pass 108 focused and 516 repository-wide tests plus the complete versioned
-verification gate. This is implementation evidence only. No live canary ran,
-and LABS-05 has not passed `LABS05_ADAPTATION_V1`.
+The superseding local implementation reached GREEN on 2026-08-03: 131 frozen
+connector acceptance tests and 539 repository-wide tests pass with the complete
+versioned verification gate. Exact outer HTTP accounting remains deterministic;
+unavailable target-internal calls, tokens, cost, tool trace, budget enforcement,
+or global-state isolation are typed gaps rather than zeros.
+
+The owner-authorized one-turn localhost smoke reached unchanged HRAI commit
+`728f6c5`, but HRAI could not create a session: its configured Postgres endpoint
+timed out during startup and its configured Redis hostname did not resolve, so
+`POST /sessions` returned HTTP 500. No chat turn, tool call, or HRAI session
+occurred. The response exposed and closed one Triana classification defect with
+an independent regression; the actual smoke remains failed target-infrastructure
+evidence, not a successful episode or `LABS05_ADAPTATION_V1` passage. No rerun
+is authorized by this record.
 
 ## Scope decisions (Akarsh, 2026-07-31)
 

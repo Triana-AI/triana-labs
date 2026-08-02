@@ -101,6 +101,26 @@ verification proves the deterministic/fake boundary and strict process
 contract; it does not prove live Foundry or HRAI/Qwen compatibility, valid live
 trajectories, or the owner adaptation ruling.
 
+The owner-approved Target Connector V1 supersedes the preceding LABS-05 target
+paragraphs while retaining the episode controller and artifacts. Triana now
+owns only the adaptive outer loop and connector-observed facts. An existing
+agent owns its prompt, model/provider, tools, internal orchestration, and
+target-side state. `HTTP_JSON_V1` provides restricted request-pointer insertion,
+response-pointer extraction, explicit remote-session or transcript-replay
+lifecycle, exact endpoint authorization, and no retry/redirect/fallback.
+`EXECUTABLE_JSONL_V1` retains the shell-free process isolation as a customer
+bridge rather than an HRAI reconstruction. HRAI maps its existing
+`POST /sessions`, `POST /sessions/{id}/chat`, and `DELETE /sessions/{id}`
+surface through configuration. Target-internal accounting and state isolation
+are recorded only when reported or evidenced; absence is a typed gap. The
+normative contract is `internal/LABS05_TARGET_CONNECTOR_V1.md`.
+
+This superseding boundary is locally GREEN with 131 focused connector tests
+and 539 repository-wide tests. The first authorized real HRAI smoke proved
+endpoint reachability only: configured Postgres timed out and Redis DNS failed,
+so session creation returned HTTP 500 before any chat turn. The attempt is a
+typed target-infrastructure gap, not an adaptive episode or owner passage.
+
 ## Authority map
 
 ```text

@@ -1,6 +1,6 @@
 # Working memory
 
-Updated: 2026-08-02
+Updated: 2026-08-03
 
 ## Active strategic position
 
@@ -43,23 +43,35 @@ Historical research and suspended-product handoff:
 
 ## Current objective
 
-Immediate objective: obtain explicit owner authorization for the bounded
-LABS-05 live synthetic-only canary, then—only if it produces three valid,
-nonduplicate inspectable trajectories—obtain `LABS05_ADAPTATION_V1`. Local
-implementation is complete and repository-wide verification is GREEN. Akarsh passed
+Target-boundary correction is locally complete. The owner-approved
+`internal/LABS05_TARGET_CONNECTOR_V1.md` keeps the adaptive controller but
+invokes opaque existing agents through restricted HTTP/JSON or a strict
+customer executable bridge. HRAI is the first localhost HTTP configuration.
+Independent acceptance proves both an HRAI-shaped remote-session endpoint and
+a non-HRAI stateless-transcript endpoint: 131 focused tests and 539 complete
+repository tests pass the versioned gate.
+
+Triana counts only connector HTTP/executable exchanges it observes. Missing
+target-internal HTTP/model/token/cost/tool/global-state evidence is represented
+by typed gaps. Triana persistent/global learning memory remains deferred;
+target-side state is not silently reclassified as Triana memory.
+
+Immediate objective: repair or supply reachable HRAI Postgres and Redis
+configuration before seeking separate authorization for any new live canary;
+then—only if an exact three-episode run produces three valid, nonduplicate
+inspectable trajectories—obtain `LABS05_ADAPTATION_V1`. Akarsh passed
 `LABS04_USEFULNESS_V1` on 2026-08-02 by
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart
 context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
 The exact active contract is `internal/SLICE_PACKET.md` plus
-`internal/LABS05_WIRE_CONTRACT.md`. The selected cases are context recovery,
-cross-client refusal, and bounded status verification; each runs as exactly
-U1/A1/U2/A2/U3/A3 against the pinned HRAI Recruiter Chat ReAct JSONL target.
-The supported local `triana episodes run` surface and strict target-specific
-subprocess are implemented. No further provider experiment is authorized until
-the owner freezes the prompt/tool repair below.
+`internal/LABS05_TARGET_CONNECTOR_V1.md`. The selected cases are context
+recovery, cross-client refusal, and bounded status verification; each runs as
+exactly U1/A1/U2/A2/U3/A3 against an opaque configured target. The supported
+local `triana episodes run` surface and both connector kinds are implemented.
+No further provider or target experiment is authorized by the failed smoke.
 
-2026-08-02 live diagnostic update: Akarsh authorized one synthetic episode
+Historical superseded 2026-08-02 diagnostic: Akarsh authorized one synthetic episode
 against a localhost HRAI endpoint using OpenRouter. The checked-out HRAI commit
 is `728f6c5`, but its production model builder is Bedrock-backed and its `.env`
 points to remote RDS/Redis, so Codex did not start that configuration. A
@@ -76,6 +88,22 @@ The leading hypothesis is a protocol/prompt mismatch: the pinned
 synthetic LABS-05 adapter intentionally exposes only four read-only lookup
 tools. Do not retry or relax budgets until the owner chooses whether to freeze
 a chat-specific prompt overlay or expand the target tool/world contract.
+
+2026-08-03 real-endpoint smoke update: Akarsh explicitly authorized starting
+unchanged HRAI commit `728f6c5` with its configured Redis/Postgres startup side
+effects and one synthetic read-only connector turn. Startup completed only
+after its configured Postgres endpoint timed out; the startup seed was skipped.
+The `/health` route unexpectedly made one target-internal OpenRouter diagnostic
+call and returned after the 30-second client deadline, so its model usage and
+cost are unavailable. Triana then attempted exactly one `POST /sessions`; HRAI
+returned HTTP 500 because its configured Redis hostname did not resolve. No
+session, chat turn, tool call, target response, or persistent target state was
+created, and HRAI shut down cleanly. The non-JSON 500 exposed a Triana status
+classification defect; an independent 131st regression froze it, production
+now reports create failure before parsing a non-success body, and the complete
+539-test gate is GREEN. The observed smoke itself remains failed infrastructure
+evidence and does not pass `LABS05_ADAPTATION_V1`. Do not rerun without a new
+owner authorization after HRAI connectivity is repaired.
 
 Memory decision: immutable accepted case evidence is read-only; transcript and
 target state are episode-only and discarded after publication; HRAI persistent

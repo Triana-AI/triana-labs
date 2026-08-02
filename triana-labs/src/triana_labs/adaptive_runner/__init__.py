@@ -17,4 +17,5 @@ from .contracts import (
     VerifiedCaseProjection,
 )
 from .process import JsonlTargetProcessFactory as JsonlTargetProcessFactory
+from .http_target import HttpJsonTargetFactory as HttpJsonTargetFactory
 from .runner import run as run
