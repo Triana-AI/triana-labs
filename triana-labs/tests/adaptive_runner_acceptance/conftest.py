@@ -9,7 +9,7 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -305,11 +305,13 @@ class Session:
         mode: str,
         assistant_variant: str,
         include_case_id: bool,
+        response_mutator: Callable[[Mapping[str, Any], dict[str, Any]], None] | None,
     ) -> None:
         self.launch = launch
         self.mode = mode
         self.assistant_variant = assistant_variant
         self.include_case_id = include_case_id
+        self.response_mutator = response_mutator
         self.exchanges: list[Mapping[str, Any]] = []
         self.terminate_count = 0
         self.http_count = 0
@@ -339,6 +341,8 @@ class Session:
                 response["unexpected"] = "private"
             if self.mode == "identity_mismatch":
                 response["case_id"] = "case-wrong"
+            if self.response_mutator is not None:
+                self.response_mutator(request, response)
             return response
         if request["kind"] == "turn":
             self.http_count += 1
@@ -374,7 +378,7 @@ class Session:
                 http_count = 5
             if self.mode == "token_overrun" and turn_index == 1:
                 input_tokens = 393_217
-            return {
+            response = {
                 "assistant_content": content,
                 "episode_id": request["episode_id"],
                 "kind": "turn_result",
@@ -389,7 +393,10 @@ class Session:
                     "provider_reported_cost_usd": None,
                 },
             }
-        return {
+            if self.response_mutator is not None:
+                self.response_mutator(request, response)
+            return response
+        response = {
             "episode_id": request["episode_id"],
             "kind": "closed",
             "last_turn_index": request["last_turn_index"],
@@ -397,6 +404,9 @@ class Session:
             "provider_http_exchange_count": self.http_count,
             "tool_call_count": 13 if self.mode == "too_many_tools" else 0,
         }
+        if self.response_mutator is not None:
+            self.response_mutator(request, response)
+        return response
 
     def terminate(self) -> None:
         self.terminate_count += 1
@@ -409,10 +419,13 @@ class TargetFactory:
         modes: tuple[str, ...] = ("success", "success", "success"),
         assistant_variant: str = "bounded",
         include_case_id: bool = True,
+        response_mutator: Callable[[Mapping[str, Any], dict[str, Any]], None]
+        | None = None,
     ) -> None:
         self.modes = modes
         self.assistant_variant = assistant_variant
         self.include_case_id = include_case_id
+        self.response_mutator = response_mutator
         self.launches: list[Any] = []
         self.sessions: list[Session] = []
 
@@ -424,6 +437,7 @@ class TargetFactory:
             mode=self.modes[index],
             assistant_variant=self.assistant_variant,
             include_case_id=self.include_case_id,
+            response_mutator=self.response_mutator,
         )
         self.sessions.append(session)
         return session
@@ -514,7 +528,7 @@ def config_value(*, target_mode: str = "success") -> dict[str, Any]:
             "cwd": str(PROJECT_ROOT),
             "env_names": ["AWS_PROFILE", "AWS_REGION"],
             "fallback_model": None,
-            "prompt_version": "candidate-screening-v2-reliability",
+            "prompt_version": "candidate-screening-v3-decision-followthrough",
             "protocol": "HRAI_RECRUITER_CHAT_REACT_JSONL_V1",
             "source_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
             "timeout_seconds": 180,
@@ -577,6 +591,7 @@ def invoke(
     target_modes: tuple[str, ...] = ("success", "success", "success"),
     assistant_variant: str = "bounded",
     include_case_id: bool = True,
+    response_mutator: Callable[[Mapping[str, Any], dict[str, Any]], None] | None = None,
     config: Mapping[str, Any] | None = None,
     target: Any = None,
     publisher: CapturePublisher | None = None,
@@ -592,6 +607,7 @@ def invoke(
         modes=target_modes,
         assistant_variant=assistant_variant,
         include_case_id=include_case_id,
+        response_mutator=response_mutator,
     )
     active_publisher = publisher or CapturePublisher()
     loader = FixtureLoader(module, order=loader_order)

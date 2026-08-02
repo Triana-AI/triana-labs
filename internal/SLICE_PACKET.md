@@ -344,26 +344,30 @@ At minimum tests prove:
 Valid RED means collection succeeds and failures arise only because the new
 `episodes run` behavior/package is absent. Import/setup failures are invalid.
 
-The independent author completed this contract against authority head
-`baa0fe3`. Codex read every assertion and fixture and independently reproduced:
+The independent author first completed the 42-case contract against authority
+head `baa0fe3`. After the first production candidate, Codex found concrete
+prompt-lineage, accounting, validation, timeout, privacy, adapter-world, and
+pre-execution budget defects. The same independent author added only
+contract-derived regressions and corrected the prompt expectation to the
+canonical executable v3 identity. Codex read the new assertions and fixtures
+and independently reproduced the post-candidate RED:
 
 ```text
-42 tests collected
-42 expected failures
-0 passes
+93 tests collected
+81 expected candidate failures
+12 passes
 0 collection errors
 0 skips
 Ruff check GREEN
 Ruff format check GREEN
 ```
 
-Direct seam failures state that `triana_labs.adaptive_runner` is absent; CLI
-failures state that `episodes run` is absent. There is no fixture/import/setup
-failure. The six test-owned Python files contain 1,370 physical lines. Their
+The failures are production mismatches rather than fixture/import/setup
+failures. The eight test-owned Python files contain 2,201 physical lines. Their
 sorted concatenated content SHA-256 is
-`88960cc93916c8b51721299b93479a2a5672ccb1f13e104d40ae39ca3dfe5dad`.
+`1900fb9f739aaf18b32048c7808487651b689708c2b1f500816a2ef1b8ded982`.
 The SHA-256 of the sorted per-file `shasum -a 256` stream is
-`2d30c12505b8fab6c154b26f8264b6b721604a63c6d9c6179d546f2c73400101`.
+`9784bd8a784366d0331a14cbfc498cf26e97efb05e9913a0c98384677d62d93f`.
 The raw fake-target file SHA-256 is
 `a67250c83eabdd541918787bc45e8256f22a5a351fddb26b6086960369e3f29d`.
 Any change under either test-owned path invalidates this freeze and stops
@@ -384,9 +388,9 @@ author attacks this additional orchestrator-declared matrix before exit:
 6. zero-egress and post-egress target failures retain distinct ledger counts
    and never infer actual cost.
 
-These attacks may add only contract-derived test-author regressions after
-Codex reproduces a real candidate violation. They cannot change acceptance
-meaning or weaken the frozen 42 cases.
+These attacks produced the independently frozen regressions above after Codex
+reproduced real candidate violations. They do not weaken the original 42 cases
+or change acceptance meaning.
 
 ## 13. Roles and change budget
 
