@@ -56,7 +56,26 @@ The exact active contract is `internal/SLICE_PACKET.md` plus
 cross-client refusal, and bounded status verification; each runs as exactly
 U1/A1/U2/A2/U3/A3 against the pinned HRAI Recruiter Chat ReAct JSONL target.
 The supported local `triana episodes run` surface and strict target-specific
-subprocess are implemented. No provider experiment is authorized yet.
+subprocess are implemented. No further provider experiment is authorized until
+the owner freezes the prompt/tool repair below.
+
+2026-08-02 live diagnostic update: Akarsh authorized one synthetic episode
+against a localhost HRAI endpoint using OpenRouter. The checked-out HRAI commit
+is `728f6c5`, but its production model builder is Bedrock-backed and its `.env`
+points to remote RDS/Redis, so Codex did not start that configuration. A
+disposable localhost bridge instead combined the pinned v3 recruiter prompt
+and Triana's four-tool in-memory synthetic world with a single no-fallback
+OpenRouter `deepseek/deepseek-v3.2` boundary. The first A1 attempt received HTTP
+401. After Akarsh refreshed the key, authentication succeeded and the target
+made live model calls, but it returned `ModelCallLimitExceededError` at the
+frozen four-call ceiling before producing A1. No U2/U3 ran; no remote database,
+Redis, real data, or persistent memory was touched; the endpoint was stopped.
+The leading hypothesis is a protocol/prompt mismatch: the pinned
+`candidate-screening-v3-decision-followthrough` prompt mandates
+`submit_evaluation`, memory, and sometimes decision terminal tools, while the
+synthetic LABS-05 adapter intentionally exposes only four read-only lookup
+tools. Do not retry or relax budgets until the owner chooses whether to freeze
+a chat-specific prompt overlay or expand the target tool/world contract.
 
 Memory decision: immutable accepted case evidence is read-only; transcript and
 target state are episode-only and discarded after publication; HRAI persistent

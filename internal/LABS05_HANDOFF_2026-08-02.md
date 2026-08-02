@@ -29,6 +29,13 @@ is now the owner-approved contract and records local implementation closure.
   `LABS05_ADAPTATION_V1` remains pending.
 - Next human gate: Akarsh must explicitly authorize the bounded synthetic-only
   live run (maximum 42 HTTP exchanges, USD 23, 600 seconds) before egress.
+- Live diagnostic evidence after local closure: one owner-authorized localhost
+  OpenRouter attempt authenticated after a key refresh but exhausted the
+  target's four-model-call ceiling before A1. The pinned v3 evaluation prompt
+  mandates terminal evaluation/memory/decision tools absent from the frozen
+  four-read-only-tool adapter. No U2/U3, remote DB/Redis, real data, fallback,
+  or persistent memory occurred. This is a typed compatibility gap, not LABS-05
+  passage; the smallest repair requires a new owner-frozen prompt/tool choice.
 
 ## 1. Exact ground truth
 
