@@ -43,12 +43,23 @@ Historical research and suspended-product handoff:
 
 ## Current objective
 
-Immediate objective after LABS-04: freeze the smallest LABS-05 Adaptive
-Multi-Turn Runner. Akarsh passed `LABS04_USEFULNESS_V1` on 2026-08-02 by
+Immediate objective: implement the frozen LABS-05 Adaptive Multi-Turn Runner
+through independent RED then separate production authorship. Akarsh passed
+`LABS04_USEFULNESS_V1` on 2026-08-02 by
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart
 context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
-No LABS-05 implementation is active.
+The exact active contract is `internal/SLICE_PACKET.md` plus
+`internal/LABS05_WIRE_CONTRACT.md`. The selected cases are context recovery,
+cross-client refusal, and bounded status verification; each runs as exactly
+U1/A1/U2/A2/U3/A3 against the pinned HRAI Recruiter Chat ReAct JSONL target.
+Only deterministic fakes are authorized during implementation. No provider
+experiment is authorized yet.
+
+Memory decision: immutable accepted case evidence is read-only; transcript and
+target state are episode-only and discarded after publication; HRAI persistent
+memory is disabled; persistent/global evaluated memory remains deferred until
+a reviewed result has a concrete next-run consumer.
 
 The older long-horizon objective below remains strategic context, not the next
 implementation authorization.

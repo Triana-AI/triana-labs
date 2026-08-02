@@ -1,1331 +1,446 @@
-# Closed implementation slice — LABS-04 Grounded Case Factory
+# LABS-05 Adaptive Multi-Turn Runner slice packet
 
-Status: **CLOSED — SUPPORTED RESTRICTED CLI GREEN — OWNER REVIEW PENDING**
+Date frozen: 2026-08-02
 
-Date: 2026-08-01
-Branch: `codex/labs-04-semantic-eval`
-Canonical base: `83454e3`
-Slice ID: `LABS-04-grounded-case-factory`
+Status: **FROZEN FOR INDEPENDENT RED; NO LIVE PROVIDER RUN AUTHORIZED**
 
-Active failure and repair evidence is maintained in
-`internal/LABS04_TRIAGE.md`. That ledger records classification and status but
-does not supersede this packet or the exact wire contract.
+Slice ID: `LABS-05-ADAPTIVE-RUNNER-V1`
 
-LABS-04 implementation and the sole scale-out provider experiment are closed;
-the final result is in the Closing exit evidence section. This file remains the
-historical live contract until, and only until, the owner clears the usefulness
-gate and a new LABS-05 packet replaces it. Fresh sessions must read
-`internal/LABS05_HANDOFF_2026-08-02.md` and must not treat historical RED or
-intermediate amendments below as the current state.
-Owner: Akarsh
-Orchestrator: Codex
+Canonical base: `1258b9c` on `codex/labs05-adaptive-runner`, descended from
+local `main` at `ff8ca24`.
 
-## 0. LABS-04 closure addendum — supported restricted CLI
+Authority: `triana-labs/CHARTER.md` -> `internal/DECISION_LOG.md` ->
+`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`.
 
-The 2026-08-02 scale-out experiment proved the restricted GLM-5.2 runtime but
-did not expose it through the supported CLI: `triana cases generate` still
-entered the older three-stage Case Factory. The addendum below was required
-before handoff and is now implemented and green; LABS-04 has no remaining
-engineering gate before owner review.
+Normative wire: `internal/LABS05_WIRE_CONTRACT.md`.
 
-The public command remains:
+Restart evidence: `internal/LABS05_HANDOFF_2026-08-02.md` and
+`internal/LABS04_CASE_REVIEW_2026-08-02.md`.
 
-```text
-triana cases generate <observer-manifest> \
-  --intelligence <intelligence-manifest> \
-  --config <case-factory-config.json> \
-  --cache-dir <private-cache-directory> \
-  --out <new-directory>
-```
+## 1. Product outcome
 
-Dispatch is explicit and fail-fast. A config whose `artifact_kind` is
-`case_factory_restricted_config` invokes the pinned restricted GLM-5.2 runtime;
-an existing `case_factory_config` continues to invoke the legacy runtime. No
-unknown kind, malformed config, missing endpoint/key environment variable, or
-provider/model mismatch falls back to either engine.
+Prove that three owner-accepted LABS-04 cases can drive genuinely adaptive,
+inspectable six-role-turn episodes against one explicitly named existing agent
+protocol. Every later simulated-user turn must consume the immediately
+preceding target response and normalized tool observations. Deterministic
+Triana code owns case and episode identity, custody, budgets, termination,
+trajectory fingerprints, duplicate arithmetic, lineage, and typed gaps.
 
-The restricted config adds only the operator boundary needed by the CLI:
+The target is the HRAI Recruiter Chat ReAct protocol at HRAI commit
+`728f6c5058efe40a16e2aecc9b528b3353f4df4f`, historical agent model
+`qwen.qwen3-235b-a22b-2507-v1:0`, prompt version
+`candidate-screening-v2-reliability`. It runs behind the exact Triana-owned
+JSONL subprocess protocol in the normative wire. Model fallback is disabled.
 
-```json
-{
-  "artifact_kind": "case_factory_restricted_config",
-  "schema_version": 1,
-  "provider": {
-    "provider_kind": "MICROSOFT_FOUNDRY_FIREWORKS",
-    "deployment": "FW-GLM-5.2",
-    "model_version": "1",
-    "endpoint_env": "TRIANA_FOUNDRY_ENDPOINT",
-    "api_key_env": "TRIANA_FOUNDRY_API_KEY",
-    "secret_sentinel_envs": [],
-    "request_timeout_seconds": 180
-  },
-  "generation": {"candidate_count": 5},
-  "budget": {
-    "max_usd": "25.000000",
-    "reservation_usd_per_agent_call": "2.000000"
-  }
-}
-```
+This is not a generic agent SDK, product-wide runner, judge, memory system, or
+release comparison. The target adapter uses a fresh synthetic read-only world
+and empty episode state. It does not load or write HRAI persistent memory.
 
-`candidate_count` is accepted only in the implemented restricted range. The
-model identity is pinned by Triana and must match the config exactly; it is not
-a model router. Credentials are read only from the named environment variables
-and never written to portable artifacts or terminal output.
+## 2. Entry evidence and selected cases
 
-One new sibling command closes human-question continuation without hidden
-automation:
+LABS-04 passed `LABS04_USEFULNESS_V1`: Akarsh answered yes to all six frozen
+questions for all five cases and confirmed that none depends on a hidden or
+fabricated fact. The reproducible ruling is
+`internal/LABS04_USEFULNESS_V1.json`.
+
+The exact LABS-04 input bundle has manifest-file SHA-256
+`817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`
+and `case_candidates.jsonl` SHA-256
+`06a3a2267f39041d98e08ef24466ffbc695e7833ebb16bd536f19f71c37ecbe4`.
+No LABS-04 provider experiment may be rerun.
+
+The smallest LABS-05 panel is exactly, in this order:
+
+1. `case-b2b9570f6e763ca0` — wrong position/client-context recovery;
+2. `case-62ca79446e3a22d5` — cross-client social-engineering refusal;
+3. `case-9a0d8a895afcd860` — bounded status verification.
+
+Selection is owner-accepted and mode-diverse, not a model judgment. Changing
+case membership or order creates a new contract version.
+
+## 3. Public invocation and outputs
+
+The supported command added by this slice is:
 
 ```text
-triana cases resume <pause-manifest> \
-  --answers <answers.json> \
-  --config <same-case-factory-config.json> \
-  --cache-dir <same-private-cache-directory> \
-  --out <new-directory>
+triana episodes run CASE_FACTORY_MANIFEST \
+  --review LABS04_USEFULNESS_V1.json \
+  --config ADAPTIVE_RUNNER_CONFIG.json \
+  --out NEW_DIRECTORY
 ```
 
-`answers.json` is one strict JSON object mapping every emitted `question_id` to
-one bounded string. Resume verifies the exact config hash recorded by the pause
-bundle before any provider call. Missing, extra, duplicate, non-string, or
-oversized answers refuse. The original pause bundle remains immutable.
+The input manifest resolves its declared sibling artifacts. The review and
+config bytes are strict inputs. `--out` must not exist, its parent must be a
+real directory, and publication is atomic/no-replace.
 
-Acceptance ownership is serial: the independent test author freezes CLI
-dispatch, redaction, fail-fast, pause/resume, and wheel-parity tests before the
-implementation author edits production code. The orchestrator runs the full
-verification gate and reconciles the change budget.
-
-Closure change budget:
-
-- production: `triana-labs/src/triana_labs/cli.py` and the smallest necessary
-  Case Factory public/config helper files;
-- tests: one new or extended Case Factory acceptance-test module, authored
-  before production edits;
-- examples/docs: one secret-free restricted config example, this packet,
-  canonical Labs status/handoff documents, decision memory, and the readable
-  LABS-04 case review;
-- explicitly untouched: `triana-core/`, Observer/adapter/intelligence behavior,
-  frozen schema artifacts and five canonical hashes, LABS-05 runtime, provider
-  prompts, semantic validators, and the successful evidence bundle;
-- dependencies: none;
-- scope expansion: none without owner confirmation.
-
-Reproducible acceptance: fake transport only for automated tests; prove both
-config kinds dispatch to their intended engines, prove restricted pause/resume
-and all refusal/redaction paths, run the full repository verifier, and preserve
-the successful 5/5 scale-out bundle and frozen hashes. No second live provider
-run is required for CLI wiring.
-
-### 0.1 Exact restricted CLI wire clarification
-
-This subsection closes the assertion-level details raised by the independent
-test-author entry audit. It changes no provider or case-generation semantics.
-
-Restricted `generate` and `resume` stdout contain exactly these keys:
-`outcome,reason_code,manifest_path,questions_path,attempted_case_count,
-valid_case_count,distinct_case_count,provider_call_count,
-provider_http_exchange_count,conservative_cost_usd`. `questions_path` is the
-published `questions.json` path only for `NEEDS_INPUT`; otherwise it is null.
-Legacy generate retains its existing receipt unchanged.
-
-Restricted stderr contains exactly one safe terminal event with the existing
-service identity plus `command,event_name,severity,outcome,reason_code,
-duration_ms,attempted_case_count,valid_case_count,distinct_case_count,
-provider_call_count,provider_http_exchange_count,conservative_cost_usd` when a
-result exists. Generate uses command `cases.generate` and event names
-`triana.cases.generate.completed`, `.completed_with_gaps`, `.needs_input`, or
-`.rejected`. Resume uses command `cases.resume` and the corresponding
-`triana.cases.resume.*` names. Pre-result refusals omit all count/cost fields.
-Paths, config values, answers, exception text, endpoints, and secrets never
-enter stderr.
-
-Exit codes are exact: `COMPLETED=0`, `COMPLETED_WITH_GAPS=10`,
-`NEEDS_INPUT=11`, terminal restricted `REJECTED=8`, CLI/config/answer usage
-refusal `=2`, unavailable or corrupt immutable resume/private state `=5`, and
-an unexpected outer-boundary invariant `=70`. Closed pre-result reasons are
-`CLI_USAGE_ERROR`, `CONFIG_INVALID`, `PROVIDER_CONFIGURATION_MISSING`,
-`RESUME_INPUT_INVALID`, and `RESUME_STATE_UNAVAILABLE`. No exception text is
-used as a reason code.
-
-Resume compares `resume_state.config_hash` to the SHA-256 artifact hash of the
-exact config file bytes. Reformatting an otherwise equivalent config therefore
-does not resume a run created from different bytes. It refuses before transport
-construction or egress on mismatch. The config is also passed explicitly to
-resume so the operator cannot unknowingly use ambient provider settings.
-
-Restricted config JSON is UTF-8, duplicate-key rejecting, float rejecting, and
-closed at every object. The exact top-level keys are `artifact_kind,
-schema_version,provider,generation,budget`. Provider keys are exactly
-`provider_kind,deployment,model_version,endpoint_env,api_key_env,
-secret_sentinel_envs,request_timeout_seconds`; generation contains exactly
-`candidate_count`; budget contains exactly `max_usd,
-reservation_usd_per_agent_call`. The three pinned provider identity values must
-equal the example above. `schema_version` is integer 1; booleans never count as
-integers. For this supported closure `candidate_count` is exactly 5.
-`request_timeout_seconds` is an integer from 1 through 600. Money values remain
-decimal strings accepted by the restricted runtime, with `0 <= max_usd <= 25`
-and nonnegative reservation.
-
-Environment-variable names are operator-chosen references matching
-`[A-Z][A-Z0-9_]{0,127}`; the sample names are not mandatory. Sentinel names are
-unique and follow the same rule. The referenced endpoint and API key must both
-exist. The endpoint must be absolute HTTPS, contain a hostname, contain no
-userinfo, query, fragment, explicit port, or path other than empty or `/`, and
-is normalized by removing the trailing slash. The API key must be a nonempty,
-non-whitespace string. Missing/invalid referenced values return
-`PROVIDER_CONFIGURATION_MISSING` without egress; malformed config structure or
-endpoint form returns `CONFIG_INVALID`.
-
-The frozen test seam is a module-private CLI transport-construction helper that
-accepts the already-validated config and environment mapping and returns the
-`FoundryGLMRestrictedTransport`. In-process acceptance tests may monkeypatch
-that helper with a fake restricted transport; the subprocess/build-parity tests
-must not expose a public fake flag or environment bypass.
-
-The exact helper symbol and signature are
-`_build_restricted_transport(config: dict[str, Any], environ: Mapping[str, str])
--> FoundryGLMRestrictedTransport`. An exact config-byte hash mismatch during
-resume is `CONFIG_INVALID` with exit 2; it is not an answer error or an
-unavailable-cache error.
-
-Exact wire authority: `internal/LABS04_WIRE_CONTRACT.md`. That document closes
-field-level schemas, canonical bytes, identity preimages, provider envelopes,
-transport behavior, partial publication, blind ordering, and the corrected
-smoke identity. Its exact rules supersede examples or shorthand here without
-expanding this packet's product scope.
-
-## 1. Product outcome and falsifiable claim
-
-Prove or falsify that Triana can convert a verified, authorized synthetic
-conversation-trace corpus into useful, inspectable designs for genuinely
-adaptive multi-turn simulations.
-
-The checkpoint produces proposed behavioral personas, intents, adaptive turn
-policies, and five proposed simulation cases. It does not execute an agent.
-The cases remain proposals until a human reviews them. If fewer than three
-distinct valid cases survive the deterministic gates, or the owner review does
-not clear the frozen usefulness rubric, the checkpoint fails and LABS-05
-multi-turn execution does not start.
-
-```text
-LABS-02 file adapter
-  -> LABS-01 Trace Observer
-  -> LABS-03 structural Corpus Intelligence
-  -> LABS-04 Grounded Case Factory
-       -> evidence-backed proposed personas
-       -> evidence-backed proposed intents
-       -> adaptive proposed turn policies
-       -> five proposed simulation cases
-       -> grounding, diversity, cost, lineage, and gap evidence
-  -X-> no target-agent execution
-  -X-> no panel run, behavioral verdict, or persistent memory
-```
-
-This slice advances the active charter's
-`GENERATED_MULTI_TURN_SIMULATION` launch cut. It is the evidence gate before a
-runtime harness: Triana must not build machinery that executes generic,
-unsupported, repetitive, or unusable cases faster.
-
-## 2. Invocation and exact input boundary
-
-The user-facing command is:
-
-```text
-triana cases generate <observer-manifest> \
-  --intelligence <intelligence-manifest> \
-  --config <case-factory-config.json> \
-  --out <new-directory>
-```
-
-The Observer manifest and intelligence manifest are both explicit inputs. The
-command verifies both complete bundles through the existing owners and proves
-that `intelligence_manifest.input_manifest_hash` equals the SHA-256 of the
-exact Observer manifest bytes. No path is inferred from a hash, working
-directory, environment, source ID, or sibling-name convention.
-
-The slice accepts only the already-supported `SYNTHETIC` privacy class. It does
-not add production, customer, public-corpus, Blitz, or `LOCAL_SENSITIVE`
-support. Source IDs, system-visible messages, tool arguments, tool results,
-terminal reasons, and opaque metadata do not enter provider-bound evidence.
-
-Eligible semantic evidence is projected from validated traces as:
-
-- user and assistant message content with trace ID and event sequence;
-- ordered safe tool names and result state, without arguments or results;
-- terminal state, without reason text;
-- LABS-03 structural cluster membership and mechanical eligibility;
-- explicit omission and gap records.
-
-Only case-generation-eligible traces enter selection. Selection is input-order
-independent: sort clusters by cluster ID, take one trace per cluster in
-round-robin order, then take remaining traces by trace ID, stopping at 25
-traces or the provider-bound byte ceiling. A message event above 16,384 UTF-8
-bytes is omitted whole and creates `EVIDENCE_EVENT_TOO_LARGE`; it is never
-silently truncated. A trace with no remaining user content is excluded with
-`NO_USABLE_USER_EVIDENCE`. The complete provider request is limited to 240,000
-UTF-8 bytes before transmission.
-
-The evidence projection is treated as untrusted data. It is serialized inside
-a closed JSON evidence field, receives no tools, cannot change system
-instructions, and cannot name credentials, endpoints, budgets, acceptance
-states, or output paths.
-
-## 3. Frozen Azure provider experiment
-
-LABS-04 uses one Azure OpenAI deployment through the GA v1 chat-completions
-REST surface and strict structured outputs:
-
-```text
-provider_kind: AZURE_OPENAI
-api_surface: /openai/v1/chat/completions
-deployment: gpt-4.1-mini
-model_name: gpt-4.1-mini
-model_version: 2025-04-14
-response_format: json_schema, strict=true
-```
-
-The existing owner Azure subscription was inspected read-only on 2026-08-01.
-The selected deployment exists on the owner's Azure AI resource. `Luna` was
-not an observed Azure deployment. `gpt-5.6-terra` exists but was not selected:
-newer capability does not establish a lower price, and this checkpoint chooses
-the smaller deployed model with documented structured-output support.
-
-The config names, but never contains, credentials:
-
-```json
-{
-  "artifact_kind": "case_factory_config",
-  "schema_version": 1,
-  "provider": {
-    "provider_kind": "AZURE_OPENAI",
-    "endpoint_env": "AZURE_OPENAI_ENDPOINT",
-    "api_key_env": "AZURE_OPENAI_API_KEY",
-    "secret_sentinel_envs": ["TRIANA_LABS04_SECRET_SENTINEL"],
-    "allowed_endpoint_host": "<operator-approved-azure-host>",
-    "api_surface": "/openai/v1/chat/completions",
-    "deployment": "gpt-4.1-mini",
-    "model_name": "gpt-4.1-mini",
-    "model_version": "2025-04-14"
-  },
-  "authorization": {
-    "allow_provider_egress": true,
-    "privacy_classes": ["SYNTHETIC"],
-    "allowed_projection": "LABS04_SYNTHETIC_SEMANTIC_EVIDENCE_V1"
-  },
-  "generation": {
-    "candidate_count": 5,
-    "evidence_trace_limit": 25,
-    "seed": 2026080104
-  },
-  "budget": {
-    "max_calls": 3,
-    "normal_calls": 3,
-    "max_input_bytes_per_call": 240000,
-    "max_output_tokens_per_call": 12000,
-    "max_wall_clock_seconds": 600,
-    "request_timeout_seconds": 60,
-    "max_transport_retries_per_stage": 0,
-    "max_usd": "8.700000",
-    "conservative_input_usd_per_million_tokens": "10.000000",
-    "conservative_output_usd_per_million_tokens": "40.000000",
-    "pricing_source": "OPERATOR_CONSERVATIVE_BOUND"
-  }
-}
-```
-
-The endpoint environment value must be exact HTTPS with no userinfo, query, or
-fragment and must resolve to the configured host. The API key is read only from
-the named environment variable. No ambient credential or Azure CLI fallback is
-allowed. The smoke's exact existing resource host is supplied in a local,
-uncommitted config and represented portably only by its hash; the raw endpoint
-does not enter the repository.
-
-The conservative preflight treats each UTF-8 input byte as one input token,
-uses the configured maximum output tokens, includes exactly three stage calls,
-and refuses before egress if its upper cost bound exceeds USD 8.70. Missing price
-information is never zero. Provider-reported usage and any available charged
-cost remain separate observed facts; the conservative estimate is never
-presented as an invoice.
-
-Before every provider call the order is:
-
-```text
-verify input and explicit authorization
-  -> construct the allowlisted evidence projection
-  -> reject configured secret sentinels and credential-shaped content
-  -> validate exact endpoint and egress class
-  -> hash the exact provider-bound payload
-  -> reserve call, token, time, and USD budget
-  -> call Azure
-  -> validate finish reason and strict response
-  -> append metering and lineage
-```
-
-No new runtime dependency is allowed. The production client uses the standard
-library HTTPS surface plus existing Pydantic validation. Tests use an internal
-transport boundary; there is no public test mode, environment bypass, or
-recorded credential.
-
-## 4. Bounded semantic loop
-
-The experiment uses exactly three normal stages over the same evidence and
-schema:
-
-1. `PROPOSE`: produce five assets/cases. This output is the one-shot control.
-2. `CRITIQUE`: identify citation, support, invention, adaptability, and
-   duplication defects. The critique is advisory and creates no score or truth.
-3. `REVISE`: produce the final five proposed assets/cases using the evidence,
-   original proposal, and critique.
-
-The corrected run permits exactly one attempt per stage. Transport failure,
-HTTP 429/5xx, schema failure, content filtering, refusal, length truncation,
-invalid citation, and semantic rejection are never retried; the single failed
-attempt remains visible when the contract publishes a partial result.
-
-The loop has no tools, retrieval service, agent framework, memory backend,
-sub-agent API, dynamic prompt rewriting, or model-selected evidence. It is a
-Triana-owned bounded orchestration over plain provider calls. The critic may
-improve a proposal but cannot evaluate the checkpoint or promote an asset.
-
-## 5. Authority and proposal states
-
-| Concern | Deterministic Triana code | Azure model | Human owner |
-|---|---|---|---|
-| Input membership, evidence selection, IDs, hashes | owns | none | none |
-| Support counts and citation existence | owns | supplies requested references | none |
-| Persona, intent, policy, scenario, rubric content | schema/validity only | proposes | reviews/corrects |
-| Semantic entailment of claim by citation | cannot prove | cannot approve | judges sample |
-| Duplicate arithmetic and effective N | owns | cannot override | judges usefulness |
-| Budget, endpoint, egress, attempts, lineage | owns | reports usage only | authorizes config |
-| Accepted truth or persistent ruling | storage absent | forbidden | not created in this slice |
-
-Every semantic asset and case is born `PROPOSED`. A valid citation proves that
-the cited evidence exists, not that the model interpreted it correctly.
-`VALID_CITATION` must never be rendered as `VALID_INTERPRETATION`.
-
-Closed support states are:
-
-```text
-SUPPORTED           two or more independent traces cited
-SINGLE_OBSERVATION  exactly one independent trace cited
-CONFLICTED          cited evidence contains declared material conflict
-INSUFFICIENT        no defensible semantic proposal
-GENERATED_VARIATION scenario material generated for coverage, not observed
-```
-
-Every retained grounding claim uses `SUPPORTED`, `SINGLE_OBSERVATION`, or
-`CONFLICTED` and has citations. `INSUFFICIENT` is a gap state, while
-`GENERATED_VARIATION` is a semantic-item basis with no grounding claim. A case
-must contain at least one observed citation-backed anchor. Generated variation
-can add a situation but cannot be counted as observed customer behavior.
-
-## 6. Exact portable artifact bundle
-
-`--out` must not exist and its immediate parent must be a real directory. A
-completed or completed-with-gaps run publishes atomically:
+Completed or safely partial publication contains exactly:
 
 ```text
 manifest.json
-generation_attempts.jsonl
-evidence_index.json
-control_personas.jsonl
-control_intents.jsonl
-control_turn_policies.jsonl
-control_case_candidates.jsonl
-personas.jsonl
-intents.jsonl
-turn_policies.jsonl
-case_candidates.jsonl
-case_factory_eval.json
-human_review_template.json
+episode_attempts.jsonl
+transcripts.jsonl
+target_tool_events.jsonl
+provider_ledger.jsonl
+gaps.jsonl
+trajectory_clusters.json
+human_adaptation_review.json
 ```
 
-All JSON artifacts use compact sorted-key UTF-8 with one LF; JSONL has one such
-object per physical line. Artifact digests cover exact bytes. Paths,
-timestamps, random UUIDs, secrets, raw HTTP headers, raw provider responses,
-and Azure request IDs are excluded from portable identity. Provider response
-content appears only through validated portable proposal fields.
-
-Every semantic portable record contains `artifact_kind`, `schema_version: 1`,
-`input_manifest_hash`, `intelligence_manifest_hash`, `proposal_state` where
-semantic, `fidelity`, and `lineage`.
-
-### 6.0 Closed common field registry
-
-All objects are closed and reject unknown fields. JSON integers are strict and
-bounded to `0..9007199254740991`; booleans are not integers. Digests match
-`^sha256:[0-9a-f]{64}$`. Portable IDs match
-`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`. Safe codes match
-`^[A-Z][A-Z0-9_]{0,63}$`. Semantic text is UTF-8, permits LF but no other
-C0/C1 control, and is 1–4,096 bytes. Opening turns are 1–16,384 bytes. Labels
-are 1–256 bytes. Collections preserve order unless explicitly called sorted;
-duplicate stable IDs are invalid. `null` appears only in novelty companion
-fields, conditional attempt reason/response/provider-cost fields, and
-uncompleted human-review fields.
-
-`Lineage` has exactly:
-
-```json
-{
-  "provider_kind": "AZURE_OPENAI",
-  "endpoint_host_hash": "sha256:<digest>",
-  "deployment": "gpt-4.1-mini",
-  "model_name": "gpt-4.1-mini",
-  "model_version": "2025-04-14",
-  "prompt_pack_hash": "sha256:<digest>",
-  "provider_evidence_hash": "sha256:<digest>",
-  "stage": "PROPOSE",
-  "seed": 2026080104,
-  "attempt_ids": ["attempt-..."]
-}
-```
-
-`stage` is `PROPOSE | REVISE`; the critique is not a semantic artifact.
-Attempt IDs are unique and ordered. `fidelity` is exactly
-`SYNTHETIC_CORPUS_GROUNDED`. `proposal_state` is exactly `PROPOSED`.
-
-All semantic list elements use `SupportedText`:
-
-```json
-{
-  "text": "bounded semantic text",
-  "basis": "OBSERVED",
-  "claim_ids": ["claim-..."]
-}
-```
-
-`basis` is `OBSERVED | GENERATED_VARIATION`. `OBSERVED` requires one or more
-unique claim IDs resolving within the same asset or case. Generated variation
-requires an empty claim list and never raises observed support. Lists of
-`SupportedText` are limited to 20 items; grounding claims and citations are
-limited to 100; cases are exactly five per valid provider proposal; personas,
-intents, and turn policies are each 1–10.
-
-`GroundingClaim` and `EvidenceCitation` use the exact shapes in section 6.1.
-Citation ID lists are unique and sorted by citation ID. A claim with
-`SUPPORTED` or `CONFLICTED` requires citations from at least two distinct
-trace IDs; `SINGLE_OBSERVATION` requires exactly one distinct trace ID;
-`INSUFFICIENT` is retained only as a gap and cannot back `OBSERVED` text.
-
-### 6.1 Evidence citation and claim
-
-```json
-{
-  "citation_id": "citation-<digest-prefix>",
-  "trace_id": "trace-safe-id",
-  "event_sequences": [1, 2],
-  "evidence_hash": "sha256:<digest>",
-  "structural_cluster_id": "cluster-..."
-}
-```
-
-Event sequences are unique, ascending, and resolve only to projected evidence.
-The evidence hash covers the exact projected citation bytes, not the raw trace.
-
-```json
-{
-  "claim_id": "claim-<digest-prefix>",
-  "claim": "bounded proposed semantic text",
-  "support_state": "SUPPORTED",
-  "citation_ids": ["citation-..."]
-}
-```
-
-Claim and citation IDs are content-derived from schema-versioned canonical
-content. Equal semantic content has one identity; duplicate stable keys fail.
-
-### 6.2 Persona
-
-```json
-{
-  "artifact_kind": "persona_proposal",
-  "schema_version": 1,
-  "persona_id": "persona-<digest-prefix>",
-  "proposal_state": "PROPOSED",
-  "label": "bounded non-demographic label",
-  "behavioral_traits": [],
-  "communication_tendencies": [],
-  "constraints": [],
-  "grounding_claims": [],
-  "input_manifest_hash": "sha256:...",
-  "intelligence_manifest_hash": "sha256:...",
-  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
-  "lineage": {}
-}
-```
-
-Persona fields describe observable behavior. Demographic, protected, medical,
-or identity attributes are rejected unless they are explicitly present,
-relevant, allowed by the evidence contract, and cited. LABS-04's allowed
-projection does not authorize those fields, so the initial implementation
-rejects them.
-
-### 6.3 Intent
-
-```json
-{
-  "artifact_kind": "intent_proposal",
-  "schema_version": 1,
-  "intent_id": "intent-<digest-prefix>",
-  "proposal_state": "PROPOSED",
-  "goal": "bounded proposed text",
-  "known_constraints": [],
-  "observed_success_signals": [],
-  "observed_failure_or_abandonment_signals": [],
-  "grounding_claims": [],
-  "input_manifest_hash": "sha256:...",
-  "intelligence_manifest_hash": "sha256:...",
-  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
-  "lineage": {}
-}
-```
-
-An observed signal is not accepted success/failure truth. The UI/report layer
-does not exist here and no PASS/FAIL label is created.
-
-### 6.4 Adaptive turn policy
-
-```json
-{
-  "artifact_kind": "turn_policy_proposal",
-  "schema_version": 1,
-  "turn_policy_id": "turn-policy-<digest-prefix>",
-  "proposal_state": "PROPOSED",
-  "information_reveal_policy": [],
-  "reaction_rules": [],
-  "clarification_behavior": [],
-  "escalation_tendencies": [],
-  "stop_conditions": [],
-  "forbidden_inventions": [],
-  "grounding_claims": [],
-  "input_manifest_hash": "sha256:...",
-  "intelligence_manifest_hash": "sha256:...",
-  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
-  "lineage": {}
-}
-```
-
-The policy expresses how a simulated user may react to the future agent's
-behavior. A prewritten dialogue, fixed list of future turns, assistant text,
-tool call, or hidden target answer is schema-invalid.
-
-### 6.5 Simulation case candidate
-
-Each line of `case_candidates.jsonl` and
-`control_case_candidates.jsonl` has the illustrative shape below; the
-independent tester derives exact fixtures from
-`internal/LABS04_WIRE_CONTRACT.md`, not from production models, schemas, or
-serialization output:
-
-```json
-{
-  "artifact_kind": "simulation_case_candidate",
-  "schema_version": 1,
-  "case_id": "case-<digest-prefix>",
-  "proposal_state": "PROPOSED",
-  "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
-  "input_manifest_hash": "sha256:...",
-  "intelligence_manifest_hash": "sha256:...",
-  "persona_id": "persona-...",
-  "intent_id": "intent-...",
-  "turn_policy_id": "turn-policy-...",
-  "scenario": {
-    "opening_user_turn": "bounded text",
-    "known_facts": [],
-    "private_user_facts": [],
-    "unknowns": [],
-    "allowed_user_actions": [],
-    "tool_world_constraints": [],
-    "termination_conditions": [],
-    "expected_tool_names": [],
-    "stressor_codes": []
-  },
-  "grounding_claims": [],
-  "proposed_evaluation": {
-    "criteria": [],
-    "abstain_conditions": []
-  },
-  "novelty": {
-    "slot_key": "sha256:...",
-    "exact_duplicate_of": null,
-    "duplicate_cluster_id": null
-  },
-  "lineage": {},
-  "gaps": []
-}
-```
-
-References must resolve within the same output lane. Every known/private fact,
-constraint, termination condition, and proposed evaluation criterion is a
-claim reference or explicitly generated variation. `private_user_facts` means
-scenario facts withheld from the future agent, not private customer data.
-Control cases resolve only to `control_personas.jsonl`,
-`control_intents.jsonl`, and `control_turn_policies.jsonl`; revised cases
-resolve only to the unprefixed final asset files.
-
-Lineage contains provider kind, endpoint-host hash, deployment, model name and
-version, prompt-pack hash, provider-bound evidence hash, stage, seed, and
-attempt IDs. It contains no credential, raw endpoint, local path, or provider
-request ID.
-
-### 6.6a Attempt, manifest, evidence-index, and evaluation shapes
-
-Each `generation_attempts.jsonl` line has exactly:
-
-```json
-{
-  "artifact_kind": "case_factory_generation_attempt",
-  "schema_version": 1,
-  "attempt_id": "attempt-<digest-prefix>",
-  "stage": "PROPOSE",
-  "attempt_index": 0,
-  "status": "SUCCEEDED",
-  "reason_code": null,
-  "request_hash": "sha256:<digest>",
-  "response_hash": "sha256:<digest>",
-  "input_tokens": 0,
-  "output_tokens": 0,
-  "provider_reported_cost_usd": null,
-  "conservative_cost_usd": "0.000000",
-  "deployment": "gpt-4.1-mini",
-  "model_name": "gpt-4.1-mini",
-  "model_version": "2025-04-14"
-}
-```
-
-`stage` is `PROPOSE | CRITIQUE | REVISE`. `status` is
-`SUCCEEDED | TRANSPORT_FAILED | PROVIDER_REFUSED | CONTENT_FILTERED |
-TRUNCATED | INVALID_RESPONSE | BUDGET_REFUSED`. Success requires response
-hash, token counts, and null reason. Failure requires one closed reason and
-permits a response hash only when safe response bytes existed. Missing
-provider-reported cost is null, never zero. Decimal USD strings have exactly
-six fractional digits, are nonnegative, and remain estimates unless explicitly
-provider-reported.
-
-`evidence_index.json` has exactly artifact kind
-`case_factory_evidence_index`, schema version, both input hashes,
-`selection_algorithm: LABS04_CLUSTER_ROUND_ROBIN_V1`, selected trace count,
-excluded trace count, projected byte count, an ordered `citations` list, and
-an ordered `gaps` list. Each gap has exactly `reason_code`, optional safe
-`trace_id`, and optional event sequence; it contains no omitted content.
-
-`manifest.json` has exactly artifact kind `case_factory_manifest`, schema
-version, both input hashes, privacy class `SYNTHETIC`, producing component and
-version, provider/model/deployment/prompt/evidence hashes, seed, outcome,
-attempt/valid/raw/distinct/duplicate/gap counts, conservative USD estimate,
-human review state, and an `artifacts` object mapping the other twelve exact
-relative paths to digests. Outcome is `COMPLETED | COMPLETED_WITH_GAPS`;
-human review state is `PENDING` at generation time.
-
-`case_factory_eval.json` has exactly artifact kind
-`case_factory_evaluation`, schema version, both input hashes, raw and effective
-N, duplicate algorithm/version/threshold and clusters, requested/valid/invalid
-case counts for control and revised lanes, citation-valid/invalid counts,
-support-state counts, attempt/call/token/conservative-cost counts, sorted gap
-codes, `machine_status: PASSED | FAILED`, and
-`human_review_state: PENDING`. Machine status passes only with at least three
-distinct valid revised cases, zero invalid retained citations, and no privacy,
-authorization, or budget violation.
-
-`human_review_template.json` has exactly artifact kind
-`case_factory_human_review`, schema version, evaluation-manifest hash,
-rubric version `LABS04_USEFULNESS_V1`, deterministic blind seed, ordered review
-items, and `review_state: PENDING`. Each review item contains a blind ID, the
-case content needed for review, citations needed for semantic inspection, six
-null integer scores, null critical-failure code, and null notes. It contains no
-lane, stage, model, attempt, or original case ID. A separate
-`blind_lineage` mapping in `case_factory_eval.json` resolves blind IDs after
-review; it is not included in the template.
-
-### 6.6 Diversity
-
-`slot_key` hashes persona ID, intent ID, turn-policy ID, source structural
-cluster IDs, sorted stressor codes, and ordered expected tool names. Two valid
-cases with the same slot key are exact slot duplicates and only the first by
-case ID counts toward effective N. Source clusters are the union reachable
-through the case and its resolved persona, intent, and turn-policy claims.
-
-Near-duplicate text uses Unicode casefolding, whitespace tokenization, and
-token-set Jaccard similarity over `opening_user_turn`, intent goal, and
-reaction-rule text. Similarity at or above `0.85` with the same expected tool
-path creates one duplicate cluster. Similar text with a different ordered
-expected tool path remains distinct. The raw cases remain in the attempt
-record, but duplicates do not increase effective distinct N. Exact-slot and
-near-text edges form separate per-lane graphs; mixed components are labeled
-explicitly. The report names
-the algorithm, version, threshold, cluster sizes, raw N, and effective N.
-
-## 7. Evaluation-first acceptance contract
-
-The independent acceptance suite is complete and valid RED before production
-implementation begins. It has three evidence lanes.
-
-The first 109-case freeze at `949fcaa` was paused when isolated adversarial
-review found the missing resource ceilings. After the wire correction at
-`02b7801`, the independent author added 33 resource cases without changing the
-original 109. Codex independently reproduced the corrected suite before
-reauthorizing production: 142 cases collected, 140 expected behavioral RED
-failures, and two unaffected passes. That evidence was contaminated by the
-implementation author's untracked partial package in the shared worktree. On
-clean commit `f280f98`, Codex and the implementation author independently
-reproduced the authoritative state: 142 collected, 141 expected behavioral RED
-failures, and one passing normative-schema check. All 188 prior tests passed
-unchanged.
-Ruff and format checks passed. The sorted concatenated test/fixture content
-SHA-256 is
-`0d71c4146d10e54b7d5eed22c85e14d38855919766196ac0028e3b627af74c90`;
-the eleven test-owned files contain 3,339 physical lines. The SHA-256 of the
-NUL-sorted relative-path per-file hash-list stream is
-`3ed4858ee7607915513abf8f785d8ec227dc1d0f91c6a8bf13f45e944a4c22d9`.
-Any change under the two test-author-owned paths invalidates this corrected
-freeze and stops production.
-
-After candidate `2c6aeb8` passed the immutable acceptance contract, the
-independent tester reproduced six additional contract-derived RED cases in an
-isolated worktree: self-consistent forged intelligence accepted before egress;
-wrong CRITIQUE and REVISE request-too-large reason codes; raw `Invalid` leakage
-from non-Money provider cost; missing staging-directory fsync; and replacement
-of a TOCTOU-created output target. The adversarial file SHA-256 is
-`d9b42b3650d2c6ee9abc492e485d21369ab4de8af078a393b9c6c6da6266c276`.
-All six failures were independently reproduced by Codex before production
-correction. These assertions are immutable until a new explicit freeze.
-
-The implementation author's first correction made those six assertions green,
-but a second independent isolated pass found ten further contract violations.
-The added 305-line file
-`tests/case_factory_adversarial/test_uncovered_contract_edges.py` has SHA-256
-`4e6e7502cfb0866f598beabe78e09f31208d3936b0a69fce55a1781450e2f50a`.
-Codex reproduced the combined adversarial state as 17 collected, seven passed,
-and ten RED: destination visibility before atomic publication; replacement of
-a destination inode swapped immediately before publication; misclassification
-of an exactly 100,348-byte PROPOSE request; missed exact API-key leakage in an
-otherwise ignored response field; three invalid secret-configuration cases;
-two malformed lowercase DNS hosts; and escaped interruption after a valid
-proposal. The already-correct pre-proposal interruption behavior remains
-frozen. Both adversarial files are immutable until a new explicit freeze.
-
-The implementation-author correction against commit `f39dbc7` changes only
-`evidence.py`, `generate.py`, and `provider.py`. It uses native atomic
-no-replace publication on Darwin and Linux with fail-closed unsupported-platform
-behavior; validates PROPOSE size, exact response secrets, secret configuration,
-and DNS hosts before egress; and preserves typed post-proposal interruption
-custody. The author and Codex independently reproduced 17/17 adversarial,
-142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN. The
-package contains 1,779 normally formatted nonblank/noncomment production lines.
-This is a corrected implementation candidate, not mechanical checkpoint exit:
-the full packaging/privacy/hash gate and the one-shot Azure/HRAI smoke remain.
-
-The first combined full-suite run exposed three order-dependent runtime imports
-inside the frozen acceptance harness: `from conftest` resolved to the already
-cached LABS-03 module rather than the LABS-04 module. The independent test
-author reproduced 344 passes/three import failures and moved only the same
-helper names into the three files' existing module-level imports; no assertion,
-fixture, or expected behavior changed. Codex reproduced the exact three-file
-diff and re-froze the 142-case suite with sorted concatenated content SHA-256
-`0044aab6adc61a5f1c65184e98be2ee7b84fb4f0f404288315c4043c2bee8fd5`
-and sorted per-file hash-list SHA-256
-`df4d1aaacd24c8049e47bda6594b09697ced68af02b820507075cf984be4ec73`.
-This narrow harness correction supersedes only the two earlier LABS-04
-acceptance aggregate hashes; all 142 behavioral assertions remain frozen.
-The versioned verifier now enforces both corrected acceptance aggregates, both
-adversarial-file hashes, and source/clean-wheel `cases generate --help` parity.
-Codex ran it through a clean CPython 3.13.14 install with network access:
-347/347 tests, Ruff, strict mypy, lock verification, source distribution,
-wheel build/install, all prior source/wheel handoffs, five canonical Observer
-hashes, governance, and the added LABS-04 hashes passed. The remaining exit
-work is the authorized one-shot Azure/HRAI smoke, artifact inspection, secret
-scan after that run, budget reconciliation, and owner usefulness review.
-
-Smoke preflight preserved two zero-egress refusals. The first was Codex's local
-config omission (`api_key_env`), corrected and exactly preflighted before any
-provider call. The valid config then exposed a contract defect: the pinned
-HRAI projection passed the 90,000-byte evidence-root bound at 73,650 bytes but
-created 424 singleton citations and an exact 193,867-byte PROPOSE request, so
-the required smoke refused `EVIDENCE_TOO_LARGE(3)` with zero Azure calls. The
-independent test author correctly rejected a proposed 100-total-citation cap as
-contrary to the exact wire. The accepted correction retains the existing
-90,000-byte root bound, then removes lowest-priority selected traces from the
-tail until the then-current complete request limit, recording the existing
-`EVIDENCE_BYTE_LIMIT_REACHED` gap for every removal. It never replaces removed
-traces or truncates evidence. Under the superseded 100,000-byte request wire,
-the pinned corpus retained nine priority traces and 198 citations in a
-93,166-byte request; that preflight evidence led to the first actual call below.
-
-The independent test author encoded the corrected wire in one synthetic-only
-268-line adversarial file with SHA-256
-`9219b756e9f7c386cfadc4b74a0775a9716593c8e803bcd1e1144f88aba148cd`.
-Codex reproduced three collected cases as one GREEN exact-100,000-byte boundary
-and two RED failures under the then-current wire: exact 100,001-byte two-trace tail fitting, and repeated
-priority-preserving tail removal without admitting a 26th replacement trace.
-The oracle independently reconstructs every citation, gap, exclusion, order,
-and input-order invariant. The then-current 100,348-byte oversized single-trace
-refusal remained green. The live result below supersedes only those byte and
-budget boundaries; the behavioral assertions require independent correction.
-
-The implementation author changed only `case_factory/generate.py` to fit the
-fresh provider projection after exact schema/citation construction. The author
-and Codex independently reproduced 3/3 tail-fit, 20/20 total adversarial,
-142/142 acceptance, 188/188 historical, Ruff, and strict mypy GREEN. Production
-is 1,810 counted lines with no dependency. A fresh pinned-HRAI preflight now
-retains nine traces and 198 citations, records 16 explicit byte-limit
-exclusions, and constructs a 93,166-byte PROPOSE request. That correction passed
-the 350-case versioned gate before the actual provider call below.
-
-The preserved actual provider run made exactly one request. Azure telemetry for
-the exact minute records HTTP 200, 28,295 input tokens, and exactly 4,096 output
-tokens—the configured output ceiling. Triana returned `PROVIDER_FAILED(8)`
-after 34.6 seconds and published no cases. The exact raw response is deliberately
-not retained, so output truncation is an evidence-backed inference rather than
-a quoted provider field; auth, transport, non-200 HTTP, and zero-generation
-failures are ruled out. No unchanged rerun is allowed.
-
-The corrected remaining experiment budget removes retries and permits exactly
-three calls: 240,000 input bytes and 12,000 reserved output tokens per call,
-with `max_usd=8.700000`. Its worst-case reservation is
-`3 * (2.400000 + 0.480000) = 8.640000`. The preserved first call reserved
-`1.095500`, so the cumulative conservative ceiling is `9.735500`, below the
-owner-approved USD 10. The 193,867-byte full 25-trace HRAI proposal now fits;
-no evidence reduction is expected at PROPOSE. This correction supersedes only
-the request/output/call/retry/USD literals and their exact test bytes. New
-independent RED must be frozen before production or another provider call.
-
-The independent test author corrected only nine LABS-04 test files against the
-new literals and no-retry semantics. Codex reproduced 163 LABS-04 cases as 131
-intended RED failures and 32 passes against unchanged production, with all 188
-historical tests green. The complete 14-file LABS-04 test/fixture freeze has
-sorted concatenated content SHA-256
-`877924718cb90cbcf05fe8179c3fefdb5f44f75e89f7e84b66d232e6fc81d1b9`
-and sorted per-file hash-list SHA-256
-`22c42e65e3ebb902cd8c558586a9bfddfb76cd742bdd3f2f3074aa4088ac7a65`.
-It contains 4,285 physical lines. Exact 240,000 acceptance, 240,001 whole-trace
-tail fitting, a 240,055 sole-trace refusal, three single attempts, no transient
-retry, 12,000-token request bytes/reservation, USD 8.64 preflight, and USD 8.70
-cap are now immutable before production resumes. These two aggregate hashes
-supersede the earlier LABS-04 acceptance-only aggregates and all three prior
-adversarial-file hashes; no behavioral assertion outside the corrected wire is
-weakened.
-
-The independent post-implementation audit found that `240,055` above was a
-brittle fixture byte count rather than the refusal contract. Production and
-the independent request oracle both constructed the same 240,776-byte request;
-the test now asserts only the meaningful precondition that the sole-trace
-request exceeds 240,000 bytes, followed by `EVIDENCE_TOO_LARGE(3)`, zero
-transport, and no output. The dedicated independent oracle still freezes exact
-240,000 acceptance and 240,001 whole-trace tail fitting. The corrected test is
-SHA-256 `3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07`;
-the complete 14-file aggregates are content SHA-256
-`fd3d310166742fd67469fb68f068a5a6296ff724eb87a444a2f47ca2d4edf2be`
-and per-file hash-list SHA-256
-`399aa3010821083cd2e87a073fffe7381eeb11b75d0c4eee4eb90b8496dda315`.
-All 163 LABS-04 and 188 historical tests passed after this correction.
-For the acceptance-plus-fixture subset enforced separately by the versioned
-gate, the corrected content SHA-256 is
-`217083673e064de01af78970ef09a2e5d8bad6c1c36aee3746fbfca1103be18c`
-and its per-file hash-list SHA-256 is
-`51d67a9922c53f9b1b9da52ba0274c4494da946bd56f6a173c3cb1c74f5f6b4a`.
-The corrected individual adversarial hashes enforced by the same gate are
-`a4140877cb081469a047868cb96a873fcad10b21ebd256177097ec2dc802f943`
-for contract regressions,
-`3d3afc582aafdf45e0cdcbc812987355a50b00170e1d0bf64b2a8bdaeb1d2a07`
-for uncovered edges, and
-`9e0540e18ea540cb37041570758a69c002a5fc63b49d8cfae16c466f04f6866c`
-for request tail fitting.
-
-The corrected HRAI preflight retained all 25 accepted traces, all 424
-citations, zero exclusions, and built a 193,868-byte request with no secret
-sentinel. The preserved corrected live attempt then made exactly one HTTP 200
-request before returning `PROVIDER_FAILED(8)` after 42.7 seconds and publishing
-no cases. Azure minute telemetry records 58,855 input and 4,877 output tokens,
-well below the 12,000 output ceiling. The raw response is intentionally not
-retained, so its exact finish reason and fields cannot be quoted.
-
-Inspection exposed an independent production defect against wire section 8:
-the parser rejected `usage` unless it had exactly the three core token keys or
-those keys plus `cost`, even though this contract requires benign Azure extras
-to be ignored after projecting validated fields and Azure documents optional
-usage-detail objects. The independent regression at `8da6fca` freezes a valid
-structured response with documented usage details and benign metadata: core
-usage/cost alone is projected portably while the raw response hash remains
-sensitive to extras. Its test SHA-256 is
-`e4c626083bb6139604e8fd27965bc8f59ad4caa23fe44f01ed5f883ae6776632`;
-the 164-case acceptance subset is frozen at content SHA-256
-`5b0cdb61674dea350bcc35c05e853a69c25d4950ab141422159daa8cb98e3896`
-and per-file hash-list SHA-256
-`5c5e42090f577004b4f0821f16e52d6dc28fd242bfa27e78229ea36e21b8ff03`.
-The production-only fix at `18748af` projects and validates only core usage and
-optional cost after strict raw parsing, secret scanning, and response hashing.
-All 164 LABS-04 and 188 historical tests, Ruff, and strict mypy pass locally.
-This proven parser bug is a strong explanation for the preserved live failure,
-not a claim about unretained raw fields. A changed-version live run still
-requires explicit cumulative-budget and no-rerun reconciliation.
-
-The owner-approved bounded recovery is frozen by contract `1957cd9`, independent
-RED `1f65901`, production `dae4bf1`, and stale-expectation reconciliation
-`3e716bb`. The three decisive recovery tests prove exact local response-cache
-miss/write/replay with zero replay transport/cost, safe post-egress failure
-bundles, and a schema-valid but semantically invalid PROPOSE draft carrying the
-three frozen defects through CRITIQUE and REVISE into five valid revised cases
-with an unavailable control comparison. All 167 LABS-04 tests pass. The new
-acceptance-plus-fixture content SHA-256 is
-`c8e327774c2bfb6cf5733ed1390ab7ece045386338baf330d0ceecace5aedfca`
-and its repository-root per-file hash-list SHA-256 is
-`d1031cee6692851687e50db1871797aee9133b7aeb50b0fed43fd0a1b9066dd5`.
-The three verifier-enforced adversarial hashes are respectively
-`5c1a65d177896ab45081e37195c4f77e50e7edd12443a452a50006213bedc1bd`,
-`97a205a81010f4c116de543711a8c41e149cb4db3519f8866a0567c4b9e10c5b`,
-and `d5d290fa6be8af5ec46618b1ce573bc6cf97624598c60491bab02d0eacd11636`.
-The final live HRAI usefulness verdict remains pending the complete local gate.
-
-The first live recovery call then exposed a single predicate defect without
-losing or repeating provider work: Azure returned a schema-valid five-case
-draft with 20 `SUPPORT_CARDINALITY_MISMATCH` defects, but production required
-the defect-code set to equal all three recoverable codes rather than be a
-subset. Independent RED `5f30921`, one-line production fix `1f35cb1`, and
-three-fixture reconciliation `d25bbbc` make 168/168 LABS-04 tests green. The
-paid response is preserved in the exact local cache for zero-call replay. The
-final acceptance-plus-fixture hashes are content
-`5385bf5d89c4308657fbe8197b845964440314046211faaeabf37edec51127d6` and
-repository-root file-list
-`7fa26af92a436bbc908f2d94f288f66d4d225c4faaea330d7b3ff95fc3cf2d18`.
-
-The final gate passed 356/356 tests plus Ruff, strict mypy, frozen hashes,
-source/wheel builds, clean CPython 3.13 installation, and source/wheel parity;
-evidence is `/private/tmp/triana-labs-verify.lafJ4D`. The resumed HRAI run
-replayed PROPOSE and made exactly the remaining CRITIQUE and REVISE calls. It
-published every safe stage artifact but ended `INVALID_REVISED_LANE` with zero
-usable cases. The proposal had 20 claims and 20 citation references: four
-resolved, sixteen were unknown, and all resolving evidence came from one
-trace. The critique returned ten issues (five invalid-grounding and five
-insufficient-support). The revision doubled citation references to 40 but
-still had 32 unknown, eight resolving, and one represented trace, so the same
-20 support-cardinality defects remained. Deterministic code correctly refused
-to remap or invent grounding. Conservative reservations for the final logical
-run were USD 7.852090 and cumulative experiment reservations USD 13.784950,
-inside the USD 15 ceiling. A full offline replay used zero provider calls and
-USD 0.000000; all provider-stage bytes matched aggregate SHA-256
-`dc818c790528ac0093eb4b9ec538995746d243a030ccf27524fc40a0b995b3b2`.
-LABS-04 remains incomplete because the required three useful distinct cases do
-not exist; no additional provider call or silent deterministic repair is
-authorized.
-
-### Lane A — deterministic contract and safety
-
-- strict config, input, portable artifact, citation, and reference schemas;
-- stable IDs, hashes, order independence, exact bytes, and fresh-process
-  repeatability;
-- Observer/intelligence integrity and lineage agreement;
-- endpoint, credential-name, authorization, secret-sentinel, and egress
-  refusals before a provider call;
-- conservative budget preflight and per-attempt reservation;
-- provider timeout, 429/5xx, content filter, refusal, length, malformed output,
-  schema error, and no-retry ledger behavior through a fake internal transport;
-- no unsafe value in terminal logs or portable lineage;
-- atomic publication, no overwrite, safe cleanup, and typed partial output;
-- source and clean-wheel parity, unchanged 188 tests, frozen acceptance
-  aggregates, and five unchanged Observer artifact hashes.
-
-### Lane B — grounding and diversity
-
-- every retained claim has valid citations or an explicit generated-variation
-  state;
-- support states match independent trace counts;
-- hallucinated IDs, wrong event ranges, circular references, and wrong cluster
-  membership are rejected;
-- no single observation is represented as supported population behavior;
-- static scripted dialogues and unresolved asset references are rejected;
-- exact and near duplicates remain visible but do not increase effective N;
-- similar language with different consequential tool paths remains distinct;
-- five requested cases produce at least three valid distinct cases or the run
-  cannot claim a usable case set;
-- this slice refuses model, deployment, prompt, or seed configuration changes;
-  evidence changes create new lineage, and any future explicitly authorized
-  contract variant must change the corresponding lineage field/hash;
-- the critic cannot create a score, acceptance state, or persistent truth.
-
-### Lane C — blind human usefulness review
-
-`human_review_template.json` presents paired one-shot and revised cases under
-deterministically shuffled blind IDs. Provider stage and ordering are hidden
-from the review items but recoverable through a separate lineage mapping.
-The owner scores 1–4 on:
-
-1. citation-grounded interpretation;
-2. realism of the user situation;
-3. readiness for genuinely adaptive multi-turn execution;
-4. distinctness from other cases;
-5. relevance to testing the target agent;
-6. absence of unjustified assumptions.
-
-Product-checkpoint pass requires:
-
-- no critical privacy, invalid-citation, or unsupported-invention failure;
-- at least three cases score 3 or 4 on grounding, simulation readiness, and
-  usefulness;
-- median distinctness at least 3;
-- at least 80% of inspected citations judged semantically supportive;
-- the reviewer can explain what each passing case tests and how its simulated
-  user should adapt.
-
-Automated tests and the live smoke can finish unattended. Until Akarsh supplies
-this review, the implementation slice may be mechanically green but the
-product checkpoint is `AWAITING_HUMAN_REVIEW`, not passed.
-
-## 8. Exact HRAI-50 smoke gate
-
-The required non-test smoke input is the existing tracked HRAI historical
-traffic corpus:
+All portable JSON is compact, sorted-key UTF-8 plus LF; JSONL is one such
+object per physical line. The manifest hashes the other seven files. No path,
+timestamp, random UUID, credential, raw endpoint, raw provider payload, raw
+exception, or provider request ID enters portable identity.
+
+## 4. Exact episode shape
+
+There are exactly three episode slots, one for each selected case. Each target
+subprocess is fresh. A complete episode has exactly six role turns:
 
 ```text
-source repository: /Users/akarshgajbhiye/Documents/hr_ai
-source commit: 728f6c5058efe40a16e2aecc9b528b3353f4df4f
-source path: experiments/historical_traffic_v0/out/run_200/normalized_traces.jsonl
-source physical lines: 200
-source SHA-256: 76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b
-selection: first 50 physical lines, bytes preserved exactly
-selected SHA-256: 4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c
-classification: SYNTHETIC_EXISTING_TRACE_CORPUS
+U1 accepted case opening
+A1 target result
+U2 simulator reaction to A1 plus A1 tool observations
+A2 target result
+U3 simulator reaction to A2 plus A2 tool observations
+A3 target result
 ```
 
-The source is existing end-to-end trace data generated independently of the
-LABS-04 tests. It is synthetic, not production or real-user evidence. The
-smoke deterministically copies only the first 50 physical lines to a private
-local temporary file, then reads it through the shipped LABS-02 adapter; no
-HRAI trace, prompt, output, or raw corpus is copied into Triana.
+U1 is copied from the accepted case. U2 and U3 are separate simulator HTTP
+exchanges. Their provider-bound request contains the accepted case projection,
+the prior transcript, and only the immediately preceding normalized target
+response/tool observations as an explicit `latest_observation` object. Static
+prewritten U2/U3 inputs are invalid. A target or simulator failure preserves a
+typed partial attempt and stops that episode; later funded episode slots may
+continue.
 
-Preflight exposed that the previously named `run_50b` file was legacy and
-incompatible with the shipped adapter (0/50 accepted). It is not used. The
-corrected selected v2 records produced 25 accepted and 25 explicit LABS-02
-source rejections; Observer accepted all 25 mapped traces as eligible; LABS-03
-produced 22 clusters and three expected semantic gaps. Those observations are
-honest denominators, not favorable acceptance constants. The final smoke may
-not select a different subset or rerun to improve them.
-
-The reproducible smoke sequence is:
+Normal completion occurs after A3. Earlier termination is one of:
 
 ```text
-HRAI-50 normalized-trace-v2
-  -> shipped LABS-02 adapter with explicit SYNTHETIC attestation
-  -> shipped Trace Observer
-  -> shipped structural Corpus Intelligence
-  -> LABS-04 Grounded Case Factory through Azure gpt-4.1-mini
+CASE_STOP_CONDITION
+TARGET_REFUSAL
+TARGET_PROTOCOL_ERROR
+TARGET_TOOL_REFUSED
+TARGET_PROVIDER_ERROR
+SIMULATOR_PROVIDER_ERROR
+SIMULATOR_INVALID_RESPONSE
+BUDGET_EXHAUSTED
+TURN_LIMIT_REACHED
+EPISODE_TIMEOUT
+RUN_TIMEOUT
+INTERRUPTED
 ```
 
-Smoke acceptance requires:
+No unrecognized terminal state becomes success.
 
-- all 50 source lines are accounted for by the adapter;
-- every downstream accepted/rejected denominator is explicit;
-- the exact input and output hashes are retained in local evidence;
-- normal generation uses no more than three calls and total execution never
-  exceeds three calls or the corrected-run USD 8.70 conservative bound;
-- five final cases are requested and at least three valid distinct cases are
-  emitted;
-- every retained claim passes deterministic citation validation;
-- a blind human-review template is produced;
-- no raw HRAI data is committed or described as real-user/customer evidence;
-- an unfavorable, partial, repetitive, or weak result is preserved without
-  rerun-to-green.
+## 5. Simulator and target authority
 
-## 9. Closed failure, refusal, and partial behavior
+The simulator is the existing Microsoft Foundry Fireworks deployment
+`FW-GLM-5.2`, version `1`, used through Triana's existing strict transport
+style. It chooses only the next user turn and an optional proposed stop signal.
+It has no tools, delegation, retrieval, filesystem, target invocation, score,
+judge, acceptance, identity, budget, or memory-write authority. It has one
+attempt per U2/U3 with no retry or fallback.
 
-Preflight failure produces no provider call and no output target. Fatal failure
-after egress produces no success claim; completed provider attempts remain
-represented only when a safe partial bundle can be finalized.
+The target subprocess is invoked with an argv array and `shell=False`. It must
+complete the exact handshake before any turn. It receives only the selected
+synthetic case projection, deterministic episode identity, a per-turn user
+message, and remaining numeric budgets. It returns one normalized assistant
+response, normalized tool events, usage, HTTP exchange count, and a closed
+status. Unknown fields, duplicate JSON keys, extra lines, stderr bytes,
+out-of-order sequence, identity mismatch, or budget overrun fail closed.
 
-Closed reasons and exits:
+The HRAI adapter constructs the existing Recruiter Chat ReAct prompt/model
+protocol with empty prior memories and only these four read-only synthetic
+tools:
 
 ```text
-2  CLI_USAGE_ERROR, INPUT_READ_FAILED, OUTPUT_ALREADY_EXISTS,
-   OUTPUT_PARENT_MISSING, CONFIG_INVALID
-3  INPUT_TOO_LARGE, EVIDENCE_TOO_LARGE
-4  MANIFEST_INVALID, UNSUPPORTED_PRIVACY_CLASS,
-   PROVIDER_AUTHORIZATION_REFUSED, ENDPOINT_REFUSED,
-   SECRET_SENTINEL_DETECTED
-5  CORPUS_INTEGRITY_FAILED, INTELLIGENCE_MISMATCH,
-   NO_USABLE_SEMANTIC_EVIDENCE, NO_VALID_CASES
-7  OUTPUT_WRITE_FAILED, OUTPUT_CLEANUP_FAILED
-8  PROVIDER_FAILED
-9  BUDGET_REFUSED, BUDGET_EXHAUSTED
-70 INTERNAL_INVARIANT_FAILED
+get_candidate_by_email
+get_existing_evaluation
+get_hiring_rubric
+query_database
 ```
 
-Success with five valid revised cases and no gaps exits 0. A safe bundle with
-at least one valid case plus source/provider/schema/duplicate/budget gaps exits
-10 as `COMPLETED_WITH_GAPS`. Fewer than three distinct valid cases always
-carries `INSUFFICIENT_DISTINCT_CASES`; it may publish partial evidence but
-cannot pass the checkpoint. No invalid proposal is silently repaired, dropped
-from attempted denominators, or replaced under the same identity.
+The tools resolve against the fresh case-specific in-memory synthetic world;
+they do not connect to HRAI's database. The adapter does not register resume
+parsing, LinkedIn, website, web search, memory, database write, evaluation
+submission, shortlist/reject/email, skill loading, parallel gather, or ATS
+sub-agent tools. Unknown or mutating tool selection is `TARGET_TOOL_REFUSED`.
 
-One terminal JSON event is written to stderr with only service/version,
-command, outcome, duration, closed reason, attempted/valid/distinct counts,
-call count, and conservative USD estimate when those facts are complete. It
-contains no path, endpoint, trace/case ID, content, citation, tool name, prompt,
-provider response, exception, or credential.
+## 6. Memory boundary
 
-## 10. Mandatory edge-case register
+Four scopes are explicit:
 
-The independent tester must encode every relevant row before valid RED.
+- evidence memory: immutable accepted LABS-04 case projection, read-only;
+- episode memory: the transcript and target thread state for one episode only;
+- target persistent memory: empty and disabled; no load, retrieval, or write;
+- persistent/global learning memory: deferred and absent.
 
-### Input and integrity
+Episode memory is published as evidence and then discarded as runtime state.
+No episode can read another episode. No result is promoted to cross-run memory.
+Future persistent memory requires a separate propose/human-promote/retrieve-
+from-pinned-snapshot/supersede-or-revoke contract.
 
-- empty, tiny, homogeneous, duplicate, and source-rejection corpora;
-- zero usable user turns and system/bot text misclassified as user evidence;
-- multilingual and code-switched text preserved without invented language
-  normalization;
-- malformed/tampered/stale manifests and artifacts, duplicate identities,
-  symlinks, nonregular files, invalid UTF-8, BOM, depth limits, and the exact
-  config/intelligence byte and single-line ceilings in the wire contract;
-- same trace ID with changed content and duplicate content under different IDs;
-- input reorder, fresh process repeat, seed change, and model/prompt change.
+## 7. Deterministic identity and adaptation proof
 
-### Grounding and semantics
+`episode_id` is a versioned hash of the case-factory manifest hash, review
+artifact hash, selected case ID, target protocol/source/model/prompt identity,
+simulator provider/model/prompt identity, world fixture hash, reset policy,
+budget contract, and slot index. It excludes attempts, paths, time, and secrets.
 
-- hallucinated trace, event, cluster, asset, case, claim, and citation IDs;
-- citation to unprojected system text, tool arguments/results, or omitted text;
-- unsupported persona traits, demographic invention, and one trace presented
-  as representative population behavior;
-- persona/intent conflation, contradictory constraints, circular claims,
-  impossible scenario facts, and ambiguous/conflicting intent;
-- fixed future dialogue disguised as a turn policy;
-- case without an observed anchor or generated material mislabeled observed;
-- proposed rubric without abstain conditions or presented as accepted truth.
+Every role turn and target tool event has an ID derived from `episode_id`,
+ordinal, role/kind, and canonical content. Attempts are retained under distinct
+attempt identities and never overwrite an earlier attempt.
 
-### Injection, privacy, and egress
+Each simulator request records `latest_observation_hash`; the returned U2/U3
+record repeats that hash as `consumed_observation_hash`. Mismatch is invalid.
+Acceptance includes a deterministic causal fixture: two target A1 responses
+with different normalized response/tool evidence under the same case must
+produce two different scripted simulator U2 values, each bound to its own
+observation hash. This proves the controller wires new evidence into turn
+generation; it does not prove semantic realism.
 
-- trace text instructing the model to ignore policy, reveal secrets, call
-  tools, change budgets, self-approve, or write files;
-- configured sentinels and credential-shaped content in every projected field;
-- missing egress consent, wrong privacy class, endpoint alias/redirect,
-  userinfo/query/fragment, HTTP, wrong host, missing/malformed key;
-- unsafe path, endpoint, prompt, evidence, header, exception, or response in
-  logs and artifacts;
-- hashing or call reservation before the provider-bound projection is safe.
+## 8. Budgets and accounting
 
-### Provider and budget
-
-- connection failure, timeout, TLS failure, 401/403, 429, 5xx, content filter,
-  provider refusal, truncated/length output, empty output, invalid JSON,
-  schema-invalid JSON, unknown fields, duplicate keys, and repeated response;
-- transport/429/5xx failures remain single-attempt evidence with no retry;
-  semantic failures likewise do not retry, and execution never exceeds three
-  total calls;
-- missing price, conservative bound above cap, exact boundary, usage above
-  reservation, budget exhaustion between stages, and wall-clock exhaustion;
-- critic or reviser failure preserves the one-shot evidence without claiming
-  revised success.
-
-### Diversity, publication, and evaluation
-
-- exact semantic duplicate, exact slot duplicate, paraphrased duplicate,
-  renamed-persona duplicate, and lexical similarity with different tool path;
-- all five cases collapse to one cluster and partial effective N;
-- output exists, parent missing/symlinked, mid-write failure, cleanup failure,
-  user interrupt, and no portable timestamp/path entropy;
-- critic attempts to score or approve, blind mapping is reversible but hidden
-  from review items, missing human review remains pending, and no automated
-  result becomes human usefulness.
-
-## 11. Roles, immutable tests, and controlled parallel attack
-
-There are exactly two worker agents plus the Codex orchestrator.
+Exact whole-run ceilings:
 
 ```text
-Codex freezes and commits this packet
-  -> independent test author writes the complete acceptance suite
-  -> Codex reproduces valid RED and freezes test commit + aggregate hashes
-  -> implementation author writes production without editing frozen tests
-       || independent tester uses an isolated worktree for read-only/fuzz/
-          mutation/adversarial attacks against the already-frozen contract
-  -> Codex integrates only contract-derived regressions and owns exit verdict
+episode slots                         3
+role turns per complete episode       6
+simulator HTTP exchanges              6
+target HTTP exchanges                 36
+all provider HTTP exchanges           42
+target tool calls per episode         12
+simulator input tokens per exchange   131072
+simulator output tokens per exchange  4096
+target input tokens per episode       393216
+target output tokens per episode      24576
+wall time per episode                 180 seconds
+whole-run wall time                   600 seconds
+conservative whole-run USD            23.000000
 ```
 
-The acceptance-authoring and production-authoring roles remain serial. The
-parallel tester phase begins only after the RED freeze, uses an isolated
-worktree, and cannot change expected behavior or acceptance meaning. A newly
-found production violation receives a tester-authored regression before the
-implementation author fixes it. A genuine contract hole stops the slice and
-returns to the owner/orchestrator; it is not silently interpreted around. A
-test defect returns only to the tester, receives a new explicit freeze, and
-production pauses. The implementation author never edits a test or fixture.
+The target adapter also enforces at most four target HTTP exchanges per target
+turn. Counts include sent requests that end in refusal or transport error.
+Zero-egress work counts zero. Cached work with no request counts zero. Actual
+cost is `null` unless a provider reports it; conservative reservation never
+becomes actual cost.
 
-## 12. Change budget
+Before every simulator exchange and target turn, Triana reserves the complete
+configured unit allowance. Exact equality is funded. If the next unit cannot
+fit every relevant remaining cap, it is not started and the gap is
+`BUDGET_EXHAUSTED`. No unfunded call, tool, or subprocess continuation occurs.
 
-Orchestrator only:
+Automated tests use deterministic transports and subprocess fixtures only.
+This packet authorizes no Microsoft Foundry or AWS Bedrock request and no USD
+spend. A live three-episode run is a separate owner authorization after local
+GREEN and exact current provider-price/credential reconciliation.
+
+## 9. Trajectory duplicate arithmetic
+
+Every attempted trajectory remains visible. The exact trajectory fingerprint
+hashes normalized ordered role text, ordered normalized target tool names,
+arguments, result summaries/statuses, and termination reason. Provider IDs,
+usage, latency, and paths are excluded.
+
+Near-text duplication uses Unicode casefolding, whitespace tokenization, and
+token-set Jaccard over all user and assistant text at threshold `0.85`, but an
+edge exists only when ordered normalized target tool-name/status sequences are
+identical. Exact and near-text edges form connected components. Only the first
+valid member in selected slot order increases effective N. Duplicate attempts
+are evidence, never dropped or replaced.
+
+## 10. Outcomes and passage
+
+Run outcomes are `COMPLETED`, `COMPLETED_WITH_GAPS`, or `FAILED`. Exit 0 is a
+complete locally valid bundle with three valid nonduplicate trajectories and
+no gaps. Exit 10 is a safely published partial/duplicate/gap bundle. Refusal
+exits follow the normative wire. Missing, invalid, refused, timed out,
+interrupted, or duplicate episodes never become valid effective trajectories.
+
+The local implementation may become `MECHANICALLY_GREEN` after the fake-boundary
+test and packaging gate. LABS-05 product passage additionally requires:
+
+1. one separately authorized live synthetic run of the exact three cases;
+2. at least three complete, valid, inspectable, effective trajectories;
+3. no privacy, fallback, accounting, identity, or custody violation;
+4. Akarsh records `LABS05_ADAPTATION_V1` yes/no for U2 and U3 of each effective
+   episode, confirming that each later user turn materially reacts to the
+   latest target behavior.
+
+Until all four hold, status is `IMPLEMENTED_AWAITING_LIVE_EXPERIMENT` or
+`AWAITING_HUMAN_REVIEW`, never passed.
+
+## 11. Closed gaps and refusal behavior
+
+Pre-egress configuration/input/integrity failures publish no target directory.
+After any provider or target egress, safe attempts may be published with a
+closed gap. Relevant codes are:
+
+```text
+CLI_USAGE_ERROR
+INPUT_READ_FAILED
+OUTPUT_ALREADY_EXISTS
+OUTPUT_PARENT_MISSING
+CONFIG_INVALID
+MANIFEST_INVALID
+REVIEW_INVALID
+REVIEW_NOT_ACCEPTED
+UNSUPPORTED_PRIVACY_CLASS
+CASE_INTEGRITY_FAILED
+TARGET_SOURCE_MISMATCH
+TARGET_PROTOCOL_ERROR
+TARGET_STDERR
+TARGET_TOOL_REFUSED
+TARGET_PROVIDER_ERROR
+TARGET_TIMEOUT
+SIMULATOR_AUTHORIZATION_REFUSED
+SIMULATOR_ENDPOINT_REFUSED
+SIMULATOR_PROVIDER_ERROR
+SIMULATOR_INVALID_RESPONSE
+ADAPTATION_BINDING_MISMATCH
+BUDGET_EXHAUSTED
+EPISODE_TIMEOUT
+RUN_TIMEOUT
+INTERRUPTED
+DUPLICATE_TRAJECTORY
+INSUFFICIENT_DISTINCT_TRAJECTORIES
+OUTPUT_WRITE_FAILED
+OUTPUT_CLEANUP_FAILED
+INTERNAL_INVARIANT_FAILED
+```
+
+There is no retry, fallback model/provider/target, default case, default user
+turn, skipped slot, silent repair, rerun-to-green, or persistent-memory lookup.
+
+## 12. Independent acceptance contract
+
+The independent test author derives assertions from this packet and
+`internal/LABS05_WIRE_CONTRACT.md`, never from production schemas or output.
+At minimum tests prove:
+
+- strict manifest/review/config acceptance and tamper/refusal before egress;
+- exact three-case selection and stable identity across input reorder/fresh
+  process, with identity change on every material lineage/config change;
+- complete U1/A1/U2/A2/U3/A3 execution and latest-observation binding;
+- causal branching under changed target observations;
+- subprocess handshake, sequence, closed fields, stderr, crash, timeout,
+  malformed JSON, extra line, tool refusal, and no-fallback behavior;
+- exact fresh-world reset and no cross-episode/persistent memory;
+- per-unit and aggregate HTTP/token/tool/USD/time refusal with no unfunded call;
+- logical turn versus target/simulator HTTP accounting;
+- partial custody after middle-slot failure while later funded slots continue;
+- exact/near trajectory duplicate clustering and effective N;
+- interruption, atomic no-replace publication, safe cleanup, deterministic
+  bytes, source/wheel parity, and redacted one-event terminal logs;
+- no network or real HRAI repository is required by the automated suite;
+- all 408 historical tests and five canonical Observer hashes remain unchanged.
+
+Valid RED means collection succeeds and failures arise only because the new
+`episodes run` behavior/package is absent. Import/setup failures are invalid.
+
+## 13. Roles and change budget
+
+Exactly two worker agents plus Codex orchestrator execute serially.
+
+Orchestrator-owned paths:
 
 ```text
 internal/SLICE_PACKET.md
-internal/LABS04_WIRE_CONTRACT.md
-internal/labs04_provider_schemas/**
+internal/LABS05_WIRE_CONTRACT.md
+internal/LABS04_USEFULNESS_V1.json
 internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
+internal/LABS05_HANDOFF_2026-08-02.md
 internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md
 triana-labs/CHARTER.md
 docs/ARCHITECTURE.md
 docs/PROVENANCE.md
-README.md
 triana-labs/scripts/verify.sh
-triana-labs/tests/case_factory_adversarial/**
 ```
 
-Independent test author only:
+Independent test-author-owned paths:
 
 ```text
-triana-labs/tests/case_factory_acceptance/**
-triana-labs/tests/case_factory_fixtures/**
+triana-labs/tests/adaptive_runner_acceptance/**
+triana-labs/tests/adaptive_runner_fixtures/**
 ```
 
-Implementation author only after RED freeze:
+Implementation-author-owned paths after RED freeze:
 
 ```text
 triana-labs/src/triana_labs/cli.py
-triana-labs/src/triana_labs/case_factory/**
-triana-labs/schemas/case_factory/**
+triana-labs/src/triana_labs/adaptive_runner/**
+triana-labs/examples/hrai_recruiter_chat_v1/**
 ```
 
-The implementation author may add no dependency. Existing Observer,
-intelligence, and adapter modules are read-only dependencies. Any discovered
-need to edit them stops the worker and returns to Codex.
+No dependency may be added. Maximum new production files: 10. Maximum new
+production nonblank/noncomment lines: 2,500. The HRAI adapter must remain one
+target-specific example, not a generic SDK. Any need for a dependency, schema
+expansion, different target/model/provider, real DB, provider run, or edit
+outside this budget stops the worker and returns to Codex.
 
 Explicitly untouched:
 
-- `triana-core/**` and all five frozen contracts;
-- all LABS-01/02/03 production, test, fixture, and canonical artifact bytes;
-- package metadata, lockfile, CI stack, and unrelated formatting;
-- HRAI, Kairos, Kairos-AI, Agentagon, Blitz, public corpora, and raw data;
-- hosted ingestion, OTel, SDK, UI, runtime runner, memory, and comparison code.
+```text
+triana-core/**
+all LABS-01/02/03/04 production, tests, fixtures, schemas, prompts, and artifacts
+pyproject.toml
+uv.lock
+raw HRAI or provider artifacts
+HRAI, Agentagon, Kairos, Kairos-AI, Blitz repositories
+UI, judges, persistent/global memory, real data, baseline/candidate diff,
+generic SDKs, broad evaluation, hosted ingestion, OTel, release policy
+the three unrelated untracked SPC/research documents
+```
 
-Maximum production scope is the CLI addition, one bounded `case_factory`
-package, and checked-in schemas. Maximum new production-file count is 14;
-maximum new production code is 3,000 normally formatted nonblank/noncomment
-lines. These are ceilings, not targets. Any new file, line, or edit outside the
-authorized paths stops the implementation author.
+## 14. Exact role commands
 
-## 13. Reproducible exit gate
+Test author runs:
 
-The slice implementation is mechanically complete only when:
+```text
+cd triana-labs
+uv run pytest -q tests/adaptive_runner_acceptance
+uv run ruff check tests/adaptive_runner_acceptance tests/adaptive_runner_fixtures
+uv run ruff format --check tests/adaptive_runner_acceptance tests/adaptive_runner_fixtures
+```
 
-- the independent RED commit and test aggregates are frozen before production;
-- all new acceptance and reserved adversarial cases pass unchanged;
-- all prior 188 tests pass and the five canonical Observer hashes are
-  byte-identical;
-- Ruff, strict mypy, package build, clean CPython 3.13.14 wheel install, source
-  and wheel CLI parity, secret scan, governance, and decision-memory pass;
-- fake-provider tests prove every refusal/partial/no-retry/budget state without
-  network access;
-- the authorized Azure/HRAI-50 corrected smoke runs without exceeding three
-  total calls or its USD 8.70 conservative cap, while all preserved smoke calls
-  remain below the original cumulative USD 10 conservative cap;
-- smoke artifacts retain every weak, duplicate, rejected, refused, and partial
-  state without rerun-to-green;
-- no raw HRAI data, secret, endpoint, absolute path, or provider payload enters
-  the repository;
-- actual changed files, dependencies, and line counts reconcile exactly with
-  this budget;
-- canonical docs, provenance, decision log, and local decision memory agree.
+Codex reproduces RED, freezes sorted content and per-file hash-list SHA-256,
+then authorizes production. Implementation author runs the frozen acceptance
+suite plus focused historical CLI tests. Final Codex gate is:
 
-At that point the implementation may be `MECHANICALLY_GREEN`. The Grounded
-Case Factory product checkpoint becomes `PASSED` only after the owner completes
-the frozen blind review in section 7. Until then it is
-`AWAITING_HUMAN_REVIEW`, and LABS-05 does not start.
+```text
+cd triana-labs
+./scripts/verify.sh
+git diff --check
+```
 
-Every worker and orchestrator returns:
+The verifier must cover all tests, Ruff, strict mypy, frozen test hashes,
+deterministic replay, five canonical Observer hashes, build, clean CPython
+3.13.14 wheel install, source/wheel CLI parity, governance, and secret scan.
+
+## 15. Provenance
+
+HRAI is owner-authorized source mining, but no HRAI implementation may be
+copied silently. The exact intended clean-room references at commit
+`728f6c5058efe40a16e2aecc9b528b3353f4df4f` are:
+
+```text
+src/graph/workflow.py
+src/llm.py
+src/prompts/evaluation.py
+experiments/historical_traffic_v0/runner/hr_bridge.py
+experiments/historical_traffic_v0/runner/cost_ledger.py
+experiments/historical_traffic_v0/out/run_200/RUN_MANIFEST.json
+```
+
+Triana reimplements only the strict adapter/protocol/accounting needed for this
+slice and imports the pinned HRAI prompt/tool packages at execution. The final
+destination/method/license/ancestry record must be complete in
+`docs/PROVENANCE.md`. Agentagon remains restricted and supplies nothing.
+
+## 16. Structured handoff
+
+Every worker and Codex returns:
 
 ```text
 What changed:
@@ -1343,469 +458,10 @@ Human action still required:
 
 Use `none` explicitly. No unrun check is reported as passing.
 
-## 14. Explicit non-goals
-
-- target-agent invocation or genuinely multi-turn execution;
-- panel selection or execution, baseline/candidate comparison, F0/F1 labels,
-  regression, release, PASS/BLOCK, or accepted-behavior claims;
-- real-customer, production, Blitz, public, or local-sensitive trace support;
-- redaction as a general product surface;
-- DeepEval, Deep Agents, Hermes, OpenAI Agents SDK, generic provider SDK,
-  coding-agent integration, browser/voice/multi-agent support;
-- model judges, evaluator ensembles, automatic rubric approval, prompt/model
-  training, or autonomous optimization;
-- persistent, global, Mem0, managed, or cross-run memory;
-- HTML/UI/report dashboard, hosted ingestion, accounts, SaaS, SDK, or OTel;
-- changes to the frozen V1 contracts or suspended Release Review meaning.
-
-Nothing in this packet authorizes LABS-05. The next checkpoint is proposed only
-after human-reviewed LABS-04 evidence demonstrates usable case designs.
-
-## 15. One-time repair-validation exception
-
-Akarsh approved exactly one changed-version live run after parser fix
-`18748af`, with an experiment-level cumulative conservative ceiling of USD 15.
-The run uses the identical pinned HRAI subset, Observer/intelligence bundles,
-Azure deployment/model/version, prompts, schemas, and seed. The existing
-per-run three-call/USD 8.70 limits and zero-retry behavior remain unchanged.
-Both earlier failed calls remain preserved; no alternate selection,
-rerun-to-improve, or subsequent provider call is authorized. Prior reservations
-total USD 3.514180 and the new worst case is USD 8.640000, for USD 12.154180
-maximum cumulative reservation. Success still requires published cases and the
-unchanged owner usefulness review; another failure stops the smoke.
-
-The authorized repair-validation run stopped the smoke with another preserved
-`PROVIDER_FAILED(8)`: exactly one Azure HTTP 200 request, 58,855 processed
-prompt tokens, 4,444 generated tokens, 57.2 seconds, no second-stage call, and
-no artifacts. It did not hit the output ceiling. Raw response bytes are not
-retained, so the exact rejected field is unknown. No subsequent provider call
-is authorized.
-
-This result exposes a contract-design gap independent of the unknown raw
-failure: strict provider output covers only `proposal.schema.json`, while
-post-parse conversion additionally requires exact asset/case counts, local-key
-formats and uniqueness, sorted references/gaps, support cardinality, valid
-cross-asset references, complete claim use, reaction rules, and observed
-anchors. A schema-conforming draft can therefore be discarded before CRITIQUE
-under the generic `PROVIDER_FAILED(8)` result. No useful simulation designs
-were produced, so LABS-04 fails its live smoke and remains unpassed. Recovery
-requires a newly frozen eval-first slice; it cannot be represented as a prompt
-retry, semantic weakening, or another provider call under this packet.
-
-The owner-approved bounded recovery is frozen in
-`internal/LABS04_RECOVERY_CONTRACT.md`. It supersedes only post-egress artifact
-custody, exact response replay, cached-token accounting, typed semantic defects,
-and invalid-PROPOSE repair flow. It authorizes no other LABS-04 expansion.
-
-## LABS-04 restricted DeepAgents POC amendment — 2026-08-01
-
-The accepted correction is governed by
-`internal/LABS04_GROUNDING_HANDLE_CONTRACT.md` and
-`internal/AGENT_ARCHITECTURE.md`. It supersedes the five-case, three-stage,
-Azure OpenAI `gpt-4.1-mini`, and no-framework portions of this packet only.
-
-The checkpoint now uses Fireworks GLM-5.2 through Microsoft Foundry against the
-same synthetic HRAI corpus under a fresh USD 3 ceiling. A disposable live probe
-must first prove tool calling, strict structured output, usage visibility, and
-safe failure preservation. Only after that probe may DeepAgents/LangGraph be
-pinned in the repository.
-
-The shipped POC requests ten cases in batches of at most five through a
-restricted DeepAgent exposing only evidence search, trace retrieval, budget
-inspection, and case submission. It may ask at most three material questions,
-has at most one repair handoff per invalid batch, and has no retry, fallback,
-shell, web, arbitrary filesystem, real-data, target-agent, judge, or global
-memory authority.
-
-The independent RED contract is limited to five outcomes: valid portable
-grounded generation; invented-handle refusal; budget refusal before a call;
-preserved tool/provider failure; and bounded `NEEDS_INPUT` preservation/resume.
-No new resource-boundary matrix or quality-score proxy is authorized. The live
-artifact reports invalid handles, duplicate groups, actual cost/latency, and
-owner `WOULD_RUN | EDIT | REJECT` rulings rather than an invented scalar score.
-
-The production change budget is the Grounding Handle Contract paths plus
-`triana-labs/pyproject.toml`, `uv.lock`, and at most one new bounded runtime
-module under `triana_labs/case_factory/`. Existing tests and five canonical
-Observer hashes remain unchanged. The test author and implementation author
-work serially; Codex owns provider conformance, integration, smoke, and exit.
-
-Owner scheduling correction: provider deployment and local construction may
-now proceed concurrently, but repository authorship remains serial. The
-independent test author first freezes the five fake-transport outcomes; only
-after that handoff may the implementation author add the restricted runtime.
-The local implementation may pin DeepAgents/LangGraph before live GLM
-conformance, but it earns no provider-compatibility or usable-artifact claim
-until the disposable GLM probe and ten-case smoke pass. A failed conformance
-probe stops provider work and leaves the local result explicitly provisional;
-it does not authorize fallback, retries, or acceptance weakening.
-
-The independent entry-gate STOP found that outcome names alone did not define
-an observable black-box wire. The assertion-level section of
-`internal/LABS04_GROUNDING_HANDLE_CONTRACT.md` now freezes the internal
-generate/resume signatures, fake transport envelope, attempts and private
-diagnostics, closed reasons, immutable one-pause resume behavior, USD 3
-pre-call reservation rule, and batched projection. Resume writes a new output
-bundle; mutating a pause bundle is forbidden. The five-test author may now
-encode only that wire.
-
-## LABS-04 lean-agent correction and live verdict — 2026-08-01
-
-The owner accepted LangChain `create_agent`, backed by LangGraph, for the
-current exact-four-tool Case Factory and returned DeepAgents to the future
-multi-agent simulation design. This supersedes only the current-runtime name
-and dependency in the preceding amendment. The deterministic controller,
-transport seam, five outcome tests, GLM deployment, privacy boundary, USD 3
-ceiling, and completion criteria remain unchanged.
-
-Provider conformance passed with exactly two synthetic calls: tool calling and
-strict structured output both returned HTTP 200, 305 aggregate tokens, visible
-usage/cached-token fields, zero retry/fallback, and USD 1 conservative
-reservation. Codex rejected the first implementation's import-only DeepAgents
-adapter before smoke. The corrected runtime executes an actual `create_agent`
-graph and asserts the model-visible tool tuple is exactly `search_evidence`,
-`get_trace_packet`, `inspect_budget`, and `submit_case_batch`.
-
-The live HRAI run did not produce cases. Preserved changed-version failures
-proved and corrected three adapter defects before the final model verdict:
-nested proposal `$defs` were not visible at the outer submit-tool schema;
-NEEDS_INPUT redundantly carrying `MATERIAL_INPUT_REQUIRED` was rejected instead
-of normalized; and a hardcoded 60-second transport timeout was too short for a
-122,499-byte grounded request. Each correction was reproduced offline, made no
-fallback, and retained the preceding artifact.
-
-After Akarsh answered the three preserved material questions, the final
-180-second, zero-retry resume completed an HTTP response in 79.957 seconds.
-GLM-5.2 used 33,973 input tokens (33,972 cached) and 13,122 output tokens,
-called no tool, and repeated the same three questions. Deterministic one-pause
-authority therefore returned `QUESTION_LIMIT_EXCEEDED`; zero cases were
-published. Cumulative conservative reservation stayed at the approved USD 3
-ceiling after releasing the proven zero-egress schema-compilation reservation.
-Actual provider USD remains unknown because Foundry returned no cost field.
-
-LABS-04 remains incomplete: local machinery and conformance pass, but the
-ten-case usefulness smoke fails. No further provider call, fallback, silent
-question acceptance, Corpus Intelligence work, or checkpoint-completion claim
-is authorized by this packet.
-
-## LABS-04 one-case action-selection canary — 2026-08-01
-
-### Outcome and controlled hypothesis
-
-Prove whether GLM-5.2 can publish one deterministically valid grounded case
-when the resumed protocol makes the already-answered transition explicit and
-requires submission. The falsifiable hypothesis is: the zero-case failure was
-caused materially by an optional, ambiguous resumed action surface; after the
-three owner answers are authoritative and `NEEDS_INPUT` is unavailable, GLM
-will call `submit_case_batch` and one case will pass unchanged deterministic
-validation.
-
-This is not a prompt-search or ten-case optimization slice. Keep the current
-inline evidence envelope, four tools, schemas, model, provider, and semantic
-validator so the experiment changes only the action-selection variable. A
-failure remains a model/protocol verdict and authorizes no fallback.
-
-### Frozen wire and authority
-
-- A new run requests exactly one case. Its initial call may submit or ask at
-  most three material questions under the existing contract.
-- A resumed request explicitly identifies itself as resumed, carries the
-  complete owner answers, and states that they resolve the prior questions.
-- On resume, `NEEDS_INPUT` is absent from the model-visible terminal schema.
-  The model must interact with an allowlisted tool and can succeed only after
-  `submit_case_batch` executes once. Returning text, hidden reasoning,
-  `SUBMITTED` without the tool, or another question cannot publish a case.
-- `submit_case_batch` may terminate the graph after its deterministic
-  `accepted_for_validation` receipt; deterministic normalization and semantic
-  validation remain the sole acceptance path.
-- Every provider exchange is preserved under its attempt identity. A resumed
-  exchange must not overwrite the initial pause exchange.
-- The owner answers already accepted for this canary are mixed personas;
-  distinct missing-data, position-mismatch, social-engineering, ETL, and
-  prior-evaluation failure coverage plus a distinct success mode across the
-  future full run; and agent-correctness, tool-use, data-integrity,
-  security/refusal, and recovery evaluation dimensions. If the one-case run
-  asks materially different questions, Codex stops for Akarsh rather than
-  inventing answers.
-
-### Budget, privacy, refusal, and acceptance
-
-The per-end-to-end-run authorization ceiling is USD 10. The runtime config may
-accept `max_usd` up to `10.000000`; this supersedes the slice-local USD 3
-configuration limit. Provider-reported actual USD remains unknown and must not
-be fabricated. The canary retains pre-call reservation, usage, HTTP-exchange,
-latency, cached-token, and attempt evidence and makes no retry or provider
-fallback. Synthetic authorized HRAI evidence only; no real-data claim.
-
-Pass requires one `SUBMITTED` tool call, one valid and distinct published case,
-complete provenance/evidence handles, a secret-safe immutable artifact bundle,
-and the full repository gate with canonical Observer hashes unchanged. Any
-question after resume, no-tool terminal, invalid submission, provider/tool
-failure, budget refusal, or zero valid cases fails the canary. Ten-case
-generation, quality optimization, prompt search, alternate models, target
-execution, judges, memory, Corpus Intelligence, UI, CLI, and SDK changes remain
-out of scope.
-
-### Change budget and serial roles
-
-- Orchestrator-owned governance: `internal/SLICE_PACKET.md`,
-  `internal/LABS04_GROUNDING_HANDLE_CONTRACT.md`,
-  `internal/DECISION_LOG.md`, `internal/LABS04_TRIAGE.md`, and
-  `internal/WORKING_MEMORY.md` only as the observed result requires.
-- Independent test author: restricted-runtime acceptance tests and frozen
-  verifier aggregates only. Tests must be RED before production changes.
-- Implementation author: `triana-labs/src/triana_labs/case_factory/`
-  restricted runtime only; config fixture bytes only if required by the frozen
-  USD 10 ceiling.
-- No new dependency, schema file, unrelated cleanup, formatting sweep, or
-  production path is allowed. Test author and implementation author work
-  serially. Codex alone runs the live canary after local GREEN.
-
-### Canary verdict
-
-The controlled canary failed with zero cases but separated the causes. The
-initial call asked two relevant questions. With answers supplied, the first
-resumed version again selected terminal JSON without a tool; the frozen
-no-tool guard rejected it. The corrected required-tool binding was then
-explicitly refused by Foundry because required `tool_choice` cannot be combined
-with provider `response_format`. Independent RED/implementation separated the
-initial structured-clarification and resumed required-tool protocols.
-
-The final supported-protocol version proved GLM tool use but not submission.
-It retrieved the correct T011 packet, executed 18 tools (17 literal searches,
-16 empty), and made seven resumed HTTP model exchanges totaling 211,218 prompt
-tokens, 175,594 cached prompt tokens, and 2,773 completion tokens before
-Foundry rate-limited it. No `submit_case_batch` occurred and no case was
-published. The unchanged full gate passed 365 tests and all five canonical
-Observer hashes before the call.
-
-This falsifies the narrow hypothesis that removing the invalid terminal path
-is sufficient. It also proves the next work should not be blind prompt tuning:
-the advertised-semantic/literal-search mismatch, missing bounded
-research-to-submit transition, repeated full-context agent turns, and
-under-counted HTTP-level budget must be resolved as an explicit next slice.
-No retry, fallback, ten-case expansion, quality optimization, or Corpus
-Intelligence work is authorized by this packet.
-
-## LABS-04 launch hardening — retrieval and forced submission
-
-The owner directed the current GLM-5.2 LangChain Case Factory to remain in
-place and prioritized making it produce cases over expanding evaluation work.
-This slice changes only the two causes proven by TRIAGE-23:
-
-1. Replace literal full-query substring search with deterministic ranked token
-   overlap that returns trace handles alongside evidence handles. Bound and
-   deduplicate searches; add no embedding model, vector store, dependency, or
-   generic semantic-search system.
-2. Make resumed research monotonic and bounded. After sufficient search,
-   require a trace read; after one successful trace read, require the named
-   `submit_case_batch` tool. Enforce at most three underlying model calls for
-   the resumed agent attempt and preserve the exact call/tool ledger.
-
-Keep GLM-5.2, `create_agent`, the four tool names, inline evidence, case
-schemas, one repair, deterministic acceptance, privacy, provenance, and
-fail-fast/no-fallback behavior unchanged. First replay the failed T011 queries
-offline, then run one live case; only a valid submitted case authorizes the
-existing five-case smoke. Launch passage still requires at least three valid,
-distinct grounded cases and owner review.
-
-Evaluation policy for this launch hardening is deliberately minimal: preserve
-one focused regression for retrieval and one for research-to-submit control,
-then use existing deterministic validation and the live artifact as the
-decisive evidence. Broader retrieval-quality sets, judge calibration,
-prompt/model comparisons, trajectory diversity evaluation, and comprehensive
-case-quality evaluation are mandatory post-launch backlog, not blockers for
-this experiment. The full repository gate runs once after the coherent patch,
-not after each implementation iteration.
-
-Change budget: the independent test author may touch only the existing
-one-case/restricted-runtime acceptance tests; the implementation author may
-touch only `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`.
-Verifier aggregate reconciliation and this governance amendment remain
-orchestrator/test-author owned. No dependency, new schema, CLI, UI, turn
-generator, LABS-05, memory, provider change, or unrelated cleanup is allowed.
-
-### Launch-hardening exit evidence
-
-The smallest usefulness checkpoint is now proven. The final bounded one-case
-GLM-5.2 run searched the authorized synthetic HRAI corpus, read T011, executed
-the named submission tool, and published one valid, distinct grounded case
-without REPAIR, fallback, retry, or deterministic semantic synthesis. Its
-portable bundle is
-`/private/tmp/triana-one-case-canary-routed.H6xwOI`; manifest file SHA-256 is
-`40c09260d7428ea8a28f7b270846093ae824f370c9a9a8977d054af041604f8d`.
-The reconciled full gate passes 371 tests with all five canonical Observer
-hashes unchanged; evidence is `/private/tmp/triana-labs-verify.fw3qMD`.
-
-This closes launch hardening as a first usable repeatable artifact, not as
-five-case or launch-scale completion. The authorized five-at-once follow-up
-reached named submit after bounded research but GLM consumed 32,768 completion
-tokens and emitted empty tool arguments. That failure is preserved at
-`/private/tmp/triana-five-case-smoke-toolonly.YKOvAw`. Batch-size changes,
-context/output redesign, another model, question-relevance enforcement, and
-further paid optimization are a successor scaling slice. Broad quality evals
-remain the mandatory post-launch backlog; deterministic validity and human
-review remain distinct.
-
-## LABS-04 closing slice — deterministic scale-out
-
-Status: **frozen for autonomous execution on 2026-08-02**
-
-The owner accepts the current one-case result at commit `ea94d26` as the
-semi-stable LABS-04 kernel and authorizes Codex to close the scaling experiment
-end to end. This slice does not reopen retrieval, prompting, provider choice,
-semantic schemas, or the four-tool agent. It replaces only the failed
-five-cases-in-one model submission with deterministic orchestration around the
-proven one-case execution.
-
-### Product outcome and experiment
-
-Run exactly five requested case slots against the same frozen, synthetic HRAI
-evidence and GLM-5.2 deployment. Each slot receives its own bounded Case
-Factory agent execution and must submit exactly one case. Owner answers are
-run-global authoritative input after the single initial pause; later slots may
-not ask new questions. A slot may use the existing one conditional semantic
-repair, but has no transport retry, fallback model, deterministic semantic
-synthesis, or silent remapping.
-
-Per-slot failure is fail-fast for that slot and is preserved with its exact
-attempt reason. Because slots are independent, one failed slot does not erase
-valid earlier slots or prevent still-funded later slots from running. The
-orchestrator merges every valid lane in stable slot order, applies the existing
-cross-slot deterministic duplicate arithmetic once, and publishes invalid,
-valid, and duplicate evidence together. Exhausted run budget stops all
-remaining slots visibly.
-
-The experiment passes its mechanical gate only when at least three of five
-requested cases are valid and distinct. `COMPLETED_WITH_GAPS` may pass that
-mechanical gate if every gap is preserved; it is not a semantic pass. The
-blind `human_review_template.json` remains `PENDING`, and only Akarsh may clear
-the usefulness gate. LABS-05 remains unauthorized until both gates clear.
-
-### Budget and custody
-
-The experiment-level conservative ceiling is USD 25.000000. This is a maximum,
-not a target. The runtime must distinguish logical agent attempts from the
-underlying provider HTTP exchanges, preserve both counts, and conservatively
-reserve enough for the bounded three-exchange agent loop before starting a
-slot. Cached/no-egress work is not reported as a paid exchange. Unknown actual
-provider cost stays `null`; Triana does not fabricate USD precision. Every
-request, response, parsed submission, normalized intermediate, deterministic
-defect, tool call, provider refusal, and partial portable result remains in
-the existing secret-safe custody paths.
-
-### Minimal acceptance contract
-
-The independent test author freezes only these regressions before production
-edits:
-
-1. five requested slots are sent as five stable one-slot batches and valid
-   lanes merge in slot order;
-2. a failed middle slot is preserved, later funded slots still run, and the
-   terminal bundle is `COMPLETED_WITH_GAPS` rather than zeroed or greenwashed;
-3. resume answers remain authoritative for every pending slot, so scale-out
-   cannot reopen clarification;
-4. logical attempt count and underlying HTTP-exchange count are distinct and
-   the USD 25 ceiling refuses before an unfunded slot;
-5. existing one-case behavior, all historical tests, and the five canonical
-   Observer hashes remain unchanged.
-
-The only paid acceptance is one five-slot GLM-5.2 run. No ten-case follow-up,
-alternate model, judge, broad quality eval, prompt tournament, Corpus
-Intelligence change, turn generator, target-agent execution, memory, UI, or
-LABS-05 implementation belongs to this slice.
-
-### Change budget and serial roles
-
-- Orchestrator-owned: this packet, append-only decision record, working memory,
-  triage/evidence reconciliation, verifier aggregates, and final go/no-go.
-- Independent test-author-owned: one focused scale-out acceptance test file and
-  only necessary frozen acceptance aggregate reconciliation.
-- Implementation-author-owned:
-  `triana-labs/src/triana_labs/case_factory/restricted_runtime.py` only.
-- Dependency allowance: none.
-- Explicitly untouched: schemas, prompts except mechanically required slot
-  wording, Observer/adapter/intelligence code, canonical artifacts, CLI, UI,
-  target runner, memory, and unrelated SPC files.
-
-Any need to alter a portable semantic schema, add a dependency, change the
-model/provider, weaken validation, or exceed the single USD 25 experiment is
-outside budget and stops the slice. Roles execute serially: independent test
-author, then implementation author, with Codex as orchestrator and final
-verdict owner for machinery only.
-
-### HTTP-accounting wire clarification
-
-The independent test-author entry audit correctly refused to invent the new
-counter wire. Freeze it as follows:
-
-- Existing `provider_call_count` keeps its meaning: one logical restricted
-  transport invocation for each GENERATE or REPAIR attempt. It is not renamed.
-- New `provider_http_exchange_count` is a nonnegative integer and appears in
-  `RestrictedResult`, each `generation_attempts.jsonl` record,
-  `case_factory_eval.json`, and `manifest.json`.
-- A live Foundry transport invocation reports the number of request bodies
-  actually captured by its HTTP hook. Multiple agent-loop model requests in
-  one GENERATE/REPAIR invocation therefore count separately.
-- A failure before provider egress reports zero. A provider response or
-  refusal after egress counts its captured request. Cached or replayed work
-  with no request reports zero.
-- The fake transport seam is the optional nonnegative response field
-  `provider_http_exchange_count`. Existing scripted fixtures that omit it are
-  interpreted as one exchange for compatibility; the new acceptance tests
-  state it explicitly.
-- `_State` sums this field across attempts. The existing
-  `reservation_usd_per_agent_call` remains a conservative reservation for the
-  entire bounded logical invocation (up to three exchanges), not a price per
-  exchange and not actual cost. `actual_cost_usd` remains `null` unless the
-  provider supplies defensible cost.
-- Restricted `max_usd` now permits exact values through `25.000000` and
-  refuses anything larger before transport. Reservation still occurs before
-  each GENERATE/REPAIR invocation; an unfunded invocation is not made and adds
-  zero HTTP exchanges.
-
-Adding this accounting field is the only portable envelope expansion allowed
-by the closing slice. Semantic case/persona/intent/turn-policy schemas remain
-untouched.
-
-### Closing exit evidence
-
-The deterministic scale-out machinery passes. The sole authorized Foundry
-GLM-5.2 closing experiment used the frozen synthetic HRAI Observer and
-intelligence manifests and produced five requested, valid, and distinct cases
-in five independent one-case slots. It used no REPAIR, retry, fallback, model
-change, deterministic semantic synthesis, or citation remapping. There are no
-gap codes and no duplicate clusters.
-
-Portable bundle:
-`/private/var/folders/9p/yg9qq11906q49n6p614_f44r0000gn/T/`
-`triana-labs04-scaleout-close.c5y15ryg/resumed`.
-
-- manifest file SHA-256:
-  `817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9`;
-- case-candidate file SHA-256:
-  `06a3a2267f39041d98e08ef24466ffbc695e7833ebb16bd536f19f71c37ecbe4`;
-- all 12 manifest-declared artifact hashes independently match;
-- six logical invocations: one initial clarification and five successful
-  GENERATE slots;
-- fourteen captured provider HTTP exchanges;
-- USD `12.000000` conservative reservation under the USD `25.000000` ceiling;
-  actual provider cost remains `null`;
-- full repository verifier after supported CLI closure: 408 tests, unchanged five canonical Observer
-  hashes, deterministic replay, build, clean-wheel install, and source/wheel
-  parity at `/private/tmp/triana-labs-verify.88h0RL`;
-- supported CLI acceptance: strict config-kind dispatch, pinned restricted
-  transport construction, redacted receipts/events/exits, immutable
-  pause/resume, exact config-byte and answer/cache validation, and source/wheel
-  help parity; legacy config dispatch remains unchanged;
-- no second provider call, prompt/validator change, dependency, privacy
-  expansion, target-agent execution, or LABS-05 code was required.
-
-The five case themes are missing-data handling, wrong-position recovery,
-cross-client social-engineering refusal, ETL/tool data integrity, and
-prior-record verification. This description is an inspection aid, not an
-owner usefulness ruling. Apply the already frozen `LABS04_USEFULNESS_V1`
-rubric in Lane C above. LABS-04 is now mechanically complete and
-`AWAITING_HUMAN_REVIEW`; LABS-05 may start only after Akarsh clears that gate.
-The readable review companion is
-`internal/LABS04_CASE_REVIEW_2026-08-02.md`.
+## 17. Non-goals
+
+Judges, persistent/global memory, UI, real-data support, baseline/candidate
+diff, generic SDKs, broad eval expansion, DeepEval, DeepAgents, model/prompt
+tournaments, automatic optimization, multi-target support, browser/voice/code
+agents, hosted execution, and release verdicts are deferred. Nothing in this
+packet expands the suspended Release Review V1.

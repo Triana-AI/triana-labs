@@ -2,7 +2,7 @@
 
 Date: 2026-08-02
 
-Status: **canonical restart context; LABS-05 not yet frozen**
+Status: **canonical restart context; superseded for active execution by the frozen LABS-05 packet**
 
 Authority: `triana-labs/CHARTER.md` → `internal/DECISION_LOG.md` →
 `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
@@ -47,8 +47,9 @@ Before LABS-05 code, replace the closed LABS-04 packet in
 - Product status: LABS-04 machinery is complete. On 2026-08-02, Akarsh answered
   yes to all six frozen usefulness questions for all five cases and confirmed
   that none depends on a hidden or fabricated fact. The checkpoint passed
-  `LABS04_USEFULNESS_V1`; LABS-05 still requires a separately owner-approved
-  replacement slice packet before implementation.
+  `LABS04_USEFULNESS_V1`. Akarsh subsequently accepted the smallest LABS-05
+  design and directed implementation. `internal/SLICE_PACKET.md` and
+  `internal/LABS05_WIRE_CONTRACT.md` are now the active contract.
 
 ## 2. What exists now
 

@@ -63,8 +63,9 @@ a blind owner review. The 2026-08-02 close produced five valid distinct cases
 with no gaps and therefore cleared machinery. Akarsh then answered yes to all
 six frozen usefulness questions for all five cases and confirmed that no
 accepted case depends on a hidden or fabricated fact. LABS-04 therefore passed
-`LABS04_USEFULNESS_V1`; this ruling authorizes discussion and freezing of
-LABS-05, but not implementation before a new owner-approved slice packet.
+`LABS04_USEFULNESS_V1`. Akarsh then accepted the smallest LABS-05 checkpoint
+and directed implementation; its frozen packet and wire are
+`internal/SLICE_PACKET.md` and `internal/LABS05_WIRE_CONTRACT.md`.
 The closure includes a supported, strict config-dispatched
 `triana cases generate` path for the pinned restricted runtime plus immutable
 `triana cases resume`; legacy configs remain explicit and no fallback exists.
@@ -74,16 +75,33 @@ tracked HRAI v2 `run_200` historical-traffic corpus, exact selected SHA-256
 `4bb5839771bffe13b33b30cb42cf8cfc4ab1513e9012c10da0923bf58e1e991c`,
 labeled `SYNTHETIC_EXISTING_TRACE_CORPUS`. It is not production or real-user
 evidence. LABS-04 does not expand the privacy boundary, execute the target
-agent, create persistent memory, expose a generic agent framework, or by
-itself authorize LABS-05. The
-exact contract, final USD 25 ceiling, edge cases, outputs, and independent test-first
-roles live in `internal/SLICE_PACKET.md` and
-`internal/LABS04_WIRE_CONTRACT.md`.
+agent, create persistent memory, or expose a generic agent framework. Its
+historical exact contract remains `internal/LABS04_WIRE_CONTRACT.md` and its
+closed evidence remains in the LABS-05 handoff.
 
-The canonical restart context for the owner review and proposed LABS-05
-Adaptive Multi-Turn Runner is `internal/LABS05_HANDOFF_2026-08-02.md`. It does
-not authorize implementation; a new owner-approved slice packet must replace
-the closed LABS-04 packet first.
+### Second launch checkpoint — Adaptive Multi-Turn Runner
+
+LABS-05 is frozen for test-first implementation on 2026-08-02. It executes
+exactly the owner-reviewed LABS-04 cases for context recovery, cross-client
+refusal, and bounded status verification as three six-role-turn episodes. The
+simulated user uses Foundry Fireworks `FW-GLM-5.2`; the target is HRAI Recruiter
+Chat ReAct at commit `728f6c5`, historical Qwen 235B agent identity, behind a
+strict Triana-owned JSONL subprocess and fresh synthetic read-only world.
+
+Deterministic code owns episode/turn/tool identity, latest-observation binding,
+termination, all budgets, HTTP accounting, artifact custody, trajectory
+fingerprints, duplicate arithmetic, and typed gaps. The simulator proposes
+only U2 and U3. The target receives no persistent memory and exposes only four
+read-only projected tools. There is no retry or target/model/provider fallback.
+
+Local implementation uses fakes only. A live three-episode run requires a
+separate owner authorization after local GREEN. Passage then requires three
+valid nonduplicate inspectable trajectories and Akarsh's
+`LABS05_ADAPTATION_V1` review. Judges, persistent/global memory, UI, real-data
+support, baseline/candidate diff, generic SDKs, broad evaluation, and hosted
+execution remain deferred. The exact contract is `internal/SLICE_PACKET.md`
+plus `internal/LABS05_WIRE_CONTRACT.md`; restart history remains
+`internal/LABS05_HANDOFF_2026-08-02.md`.
 
 ## Scope decisions (Akarsh, 2026-07-31)
 

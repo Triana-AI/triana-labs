@@ -37,7 +37,7 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
-LABS-04 is the implemented, mechanically passed, owner-review-pending boundary:
+LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text
 verified synthetic Observer + intelligence manifests
@@ -64,17 +64,36 @@ configs retain the older engine. `cases resume` verifies exact config bytes,
 the immutable pause bundle, complete bounded answers, and the same private
 cache before transport construction. Unknown or malformed state refuses; no
 engine, credential, model, or provider fallback exists.
-The closing experiment is `AWAITING_HUMAN_REVIEW`, so LABS-05 remains blocked.
+The owner passed all five cases under `LABS04_USEFULNESS_V1`.
 
-The proposed LABS-05 boundary is documented, but not authorized, in
-`internal/LABS05_HANDOFF_2026-08-02.md`: one deterministic episode controller,
-one reviewed grounded case at a time, one adaptive simulated user, and one
-explicitly named target-agent protocol. Episode identity, termination,
-budgets, HTTP accounting, tool normalization, transcript custody, trajectory
-dedupe, and typed gaps remain deterministic. The simulator may propose the
-next user turn after observing the latest target response/tool event; it may
-not mutate rulings or persistent memory. No runner implementation begins until
-the owner review and a replacement slice packet are complete.
+LABS-05 is the active test-first boundary:
+
+```text
+accepted LABS-04 case + reproducible owner ruling
+  -> deterministic three-slot episode controller
+  -> U1 copied from case
+  -> strict HRAI Recruiter Chat ReAct subprocess -> A1 + normalized tools
+  -> Foundry GLM-5.2 consumes latest observation -> U2
+  -> same isolated target session -> A2
+  -> Foundry GLM-5.2 consumes latest observation -> U3
+  -> same isolated target session -> A3
+  -> immutable transcript/tool/HTTP/budget/gap artifacts
+  -> deterministic trajectory fingerprint and duplicate clusters
+  -> owner adaptation review
+```
+
+The HRAI target is pinned to commit `728f6c5`, historical Qwen 235B model and
+prompt identity, but runs through a Triana-owned target-specific JSONL adapter
+against a fresh in-memory synthetic read-only world. HRAI persistent memory,
+database writes, web, email, evaluation submission, and sub-agents are absent.
+The target process and episode state are discarded after each episode.
+
+The simulator may propose only U2/U3 and a stop suggestion. Deterministic code
+owns every identity, sequence, observation binding, termination, reservation,
+HTTP/token/tool count, custody, and duplicate denominator. Provider or target
+failure is typed partial evidence; no retry or fallback exists. Persistent or
+global learning memory remains deferred: only immutable evidence memory and
+discarded episode memory exist in this checkpoint.
 
 ## Authority map
 

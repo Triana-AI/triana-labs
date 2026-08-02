@@ -37,9 +37,10 @@ slice packets only after owner discussion. All unchanged privacy, authority,
 provenance, test-first, change-budget, and typed-gap rules in this plan remain
 binding.
 
-### Frozen Checkpoint 1 — LABS-04 Grounded Case Factory
+### Closed Checkpoint 1 — LABS-04 Grounded Case Factory
 
-The first launch checkpoint is now frozen in `internal/SLICE_PACKET.md`. It
+The first launch checkpoint's historical wire is
+`internal/LABS04_WIRE_CONTRACT.md`. It
 proves or falsifies the trace-to-simulation-design step only:
 
 ```text
@@ -73,25 +74,33 @@ On 2026-08-02, the owner answered yes to all six frozen usefulness questions
 for all five cases and confirmed that no accepted case depends on a hidden or
 fabricated fact. LABS-04 therefore passed `LABS04_USEFULNESS_V1`. This clears
 the gate to discuss and freeze LABS-05; it does not itself authorize target-
-agent execution or multi-turn implementation before a replacement owner-
-approved slice packet. Judges, memory, UI, real-data support, DeepEval, and
-generic agent frameworks remain unauthorized.
+agent execution by itself. Judges, memory, UI, real-data support, DeepEval,
+and generic agent frameworks remain unauthorized.
 
-### Proposed Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
+### Frozen Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
 
-LABS-05 is not frozen or authorized. Its canonical restart context is
-`internal/LABS05_HANDOFF_2026-08-02.md`. With the owner having cleared
-`LABS04_USEFULNESS_V1`, the recommended minimum experiment runs an
-owner-reviewed subset of grounded cases as genuinely adaptive multi-turn
-episodes against one explicitly named existing conversational/tool agent. A
-new slice packet must freeze the target protocol, reset/tool/world boundary,
-episode/termination shape, simulator harness, hard budgets, typed partials,
-trajectory dedupe, transcript artifacts, and minimum human-inspection proof
-before tests or implementation.
+LABS-05 is frozen in `internal/SLICE_PACKET.md` and
+`internal/LABS05_WIRE_CONTRACT.md`. It runs exactly three owner-reviewed cases
+as U1/A1/U2/A2/U3/A3 episodes. U2 and U3 are proposed by pinned Foundry
+Fireworks `FW-GLM-5.2` only after consuming the immediately preceding HRAI
+response and normalized tool observations. The one target is HRAI Recruiter
+Chat ReAct at commit `728f6c5`, historical Qwen 235B identity, behind the
+strict target-specific JSONL subprocess. Every episode gets a fresh synthetic
+read-only world, empty target memory, four allowlisted read-only tools, and no
+fallback.
+
+The deterministic controller owns identity, sequencing, latest-observation
+binding, termination, budgets, logical versus HTTP accounting, atomic evidence
+custody, trajectory fingerprints, dedupe, and typed gaps. The exact ceiling is
+six simulator and thirty-six target HTTP exchanges, forty-two total, USD
+`23.000000`, 180 seconds per episode, and 600 seconds total. Automated
+implementation uses fakes only; a live run is separately owner-authorized.
+Passage requires three valid inspectable nonduplicate trajectories and the
+owner's `LABS05_ADAPTATION_V1` turn-level ruling.
 
 Persistent/global memory, model judges, UI, real-data support,
 baseline/candidate comparison, hosted execution, generic SDKs, and broad eval
-expansion remain outside that proposed checkpoint.
+expansion remain outside this checkpoint.
 
 ## 1. The commitment
 
