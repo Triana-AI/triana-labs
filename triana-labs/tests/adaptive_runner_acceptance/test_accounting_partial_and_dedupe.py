@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from conftest import TargetFactory, invoke, jsonl
+from conftest import Clock, TargetFactory, invoke, jsonl
 
 
 def test_provider_ledger_separates_logical_turns_from_http_counts(
@@ -69,6 +69,69 @@ def test_simulator_token_overrun_stops_episode_before_next_target_turn(
     for session in run.target.sessions:
         assert [item["kind"] for item in session.exchanges].count("turn") == 1
         assert session.terminate_count == 1
+
+
+def test_episode_deadline_after_a1_preserves_custody_without_new_egress(
+    tmp_path: Path,
+) -> None:
+    clock = Clock(
+        [
+            0,
+            0,
+            0,
+            0,
+            180_000_000_001,
+            *([181_000_000_000] * 50),
+        ]
+    )
+    run = invoke(tmp_path, clock=clock)
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    first_episode = run.target.launches[0].episode_id
+    first_session = run.target.sessions[0]
+    first_transcript = [
+        item
+        for item in jsonl(run.publisher.artifacts["transcripts.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+    first_ledger = [
+        item
+        for item in jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+
+    assert attempts[0]["status"] == "PARTIAL"
+    assert attempts[0]["termination_reason"] == "EPISODE_TIMEOUT"
+    assert attempts[0]["gap_codes"] == ["EPISODE_TIMEOUT"]
+    assert [item["role"] for item in first_transcript] == ["USER", "ASSISTANT"]
+    assert first_transcript[-1]["content"].startswith("bounded ")
+    assert len(first_ledger) == 1
+    assert first_ledger[0]["lane"] == "TARGET"
+    assert first_ledger[0]["response_hash"] is not None
+    assert (
+        first_ledger[0]["provider_http_exchange_count"],
+        first_ledger[0]["input_tokens"],
+        first_ledger[0]["output_tokens"],
+    ) == (1, 10, 5)
+    assert attempts[0]["target_http_exchange_count"] == 1
+    assert attempts[0]["simulator_http_exchange_count"] == 0
+    assert [item["kind"] for item in first_session.exchanges] == [
+        "hello",
+        "turn",
+        "close",
+    ]
+    assert first_session.exchanges[1]["remaining_budget"]["timeout_ms"] == 180_000
+    assert first_session.exchanges[-1]["last_turn_index"] == 1
+    assert first_session.terminate_count == 1
+    assert all(
+        request["episode_id"] != first_episode for request in run.simulator.requests
+    )
+    assert [item["status"] for item in attempts[1:]] == ["VALID", "VALID"]
+    assert all(
+        [item["kind"] for item in session.exchanges].count("turn") == 3
+        and session.exchanges[-1]["kind"] == "close"
+        and session.terminate_count == 1
+        for session in run.target.sessions[1:]
+    )
 
 
 def test_middle_slot_failure_is_preserved_and_later_funded_slot_continues(
