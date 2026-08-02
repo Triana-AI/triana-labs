@@ -195,6 +195,29 @@ class ArtifactPublisher(Protocol):
     def publish(self, output_path: Path, artifacts: Mapping[str, bytes]) -> None: ...
 ```
 
+Production also exposes `JsonlTargetProcessFactory()` implementing
+`TargetProcessFactory`. Its zero-argument constructor creates no subprocess.
+`start(launch)` uses only the closed `TargetLaunch`, starts the configured argv
+with `shell=False`, configured cwd and allowlisted environment, then returns a
+session that owns raw UTF-8 JSONL framing, the 1,048,576-byte line ceiling,
+strict duplicate-key parsing, exact one-response-per-request behavior, stderr
+monitoring, timeout, exit status, and TERM/bounded-KILL cleanup from section 4.
+It performs no HRAI import and no provider call itself; therefore acceptance
+tests may use it with a newly authored local fake executable while injecting
+the verified case loader and source verifier.
+
+Raw target-process failures raise only:
+
+```python
+class TargetProtocolFailure(Exception):
+    reason_code: str
+```
+
+The constructor is `TargetProtocolFailure(reason_code: str)`. Allowed reasons
+are `TARGET_PROTOCOL_ERROR | TARGET_STDERR | TARGET_TIMEOUT`; process bytes,
+stderr, argv, cwd, exit status, and exception text are not exposed. The runner
+maps this safe category into the existing typed episode/partial behavior.
+
 `TargetSession.exchange` requests and returns only the exact hello/turn/close
 JSON objects in section 4. `terminate` is called exactly once in a `finally`
 path for every successfully started session, including failure/interruption.
