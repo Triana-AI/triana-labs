@@ -1,0 +1,20 @@
+{
+  "artifact_kind": "case_factory_restricted_config",
+  "schema_version": 1,
+  "provider": {
+    "provider_kind": "MICROSOFT_FOUNDRY_FIREWORKS",
+    "deployment": "FW-GLM-5.2",
+    "model_version": "1",
+    "endpoint_env": "TRIANA_FOUNDRY_ENDPOINT",
+    "api_key_env": "TRIANA_FOUNDRY_API_KEY",
+    "secret_sentinel_envs": [],
+    "request_timeout_seconds": 180
+  },
+  "generation": {
+    "candidate_count": 5
+  },
+  "budget": {
+    "max_usd": "25.000000",
+    "reservation_usd_per_agent_call": "2.000000"
+  }
+}

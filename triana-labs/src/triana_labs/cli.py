@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Never
+from urllib.parse import urlsplit
 
 from triana_labs import __version__
 from triana_labs.intelligence import DeriveFailure, derive
@@ -33,9 +37,10 @@ class _SafeArgumentParser(argparse.ArgumentParser):
         # message preserves the one-event log contract and prevents paths or values
         # from leaking before command execution begins.
         del message
-        if _usage_command == "cases.generate":
+        if _usage_command in ("cases.generate", "cases.resume"):
             event = _case_terminal_log(
-                event_name="triana.cases.generate.rejected",
+                command=_usage_command,
+                event_name=f"triana.{_usage_command}.rejected",
                 severity="ERROR",
                 outcome="REJECTED",
                 reason_code="CLI_USAGE_ERROR",
@@ -105,6 +110,18 @@ def _build_parser() -> _SafeArgumentParser:
         help="Private exact-response cache directory.",
     )
     generate_parser.add_argument("--out", required=True)
+    resume_parser = case_commands.add_parser(
+        "resume", help="Resume a restricted case run after human answers."
+    )
+    resume_parser.add_argument("pause_manifest")
+    resume_parser.add_argument("--answers", required=True)
+    resume_parser.add_argument("--config", required=True)
+    resume_parser.add_argument(
+        "--cache-dir",
+        required=True,
+        help="Private exact-response cache directory used by the paused run.",
+    )
+    resume_parser.add_argument("--out", required=True)
     return parser
 
 
@@ -163,8 +180,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     global _usage_command
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
-    if raw_arguments[:2] == ["cases", "generate"]:
-        _usage_command = "cases.generate"
+    if raw_arguments[:2] in (["cases", "generate"], ["cases", "resume"]):
+        _usage_command = f"cases.{raw_arguments[1]}"
     elif raw_arguments[:2] == ["corpus", "derive"]:
         _usage_command = "corpus.derive"
     else:
@@ -294,14 +311,45 @@ def main(argv: Sequence[str] | None = None) -> int:
         from triana_labs.case_factory import GenerateFailure, generate
 
         start = time.monotonic_ns()
+        config_path = Path(arguments.config)
         try:
-            generated = generate(
-                Path(arguments.observer_manifest),
-                Path(arguments.intelligence),
-                Path(arguments.config),
-                Path(arguments.out),
-                cache_path=Path(arguments.cache_dir),
-            )
+            config = _read_config(config_path)
+            if config.get("artifact_kind") == "case_factory_config":
+                generated = generate(
+                    Path(arguments.observer_manifest),
+                    Path(arguments.intelligence),
+                    config_path,
+                    Path(arguments.out),
+                    cache_path=Path(arguments.cache_dir),
+                )
+                restricted = False
+            elif config.get("artifact_kind") == "case_factory_restricted_config":
+                from triana_labs.case_factory.generate import generate_restricted
+                from triana_labs.case_factory.provider import SystemClock
+
+                restricted_config, environ = _restricted_configuration(
+                    config, os.environ
+                )
+                transport = _build_restricted_transport(restricted_config, environ)
+                generated = generate_restricted(
+                    Path(arguments.observer_manifest),
+                    Path(arguments.intelligence),
+                    config_path,
+                    Path(arguments.out),
+                    cache_path=Path(arguments.cache_dir),
+                    transport=transport,
+                    clock=SystemClock(),
+                    environ=environ,
+                    requested_case_count=restricted_config["generation"][
+                        "candidate_count"
+                    ],
+                )
+                restricted = True
+            else:
+                raise _CliRefusal("CONFIG_INVALID", 2)
+        except _CliRefusal as failure:
+            _write_case_refusal("cases.generate", failure.reason_code, start)
+            return failure.exit_code
         except GenerateFailure as failure:
             _write_json(
                 sys.stderr,
@@ -326,6 +374,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ),
             )
             return 70
+        if restricted:
+            return _write_restricted_result(generated, "cases.generate", start)
         _write_json(
             sys.stdout,
             {
@@ -357,6 +407,43 @@ def main(argv: Sequence[str] | None = None) -> int:
             ),
         )
         return 0 if generated.outcome == "COMPLETED" else 10
+
+    if arguments.command == "cases" and arguments.case_command == "resume":
+        from triana_labs.case_factory.generate import resume_restricted
+        from triana_labs.case_factory.primitives import Invalid
+        from triana_labs.case_factory.provider import SystemClock
+
+        start = time.monotonic_ns()
+        try:
+            config_path = Path(arguments.config)
+            config_bytes = _read_bytes(config_path, "CONFIG_INVALID")
+            config = _parse_object(config_bytes, "CONFIG_INVALID")
+            restricted_config, environ = _restricted_configuration(config, os.environ)
+            pause_manifest = Path(arguments.pause_manifest)
+            resume_state = _resume_state(pause_manifest)
+            if _artifact_hash(config_bytes) != resume_state.get("config_hash"):
+                raise _CliRefusal("CONFIG_INVALID", 2)
+            answers = _resume_answers(Path(arguments.answers), resume_state)
+            _require_private_resume_state(Path(arguments.cache_dir), resume_state)
+            transport = _build_restricted_transport(restricted_config, environ)
+            resumed = resume_restricted(
+                pause_manifest,
+                answers,
+                Path(arguments.out),
+                cache_path=Path(arguments.cache_dir),
+                transport=transport,
+                clock=SystemClock(),
+            )
+        except _CliRefusal as failure:
+            _write_case_refusal("cases.resume", failure.reason_code, start)
+            return failure.exit_code
+        except (Invalid, OSError, KeyError, TypeError):
+            _write_case_refusal("cases.resume", "RESUME_STATE_UNAVAILABLE", start)
+            return 5
+        except Exception:  # noqa: BLE001 - redact the outer process boundary.
+            _write_case_refusal("cases.resume", "INTERNAL_INVARIANT_FAILED", start)
+            return 70
+        return _write_restricted_result(resumed, "cases.resume", start)
 
     parser.print_help()
     return 0
@@ -415,10 +502,12 @@ def _case_terminal_log(
     valid_case_count: int | None = None,
     distinct_case_count: int | None = None,
     provider_call_count: int | None = None,
+    provider_http_exchange_count: int | None = None,
     conservative_cost_usd: str | None = None,
+    command: str = "cases.generate",
 ) -> dict[str, Any]:
     event: dict[str, Any] = {
-        "command": "cases.generate",
+        "command": command,
         "duration_ms": duration_ms,
         "event_name": event_name,
         "outcome": outcome,
@@ -435,4 +524,264 @@ def _case_terminal_log(
             provider_call_count=provider_call_count,
             conservative_cost_usd=conservative_cost_usd,
         )
+        if provider_http_exchange_count is not None:
+            event["provider_http_exchange_count"] = provider_http_exchange_count
     return event
+
+
+class _CliRefusal(Exception):
+    def __init__(self, reason_code: str, exit_code: int) -> None:
+        self.reason_code = reason_code
+        self.exit_code = exit_code
+
+
+_ENVIRONMENT_NAME = re.compile(r"^[A-Z][A-Z0-9_]{0,127}$")
+_RESTRICTED_KEYS = {
+    "artifact_kind",
+    "schema_version",
+    "provider",
+    "generation",
+    "budget",
+}
+_PROVIDER_KEYS = {
+    "provider_kind",
+    "deployment",
+    "model_version",
+    "endpoint_env",
+    "api_key_env",
+    "secret_sentinel_envs",
+    "request_timeout_seconds",
+}
+
+
+def _read_bytes(path: Path, reason: str) -> bytes:
+    try:
+        return path.read_bytes()
+    except OSError as error:
+        raise _CliRefusal(reason, 2) from error
+
+
+def _parse_object(payload: bytes, reason: str, *, exit_code: int = 2) -> dict[str, Any]:
+    from triana_labs.case_factory.primitives import Invalid, strict_json
+
+    try:
+        value = strict_json(payload)
+    except Invalid as error:
+        raise _CliRefusal(reason, exit_code) from error
+    if not isinstance(value, dict):
+        raise _CliRefusal(reason, exit_code)
+    return value
+
+
+def _read_config(path: Path) -> dict[str, Any]:
+    return _parse_object(_read_bytes(path, "CONFIG_INVALID"), "CONFIG_INVALID")
+
+
+def _restricted_configuration(
+    config: dict[str, Any], environ: Mapping[str, str]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    try:
+        provider = config["provider"]
+        generation = config["generation"]
+        budget = config["budget"]
+        if (
+            set(config) != _RESTRICTED_KEYS
+            or config["artifact_kind"] != "case_factory_restricted_config"
+            or type(config["schema_version"]) is not int
+            or config["schema_version"] != 1
+            or not isinstance(provider, dict)
+            or set(provider) != _PROVIDER_KEYS
+            or provider["provider_kind"] != "MICROSOFT_FOUNDRY_FIREWORKS"
+            or provider["deployment"] != "FW-GLM-5.2"
+            or provider["model_version"] != "1"
+            or type(provider["request_timeout_seconds"]) is not int
+            or not 1 <= provider["request_timeout_seconds"] <= 600
+            or not isinstance(generation, dict)
+            or set(generation) != {"candidate_count"}
+            or type(generation["candidate_count"]) is not int
+            or generation["candidate_count"] != 5
+            or not isinstance(budget, dict)
+            or set(budget) != {"max_usd", "reservation_usd_per_agent_call"}
+        ):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        names = [provider["endpoint_env"], provider["api_key_env"]]
+        sentinels = provider["secret_sentinel_envs"]
+        if (
+            any(
+                not isinstance(name, str) or not _ENVIRONMENT_NAME.fullmatch(name)
+                for name in names
+            )
+            or not isinstance(sentinels, list)
+            or any(
+                not isinstance(name, str) or not _ENVIRONMENT_NAME.fullmatch(name)
+                for name in sentinels
+            )
+            or len(sentinels) != len(set(sentinels))
+        ):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        maximum = _money_decimal(budget["max_usd"])
+        reservation = _money_decimal(budget["reservation_usd_per_agent_call"])
+        if not Decimal(0) <= maximum <= Decimal(25) or reservation < 0:
+            raise _CliRefusal("CONFIG_INVALID", 2)
+    except (KeyError, TypeError, ValueError):
+        raise _CliRefusal("CONFIG_INVALID", 2) from None
+
+    endpoint = environ.get(provider["endpoint_env"])
+    api_key = environ.get(provider["api_key_env"])
+    if endpoint is None or api_key is None or not api_key.strip():
+        raise _CliRefusal("PROVIDER_CONFIGURATION_MISSING", 2)
+    parsed = urlsplit(endpoint)
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.port is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in ("", "/")
+    ):
+        raise _CliRefusal("CONFIG_INVALID", 2)
+    normalized = dict(environ)
+    normalized[provider["endpoint_env"]] = endpoint.rstrip("/")
+    return config, normalized
+
+
+def _money_decimal(value: Any) -> Decimal:
+    if not isinstance(value, str):
+        raise _CliRefusal("CONFIG_INVALID", 2)
+    try:
+        result = Decimal(value)
+    except InvalidOperation as error:
+        raise _CliRefusal("CONFIG_INVALID", 2) from error
+    if not result.is_finite():
+        raise _CliRefusal("CONFIG_INVALID", 2)
+    return result
+
+
+def _build_restricted_transport(
+    config: dict[str, Any], environ: Mapping[str, str]
+) -> Any:
+    from triana_labs.case_factory.restricted_runtime import (
+        FoundryGLMRestrictedTransport,
+    )
+
+    provider = config["provider"]
+    return FoundryGLMRestrictedTransport(
+        environ[provider["endpoint_env"]],
+        environ[provider["api_key_env"]],
+        timeout_seconds=provider["request_timeout_seconds"],
+    )
+
+
+def _artifact_hash(payload: bytes) -> str:
+    from triana_labs.case_factory.primitives import artifact_hash
+
+    return artifact_hash(payload)
+
+
+def _resume_state(pause_manifest: Path) -> dict[str, Any]:
+    if not pause_manifest.is_file():
+        raise _CliRefusal("RESUME_STATE_UNAVAILABLE", 5)
+    state_path = pause_manifest.parent / "resume_state.json"
+    try:
+        state = _parse_object(
+            state_path.read_bytes(), "RESUME_STATE_UNAVAILABLE", exit_code=5
+        )
+    except OSError as error:
+        raise _CliRefusal("RESUME_STATE_UNAVAILABLE", 5) from error
+    if not isinstance(state.get("question_ids"), list) or not isinstance(
+        state.get("run_id"), str
+    ):
+        raise _CliRefusal("RESUME_STATE_UNAVAILABLE", 5)
+    return state
+
+
+def _resume_answers(path: Path, state: dict[str, Any]) -> dict[str, str]:
+    from triana_labs.case_factory.primitives import bounded_text
+
+    answers = _parse_object(
+        _read_bytes(path, "RESUME_INPUT_INVALID"), "RESUME_INPUT_INVALID"
+    )
+    expected = state["question_ids"]
+    if (
+        any(not isinstance(item, str) for item in expected)
+        or set(answers) != set(expected)
+        or any(not bounded_text(value, 4096) for value in answers.values())
+    ):
+        raise _CliRefusal("RESUME_INPUT_INVALID", 2)
+    return answers
+
+
+def _require_private_resume_state(cache: Path, state: dict[str, Any]) -> None:
+    run_id = state["run_id"]
+    if not run_id.startswith("sha256:") or len(run_id) != 71:
+        raise _CliRefusal("RESUME_STATE_UNAVAILABLE", 5)
+    private = cache / "runs" / run_id.removeprefix("sha256:") / "resume-private.json"
+    if not private.is_file():
+        raise _CliRefusal("RESUME_STATE_UNAVAILABLE", 5)
+
+
+def _write_case_refusal(command: str, reason: str, start: int) -> None:
+    _write_json(
+        sys.stderr,
+        _case_terminal_log(
+            command=command,
+            event_name=f"triana.{command}.rejected",
+            severity="ERROR",
+            outcome="REJECTED",
+            reason_code=reason,
+            duration_ms=_duration_ms(start),
+        ),
+    )
+
+
+def _write_restricted_result(result: Any, command: str, start: int) -> int:
+    suffix = {
+        "COMPLETED": "completed",
+        "COMPLETED_WITH_GAPS": "completed_with_gaps",
+        "NEEDS_INPUT": "needs_input",
+        "REJECTED": "rejected",
+    }[result.outcome]
+    _write_json(
+        sys.stdout,
+        {
+            "outcome": result.outcome,
+            "reason_code": result.reason_code,
+            "manifest_path": str(result.manifest_path),
+            "questions_path": (
+                str(result.manifest_path.parent / "questions.json")
+                if result.outcome == "NEEDS_INPUT"
+                else None
+            ),
+            "attempted_case_count": result.attempted_case_count,
+            "valid_case_count": result.valid_case_count,
+            "distinct_case_count": result.distinct_case_count,
+            "provider_call_count": result.provider_call_count,
+            "provider_http_exchange_count": result.provider_http_exchange_count,
+            "conservative_cost_usd": result.conservative_cost_usd,
+        },
+    )
+    _write_json(
+        sys.stderr,
+        _case_terminal_log(
+            command=command,
+            event_name=f"triana.{command}.{suffix}",
+            severity="INFO",
+            outcome=result.outcome,
+            reason_code=result.reason_code,
+            duration_ms=_duration_ms(start),
+            attempted_case_count=result.attempted_case_count,
+            valid_case_count=result.valid_case_count,
+            distinct_case_count=result.distinct_case_count,
+            provider_call_count=result.provider_call_count,
+            provider_http_exchange_count=result.provider_http_exchange_count,
+            conservative_cost_usd=result.conservative_cost_usd,
+        ),
+    )
+    return {
+        "COMPLETED": 0,
+        "COMPLETED_WITH_GAPS": 10,
+        "NEEDS_INPUT": 11,
+        "REJECTED": 8,
+    }[result.outcome]
