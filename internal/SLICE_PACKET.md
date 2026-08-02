@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-02
 
-Status: **INDEPENDENT RED FROZEN; PRODUCTION AUTHOR AUTHORIZED AFTER TEST COMMIT**
+Status: **LOCAL IMPLEMENTATION GREEN; LIVE CANARY REQUIRES OWNER AUTHORIZATION**
 
 Slice ID: `LABS-05-ADAPTIVE-RUNNER-V1`
 
@@ -506,6 +506,41 @@ destination/method/license/ancestry record must be complete in
 `docs/PROVENANCE.md`. Agentagon remains restricted and supplies nothing.
 
 ## 16. Structured handoff
+
+Local implementation closure on 2026-08-02:
+
+```text
+What changed: added the strict `episodes run` CLI, deterministic adaptive
+controller/contracts/boundaries/process package, and target-specific HRAI
+Recruiter Chat JSONL adapter with an explicit package marker.
+Why each changed file was necessary: CLI dispatches the supported surface;
+adaptive_runner owns validation, identity, execution, accounting, custody,
+dedupe, publication, and typed refusal; the example owns only the pinned HRAI
+protocol projection.
+Change-budget reconciliation: eight production surfaces (one modified CLI and
+seven new Python files), exactly 2,500 new nonblank/noncomment production
+lines, no dependency or lock change, and no edit outside the frozen budget.
+What was verified: `./scripts/verify.sh` passed with 516 tests, Ruff, strict
+mypy over 29 source files, deterministic replay, five unchanged Observer
+hashes, frozen LABS-05 test hashes, sdist/wheel build, clean CPython 3.13.14
+install, source/wheel parity, governance, and secret scan. Evidence:
+/private/tmp/triana-labs-verify.LZNfkB.
+What remains unverified: live Foundry simulator and pinned HRAI/Qwen execution;
+the three live trajectories; LABS05_ADAPTATION_V1.
+Assumptions made: exact 180 seconds remains permitted; elapsed time greater
+than 180 seconds produces EPISODE_TIMEOUT after preserving completed custody.
+Unexpected findings: final audit added post-A1/A2 deadline regressions; full
+verification required an explicit example package boundary and path-stable
+test fixture imports.
+Dependencies added and why: none.
+Out-of-scope problems deliberately left alone: judges, persistent/global
+memory, UI, real data, baseline/candidate diff, generic SDKs, broad eval,
+hosted execution, and the unrelated untracked research/SPC files.
+Known risks or uncertainty: exact live target/provider callback accounting and
+external protocol compatibility remain unverified until the bounded canary.
+Human action still required: authorize or decline the live synthetic-only run;
+after a valid run, complete the frozen turn-level owner adaptation review.
+```
 
 Every worker and Codex returns:
 

@@ -105,6 +105,12 @@ execution remain deferred. The exact contract is `internal/SLICE_PACKET.md`
 plus `internal/LABS05_WIRE_CONTRACT.md`; restart history remains
 `internal/LABS05_HANDOFF_2026-08-02.md`.
 
+Local implementation reached GREEN on 2026-08-02: the supported synthetic-only
+CLI, deterministic controller, strict subprocess, and target-specific adapter
+pass 108 focused and 516 repository-wide tests plus the complete versioned
+verification gate. This is implementation evidence only. No live canary ran,
+and LABS-05 has not passed `LABS05_ADAPTATION_V1`.
+
 ## Scope decisions (Akarsh, 2026-07-31)
 
 1. **User simulation is in scope.** The core intelligence layer is the

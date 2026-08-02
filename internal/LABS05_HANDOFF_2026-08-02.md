@@ -2,16 +2,33 @@
 
 Date: 2026-08-02
 
-Status: **canonical restart context; superseded for active execution by the frozen LABS-05 packet**
+Status: **canonical restart context with local LABS-05 implementation closure**
 
 Authority: `triana-labs/CHARTER.md` → `internal/DECISION_LOG.md` →
 `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
 
 This file exists so a fresh coding-agent session does not rediscover LABS-04,
 repeat failed provider experiments, assume an internal POC is a public product,
-or silently expand LABS-05. It is a handoff, not an implementation packet.
-Before LABS-05 code, replace the closed LABS-04 packet in
-`internal/SLICE_PACKET.md` with a separately owner-approved LABS-05 packet.
+or silently expand LABS-05. It is a handoff, not an implementation packet. The
+historical pre-code instructions below are preserved; `internal/SLICE_PACKET.md`
+is now the owner-approved contract and records local implementation closure.
+
+## 0. LABS-05 local closure
+
+- Supported local surface: `triana episodes run MANIFEST --review REVIEW
+  --config CONFIG --out OUT`.
+- Implementation: deterministic adaptive controller plus strict Triana-owned
+  HRAI Recruiter Chat ReAct JSONL subprocess and fresh synthetic read-only
+  four-tool world; no persistent memory, retry, or fallback.
+- Verification: 108/108 focused acceptance cases and 516/516 repository cases;
+  Ruff, strict mypy, deterministic replay, all five unchanged Observer hashes,
+  build, clean CPython 3.13.14 wheel install, source/wheel parity, governance,
+  and secret scan passed. Evidence: `/private/tmp/triana-labs-verify.LZNfkB`.
+- Status boundary: local implementation is complete; no live target/provider
+  run occurred, no three-trajectory passage claim exists, and
+  `LABS05_ADAPTATION_V1` remains pending.
+- Next human gate: Akarsh must explicitly authorize the bounded synthetic-only
+  live run (maximum 42 HTTP exchanges, USD 23, 600 seconds) before egress.
 
 ## 1. Exact ground truth
 

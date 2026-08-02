@@ -43,8 +43,10 @@ Historical research and suspended-product handoff:
 
 ## Current objective
 
-Immediate objective: implement the frozen LABS-05 Adaptive Multi-Turn Runner
-through independent RED then separate production authorship. Akarsh passed
+Immediate objective: obtain explicit owner authorization for the bounded
+LABS-05 live synthetic-only canary, then—only if it produces three valid,
+nonduplicate inspectable trajectories—obtain `LABS05_ADAPTATION_V1`. Local
+implementation is complete and repository-wide verification is GREEN. Akarsh passed
 `LABS04_USEFULNESS_V1` on 2026-08-02 by
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart
@@ -53,22 +55,21 @@ The exact active contract is `internal/SLICE_PACKET.md` plus
 `internal/LABS05_WIRE_CONTRACT.md`. The selected cases are context recovery,
 cross-client refusal, and bounded status verification; each runs as exactly
 U1/A1/U2/A2/U3/A3 against the pinned HRAI Recruiter Chat ReAct JSONL target.
-Only deterministic fakes are authorized during implementation. No provider
-experiment is authorized yet.
+The supported local `triana episodes run` surface and strict target-specific
+subprocess are implemented. No provider experiment is authorized yet.
 
 Memory decision: immutable accepted case evidence is read-only; transcript and
 target state are episode-only and discarded after publication; HRAI persistent
 memory is disabled; persistent/global evaluated memory remains deferred until
 a reviewed result has a concrete next-run consumer.
 
-Independent LABS-05 RED freeze: 42 tests collect cleanly and all 42 fail only
-because the new package/CLI is absent. The six files/1,370 lines are frozen at
-content SHA-256
-`88960cc93916c8b51721299b93479a2a5672ccb1f13e104d40ae39ca3dfe5dad`
-and per-file-list SHA-256
-`2d30c12505b8fab6c154b26f8264b6b721604a63c6d9c6179d546f2c73400101`.
-Production may edit only the packet-owned paths and no provider call is
-authorized.
+Final independent LABS-05 acceptance: 108/108 focused cases and 516/516 full
+repository cases pass. The final eight test-owned files/2,792 lines are frozen
+at content SHA-256
+`e3eb48819cc0bd098a0ed6b270317d964512f29181a56f391cad30347377f196`
+and per-file hash-stream SHA-256
+`347bf5d65b743e40291ba8f526ef34ccac06ab9368fd3593bb4cce16be3eab27`.
+The full verifier evidence is `/private/tmp/triana-labs-verify.LZNfkB`.
 
 The older long-horizon objective below remains strategic context, not the next
 implementation authorization.

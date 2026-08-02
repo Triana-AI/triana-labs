@@ -96,6 +96,11 @@ failure is typed partial evidence; no retry or fallback exists. Persistent or
 global learning memory remains deferred: only immutable evidence memory and
 discarded episode memory exist in this checkpoint.
 
+This boundary is locally implemented behind `triana episodes run`. Repository
+verification proves the deterministic/fake boundary and strict process
+contract; it does not prove live Foundry or HRAI/Qwen compatibility, valid live
+trajectories, or the owner adaptation ruling.
+
 ## Authority map
 
 ```text

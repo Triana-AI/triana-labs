@@ -103,6 +103,11 @@ Persistent/global memory, model judges, UI, real-data support,
 baseline/candidate comparison, hosted execution, generic SDKs, and broad eval
 expansion remain outside this checkpoint.
 
+Local implementation completed on 2026-08-02 with 108 focused and 516
+repository-wide tests plus the complete versioned verification gate GREEN.
+The supported surface remains synthetic-only. The bounded live canary and
+`LABS05_ADAPTATION_V1` are separate owner gates and have not occurred.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

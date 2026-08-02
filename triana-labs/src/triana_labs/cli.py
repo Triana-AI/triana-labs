@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import sys
 import time
 from collections.abc import Mapping, Sequence
@@ -42,6 +43,12 @@ class _SafeArgumentParser(argparse.ArgumentParser):
                 command=_usage_command,
                 event_name=f"triana.{_usage_command}.rejected",
                 severity="ERROR",
+                outcome="REJECTED",
+                reason_code="CLI_USAGE_ERROR",
+                duration_ms=0,
+            )
+        elif _usage_command == "episodes.run":
+            event = _episode_terminal_log(
                 outcome="REJECTED",
                 reason_code="CLI_USAGE_ERROR",
                 duration_ms=0,
@@ -122,6 +129,15 @@ def _build_parser() -> _SafeArgumentParser:
         help="Private exact-response cache directory used by the paused run.",
     )
     resume_parser.add_argument("--out", required=True)
+    episodes = commands.add_parser("episodes", help="Run bounded adaptive episodes.")
+    episode_commands = episodes.add_subparsers(dest="episode_command")
+    run_parser = episode_commands.add_parser(
+        "run", help="Run the frozen LABS-05 synthetic episode panel."
+    )
+    run_parser.add_argument("manifest")
+    run_parser.add_argument("--review", required=True)
+    run_parser.add_argument("--config", required=True)
+    run_parser.add_argument("--out", required=True)
     return parser
 
 
@@ -182,12 +198,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
     if raw_arguments[:2] in (["cases", "generate"], ["cases", "resume"]):
         _usage_command = f"cases.{raw_arguments[1]}"
+    elif raw_arguments[:2] == ["episodes", "run"]:
+        _usage_command = "episodes.run"
     elif raw_arguments[:2] == ["corpus", "derive"]:
         _usage_command = "corpus.derive"
     else:
         _usage_command = "traces.observe"
     parser = _build_parser()
     arguments = parser.parse_args(raw_arguments)
+
+    if arguments.command == "episodes" and arguments.episode_command == "run":
+        return _run_episodes(arguments)
 
     if arguments.command == "traces" and arguments.trace_command == "observe":
         start = time.monotonic_ns()
@@ -449,6 +470,136 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
+def _episode_terminal_log(
+    *,
+    outcome: str,
+    reason_code: str | None,
+    duration_ms: int,
+    attempted: int | None = None,
+    valid: int | None = None,
+    effective: int | None = None,
+    simulator_http: int | None = None,
+    target_http: int | None = None,
+    all_http: int | None = None,
+    reserved: str | None = None,
+    actual: str | None = None,
+) -> dict[str, Any]:
+    """Build the content-free LABS-05 terminal event."""
+
+    event: dict[str, Any] = {
+        "command": "episodes.run",
+        "duration_ms": duration_ms,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "service": _SERVICE,
+        "service_version": __version__,
+    }
+    if attempted is not None:
+        event.update(
+            attempted_episode_count=attempted,
+            valid_episode_count=valid,
+            effective_trajectory_count=effective,
+            simulator_http_exchange_count=simulator_http,
+            target_http_exchange_count=target_http,
+            all_http_exchange_count=all_http,
+            reserved_cost_usd=reserved,
+            actual_cost_usd=actual,
+        )
+    return event
+
+
+def _run_episodes(arguments: argparse.Namespace) -> int:
+    """Construct real boundaries and translate the typed LABS-05 result."""
+
+    from triana_labs.adaptive_runner import (
+        AdaptiveRunFailure,
+        JsonlTargetProcessFactory,
+        run,
+    )
+    from triana_labs.adaptive_runner.boundaries import FoundrySimulatorTransport
+    from triana_labs.case_factory.provider import SystemClock
+
+    start = time.monotonic_ns()
+    try:
+        config_path = Path(arguments.config)
+        config_bytes = _read_bytes(config_path, "CONFIG_INVALID")
+        config = _parse_object(config_bytes, "CONFIG_INVALID")
+        simulator_config = config.get("simulator")
+        if not isinstance(simulator_config, dict):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        key_name = simulator_config.get("api_key_env")
+        api_key = os.environ.get(key_name, "") if isinstance(key_name, str) else ""
+        if _read_bytes(config_path, "CONFIG_INVALID") != config_bytes:
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        result = run(
+            Path(arguments.manifest),
+            Path(arguments.review),
+            config_path,
+            Path(arguments.out),
+            simulator=FoundrySimulatorTransport(simulator_config, api_key),
+            target_factory=JsonlTargetProcessFactory(),
+            clock=SystemClock(),
+            environ=os.environ,
+        )
+    except _CliRefusal as failure:
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code=failure.reason_code,
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return failure.exit_code
+    except AdaptiveRunFailure as failure:
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code=failure.reason_code,
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return failure.exit_code
+    except Exception:  # noqa: BLE001 - redact the outer process boundary.
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code="INTERNAL_INVARIANT_FAILED",
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return 70
+    _write_json(
+        sys.stdout,
+        {
+            "attempted_episode_count": result.attempted_episode_count,
+            "effective_trajectory_count": result.effective_trajectory_count,
+            "manifest_path": f"{arguments.out}/manifest.json",
+            "outcome": result.outcome,
+            "valid_episode_count": result.valid_episode_count,
+        },
+    )
+    _write_json(
+        sys.stderr,
+        _episode_terminal_log(
+            outcome=result.outcome,
+            reason_code=result.reason_code,
+            duration_ms=_duration_ms(start),
+            attempted=result.attempted_episode_count,
+            valid=result.valid_episode_count,
+            effective=result.effective_trajectory_count,
+            simulator_http=result.simulator_http_exchange_count,
+            target_http=result.target_http_exchange_count,
+            all_http=result.all_http_exchange_count,
+            reserved=result.reserved_cost_usd,
+            actual=result.actual_cost_usd,
+        ),
+    )
+    return result.exit_code
+
+
 def _duration_ms(start_ns: int) -> int:
     """Return nonnegative operational duration excluded from portable artifacts."""
 
@@ -556,7 +707,11 @@ _PROVIDER_KEYS = {
 
 def _read_bytes(path: Path, reason: str) -> bytes:
     try:
-        return path.read_bytes()
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise OSError
+            return stream.read()
     except OSError as error:
         raise _CliRefusal(reason, 2) from error
 
