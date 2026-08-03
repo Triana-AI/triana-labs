@@ -131,6 +131,38 @@ if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runne
   exit 1
 fi
 
+triana_simulator_fidelity_content_hash="$(
+  cd "${triana_repository_root}"
+  find \
+    triana-labs/tests/simulator_fidelity_acceptance \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs cat \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_simulator_fidelity_content_hash="9cb872ce1015d12eedf3f47464c88363cfb38d1c204f3418bc4bfac12271074d"
+if [[ "${triana_simulator_fidelity_content_hash}" != "${triana_expected_simulator_fidelity_content_hash}" ]]; then
+  echo "frozen simulator fidelity acceptance content hash mismatch" >&2
+  exit 1
+fi
+
+triana_simulator_fidelity_file_hash="$(
+  cd "${triana_repository_root}"
+  find \
+    triana-labs/tests/simulator_fidelity_acceptance \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_simulator_fidelity_file_hash="de3767401404d32fe9786cb93cb7f4d29718deec71285cb3d5040c1190d09842"
+if [[ "${triana_simulator_fidelity_file_hash}" != "${triana_expected_simulator_fidelity_file_hash}" ]]; then
+  echo "frozen simulator fidelity acceptance file hash mismatch" >&2
+  exit 1
+fi
+
 triana_verify_tracked_hash() {
   local path="$1"
   local expected="$2"

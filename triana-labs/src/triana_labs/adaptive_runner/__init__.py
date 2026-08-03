@@ -5,6 +5,8 @@ from .contracts import (
     ArtifactPublisher,
     CaseFactoryInputLoader,
     Clock,
+    SimulatorContextBundle,
+    SimulatorContextLoader,
     SimulatorResponse,
     SimulatorTransport,
     TargetLaunch,
@@ -15,6 +17,10 @@ from .contracts import (
     TargetSourceVerifier,
     VerifiedCaseFactoryInput,
     VerifiedCaseProjection,
+)
+from .simulator_fidelity import (
+    FileSimulatorContextLoader as FileSimulatorContextLoader,
+    evaluate_teacher_forced as evaluate_teacher_forced,
 )
 from .process import JsonlTargetProcessFactory as JsonlTargetProcessFactory
 from .http_target import HttpJsonTargetFactory as HttpJsonTargetFactory

@@ -121,6 +121,17 @@ endpoint reachability only: configured Postgres timed out and Redis DNS failed,
 so session creation returned HTTP 500 before any chat turn. The attempt is a
 typed target-infrastructure gap, not an adaptive episode or owner passage.
 
+LABS-06 is the locally implemented simulator-only correction. It preserves the
+opaque target connector boundary and adds a versioned user-owned simulator context derived
+without mutating LABS-04 artifacts, a closed episode-local interaction state,
+one-attempt strict user-turn/structured-stop proposals, deterministic declared-
+matcher semantic validation, and a synthetic teacher-forced review contract.
+Deterministic code owns context identity, visibility, allowlists, state
+transitions, binding, rejection, termination, accounting, and custody. The
+model owns wording only; a human owns residual naturalness and fidelity. No
+provider execution, persistent/global memory, model judge, report/UI,
+baseline/candidate comparison, or real-data path is added by this checkpoint.
+
 ## Authority map
 
 ```text

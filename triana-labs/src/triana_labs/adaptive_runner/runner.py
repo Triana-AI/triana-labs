@@ -23,6 +23,7 @@ from .contracts import (
     CaseFactoryInputLoader,
     Clock,
     JsonObject,
+    SimulatorContextLoader,
     SimulatorResponse,
     SimulatorTransport,
     TargetLaunch,
@@ -441,6 +442,7 @@ class _Episode:
     tools: list[dict[str, Any]] = field(default_factory=list)
     ledger: list[dict[str, Any]] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
+    gap_details: list[str] = field(default_factory=list)
     termination: str = "TURN_LIMIT_REACHED"
     valid: bool = False
     fingerprint: str | None = None
@@ -735,6 +737,7 @@ def _run_episode(
     base: dict[str, Any],
     identity_seed: dict[str, Any],
     sentinels: tuple[bytes, ...],
+    simulator_context: JsonObject | None = None,
 ) -> _Episode:
     episode_id = _id(
         "episode", {**identity_seed, "case_id": case.case["case_id"], "slot": slot}
@@ -747,6 +750,11 @@ def _run_episode(
         _turn_record(
             base, episode, 1, "USER", opening, "CASE_OPENING", episode.attempt_id
         )
+    )
+    interaction_state = (
+        json.loads(_canonical(simulator_context["initial_interaction_state"]))
+        if simulator_context is not None
+        else None
     )
     world = {
         "case_projection": {
@@ -1006,15 +1014,32 @@ def _run_episode(
                 episode.valid, episode.termination = True, "TURN_LIMIT_REACHED"
                 break
             observation = _observation(assistant, events)
-            simulator_request = {
-                "protocol_version": WIRE,
-                "episode_id": episode_id,
-                "case": case.case,
-                "turn_index": target_index + 1,
-                "transcript": episode.transcripts,
-                "latest_observation": observation,
-                "remaining_turns": 2 - target_index,
-            }
+            if simulator_context is None:
+                simulator_request = {
+                    "protocol_version": WIRE,
+                    "episode_id": episode_id,
+                    "case": case.case,
+                    "turn_index": target_index + 1,
+                    "transcript": episode.transcripts,
+                    "latest_observation": observation,
+                    "remaining_turns": 2 - target_index,
+                }
+            else:
+                from .simulator_fidelity import PROTOCOL, case_projection
+
+                simulator_request = {
+                    "protocol_version": PROTOCOL,
+                    "episode_id": episode_id,
+                    "turn_index": target_index + 1,
+                    "case_context": case_projection(simulator_context),
+                    "interaction_state": interaction_state,
+                    "transcript": [
+                        {"role": item["role"], "content": item["content"]}
+                        for item in episode.transcripts
+                    ],
+                    "latest_observation": observation,
+                    "remaining_turns": 2 - target_index,
+                }
             sim_reservation = Decimal("1.000000")
             episode.reserved += sim_reservation
             try:
@@ -1054,9 +1079,10 @@ def _run_episode(
             invalid = (
                 sim.status not in {"SUCCEEDED", "FAILED"}
                 or not _money(sim.provider_reported_cost_usd)
-                or type(sim.proposed_stop) is not bool
+                or (simulator_context is None and type(sim.proposed_stop) is not bool)
                 or (
-                    sim.status == "SUCCEEDED"
+                    simulator_context is None
+                    and sim.status == "SUCCEEDED"
                     and (
                         not _text(sim.next_user_content, nonempty=True)
                         or not isinstance(sim.consumed_observation_hash, str)
@@ -1064,8 +1090,16 @@ def _run_episode(
                         or sim.reason_code is not None
                     )
                 )
-                or (sim.proposed_stop and not _text(sim.stop_reason, nonempty=True))
-                or (not sim.proposed_stop and sim.stop_reason is not None)
+                or (
+                    simulator_context is None
+                    and sim.proposed_stop
+                    and not _text(sim.stop_reason, nonempty=True)
+                )
+                or (
+                    simulator_context is None
+                    and not sim.proposed_stop
+                    and sim.stop_reason is not None
+                )
                 or sim.status == "FAILED"
                 and sim.reason_code != "SIMULATOR_PROVIDER_ERROR"
                 or not all(
@@ -1082,6 +1116,8 @@ def _run_episode(
                     "next_user_content": sim.next_user_content,
                     "consumed_observation_hash": sim.consumed_observation_hash,
                     "stop_reason": sim.stop_reason,
+                    "user_utterance": sim.user_utterance,
+                    "stop_reason_code": sim.stop_reason_code,
                 },
                 sentinels,
             )
@@ -1093,6 +1129,10 @@ def _run_episode(
                 if over_budget
                 else sim.reason_code
             )
+            if simulator_context is not None and sim_reason is None:
+                from .simulator_fidelity import response_structure
+
+                sim_reason = response_structure(sim)
             episode.sim_http += sim_http
             episode.sim_input += sim_input
             episode.sim_output += sim_output
@@ -1104,7 +1144,15 @@ def _run_episode(
                     assistant_ordinal + 1,
                     "FAILED" if sim_reason else sim.status,
                     sim.request_bytes,
-                    None if sim_reason else sim.response_bytes,
+                    (
+                        None
+                        if unsafe
+                        else sim.response_bytes
+                        if simulator_context is not None
+                        else None
+                        if sim_reason
+                        else sim.response_bytes
+                    ),
                     sim_http,
                     sim_input,
                     sim_output,
@@ -1117,6 +1165,42 @@ def _run_episode(
                 episode.gaps.append(sim_reason)
                 episode.termination = sim_reason
                 break
+            if simulator_context is not None:
+                from .simulator_fidelity import semantic_codes, transition
+
+                if sim.consumed_observation_hash != observation["observation_hash"]:
+                    episode.gaps.append("ADAPTATION_BINDING_MISMATCH")
+                    episode.termination = "ADAPTATION_BINDING_MISMATCH"
+                    episode.ledger[-1]["status"] = "FAILED"
+                    episode.ledger[-1]["reason_code"] = "ADAPTATION_BINDING_MISMATCH"
+                    break
+                details = semantic_codes(sim, simulator_request, simulator_context)
+                if details:
+                    episode.gaps.append("SIMULATOR_SEMANTIC_INVALID")
+                    episode.gap_details.extend(details)
+                    episode.termination = "SIMULATOR_SEMANTIC_INVALID"
+                    episode.ledger[-1]["status"] = "FAILED"
+                    episode.ledger[-1]["reason_code"] = "SIMULATOR_SEMANTIC_INVALID"
+                    break
+                interaction_state = transition(simulator_context, sim)
+                if sim.disposition == "STOP":
+                    episode.valid = True
+                    episode.termination = "CASE_STOP_CONDITION"
+                    break
+                episode.transcripts.append(
+                    _turn_record(
+                        base,
+                        episode,
+                        assistant_ordinal + 1,
+                        "USER",
+                        sim.user_utterance or "",
+                        "SIMULATOR",
+                        episode.ledger[-1]["attempt_id"],
+                        consumed_observation_hash=sim.consumed_observation_hash,
+                        latest_observation_hash=observation["observation_hash"],
+                    )
+                )
+                continue
             if (
                 sim.status != "SUCCEEDED"
                 or not isinstance(sim.next_user_content, str)
@@ -1374,17 +1458,23 @@ def _artifacts(
     gaps: list[dict[str, Any]] = []
     for episode in episodes:
         for code in episode.gaps:
-            gaps.append(
-                {
-                    **base,
-                    "record_id": _id("gap", [episode.episode_id, code]),
-                    "episode_id": episode.episode_id,
-                    "turn_ordinal": len(episode.transcripts),
-                    "reason_code": code,
-                    "detail_code": None,
-                    "originating_attempt_id": episode.attempt_id,
-                }
+            details: list[str | None] = (
+                [*episode.gap_details]
+                if code == "SIMULATOR_SEMANTIC_INVALID"
+                else [None]
             )
+            for detail in details:
+                gaps.append(
+                    {
+                        **base,
+                        "record_id": _id("gap", [episode.episode_id, code, detail]),
+                        "episode_id": episode.episode_id,
+                        "turn_ordinal": len(episode.transcripts),
+                        "reason_code": code,
+                        "detail_code": detail,
+                        "originating_attempt_id": episode.attempt_id,
+                    }
+                )
     if len(effective) < 3:
         gaps.append(
             {
@@ -1435,6 +1525,8 @@ def _artifacts(
     review_items = []
     for episode in effective:
         for ordinal in (3, 5):
+            if not any(item["ordinal"] == ordinal for item in episode.transcripts):
+                continue
             user = next(
                 item for item in episode.transcripts if item["ordinal"] == ordinal
             )
@@ -1566,6 +1658,8 @@ def run(
     publisher: ArtifactPublisher | None = None,
     source_verifier: TargetSourceVerifier | None = None,
     case_loader: CaseFactoryInputLoader | None = None,
+    simulator_context_bundle: Path | None = None,
+    context_loader: SimulatorContextLoader | None = None,
 ) -> AdaptiveRunResult:
     """Execute the exact three-slot LABS-05 controller and publish safe custody."""
     if os.path.lexists(output_path):
@@ -1592,6 +1686,14 @@ def run(
     except (OSError, ValueError, KeyError, TypeError) as error:
         raise AdaptiveRunFailure("MANIFEST_INVALID", 4) from error
     _validate_cases(source_input)
+    contexts_by_case: dict[str, JsonObject] = {}
+    context_bundle_hash: str | None = None
+    if simulator_context_bundle is not None:
+        from .simulator_fidelity import bind_contexts, load_bundle
+
+        context_bundle_value = load_bundle(simulator_context_bundle, context_loader)
+        contexts_by_case = bind_contexts(context_bundle_value, source_input.cases)
+        context_bundle_hash = context_bundle_value.bundle_hash
     if not environ.get(config["simulator"]["api_key_env"]):
         raise AdaptiveRunFailure("SIMULATOR_AUTHORIZATION_REFUSED", 4)
     review_hash, config_hash = _hash(review_bytes), _hash(config_bytes)
@@ -1643,6 +1745,11 @@ def run(
         "state_isolation": target["state_isolation"],
         "target_source_tree_hash": source_identity.source_tree_hash,
         "target_adapter_file_hash": source_identity.adapter_file_hash,
+        **(
+            {"simulator_context_bundle_hash": context_bundle_hash}
+            if context_bundle_hash is not None
+            else {}
+        ),
     }
     episodes: list[_Episode] = []
     interrupted = False
@@ -1684,6 +1791,7 @@ def run(
                     base,
                     identity_seed,
                     sentinels,
+                    contexts_by_case.get(case.case["case_id"]),
                 )
             )
         except KeyboardInterrupt:

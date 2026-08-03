@@ -131,6 +131,29 @@ behavior is primary; angry, impatient, skeptical, informal, mistaken, and
 adversarial behavior are declared strata. Persistent/global Triana memory
 remains deferred.
 
+On 2026-08-03 Akarsh accepted and started LABS-06 under
+`internal/LABS06_SIMULATOR_FIDELITY_V1.md` and the replacement
+`internal/SLICE_PACKET.md`. It is a synthetic-only, one-attempt repair that
+passes a versioned user-owned persona/intent/fact/policy projection and bounded
+episode state to every simulator call, adds deterministic declared-matcher
+semantic gates and true structured stopping, and freezes a 30-item
+`REGULAR_USER_SIMULATION_FIDELITY_V1` panel with a 24-accepted and zero-critical
+human gate. The historical LABS-04 artifacts remain immutable. Additional
+provider execution and human passage remain separately owner-gated; persistent/global
+memory, judges, UI/report, baseline/candidate comparison, real data, generic
+SDKs, and broad eval expansion remain deferred.
+
+The synthetic-only LABS-06 implementation is locally GREEN: 18 frozen fidelity
+acceptance cases, 143 historical adaptive-runner cases, and the complete
+569-test repository verifier passed on 2026-08-03. This proves the bounded
+component and null-ruling review contract only. A separately authorized private
+three-episode HRAI/Foundry smoke was then consumed: each opening received one
+HRAI response, but each first simulator continuation was rejected as
+`SIMULATOR_INVALID_RESPONSE`, leaving 0 valid/effective trajectories. No retry
+or rerun occurred. `REGULAR_USER_SIMULATION_FIDELITY_V1` remains unpassed and
+pending Akarsh's human rulings; the smoke does not authorize general real-data
+support or another provider/target run.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a

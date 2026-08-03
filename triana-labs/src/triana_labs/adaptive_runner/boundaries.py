@@ -200,14 +200,50 @@ class FoundrySimulatorTransport:
         self._api_key = api_key
 
     def complete(self, request: Mapping[str, Any]) -> SimulatorResponse:
-        schema = _json(
-            b'{"additionalProperties":false,"properties":{"consumed_observation_hash":{"type":"string"},"next_user_content":{"type":"string"},"proposed_stop":{"type":"boolean"},"stop_reason":{"type":["string","null"]}},"required":["next_user_content","consumed_observation_hash","proposed_stop","stop_reason"],"type":"object"}'
-        )
+        labs06 = request.get("protocol_version") == "LABS06_SIMULATOR_FIDELITY_V1"
+        if labs06:
+            schema = {
+                "additionalProperties": False,
+                "properties": {
+                    "consumed_observation_hash": {"type": "string"},
+                    "speaker_role": {"const": "USER"},
+                    "disposition": {"enum": ["EMIT", "STOP"]},
+                    "reaction_id": {"type": "string"},
+                    "action_ids": {
+                        "items": {"type": "string"},
+                        "type": "array",
+                        "uniqueItems": True,
+                    },
+                    "user_utterance": {"type": ["string", "null"]},
+                    "stop_reason_code": {"type": ["string", "null"]},
+                },
+                "required": [
+                    "consumed_observation_hash",
+                    "speaker_role",
+                    "disposition",
+                    "reaction_id",
+                    "action_ids",
+                    "user_utterance",
+                    "stop_reason_code",
+                ],
+                "type": "object",
+            }
+        else:
+            schema = _json(
+                b'{"additionalProperties":false,"properties":{"consumed_observation_hash":{"type":"string"},"next_user_content":{"type":"string"},"proposed_stop":{"type":"boolean"},"stop_reason":{"type":["string","null"]}},"required":["next_user_content","consumed_observation_hash","proposed_stop","stop_reason"],"type":"object"}'
+            )
         body_value = _json(
             b'{"messages":[{"content":"LABS05_ADAPTIVE_USER_V1: react only to the latest bounded evidence.","role":"system"},{"content":"","role":"user"}],"model":"","n":1,"response_format":{"json_schema":{"name":"next_user_turn","schema":{},"strict":true},"type":"json_schema"},"seed":0,"temperature":0}'
         )
         body_value["model"] = self._config["deployment"]
         body_value["seed"] = self._config["seed"]
+        if labs06:
+            body_value["messages"][0]["content"] = (
+                "LABS06_SIMULATOR_FIDELITY_V1: propose exactly one USER response "
+                "under the supplied user-owned policy. Do not answer as the assistant, "
+                "copy or paraphrase assistant text, reveal hidden facts, or take an "
+                "unauthorized action. Use structured STOP, never a visible stop token."
+            )
         body_value["messages"][1]["content"] = _canonical(request).decode()
         body_value["response_format"]["json_schema"]["schema"] = schema
         body = _canonical(body_value)
@@ -246,19 +282,47 @@ class FoundrySimulatorTransport:
             usage = envelope.get("usage", {})
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
-            if (
-                not isinstance(value, dict)
-                or not _integer(input_tokens)
-                or not _integer(output_tokens)
-                or set(value)
-                != {
+            expected = (
+                {
+                    "consumed_observation_hash",
+                    "speaker_role",
+                    "disposition",
+                    "reaction_id",
+                    "action_ids",
+                    "user_utterance",
+                    "stop_reason_code",
+                }
+                if labs06
+                else {
                     "next_user_content",
                     "consumed_observation_hash",
                     "proposed_stop",
                     "stop_reason",
                 }
+            )
+            if (
+                not isinstance(value, dict)
+                or not _integer(input_tokens)
+                or not _integer(output_tokens)
+                or set(value) != expected
             ):
                 raise ValueError
+            if labs06:
+                return SimulatorResponse(
+                    status="SUCCEEDED",
+                    request_bytes=body,
+                    response_bytes=response_bytes,
+                    consumed_observation_hash=value["consumed_observation_hash"],
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    provider_http_exchange_count=1,
+                    speaker_role=value["speaker_role"],
+                    disposition=value["disposition"],
+                    reaction_id=value["reaction_id"],
+                    action_ids=value["action_ids"],
+                    user_utterance=value["user_utterance"],
+                    stop_reason_code=value["stop_reason_code"],
+                )
             return SimulatorResponse(
                 "SUCCEEDED",
                 body,

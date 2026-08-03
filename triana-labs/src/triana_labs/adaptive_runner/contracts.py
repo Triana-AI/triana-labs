@@ -40,15 +40,28 @@ class SimulatorResponse:
     status: str
     request_bytes: bytes | None
     response_bytes: bytes | None
-    next_user_content: str | None
-    consumed_observation_hash: str | None
-    proposed_stop: bool | None
-    stop_reason: str | None
-    input_tokens: int
-    output_tokens: int
-    provider_http_exchange_count: int
-    provider_reported_cost_usd: str | None
-    reason_code: str | None
+    next_user_content: str | None = None
+    consumed_observation_hash: str | None = None
+    proposed_stop: bool | None = None
+    stop_reason: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    provider_http_exchange_count: int = 0
+    provider_reported_cost_usd: str | None = None
+    reason_code: str | None = None
+    speaker_role: str | None = None
+    disposition: str | None = None
+    reaction_id: str | None = None
+    action_ids: list[str] | None = None
+    user_utterance: str | None = None
+    stop_reason_code: str | None = None
+
+
+@dataclass(frozen=True)
+class SimulatorContextBundle:
+    bundle_hash: str
+    contexts: tuple[JsonObject, ...]
+    teacher_forced_items: tuple[JsonObject, ...]
 
 
 @dataclass(frozen=True)
@@ -88,6 +101,10 @@ class TargetSourceVerifier(Protocol):
 
 class SimulatorTransport(Protocol):
     def complete(self, request: JsonObject) -> SimulatorResponse: ...
+
+
+class SimulatorContextLoader(Protocol):
+    def load(self, path: Path) -> SimulatorContextBundle: ...
 
 
 class TargetSession(Protocol):

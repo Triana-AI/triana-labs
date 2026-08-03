@@ -63,11 +63,16 @@ unpassed. The N was an exact assistant echo caused by the simulator request
 omitting the verified persona, intent, and turn policy and by the absence of a
 semantic user-role/anti-copy gate.
 
-Immediate objective: discuss and freeze the proposed regular-use-first
-`REGULAR_USER_SIMULATION_FIDELITY_V1` checkpoint in
-`internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`. Do not request
-another provider run before its teacher-forced local eval is independently
-frozen and GREEN. Persistent/global Triana memory remains deferred. Akarsh passed
+Immediate objective completed locally: the owner-frozen synthetic-only
+`LABS-06-REGULAR-USER-SIMULATOR-FIDELITY-V1` passed independent RED,
+production GREEN, adversarial audit, and the complete 569-test verifier. The
+accepted wire is
+`internal/LABS06_SIMULATOR_FIDELITY_V1.md`: one attempt, versioned user-owned
+context migration, bounded episode state, declared-matcher semantic gates,
+structured stop, and a 30-item/24-accepted/zero-critical human fidelity gate.
+No provider or target execution was authorized; the 30 human fidelity rulings
+remain pending and public sample generation waits for LABS-07. Persistent/
+global Triana memory remains deferred. Akarsh passed
 `LABS04_USEFULNESS_V1` on 2026-08-02 by
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart
@@ -82,15 +87,11 @@ stranger installation. The full blocker/deferred register is
 license, and the report contract precede UI code; persistent/global memory is
 not a first-public-proof blocker.
 
-Session handoff: merge the completed LABS-05/public-rollout branch into local
-`main`, then start LABS-06 through
-`internal/LABS06_HANDOFF_2026-08-03.md`. The new session must plan first: inspect
-the boundary, state the goal, propose the LLD/spec and smallest essential test
-set, ask the material owner questions with recommended defaults, and wait.
-Implementation begins only after Akarsh answers and a bounded LABS-06 slice
-packet replaces the closed LABS-05 packet.
+The planning-first LABS-06 handoff is complete: Akarsh accepted every
+recommended option and directed implementation with maximum safe parallelism.
 The exact active contract is `internal/SLICE_PACKET.md` plus
-`internal/LABS05_TARGET_CONNECTOR_V1.md`. The selected cases are context
+`internal/LABS06_SIMULATOR_FIDELITY_V1.md`; LABS-05 connector and retained
+episode/artifact rules remain inherited. The selected cases are context
 recovery, cross-client refusal, and bounded status verification; each runs as
 exactly U1/A1/U2/A2/U3/A3 against an opaque configured target. The supported
 local `triana episodes run` surface and both connector kinds are implemented.
@@ -702,3 +703,15 @@ LABS-04 result, current implementation boundary, failed paths, proposed
 LABS-05 checkpoint, seven material owner decisions, and categorized backlog.
 Earlier open-blocker paragraphs in this working memory are chronological
 history and are superseded by the final LABS-04 close where they conflict.
+
+Latest LABS-06 live evidence (2026-08-03): Akarsh inspected and authorized the
+exact three-context migration bundle before one private HRAI/Foundry run. HRAI
+returned one assistant turn for every opening, but all three first Foundry
+continuations were rejected as `SIMULATOR_INVALID_RESPONSE`; no simulator user
+turn entered custody. The run ended `COMPLETED_WITH_GAPS` with 0 valid/effective
+trajectories, 13 gaps, 9 target plus 3 simulator HTTP exchanges, and USD
+8.666664 reserved. No retry or rerun is authorized. The provider response bytes
+are intentionally not retained, so the structural subcause cannot be recovered
+from artifacts and must not be guessed. Akarsh owns any grading of the retained
+opening/assistant conversations; local LABS-06 mechanics stay GREEN while live
+compatibility and the human fidelity gate remain unpassed.

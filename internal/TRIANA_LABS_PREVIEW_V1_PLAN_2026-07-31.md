@@ -149,6 +149,38 @@ not authorize the historical M2 baseline/candidate path, persistent memory,
 real-data support, or hosted execution. A static synthetic read-only demo may
 be publicly hosted because it accepts no data, credentials, or execution.
 
+### Frozen Checkpoint 3 — LABS-06 Regular-User Simulator Fidelity
+
+Akarsh accepted the planning-first LABS-06 recommendation on 2026-08-03. The
+normative contract is `internal/LABS06_SIMULATOR_FIDELITY_V1.md` plus the
+replacement `internal/SLICE_PACKET.md`. It corrects only the simulated-user
+boundary: immutable LABS-04 persona/intent/policy lineage is migrated into a
+versioned user-owned context; known facts, a bounded six-field episode state,
+the transcript, and the exact latest observation enter each one-attempt
+request; deterministic declared matchers reject role inversion, exact/near
+assistant echo, hidden-fact leakage, fixed-fact conflict, unauthorized
+reaction/action, and invalid stop before a later target call.
+
+LABS-06 freezes 30 newly authored synthetic teacher-forced items: 24 ordinary
+operational uses plus one each angry, impatient, skeptical, informal, mistaken,
+and adversarial. `REGULAR_USER_SIMULATION_FIDELITY_V1` requires at least 24
+human-accepted items and zero critical semantic violations. Automated
+acceptance uses fakes only; provider or target execution requires a separate
+one-run owner authorization.
+Public sample generation waits for LABS-07's report schema. Persistent/global
+memory, judges, UI/report, baseline/candidate comparison, real-data support,
+generic SDKs, and broad eval expansion remain deferred.
+
+Local implementation completed on 2026-08-03 with 18/18 frozen LABS-06 cases,
+143/143 historical adaptive-runner cases, and 569/569 complete repository tests
+plus every versioned verifier lane. A separately authorized private live smoke
+then exercised three HRAI openings and three first Foundry continuations. Every
+simulator continuation was rejected as `SIMULATOR_INVALID_RESPONSE`; the run
+closed with 0 valid/effective trajectories, 13 typed gaps, 12 total HTTP
+exchanges, no retry/rerun, and no generated user transcript turn. The local
+mechanics remain GREEN, but live compatibility and the human fidelity
+checkpoint are unpassed until new evidence and Akarsh's required rulings exist.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may
