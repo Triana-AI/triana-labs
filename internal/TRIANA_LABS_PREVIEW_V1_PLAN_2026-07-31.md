@@ -181,6 +181,24 @@ exchanges, no retry/rerun, and no generated user transcript turn. The local
 mechanics remain GREEN, but live compatibility and the human fidelity
 checkpoint are unpassed until new evidence and Akarsh's required rulings exist.
 
+Akarsh then authorized the bounded intent-first continuation repair: reduce the
+provider-authored proposal to `disposition`, `user_utterance`, and
+`stop_reason_code`; make intent primary and persona secondary; keep accepted
+episode state unchanged; and retain deterministic binding, role, semantic,
+privacy, accounting, custody, and no-retry authority. The repair is locally
+GREEN with 15/15 frozen cases, 143/143 historical adaptive cases, and 566/566
+complete repository tests plus build/install verification at
+`/private/tmp/triana-labs-verify.HqCiRi`.
+
+The one separately authorized repaired live run was consumed without rerun.
+All three HRAI openings again received a response, but each first three-field
+Foundry continuation was rejected as `SIMULATOR_INVALID_RESPONSE`. It recorded
+9 target and 3 simulator HTTP exchanges, 13 typed gaps, USD 8.666664 reserved,
+0 valid/effective trajectories, and no generated user turn. It therefore fails
+the all-three-reach-A2 and structural-yield gates before human Accepted
+Continuation Rate can be scored. Live provider compatibility and LABS-06 remain
+unpassed.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

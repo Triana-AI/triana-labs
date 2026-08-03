@@ -8,7 +8,6 @@ from pathlib import Path
 
 from conftest import (
     CRITICAL_CODES,
-    ContextLoader,
     FidelitySimulator,
     bundle_value,
     canonical,
@@ -17,9 +16,24 @@ from conftest import (
 )
 
 
-def test_teacher_forced_default_bundle_load_and_exact_three_artifact_review_contract(
+def test_historical_bundle_review_and_no_bundle_accounting_privacy_custody_remain_stable(
     tmp_path: Path, legacy: object
 ) -> None:
+    historical = legacy.invoke(tmp_path / "legacy")
+    assert all(
+        request["protocol_version"] == "LABS05_WIRE_V1"
+        for request in historical.simulator.requests
+    )
+    assert historical.result.simulator_http_exchange_count == 6
+    assert (
+        json.loads(historical.publisher.artifacts["manifest.json"])["privacy_class"]
+        == "SYNTHETIC"
+    )
+    assert all(
+        row["request_hash"] and row["response_hash"]
+        for row in jsonl(historical.publisher.artifacts["provider_ledger.jsonl"])
+    )
+
     module = legacy.api()
     bundle = bundle_value(legacy)
     bundle_path = tmp_path / "bundle.json"
@@ -67,37 +81,3 @@ def test_teacher_forced_default_bundle_load_and_exact_three_artifact_review_cont
         for name, payload in artifacts.items()
         if name != "fidelity_manifest.json"
     }
-
-
-def test_teacher_forced_injected_loader_preserves_rejected_denominator_and_accounting(
-    tmp_path: Path, legacy: object
-) -> None:
-    module = legacy.api()
-    bundle = bundle_value(legacy)
-    echo = "Synthetic assistant observation 1: the request remains open."
-    simulator = FidelitySimulator(
-        module,
-        [
-            {
-                "action_ids": ["action-clarify"],
-                "consumed_observation_hash": "LATEST",
-                "disposition": "EMIT",
-                "reaction_id": "reaction-clarify",
-                "speaker_role": "USER",
-                "stop_reason_code": None,
-                "user_utterance": echo,
-            }
-        ],
-    )
-    loader = ContextLoader(module, bundle)
-    artifacts = module.evaluate_teacher_forced(
-        tmp_path / "injected.json", simulator=simulator, context_loader=loader
-    )
-    attempts = jsonl(artifacts["fidelity_attempts.jsonl"])
-    review = json.loads(artifacts["human_fidelity_review.json"])
-    assert loader.calls == [tmp_path / "injected.json"]
-    assert len(attempts) == review["denominator"] == 30
-    assert attempts[0]["outcome"] == "REJECTED"
-    assert attempts[0]["reason_code"] == "SIMULATOR_SEMANTIC_INVALID"
-    assert "EXACT_ASSISTANT_ECHO" in attempts[0]["detail_codes"]
-    assert all(item["human_accepted"] is None for item in review["review_items"])

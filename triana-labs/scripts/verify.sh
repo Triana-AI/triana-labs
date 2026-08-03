@@ -141,7 +141,7 @@ triana_simulator_fidelity_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_content_hash="9cb872ce1015d12eedf3f47464c88363cfb38d1c204f3418bc4bfac12271074d"
+triana_expected_simulator_fidelity_content_hash="0320dbf68093f142dc39c491ad52b447f1af3ddbf81bfd614b4a031ea35c566f"
 if [[ "${triana_simulator_fidelity_content_hash}" != "${triana_expected_simulator_fidelity_content_hash}" ]]; then
   echo "frozen simulator fidelity acceptance content hash mismatch" >&2
   exit 1
@@ -157,7 +157,7 @@ triana_simulator_fidelity_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_file_hash="de3767401404d32fe9786cb93cb7f4d29718deec71285cb3d5040c1190d09842"
+triana_expected_simulator_fidelity_file_hash="0e3566eaf8d58378ee6df9c9a4538f9397d47110e14077bcdda95d3b8f7ba76a"
 if [[ "${triana_simulator_fidelity_file_hash}" != "${triana_expected_simulator_fidelity_file_hash}" ]]; then
   echo "frozen simulator fidelity acceptance file hash mismatch" >&2
   exit 1

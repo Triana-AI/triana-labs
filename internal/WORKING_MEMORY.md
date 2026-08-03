@@ -715,3 +715,17 @@ are intentionally not retained, so the structural subcause cannot be recovered
 from artifacts and must not be guessed. Akarsh owns any grading of the retained
 opening/assistant conversations; local LABS-06 mechanics stay GREEN while live
 compatibility and the human fidelity gate remain unpassed.
+
+Latest LABS-06 intent-first repair evidence (2026-08-03): the bounded
+three-field proposal and intent-first prompt are locally GREEN (15 focused, 143
+historical adaptive, 566 complete verifier). The one authorized repaired live
+run was consumed without rerun and reproduced the same earlier boundary shape:
+three successful HRAI opening responses followed by three
+`SIMULATOR_INVALID_RESPONSE` first continuations, 13 gaps, 12 total HTTP
+exchanges, USD 8.666664 reserved, and 0 valid/effective trajectories. No
+generated user turn entered custody and no episode reached A2, so structural
+yield and Accepted Continuation Rate are unpassed before human scoring. The
+three-field provider response bytes are intentionally unavailable in published
+artifacts; diagnosing the exact provider envelope/schema incompatibility would
+require a separately authorized evidence-custody slice, not another rerun or
+semantic weakening.

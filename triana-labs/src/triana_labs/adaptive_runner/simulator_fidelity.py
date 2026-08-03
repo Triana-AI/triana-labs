@@ -559,11 +559,7 @@ def _echo_codes(utterance: str, transcript: list[JsonObject]) -> set[str]:
 
 def response_structure(response: SimulatorResponse) -> str | None:
     expected = {
-        "consumed_observation_hash",
-        "speaker_role",
         "disposition",
-        "reaction_id",
-        "action_ids",
         "user_utterance",
         "stop_reason_code",
     }
@@ -580,11 +576,7 @@ def response_structure(response: SimulatorResponse) -> str | None:
         if not isinstance(proposal, dict) or set(proposal) != expected:
             return "SIMULATOR_INVALID_RESPONSE"
         projected = {
-            "consumed_observation_hash": response.consumed_observation_hash,
-            "speaker_role": response.speaker_role,
             "disposition": response.disposition,
-            "reaction_id": response.reaction_id,
-            "action_ids": response.action_ids,
             "user_utterance": response.user_utterance,
             "stop_reason_code": response.stop_reason_code,
         }
@@ -606,19 +598,13 @@ def response_structure(response: SimulatorResponse) -> str | None:
         and _DIGEST.fullmatch(response.consumed_observation_hash)
         and response.speaker_role == "USER"
         and response.disposition in {"EMIT", "STOP"}
-        and _text(response.reaction_id)
-        and _ids(response.action_ids)
     )
     if not common:
         return "SIMULATOR_INVALID_RESPONSE"
     if response.disposition == "EMIT":
         valid = _text(response.user_utterance) and response.stop_reason_code is None
     else:
-        valid = (
-            response.user_utterance is None
-            and response.action_ids == []
-            and _text(response.stop_reason_code)
-        )
+        valid = response.user_utterance is None and _text(response.stop_reason_code)
     return None if valid else "SIMULATOR_INVALID_RESPONSE"
 
 
@@ -627,7 +613,6 @@ def semantic_codes(
 ) -> list[str]:
     codes: set[str] = set()
     utterance = response.user_utterance or ""
-    allowed_reactions = request["case_context"]["allowed_reaction_ids"]
     allowed_actions = request.get(
         "allowed_action_ids", context["user_turn_policy"]["allowed_action_ids"]
     )
@@ -635,31 +620,8 @@ def semantic_codes(
         "allowed_stop_reason_codes",
         [item["stop_reason_code"] for item in context["stop_registry"]],
     )
-    if response.reaction_id not in allowed_reactions:
-        codes.add("UNAUTHORIZED_REACTION")
-    if any(action not in allowed_actions for action in response.action_ids or []):
-        codes.add("UNAUTHORIZED_ACTION")
-    reaction = next(
-        (
-            item
-            for item in context["reaction_registry"]
-            if item["reaction_id"] == response.reaction_id
-        ),
-        None,
-    )
-    if reaction is not None and any(
-        action not in reaction["allowed_action_ids"]
-        for action in response.action_ids or []
-    ):
-        codes.add("UNAUTHORIZED_ACTION")
     if response.disposition == "STOP" and (
-        reaction is None
-        or response.stop_reason_code not in allowed_stops
-        or (response.reaction_id, response.stop_reason_code)
-        not in {
-            (item["reaction_id"], item["stop_reason_code"])
-            for item in context["stop_registry"]
-        }
+        response.stop_reason_code not in allowed_stops
     ):
         codes.add("STOP_NOT_ALLOWED")
     if utterance:
@@ -674,9 +636,10 @@ def semantic_codes(
         if _match(utterance, context["fixed_fact_conflict_literal_matchers"]):
             codes.add("FIXED_FACT_CONFLICT")
         for action in context["action_registry"]:
-            if _match(utterance, action["literal_matchers"]) and action[
-                "action_id"
-            ] not in (response.action_ids or []):
+            if (
+                _match(utterance, action["literal_matchers"])
+                and action["action_id"] not in allowed_actions
+            ):
                 codes.add("UNAUTHORIZED_ACTION")
     return sorted(codes)
 

@@ -205,24 +205,12 @@ class FoundrySimulatorTransport:
             schema = {
                 "additionalProperties": False,
                 "properties": {
-                    "consumed_observation_hash": {"type": "string"},
-                    "speaker_role": {"const": "USER"},
                     "disposition": {"enum": ["EMIT", "STOP"]},
-                    "reaction_id": {"type": "string"},
-                    "action_ids": {
-                        "items": {"type": "string"},
-                        "type": "array",
-                        "uniqueItems": True,
-                    },
                     "user_utterance": {"type": ["string", "null"]},
                     "stop_reason_code": {"type": ["string", "null"]},
                 },
                 "required": [
-                    "consumed_observation_hash",
-                    "speaker_role",
                     "disposition",
-                    "reaction_id",
-                    "action_ids",
                     "user_utterance",
                     "stop_reason_code",
                 ],
@@ -239,10 +227,21 @@ class FoundrySimulatorTransport:
         body_value["seed"] = self._config["seed"]
         if labs06:
             body_value["messages"][0]["content"] = (
-                "LABS06_SIMULATOR_FIDELITY_V1: propose exactly one USER response "
-                "under the supplied user-owned policy. Do not answer as the assistant, "
-                "copy or paraphrase assistant text, reveal hidden facts, or take an "
-                "unauthorized action. Use structured STOP, never a visible stop token."
+                "You simulate the next USER message in an ongoing conversation.\n\n"
+                "The user's goal is the primary authority. The persona affects tone,\n"
+                "communication style, patience, and persistence; it must not replace or weaken\n"
+                "the goal.\n\n"
+                "Read the full conversation, the assistant's latest response, and the verified\n"
+                "current facts. Produce exactly one natural user message that advances the goal\n"
+                "from the current state. Continue by default when a useful next step exists.\n\n"
+                "If the requested item is unavailable, naturally clarify, correct the request,\n"
+                "select an offered alternative, or challenge once when the persona supports it.\n"
+                "Stop only when the goal is satisfied, abandoned, or a final boundary has been\n"
+                "established.\n\n"
+                "Do not answer as the assistant, copy or paraphrase the assistant, invent facts,\n"
+                "tools, records, permissions, or results, reveal hidden facts, or take an action\n"
+                "outside the supplied user authority. Use structured STOP, never a visible stop\n"
+                "token."
             )
         body_value["messages"][1]["content"] = _canonical(request).decode()
         body_value["response_format"]["json_schema"]["schema"] = schema
@@ -284,11 +283,7 @@ class FoundrySimulatorTransport:
             output_tokens = usage.get("completion_tokens", 0)
             expected = (
                 {
-                    "consumed_observation_hash",
-                    "speaker_role",
                     "disposition",
-                    "reaction_id",
-                    "action_ids",
                     "user_utterance",
                     "stop_reason_code",
                 }
@@ -312,14 +307,14 @@ class FoundrySimulatorTransport:
                     status="SUCCEEDED",
                     request_bytes=body,
                     response_bytes=response_bytes,
-                    consumed_observation_hash=value["consumed_observation_hash"],
+                    consumed_observation_hash=request["latest_observation"][
+                        "observation_hash"
+                    ],
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     provider_http_exchange_count=1,
-                    speaker_role=value["speaker_role"],
+                    speaker_role="USER",
                     disposition=value["disposition"],
-                    reaction_id=value["reaction_id"],
-                    action_ids=value["action_ids"],
                     user_utterance=value["user_utterance"],
                     stop_reason_code=value["stop_reason_code"],
                 )

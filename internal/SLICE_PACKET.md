@@ -1,143 +1,195 @@
-# LABS-06 regular-user simulator fidelity slice packet
+# LABS-06 intent-first continuation repair slice packet
 
 Date frozen: 2026-08-03
 
-Status: **LOCALLY IMPLEMENTED AND VERIFIED; HUMAN FIDELITY GATE PENDING**
+Status: **LOCAL GREEN; SINGLE LIVE RUN CONSUMED WITH GAPS; HUMAN GATE UNPASSED**
 
-Slice ID: `LABS-06-REGULAR-USER-SIMULATOR-FIDELITY-V1`
+Slice ID: `LABS-06-INTENT-FIRST-CONTINUATION-REPAIR-V1`
 
-Canonical base: `2e7a367325ceeffc7adb8e0e45fe3748faf0cda9` on local `main`;
-implementation branch `codex/labs-06-regular-user-fidelity`.
+Canonical base: `b5a9faa` on branch
+`codex/labs-06-regular-user-fidelity`.
 
 Authority: `triana-labs/CHARTER.md` -> `internal/DECISION_LOG.md` ->
-`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`.
+`internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md` -> this packet.
 
-Normative wire: `internal/LABS06_SIMULATOR_FIDELITY_V1.md`. LABS-05 Target
-Connector V1 and the retained LABS-05 episode/artifact wire remain normative
-where the LABS-06 wire does not supersede simulator behavior.
+Normative inherited contract: `internal/LABS06_SIMULATOR_FIDELITY_V1.md` except
+where this packet explicitly supersedes the simulator response, intent priority,
+state-transition, and live acceptance behavior.
 
 ## 1. Product outcome
 
-Repair the observed R2 simulator-boundary defect without expanding the target,
-provider, memory, report, UI, or real-data surface. Every simulator call carries
-the verified persona, intent, known-fact projection, versioned user-owned turn
-policy, bounded episode state, transcript, and latest observation. Deterministic
-code accepts one authorized user utterance or structured stop and rejects typed
-critical semantic defects before another target call.
+Make the existing bounded LABS-06 multi-turn runner good enough to produce
+grounded next-user continuations after live HRAI responses. This is a repair,
+not a redesign: keep the same three-episode controller, context bundle, target
+connector, budgets, privacy, custody, no-retry behavior, and readable private
+review flow.
 
-The round exits with locally GREEN implementation, a frozen 30-item synthetic
-teacher-forced panel, and a generated human-review contract/template. It does
-not claim `REGULAR_USER_SIMULATION_FIDELITY_V1` passage or produce a public
-sample without Akarsh's later rulings and separate provider authorization.
+The repair has exactly three product changes:
+
+1. reduce the provider-authored response from seven fields to three;
+2. make user intent primary and persona a tone/persistence modifier;
+3. evaluate three purposeful episodes spanning valid-world deepening,
+   unavailable-item recovery, and a boundary or unexpected-status challenge.
+
+No claim of multi-turn fidelity passes until Akarsh grades the live generated
+turns against the frozen acceptance metric.
 
 ## 2. Accepted owner decisions
 
-1. Local GREEN precedes any provider evaluation; this packet authorizes none.
-2. Fidelity gate is 30 items, at least 24 accepted, zero critical failures.
-3. Fixtures are newly authored synthetic HRAI-shaped evidence; no private
-   canary text enters Git.
-4. Episode state is the six closed fields in the normative wire, with
-   `UNKNOWN` and no free-form emotion memory.
-5. Simulator behavior is one attempt in evaluation and generation; no
-   regeneration, retry, repair, or fallback.
-6. Semantic failures use `SIMULATOR_SEMANTIC_INVALID` plus closed detail codes.
-7. Echo detection uses normalized containment and token-trigram Jaccard
-   threshold `0.80` under `LABS06_ASSISTANT_ECHO_V1`.
-8. LABS-04 policy artifacts remain immutable; LABS-06 uses a versioned
-   user-owned migration.
-9. LABS-06 finishes the component/review contract; public sample waits for
-   LABS-07's report schema.
-10. Deterministic semantics are limited to declared matchers; residual
-    paraphrased-role/naturalness judgment remains human-owned.
+1. The provider returns exactly:
 
-## 3. Input, output, and authority
+   ```json
+   {
+     "disposition": "EMIT",
+     "user_utterance": "one next user message",
+     "stop_reason_code": null
+   }
+   ```
 
-Inputs:
+2. `EMIT` requires a nonempty utterance and null stop reason. `STOP` requires
+   null utterance and a declared stop reason. Unknown fields remain invalid.
+3. Deterministic code binds the response to the exact outstanding simulator
+   attempt and latest observation, assigns the `USER` role, owns custody, and
+   applies critical semantic checks. The model does not echo hashes, declare
+   its role, or select internal reaction/action identifiers.
+4. Accepted `EMIT` leaves the closed episode interaction state unchanged.
+   State remains episode-local and deterministic; the model cannot mutate it.
+   Accepted `STOP` terminates once. No new classifier or state abstraction is
+   introduced.
+5. Intent is primary. Persona affects tone, patience, and persistence only.
+   The simulator continues when a useful next step exists and naturally
+   clarifies, corrects, selects an offered alternative, or challenges once
+   when an unavailable premise blocks the original request.
+6. The same three source cases remain bounded to recovery, boundary pressure,
+   and existing-status/deeper lookup. No broad case-library expansion occurs.
+7. One private three-episode HRAI/Foundry run is authorized after complete
+   local GREEN. It uses the same named HRAI target, `client-techcorp`, Azure
+   Foundry `FW-GLM-5.2`, private `/private/tmp` custody, USD 23 ceiling, 21 HTTP
+   ceiling, bounded target-owned side effects, and no automatic rerun.
+8. Akarsh alone supplies naturalness, intent-advancement, appropriate-stop,
+   and overall acceptance rulings. Software and Codex do not approve them.
 
-- existing verified `VerifiedCaseProjection` and frozen selected-case order;
-- explicit file-backed versioned `SimulatorCaseContext` bundle, or an injected
-  loader limited to read/schema/identity verification;
-- current episode transcript and exact latest target observation;
-- closed episode-local `InteractionState`;
-- one simulator response or deterministic fake response;
-- 30-item synthetic teacher-forced panel for the fidelity review contract.
+## 3. Exact provider instruction
 
-Outputs:
+```text
+You simulate the next USER message in an ongoing conversation.
 
-- unchanged eight-file adaptive-run bundle with LABS-06 simulator protocol,
-  semantic gap details, structured stop, and interaction-state lineage added
-  only where frozen by the wire;
-- deterministic teacher-forced review projection with exact item identities,
-  strata, denominator, generated proposal evidence, and null human rulings.
-- exactly `fidelity_attempts.jsonl`, `human_fidelity_review.json`, and
-  `fidelity_manifest.json` from the separate internal teacher-forced API;
-- historical LABS-05 behavior when no bundle is supplied; an invalid supplied
-  bundle refuses and never falls back.
+The user's goal is the primary authority. The persona affects tone,
+communication style, patience, and persistence; it must not replace or weaken
+the goal.
 
-Deterministic code owns identities, migration validation, visibility,
-allowlists, state transitions, binding, hard semantic checks, termination,
-accounting, custody, dedupe, and publication. The simulator owns wording and
-one proposed reaction/stop. Akarsh owns fidelity and naturalness rulings.
+Read the full conversation, the assistant's latest response, and the verified
+current facts. Produce exactly one natural user message that advances the goal
+from the current state. Continue by default when a useful next step exists.
 
-## 4. Privacy and execution
+If the requested item is unavailable, naturally clarify, correct the request,
+select an offered alternative, or challenge once when the persona supports it.
+Stop only when the goal is satisfied, abandoned, or a final boundary has been
+established.
 
-Automated work is local and synthetic-only. No provider, target, HRAI, real
-data, private canary artifact, external endpoint, or credential is used. The
-existing redaction/secret-reflection and provider authorization boundaries stay
-closed. A later provider evaluation requires a separate explicit owner grant.
+Do not answer as the assistant, copy or paraphrase the assistant, invent facts,
+tools, records, permissions, or results, reveal hidden facts, or take an action
+outside the supplied user authority. Use structured STOP, never a visible stop
+token.
+```
 
-## 5. Refusal and gap behavior
+The request retains the verified persona, intent, known facts, hidden fact IDs,
+user-owned policy, episode-local state, transcript, latest observation, and
+remaining-turn count. Hidden values remain controller-local.
 
-Pre-egress invalid/ambiguous migration, missing required matchers, invalid
-state, unknown transition, hidden value in provider projection, or unsupported
-protocol refuses as `SIMULATOR_CONTEXT_INVALID` and creates no new call.
+## 4. Evaluation point and metric
 
-Post-response structural defects remain `SIMULATOR_INVALID_RESPONSE`; binding
-mismatch remains `ADAPTATION_BINDING_MISMATCH`; semantic defects use
-`SIMULATOR_SEMANTIC_INVALID` with sorted closed detail codes. Completed request
-and accounting custody remain. No rejected response becomes a turn or is
-silently repaired. Later already funded episode slots may continue under the
-unchanged LABS-05 rule.
+Evaluation point: immediately after every simulator proposal and before it is
+added as a `USER` turn or sent to HRAI.
 
-## 6. Essential independent acceptance set
+Primary metric: **Accepted Continuation Rate**.
 
-Approximately eleven black-box behavioral tests, without helper-shape or
-coverage-padding cases:
+```text
+Akarsh-accepted generated user turns / eligible simulator opportunities
+```
 
-1. default and injected bundle loading, exact verified projection, historical
-   no-bundle compatibility, and hidden-value non-egress;
-2. valid regular-user emit, binding, state transition, and accounting;
-3. preserved R2-shaped exact echo rejection before target continuation;
-4. near echo positive and ordinary-overlap negative fixtures;
-5. bounded nonidentical assistant-role inversion rejection;
-6. hidden-fact leakage and fixed-fact conflict rejection;
-7. unauthorized reaction/action rejection;
-8. structured stop exactly once, no visible token, no target continuation;
-9. malformed/binding/unknown semantic output fails once without fallback;
-10. cross-episode state isolation;
-11. exact 30-item review denominator/strata/null-ruling projection while prior
-    identity, budget, connector, custody, privacy, and dedupe behavior remains
-    GREEN.
+A generated turn is owner-accepted only when it is a plausible regular user,
+materially responds to the latest HRAI answer, advances or naturally resolves
+the intent, remains grounded in the transcript/current world, and has no
+critical semantic violation.
 
-Parameterized semantic rejection may combine related variants while retaining
-exact detail-code and custody assertions. Tests must not assert private helper
-shape, every enum member, framework behavior, or speculative abstractions.
+The one-run good-enough gate is:
 
-Valid RED requires collection success, no skip/setup/import error, all existing
-tests GREEN, and failures caused only by missing LABS-06 behavior. The test
-author independently derives expected requests, echo calculations, identities,
-and review bytes rather than importing production oracles.
+- all three episodes reach at least opening -> HRAI A1 -> generated U2 -> HRAI A2;
+- at least five of six planned simulator opportunities are structurally valid;
+- at least four generated turns are accepted by Akarsh;
+- zero role inversion, exact/near assistant echo, hidden-fact leak, fixed-fact
+  conflict, or unauthorized literal action;
+- no retry, repair, fallback, skipped denominator, or invented pass;
+- an early structured stop reduces the denominator only when Akarsh accepts
+  that the stop was appropriate.
 
-## 7. Role protocol
+Until the owner ruling exists, the live result remains `PENDING` or unpassed.
 
-Exactly two worker agents plus Codex orchestrator execute serially in the
-shared worktree. The test author edits only test-owned paths and proves RED.
-Codex audits, hashes, and freezes those bytes. Only then may a distinct
-implementation author edit production-owned paths. Test defects return to the
-test author; implementation defects return to the implementation author.
-Codex alone runs adversarial/full gates and declares completion.
+## 5. Input, output, and authority
 
-## 8. Change budget
+Inputs remain the verified three-case LABS-04 projection, reviewed LABS-06
+context bundle, transcript, latest target observation, current episode-local
+state, and one provider response.
+
+Outputs remain the existing eight adaptive-run artifacts plus the private
+human-readable grading Markdown. No public report schema is added.
+
+Deterministic code owns request/response identity, latest-observation binding,
+role assignment, structural and critical semantic validation, termination,
+budgets, accounting, custody, dedupe, privacy, publication, and typed gaps. The
+simulator owns only disposition and wording. HRAI owns its target behavior and
+side effects. Akarsh owns human fidelity truth.
+
+## 6. Refusal and gap behavior
+
+- Invalid context remains pre-egress `SIMULATOR_CONTEXT_INVALID`.
+- Provider/network failure remains `SIMULATOR_PROVIDER_ERROR`.
+- Malformed three-field output remains `SIMULATOR_INVALID_RESPONSE`.
+- Deterministic critical defects remain `SIMULATOR_SEMANTIC_INVALID` with the
+  existing applicable detail codes.
+- `STOP` with an undeclared reason is `SIMULATOR_SEMANTIC_INVALID` with
+  `STOP_NOT_ALLOWED`.
+- No invalid response enters transcript custody as a user turn.
+- No retry, response repair, provider/model/target fallback, default message,
+  or hidden second attempt exists.
+- Later already-funded episode slots may continue under inherited behavior.
+
+## 7. Minimum independent acceptance set
+
+The independent test author changes only test-owned paths and freezes no more
+than eight focused black-box functions:
+
+1. intent-first provider instruction and exact three-field schema;
+2. a valid emit is deterministically bound to the latest observation, assigned
+   `USER`, and advances to a second target response;
+3. unavailable-item recovery accepts clarification or offered-alternative
+   selection without reaction/action IDs;
+4. valid-world deepening accepts a grounded follow-up and preserves state;
+5. valid structured stop terminates once with no visible stop token;
+6. malformed legacy seven-field and malformed three-field outputs fail once;
+7. role inversion, assistant echo, hidden/fixed-fact defect, and unauthorized
+   literal action remain critical failures;
+8. historical no-bundle LABS-05 behavior, accounting, privacy, custody, and
+   cross-episode isolation remain unchanged.
+
+No test may require exact model wording, helper shape, combinatorial enum
+coverage, new metric artifacts, or speculative abstractions.
+
+Valid RED requires collection success, no setup/import error, unchanged
+historical acceptance GREEN, and focused failures caused only by the missing
+three-field/intent-first behavior.
+
+## 8. Three-role protocol
+
+Codex is orchestrator. One independent test-author agent edits only frozen
+test-owned paths and proves RED. Codex audits and freezes those bytes. A
+different implementation-author agent then edits only production-owned paths.
+Workers run serially in the shared worktree. Codex alone reconciles scope,
+verifies final behavior, performs the separately authorized live run, records
+evidence, and declares completion.
+
+## 9. Change budget
 
 Orchestrator-owned:
 
@@ -148,185 +200,171 @@ internal/DECISION_LOG.md
 internal/WORKING_MEMORY.md
 internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md
 triana-labs/CHARTER.md
-docs/ARCHITECTURE.md
-triana-labs/scripts/verify.sh
+triana-labs/scripts/verify.sh (frozen LABS-06 acceptance hashes only)
+.decision-memory/2026-08-03-codex-labs-06-regular-user-fidelity.md
+/private/tmp LABS-06 live driver, bundle, artifacts, and readable report
 ```
 
 Test-author-owned:
 
 ```text
 triana-labs/tests/simulator_fidelity_acceptance/**
-triana-labs/tests/simulator_fidelity_fixtures/**
 ```
 
 Implementation-author-owned after RED freeze:
 
 ```text
-triana-labs/src/triana_labs/adaptive_runner/contracts.py
 triana-labs/src/triana_labs/adaptive_runner/boundaries.py
-triana-labs/src/triana_labs/adaptive_runner/runner.py
 triana-labs/src/triana_labs/adaptive_runner/simulator_fidelity.py
-triana-labs/src/triana_labs/adaptive_runner/__init__.py
+triana-labs/src/triana_labs/adaptive_runner/runner.py
 ```
 
-Maximum production files: five. Maximum changed production nonblank/
-noncomment lines: 1,200. Maximum new test-owned Python/JSON files: six.
-Maximum test-owned physical lines: 1,600. No dependency, lock, package,
-connector, CLI, config schema, report, UI, or external-repository edit is
-allowed. The bundle schema and separate internal teacher-forced API are the
-only new input/evaluation surfaces.
-There is no scope expansion without orchestrator review; material expansion
-returns to Akarsh.
+Maximum production files: three. Maximum changed production physical lines:
+260. Maximum changed/new test physical lines: 500. No dependency, lockfile,
+package metadata, context-bundle schema, CLI, config schema, connector, target,
+generic SDK, UI, public report, judge, memory, baseline/candidate, external repo,
+or HRAI code change is allowed.
 
-Explicitly untouched:
+Explicitly untouched unrelated user files:
 
 ```text
-triana-core/**
-triana-labs/src/triana_labs/adaptive_runner/http_target.py
-triana-labs/src/triana_labs/adaptive_runner/process.py
-triana-labs/src/triana_labs/cli.py
-triana-labs/examples/**
-all LABS-01--05 tests, fixtures, production artifacts, and external evidence
-pyproject.toml and uv.lock
-raw HRAI, provider, canary, Blitz, Agentagon, Kairos, and Kairos-AI material
-UI/report, baseline/candidate diff, judges, persistent/global memory,
-real-data support, generic SDKs, hosted execution, and broad eval expansion
-the three unrelated untracked research/SPC files
+internal/RESEARCH_BRIEFING_SIMULATION_FIDELITY_2026-08-02.md
+internal/SPC_APPLICATION_EVIDENCE_MAP_2026-08-02.md
+internal/SPC_INTERVIEW_VERBATIM_2026-08-02.md
 ```
 
-## 9. Commands and freeze
+Any worker stops before crossing this budget. No cleanup or opportunistic
+refactor is allowed.
 
-Test author:
+Mechanical budget clarification after implementation: the complete verifier
+correctly rejected the superseded LABS-06 frozen hashes after all 566 tests
+passed. `triana-labs/scripts/verify.sh` is therefore added to orchestrator
+ownership for exactly two expected-hash literal replacements. This changes no
+test or product behavior and is not a material scope expansion. The verifier's
+own ordered `shasum` stream identity is
+`0e3566eaf8d58378ee6df9c9a4538f9397d47110e14077bcdda95d3b8f7ba76a`;
+the packet's earlier `f493...` identity used a different explicit path/hash
+encoding and remains a valid independent freeze identity.
 
-```text
+## 10. Verification
+
+RED and focused GREEN:
+
+```bash
 cd triana-labs
-uv run pytest -q tests/simulator_fidelity_acceptance
-uv run ruff check tests/simulator_fidelity_acceptance
-uv run ruff format --check tests/simulator_fidelity_acceptance
+uv run pytest tests/simulator_fidelity_acceptance -q
 ```
 
-Codex reproduces focused RED and all historical tests, records sorted
-concatenated content SHA-256 and sorted per-file hash-stream SHA-256, and
-freezes every test/fixture byte before implementation.
+Historical adaptive regression:
 
-Frozen independent RED (2026-08-03): four Python files, 748 physical lines,
-12 essential black-box functions / 18 collected cases; 18 expected behavioral
-failures solely at the absent LABS-06 run/evaluation surface, 143 historical
-adaptive-runner cases GREEN, Ruff check/format GREEN. Sorted concatenated
-content SHA-256 is
-`9cb872ce1015d12eedf3f47464c88363cfb38d1c204f3418bc4bfac12271074d`;
-sorted per-file hash-stream SHA-256 is
-`de3767401404d32fe9786cb93cb7f4d29718deec71285cb3d5040c1190d09842`.
-These test bytes are immutable during implementation.
+```bash
+cd triana-labs
+uv run pytest tests/adaptive_runner_acceptance -q
+```
 
-Implementation author runs the frozen LABS-06 suite and the existing adaptive
-runner suite. Final Codex gate:
+Complete repository gate:
 
-```text
+```bash
 cd triana-labs
 ./scripts/verify.sh
-git diff --check
 ```
 
-The complete verifier must retain all existing lanes and add the frozen LABS-06
-hashes, full test collection, Ruff, strict mypy, deterministic replay, five
-canonical Observer hashes, build, clean CPython 3.13 wheel install,
-source/wheel parity, governance, provenance, and secret scan. An unrun lane is
-not passing.
+The live run occurs only after all three commands are GREEN and consumes the
+single authorization at the first provider or HRAI request. A zero-egress
+preflight refusal does not consume it; any external request does. There is no
+automatic rerun.
 
-Final local evidence (2026-08-03): LABS-06 acceptance 18/18 GREEN, historical
-adaptive-runner acceptance 143/143 GREEN, and complete repository verification
-569/569 GREEN with Ruff, strict mypy over 29 source files, deterministic replay,
-five unchanged Observer hashes, frozen test hashes, sdist/wheel build, clean
-CPython 3.13.14 wheel install, source/wheel parity, governance, and secret scan.
-Evidence: `/private/tmp/triana-labs-verify.JGgnp9`. This proves local mechanics,
-not `REGULAR_USER_SIMULATION_FIDELITY_V1` passage or provider compatibility.
+## 11. Exit evidence and structured uncertainty handoff
 
-## 10. Orchestrator adversarial matrix
+Every worker and the orchestrator reports: changed files and why; budget
+reconciliation; exact commands/results/artifacts; unverified work; assumptions;
+unexpected findings; dependencies; deliberately excluded problems; known
+risks; and required human action, using `none` explicitly.
 
-After candidate GREEN, Codex independently checks:
+The slice exits only with frozen RED, separate implementation GREEN, focused
+and complete verifier evidence, one consumed live result or typed pre-egress
+refusal, a readable private grading Markdown, canonical status updates, and an
+owner-pending human ruling.
 
-1. Unicode/punctuation/case perturbation cannot evade exact/near echo while a
-   short common phrase does not false-positive;
-2. a forged `speaker_role: USER` with an assistant-only action matcher still
-   rejects;
-3. hidden/fixed matcher absence refuses before egress rather than weakening;
-4. semantic rejection preserves one simulator ledger attempt and performs no
-   later target exchange;
-5. structured stop preserves prior transcript/accounting, closes the target
-   once, and emits no synthetic user row;
-6. state and remaining disclosures cannot cross episode identity or mutate the
-   frozen case context.
+## 12. Independent RED freeze
 
-Any actual defect returns to the responsible worker under a single falsifiable
-hypothesis. Codex does not repair production or frozen acceptance logic.
+The independent test author changed exactly the four existing test-owned Python
+files with 244 additions and 255 deletions, exactly 499 changed physical lines
+against the 500-line budget. The suite contains eight black-box functions and
+collects 15 cases.
 
-## 11. Provenance and non-goals
-
-All production and tests are newly authored from repository-local authority.
-HRAI supplies only the already-recorded interface/evidence history; no HRAI or
-private content is copied. Newly authored fixtures are synthetic and must not
-reproduce private canary text. No provenance-ledger change is expected unless
-the implemented diff uses an external source, in which case work stops first.
-
-Deferred: persistent/global or free-form emotion memory, model judges,
-provider evaluation, public sample, UI/report, baseline/candidate comparison,
-real/local-sensitive support, generic SDKs, broad evals, target changes, HRAI
-rerun, and hosted execution.
-
-## 12. Required handoff
-
-Every worker and Codex reports:
+Frozen whole-file identities:
 
 ```text
-What changed:
-Why each changed file was necessary:
-Change-budget reconciliation:
-What was verified (exact commands and artifacts):
-What remains unverified:
-Assumptions made:
-Unexpected findings:
-Dependencies added and why:
-Out-of-scope problems deliberately left alone:
-Known risks or uncertainty:
-Human action still required:
+conftest.py                 92ec4143191ca801f2b8c0b7091c104433582005c169457d24413c078a059749
+test_runtime_contract.py    f43669e5c91776204a876197f59ef01286a509ea2bd2db18a5af5de11d9cd1f7
+test_semantic_refusals.py   615f664519975043050856b3f5f75e2b03e8c9b6af1fb2c421eb43a32bd7c9af
+test_teacher_forced_review.py 94833e8b35ba5914f3d389b88f096d0d3046d08a60d12d5c4cbef896f7cb9d09
 ```
 
-Use `none` explicitly. Codex does not approve a human fidelity ruling.
+Ordered concatenated content SHA-256:
+`0320dbf68093f142dc39c491ad52b447f1af3ddbf81bfd614b4a031ea35c566f`.
+Ordered path/hash-stream SHA-256:
+`f493fa51d1bdf2ea59b010b86b6d38fda92354f099d579bdf02eaca6516402ec`.
 
-Final orchestrator handoff:
+Codex independently reproduced focused valid RED as 11 failures and four
+control passes, with no collection/setup/import error, and reproduced 143/143
+historical adaptive-runner passes. Ruff and diff checks are GREEN. Frozen
+test-owned bytes may not change during implementation.
+
+## 13. Implementation, verification, and live result
+
+The separate implementation author changed exactly the three authorized
+production files: 26 insertions plus 69 deletions, 95 changed physical lines
+against the 260-line ceiling. Frozen test bytes remained exact. No dependency,
+CLI/config, connector, context schema, target, report, memory, judge, or
+external repository changed.
+
+Final local verification:
 
 ```text
-What changed: added an explicit verified LABS-06 context-bundle boundary,
-strict user-role response wire, deterministic semantic refusal and episode
-state/stop control, and a separate 30-item teacher-forced review projection;
-preserved no-bundle LABS-05 behavior and inherited target/accounting/privacy.
-Why each changed file was necessary: contracts define bounded types;
-simulator_fidelity owns loading, semantics, transitions, and review artifacts;
-runner integrates activation and custody; boundaries selects the provider wire;
-exports expose the API; acceptance owns behavior; verifier freezes it;
-canonical documents record authority and status.
-Change-budget reconciliation: five authorized production paths, four test files
-and 748 lines, no dependency/lock/CLI/connector/external-repository change, and
-the three unrelated untracked research/SPC files untouched.
-What was verified: 18 focused, 143 historical adaptive, and 569 complete tests;
-Ruff, strict mypy, frozen hashes, replay, Observer hashes, build, clean wheel,
-source/wheel parity, governance, provenance, secret scan, diff check, and the
-six-item adversarial matrix.
-What remains unverified: live provider compatibility and all 30 human fidelity
-rulings; no provider, target, external endpoint, or real data was executed.
-Assumptions made: explicit bundle presence is the only LABS-06 activation;
-injected loaders own read/schema/identity verification but not semantic
-completeness; no bundle preserves LABS-05.
-Unexpected findings: the initial freeze lacked a migration input route and
-exact review API, so RED paused until corrected; adversarial audit then closed
-raw non-object acceptance, hidden projection, and unsafe-response hashing.
-Dependencies added and why: none.
-Out-of-scope problems deliberately left alone: every deferred area in section
-11 and the unrelated untracked files.
-Known risks or uncertainty: declared literal matchers are intentionally bounded
-and do not establish general semantic understanding; human naturalness and
-fidelity remain pending.
-Human action still required: separate authorization for any provider, target,
-external, or real-data run, followed by Akarsh's own 30-item fidelity rulings.
+focused repair acceptance: 15/15 passed
+historical adaptive acceptance: 143/143 passed
+complete repository suite: 566/566 passed
+Ruff, format, strict mypy, deterministic/versioned gates: passed
+source/wheel build and clean CPython 3.13.14 install: passed
+evidence: /private/tmp/triana-labs-verify.HqCiRi
 ```
+
+The one authorized private run used the frozen three-context bundle
+`sha256:ca7627ac232793421164005abc12fa563c6505c2b03412c4ddb3aac4e8194987`,
+live HRAI for `client-techcorp`, and Azure Foundry `FW-GLM-5.2`. It was consumed
+once and not rerun. Result:
+
+```text
+outcome: COMPLETED_WITH_GAPS
+attempted episodes: 3
+valid/effective trajectories: 0/0
+target/simulator/all HTTP: 9/3/12
+typed gaps: 13
+termination: SIMULATOR_INVALID_RESPONSE for all three episodes
+reserved/actual USD: 8.666664/unavailable
+generated simulator transcript turns: 0
+```
+
+All three HRAI openings received one assistant response, but each first
+three-field simulator continuation was rejected before transcript insertion or
+A2. Thus all-three-reach-A2 fails, structural yield is 0 of 3 attempted and 0
+of 6 planned opportunities, and owner Accepted Continuation Rate is unavailable
+rather than zero or pass. Raw rejected provider content is not present in the
+published artifacts, so the exact provider envelope/schema defect is unknown.
+No retry, repair, fallback, or second run occurred.
+
+Private readable report:
+`/private/tmp/triana-labs06-hrai-intent-first-live-20260803-c/LABS06_HRAI_CONVERSATIONS_READABLE.md`.
+
+Structured uncertainty handoff: unverified work is the exact live provider
+structural subcause and all human naturalness/intent rulings. Assumptions are
+none beyond the frozen inputs. Unexpected finding is the repeated structural
+failure after schema reduction. Dependencies added: none. Deliberately excluded
+problems are provider-response diagnostics, retry/repair, model/provider change,
+new cases, memory, judges, UI/report, and HRAI changes. Known risk is that local
+fake compatibility does not establish Foundry/GLM response-envelope
+compatibility. Human action required: Akarsh may read the report, but there are
+no generated continuations to grade; any further live or diagnostic work needs
+a new decision.

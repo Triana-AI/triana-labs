@@ -1166,7 +1166,7 @@ def _run_episode(
                 episode.termination = sim_reason
                 break
             if simulator_context is not None:
-                from .simulator_fidelity import semantic_codes, transition
+                from .simulator_fidelity import semantic_codes
 
                 if sim.consumed_observation_hash != observation["observation_hash"]:
                     episode.gaps.append("ADAPTATION_BINDING_MISMATCH")
@@ -1182,7 +1182,6 @@ def _run_episode(
                     episode.ledger[-1]["status"] = "FAILED"
                     episode.ledger[-1]["reason_code"] = "SIMULATOR_SEMANTIC_INVALID"
                     break
-                interaction_state = transition(simulator_context, sim)
                 if sim.disposition == "STOP":
                     episode.valid = True
                     episode.termination = "CASE_STOP_CONDITION"

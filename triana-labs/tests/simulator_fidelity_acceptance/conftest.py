@@ -255,20 +255,10 @@ class FidelitySimulator:
             )
         else:
             proposal = {
-                "action_ids": ["action-clarify"],
-                "consumed_observation_hash": request["latest_observation"][
-                    "observation_hash"
-                ],
                 "disposition": "EMIT",
-                "reaction_id": "reaction-clarify",
-                "speaker_role": "USER",
                 "stop_reason_code": None,
                 "user_utterance": "Please clarify the requested synthetic record.",
             }
-        if proposal.get("consumed_observation_hash") == "LATEST":
-            proposal["consumed_observation_hash"] = request["latest_observation"][
-                "observation_hash"
-            ]
         return proposal
 
     def complete(self, request: dict[str, Any]) -> Any:
@@ -278,11 +268,9 @@ class FidelitySimulator:
             status="SUCCEEDED",
             request_bytes=canonical(request),
             response_bytes=canonical(proposal),
-            consumed_observation_hash=proposal.get("consumed_observation_hash"),
-            speaker_role=proposal.get("speaker_role"),
+            consumed_observation_hash=request["latest_observation"]["observation_hash"],
+            speaker_role="USER",
             disposition=proposal.get("disposition"),
-            reaction_id=proposal.get("reaction_id"),
-            action_ids=proposal.get("action_ids"),
             user_utterance=proposal.get("user_utterance"),
             stop_reason_code=proposal.get("stop_reason_code"),
             input_tokens=11,
@@ -346,11 +334,7 @@ def invoke_lab06(
 
 def proposal(**updates: Any) -> dict[str, Any]:
     value = {
-        "action_ids": ["action-clarify"],
-        "consumed_observation_hash": "LATEST",
         "disposition": "EMIT",
-        "reaction_id": "reaction-clarify",
-        "speaker_role": "USER",
         "stop_reason_code": None,
         "user_utterance": "Please clarify the requested synthetic record.",
     }

@@ -8,160 +8,70 @@ import pytest
 from conftest import invoke_lab06, jsonl, proposal
 
 
-def _first_episode(
-    run: object,
-) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
+def _episode_evidence(run: object) -> tuple[list[dict], list[dict], list[dict]]:
     episode_id = run.target.launches[0].episode_id
-    transcripts = [
-        row
-        for row in jsonl(run.publisher.artifacts["transcripts.jsonl"])
-        if row["episode_id"] == episode_id
-    ]
-    ledger = [
-        row
-        for row in jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
-        if row["episode_id"] == episode_id
-    ]
-    gaps = [
-        row
-        for row in jsonl(run.publisher.artifacts["gaps.jsonl"])
-        if row["episode_id"] == episode_id
-    ]
-    return transcripts, ledger, gaps
+    return tuple(
+        [
+            row
+            for row in jsonl(run.publisher.artifacts[name])
+            if row["episode_id"] == episode_id
+        ]
+        for name in ("transcripts.jsonl", "provider_ledger.jsonl", "gaps.jsonl")
+    )
 
 
 @pytest.mark.parametrize(
-    ("utterance", "detail"),
+    ("raw", "reason"),
     [
         (
-            "bounded case answer 1 to Synthetic accepted opening for bounded recruiting context.",
-            "EXACT_ASSISTANT_ECHO",
+            {
+                "action_ids": ["action-clarify"],
+                "consumed_observation_hash": "sha256:" + "f" * 64,
+                "disposition": "EMIT",
+                "reaction_id": "reaction-clarify",
+                "speaker_role": "USER",
+                "stop_reason_code": None,
+                "user_utterance": "Legacy response must not be repaired.",
+            },
+            "SIMULATOR_INVALID_RESPONSE",
         ),
         (
-            "I have updated your account; the database operation is complete.",
-            "ROLE_INVERSION",
+            {"disposition": "EMIT", "user_utterance": "Missing stop companion."},
+            "SIMULATOR_INVALID_RESPONSE",
         ),
-        ("The private key is violet locker 73.", "HIDDEN_FACT_LEAK"),
-        ("The synthetic request is already cancelled.", "FIXED_FACT_CONFLICT"),
-    ],
-)
-def test_critical_semantic_defects_are_typed_and_rejected_before_target_continuation(
-    tmp_path: Path, legacy: object, utterance: str, detail: str
-) -> None:
-    run = invoke_lab06(
-        tmp_path,
-        legacy,
-        proposals=[proposal(user_utterance=utterance)],
-        assistant_variant="bounded case",
-        include_case_id=False,
-    )
-    transcripts, ledger, gaps = _first_episode(run)
-    assert [row["role"] for row in transcripts] == ["USER", "ASSISTANT"]
-    sim_rows = [row for row in ledger if row["lane"] == "SIMULATOR"]
-    assert len(sim_rows) == 1
-    assert sim_rows[0]["provider_http_exchange_count"] == 1
-    assert (
-        sim_rows[0]["request_hash"] is not None
-        and sim_rows[0]["response_hash"] is not None
-    )
-    assert {(row["reason_code"], row["detail_code"]) for row in gaps} >= {
-        ("SIMULATOR_SEMANTIC_INVALID", detail)
-    }
-    assert [item["kind"] for item in run.target.sessions[0].exchanges].count(
-        "turn"
-    ) == 1
-
-
-def test_near_echo_threshold_has_positive_and_ordinary_overlap_negative_fixture(
-    tmp_path: Path, legacy: object
-) -> None:
-    assistant = (
-        "one two three four five six seven eight nine ten eleven twelve thirteen "
-        "fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone "
-        "twentytwo twentythree twentyfour twentyfive twentysix twentyseven "
-        "twentyeight twentynine thirty"
-    )
-    positive = (
-        f"{assistant.replace('twenty ', 'changed ', 1)} answer 1 to Synthetic "
-        "accepted opening for bounded recruiting context."
-    )
-    rejected = invoke_lab06(
-        tmp_path / "positive",
-        legacy,
-        proposals=[proposal(user_utterance=positive)],
-        assistant_variant=assistant,
-        include_case_id=False,
-    )
-    assert "NEAR_ASSISTANT_ECHO" in {
-        row["detail_code"] for row in jsonl(rejected.publisher.artifacts["gaps.jsonl"])
-    }
-
-    accepted = invoke_lab06(
-        tmp_path / "negative",
-        legacy,
-        proposals=[proposal(user_utterance="Please clarify the synthetic request.")],
-        assistant_variant="Please clarify that this synthetic request remains open",
-        include_case_id=False,
-    )
-    assert not any(
-        row["reason_code"] == "SIMULATOR_SEMANTIC_INVALID"
-        for row in jsonl(accepted.publisher.artifacts["gaps.jsonl"])
-    )
-    assert accepted.result.valid_episode_count == 3
-
-
-@pytest.mark.parametrize(
-    ("updates", "detail"),
-    [
-        ({"reaction_id": "reaction-administrator"}, "UNAUTHORIZED_REACTION"),
-        ({"action_ids": ["action-delete-account"]}, "UNAUTHORIZED_ACTION"),
+        (
+            {
+                "disposition": "EMIT",
+                "user_utterance": "Unknown fields are invalid.",
+                "stop_reason_code": None,
+                "unexpected": True,
+            },
+            "SIMULATOR_INVALID_RESPONSE",
+        ),
         (
             {
                 "disposition": "STOP",
-                "reaction_id": "reaction-clarify",
-                "action_ids": [],
                 "user_utterance": None,
-                "stop_reason_code": "GOAL_SATISFIED",
+                "stop_reason_code": "NOT_DECLARED",
             },
-            "STOP_NOT_ALLOWED",
+            "SIMULATOR_SEMANTIC_INVALID",
         ),
     ],
 )
-def test_unauthorized_reaction_action_and_stop_are_closed_semantic_gaps(
-    tmp_path: Path, legacy: object, updates: dict[str, object], detail: str
+def test_legacy_and_malformed_three_field_outputs_fail_once_without_repair(
+    tmp_path: Path, legacy: object, raw: dict, reason: str
 ) -> None:
-    run = invoke_lab06(tmp_path, legacy, proposals=[proposal(**updates)])
-    _, _, gaps = _first_episode(run)
-    assert {(row["reason_code"], row["detail_code"]) for row in gaps} >= {
-        ("SIMULATOR_SEMANTIC_INVALID", detail)
-    }
-
-
-@pytest.mark.parametrize(
-    ("updates", "reason"),
-    [
-        ({"extra": "unknown"}, "SIMULATOR_INVALID_RESPONSE"),
-        (
-            {"consumed_observation_hash": "sha256:" + "f" * 64},
-            "ADAPTATION_BINDING_MISMATCH",
-        ),
-        ({"speaker_role": "ASSISTANT"}, "SIMULATOR_INVALID_RESPONSE"),
-    ],
-)
-def test_malformed_binding_and_unknown_semantic_output_fail_once_without_fallback(
-    tmp_path: Path, legacy: object, updates: dict[str, object], reason: str
-) -> None:
-    run = invoke_lab06(tmp_path, legacy, proposals=[proposal(**updates)])
-    transcripts, ledger, gaps = _first_episode(run)
+    run = invoke_lab06(tmp_path, legacy, proposals=[raw])
+    transcripts, ledger, gaps = _episode_evidence(run)
     assert [row["role"] for row in transcripts] == ["USER", "ASSISTANT"]
     assert sum(row["lane"] == "SIMULATOR" for row in ledger) == 1
     assert reason in {row["reason_code"] for row in gaps}
     assert (
         len(
             [
-                request
-                for request in run.simulator.requests
-                if request["episode_id"] == run.target.launches[0].episode_id
+                item
+                for item in run.simulator.requests
+                if item["episode_id"] == run.target.launches[0].episode_id
             ]
         )
         == 1
@@ -171,16 +81,60 @@ def test_malformed_binding_and_unknown_semantic_output_fail_once_without_fallbac
     ) == 1
 
 
-def test_invalid_supplied_context_refuses_pre_egress_without_legacy_fallback(
-    tmp_path: Path, legacy: object
+@pytest.mark.parametrize(
+    ("utterance", "detail", "assistant", "unauthorized"),
+    [
+        (
+            "I have updated your account; the database operation is complete.",
+            "ROLE_INVERSION",
+            "bounded",
+            False,
+        ),
+        (
+            "bounded answer 1 to Synthetic accepted opening for bounded recruiting context.",
+            "EXACT_ASSISTANT_ECHO",
+            "bounded",
+            False,
+        ),
+        ("The private key is violet locker 73.", "HIDDEN_FACT_LEAK", "bounded", False),
+        (
+            "The synthetic request is already cancelled.",
+            "FIXED_FACT_CONFLICT",
+            "bounded",
+            False,
+        ),
+        ("The request is still open.", "UNAUTHORIZED_ACTION", "bounded", True),
+    ],
+)
+def test_critical_semantic_failures_remain_typed_before_target_continuation(
+    tmp_path: Path,
+    legacy: object,
+    utterance: str,
+    detail: str,
+    assistant: str,
+    unauthorized: bool,
 ) -> None:
-    def corrupt(bundle: dict[str, object]) -> None:
-        contexts = bundle["contexts"]
-        contexts[0]["assistant_only_literal_matchers"] = []
+    def restrict(bundle: dict) -> None:
+        if unauthorized:
+            bundle["contexts"][0]["user_turn_policy"]["allowed_action_ids"] = [
+                "action-clarify"
+            ]
 
-    with pytest.raises(Exception) as caught:
-        invoke_lab06(tmp_path, legacy, bundle_mutator=corrupt)
-    failure = caught.value
-    assert failure.__class__.__name__ == "AdaptiveRunFailure"
-    assert failure.reason_code == "SIMULATOR_CONTEXT_INVALID"
-    assert failure.exit_code == 4
+    run = invoke_lab06(
+        tmp_path,
+        legacy,
+        proposals=[proposal(user_utterance=utterance)],
+        bundle_mutator=restrict,
+        assistant_variant=assistant,
+        include_case_id=False,
+    )
+    transcripts, ledger, gaps = _episode_evidence(run)
+    assert [row["role"] for row in transcripts] == ["USER", "ASSISTANT"]
+    sim_rows = [row for row in ledger if row["lane"] == "SIMULATOR"]
+    assert len(sim_rows) == 1 and sim_rows[0]["response_hash"] is not None
+    assert {(row["reason_code"], row["detail_code"]) for row in gaps} >= {
+        ("SIMULATOR_SEMANTIC_INVALID", detail)
+    }
+    assert [item["kind"] for item in run.target.sessions[0].exchanges].count(
+        "turn"
+    ) == 1

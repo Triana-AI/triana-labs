@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-03
 
-Status: **local mechanics GREEN; one live HRAI smoke consumed with gaps; human fidelity unpassed**
+Status: **intent-first repair locally GREEN; repaired live smoke consumed and unpassed**
 
 Protocol: `LABS06_SIMULATOR_FIDELITY_V1`
 
@@ -321,3 +321,59 @@ baseline/candidate comparison, generic provider/agent SDKs, broad eval import,
 target changes, additional live HRAI execution, and hosted execution remain
 deferred. The consumed owner-authorized private smoke is a bounded exception,
 not general real-data support.
+
+## 11. Intent-first continuation repair
+
+On 2026-08-03 Akarsh accepted the bounded
+`LABS-06-INTENT-FIRST-CONTINUATION-REPAIR-V1` contract in
+`internal/SLICE_PACKET.md`. This section supersedes Sections 3 through 6 only
+where they require the provider to author binding, role, reaction, action, or
+state-transition metadata.
+
+The provider response now has exactly three fields:
+
+```json
+{
+  "disposition": "EMIT",
+  "user_utterance": "one next user message",
+  "stop_reason_code": null
+}
+```
+
+`EMIT` requires one nonempty utterance and a null stop reason. `STOP` requires
+a null utterance and one declared stop reason. Unknown or legacy fields are
+invalid. Deterministic code binds the response to the one outstanding attempt
+and latest observation, assigns the `USER` role, and retains exact request,
+response, accounting, and transcript custody. The provider does not echo an
+observation hash, self-declare a role, choose reaction/action IDs, or mutate
+interaction state. A valid emit preserves the current episode-local state; a
+valid stop terminates once.
+
+The instruction makes verified intent primary. Persona controls tone,
+patience, and persistence but cannot replace the goal. A useful next step
+continues by default. An unavailable premise should lead naturally to
+clarification, correction, offered-alternative selection, or one
+persona-consistent challenge. Existing exact/near echo, assistant-only literal,
+hidden-fact, fixed-fact, and unauthorized-literal checks remain deterministic
+critical gates. No retry, repair, fallback, default utterance, judge, memory,
+or classifier is added.
+
+The private three-episode exit metric is Accepted Continuation Rate. All three
+episodes must reach a second HRAI response; at least five of six planned
+continuations must be structurally valid; at least four must be accepted by
+Akarsh; and critical failures must be zero. An early stop reduces the
+denominator only when Akarsh accepts it as appropriate. Until those owner
+rulings exist, the repair remains unpassed.
+
+The repair passed 15/15 frozen focused cases, 143/143 historical adaptive cases,
+and the complete 566-test/build/install repository verifier at
+`/private/tmp/triana-labs-verify.HqCiRi`. The separately authorized live run was
+then consumed once. Each opening received one live HRAI response, but all three
+first three-field simulator proposals were rejected as
+`SIMULATOR_INVALID_RESPONSE`; no proposal entered the transcript and no episode
+reached A2. The run closed `COMPLETED_WITH_GAPS` with 9 target plus 3 simulator
+HTTP exchanges, 13 gaps, 0 valid/effective trajectories, and USD 8.666664
+reserved with actual cost unavailable. No retry or rerun occurred. Raw rejected
+provider content is not retained, so the exact provider-envelope/schema defect
+is unavailable and cannot be inferred. The structural and multi-turn gates fail
+before owner naturalness/intent scoring.

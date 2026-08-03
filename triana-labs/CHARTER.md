@@ -143,16 +143,16 @@ provider execution and human passage remain separately owner-gated; persistent/g
 memory, judges, UI/report, baseline/candidate comparison, real data, generic
 SDKs, and broad eval expansion remain deferred.
 
-The synthetic-only LABS-06 implementation is locally GREEN: 18 frozen fidelity
-acceptance cases, 143 historical adaptive-runner cases, and the complete
-569-test repository verifier passed on 2026-08-03. This proves the bounded
-component and null-ruling review contract only. A separately authorized private
-three-episode HRAI/Foundry smoke was then consumed: each opening received one
-HRAI response, but each first simulator continuation was rejected as
-`SIMULATOR_INVALID_RESPONSE`, leaving 0 valid/effective trajectories. No retry
-or rerun occurred. `REGULAR_USER_SIMULATION_FIDELITY_V1` remains unpassed and
-pending Akarsh's human rulings; the smoke does not authorize general real-data
-support or another provider/target run.
+The current intent-first LABS-06 implementation is locally GREEN: 15 frozen
+repair acceptance cases, 143 historical adaptive-runner cases, and the complete
+566-test repository verifier passed on 2026-08-03. The earlier seven-field and
+the repaired three-field private HRAI/Foundry runs were each consumed once.
+Both produced one HRAI response per opening, but all three first simulator
+continuations in each run were rejected as `SIMULATOR_INVALID_RESPONSE`, leaving
+0 valid/effective trajectories and no generated user turn. No retry or rerun
+occurred. `REGULAR_USER_SIMULATION_FIDELITY_V1` and the Accepted Continuation
+Rate gate remain unpassed; another provider/target run requires a new owner
+decision, and general real-data support remains deferred.
 
 ### Public Preview rollout direction
 
