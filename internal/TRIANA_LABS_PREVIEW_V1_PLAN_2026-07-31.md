@@ -134,6 +134,21 @@ are recorded in
 `internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`; they require a new
 frozen slice before implementation or live execution.
 
+### 2026-08-03 public-rollout amendment
+
+Akarsh directed the next roadmap toward a public, usable Preview and added the
+allowlisted Triana demo UI as an explicit priority. The superseding checkpoint
+order for the immediate generated-multi-turn launch cut is LABS-06 simulator
+fidelity, LABS-07 report/static projection, LABS-08 Labs demo UI, LABS-09
+one-command public packaging, and LABS-10 local-sensitive stranger
+installation. Detailed scope, release blockers, deferred work, and owner gates
+are in `internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`.
+
+This amendment accelerates the existing M3A/M3B UI and demo outcomes; it does
+not authorize the historical M2 baseline/candidate path, persistent memory,
+real-data support, or hosted execution. A static synthetic read-only demo may
+be publicly hosted because it accepts no data, credentials, or execution.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

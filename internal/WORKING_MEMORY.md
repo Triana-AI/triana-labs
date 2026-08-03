@@ -72,6 +72,15 @@ frozen and GREEN. Persistent/global Triana memory remains deferred. Akarsh passe
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart
 context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
+
+Public-rollout amendment: Akarsh now wants a public/YC-demonstrable and then
+externally usable Preview, with the allowlisted Triana demo adapted as the Labs
+UI. The current ordered proposal is LABS-06 fidelity repair, LABS-07 report
+contract, LABS-08 UI, LABS-09 public synthetic demo, and LABS-10 local-sensitive
+stranger installation. The full blocker/deferred register is
+`internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`. UI provenance,
+license, and the report contract precede UI code; persistent/global memory is
+not a first-public-proof blocker.
 The exact active contract is `internal/SLICE_PACKET.md` plus
 `internal/LABS05_TARGET_CONNECTOR_V1.md`. The selected cases are context
 recovery, cross-client refusal, and bounded status verification; each runs as

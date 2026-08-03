@@ -131,6 +131,24 @@ behavior is primary; angry, impatient, skeptical, informal, mistaken, and
 adversarial behavior are declared strata. Persistent/global Triana memory
 remains deferred.
 
+### Public Preview rollout direction
+
+On 2026-08-03 Akarsh directed Triana to move from component proofs toward a
+public, usable Preview and to add the allowlisted Triana demo UI to the active
+roadmap. The ordered proposal is recorded in
+`internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`: repair
+regular-user simulator fidelity, freeze a machine-readable report projection,
+adapt the provenance-cleared demo visual system to Labs semantics, ship a
+one-command synthetic public demo, and then prove real-agent usability through
+the stranger-installation gate. Static read-only hosting is permitted for the
+public proof; hosted ingestion, accounts, storage, or execution remain
+deferred.
+
+The Triana demo package is allowlisted only after per-file ancestry and license
+checks. Its Release Review claims, PASS/BLOCK logic, snapshots, and release
+memory are not Labs truth and cannot cross merely because its visual shell is
+eligible.
+
 The superseding local implementation reached GREEN on 2026-08-03: 131 frozen
 connector acceptance tests and 539 repository-wide tests pass with the complete
 versioned verification gate. Exact outer HTTP accounting remains deterministic;
