@@ -86,6 +86,12 @@ required to publish the generated-multi-turn Preview honestly.
 This checkpoint closes the supported R2 failure before UI polish amplifies a
 bad adaptive turn.
 
+The new-session planning and owner-question entry protocol is frozen in
+`internal/LABS06_HANDOFF_2026-08-03.md`. The first LABS-06 turn must produce
+the LLD/spec, essential edge cases, minimal-test proposal, and material owner
+questions, then wait. It may not begin implementation before Akarsh answers and
+the LABS-06 slice packet replaces the closed LABS-05 packet.
+
 Minimum scope:
 
 - pass verified persona, intent, known facts, and **user-owned** turn policy to

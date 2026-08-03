@@ -55,6 +55,9 @@ code from Akarsh's Kairos repositories only through the provenance process in
 14. [`internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`](internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md)
     — post-LABS-05 public rollout, Labs demo UI sequence, blockers, and deferred
     register.
+15. [`internal/LABS06_HANDOFF_2026-08-03.md`](internal/LABS06_HANDOFF_2026-08-03.md)
+    — copyable planning-first LABS-06 prompt, LLD seed, edge cases, owner
+    questions, and minimum-test boundary.
 
 Working product instruments:
 

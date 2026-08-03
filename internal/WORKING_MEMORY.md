@@ -81,6 +81,14 @@ stranger installation. The full blocker/deferred register is
 `internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`. UI provenance,
 license, and the report contract precede UI code; persistent/global memory is
 not a first-public-proof blocker.
+
+Session handoff: merge the completed LABS-05/public-rollout branch into local
+`main`, then start LABS-06 through
+`internal/LABS06_HANDOFF_2026-08-03.md`. The new session must plan first: inspect
+the boundary, state the goal, propose the LLD/spec and smallest essential test
+set, ask the material owner questions with recommended defaults, and wait.
+Implementation begins only after Akarsh answers and a bounded LABS-06 slice
+packet replaces the closed LABS-05 packet.
 The exact active contract is `internal/SLICE_PACKET.md` plus
 `internal/LABS05_TARGET_CONNECTOR_V1.md`. The selected cases are context
 recovery, cross-client refusal, and bounded status verification; each runs as
