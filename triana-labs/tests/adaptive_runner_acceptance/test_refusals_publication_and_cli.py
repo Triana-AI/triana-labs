@@ -10,6 +10,7 @@ import pytest
 from conftest import (
     ENVIRON,
     OUTPUT_NAMES,
+    PROJECT_ROOT,
     CapturePublisher,
     Clock,
     FixtureLoader,
@@ -25,6 +26,12 @@ from conftest import (
     run_cli,
     write_inputs,
 )
+from test_target_connector_v1 import _http_config
+
+CANARY_PRIVACY = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+CANARY_TARGET_CLASS = "OWNER_AUTHORIZED_REAL_TARGET"
+CANARY_TARGET_HOST = "3-6-37-142.sslip.io"
+CANARY_SIMULATOR_HOST = "kairos-openai-1.openai.azure.com"
 
 
 def call_run(
@@ -253,3 +260,115 @@ def test_cli_usage_is_one_redacted_terminal_event() -> None:
     assert event["command"] == "episodes.run"
     assert event["reason_code"] == "CLI_USAGE_ERROR"
     assert b"PRIVATE_ARG_SECRET" not in completed.stderr
+
+
+def _canary_config() -> dict[str, Any]:
+    value = _http_config(f"https://{CANARY_TARGET_HOST}")
+    value["privacy_class"] = CANARY_PRIVACY
+    value["target"].update(
+        allowed_host=CANARY_TARGET_HOST, data_class=CANARY_TARGET_CLASS
+    )
+    value["target"]["session"]["create"]["constant_json"]["client_id"] = (
+        "client-techcorp"
+    )
+    value["target"]["turn"]["operation"]["constant_json"]["client_id"] = (
+        "client-techcorp"
+    )
+    value["simulator"].update(
+        allowed_host=CANARY_SIMULATOR_HOST,
+        deployment="FW-GLM-5.2",
+        endpoint=f"https://{CANARY_SIMULATOR_HOST}/openai/v1",
+        provider_kind="MICROSOFT_FOUNDRY_FIREWORKS",
+    )
+    return value
+
+
+def _run_canary(
+    tmp_path: Path, config: dict[str, Any], output: Path | None = None
+) -> tuple[Any, Any, Any, Any, Any]:
+    module = api()
+    inputs = write_inputs(tmp_path, config=config)
+    simulator, target, publisher = (
+        Simulator(module),
+        TargetFactory(),
+        CapturePublisher(),
+    )
+    result = failure = None
+    try:
+        result = module.run(
+            inputs.manifest,
+            inputs.review,
+            inputs.config,
+            output or inputs.output,
+            simulator=simulator,
+            target_factory=target,
+            clock=Clock(),
+            environ={**ENVIRON, "LABS05_FAKE_API_KEY": "PRIVATE_SIMULATOR_SECRET"},
+            publisher=publisher,
+            source_verifier=SourceVerifier(module),
+            case_loader=FixtureLoader(module),
+        )
+    except module.AdaptiveRunFailure as caught:
+        failure = caught
+    return result, failure, simulator, target, publisher
+
+
+def _assert_canary_pre_egress(run: tuple[Any, Any, Any, Any, Any]) -> None:
+    _, failure, simulator, target, publisher = run
+    assert failure is not None
+    assert failure.__class__.__name__ == "AdaptiveRunFailure"
+    assert not simulator.requests
+    assert not target.launches
+    assert not publisher.calls
+
+
+def test_exact_real_data_canary_propagates_truthful_private_lineage(
+    tmp_path: Path,
+) -> None:
+    output = Path("/private/tmp") / f"labs05-canary-{tmp_path.name}"
+    result, failure, _, _, publisher = _run_canary(tmp_path, _canary_config(), output)
+    assert failure is None
+    assert result.outcome == "COMPLETED"
+    assert publisher.calls[0][0] == output
+    assert all(b"SYNTHETIC" not in item for item in publisher.artifacts.values())
+    for name, payload in publisher.artifacts.items():
+        records = [json.loads(payload)] if name.endswith(".json") else jsonl(payload)
+        assert all(record["privacy_class"] == CANARY_PRIVACY for record in records)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda value: value["target"].update(data_class="SYNTHETIC_LOCAL_TARGET"),
+        lambda value: value.update(privacy_class="SYNTHETIC"),
+        lambda value: value.update(target=executable_config_value()["target"]),
+        lambda value: value["target"].update(
+            allowed_host="other.example", base_url="https://other.example"
+        ),
+        lambda value: value["target"].update(base_url=f"http://{CANARY_TARGET_HOST}"),
+        lambda value: value["target"]["session"]["create"]["constant_json"].update(
+            client_id="other-client"
+        ),
+        lambda value: value["simulator"].update(
+            allowed_host="other.example", endpoint="https://other.example/openai/v1"
+        ),
+        lambda value: value["simulator"].update(provider_kind="OTHER_PROVIDER"),
+        lambda value: value["simulator"].update(deployment="OTHER_DEPLOYMENT"),
+    ],
+)
+def test_real_canary_mismatch_refuses_before_provider_egress(
+    tmp_path: Path, mutation: Any
+) -> None:
+    config = _canary_config()
+    mutation(config)
+    _assert_canary_pre_egress(_run_canary(tmp_path, config))
+
+
+@pytest.mark.parametrize(
+    "output",
+    [PROJECT_ROOT / "real-canary-output", Path("/Users/Shared/real-canary-output")],
+)
+def test_real_canary_repository_or_public_output_refuses_pre_egress(
+    tmp_path: Path, output: Path
+) -> None:
+    _assert_canary_pre_egress(_run_canary(tmp_path, _canary_config(), output))

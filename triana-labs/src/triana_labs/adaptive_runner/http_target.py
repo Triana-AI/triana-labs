@@ -223,7 +223,8 @@ def validate_http_target(target: Any, environ: Mapping[str, str]) -> None:
         if (
             target["connector_kind"] != "HTTP_JSON_V1"
             or not _ID.fullmatch(target["connector_id"])
-            or target["data_class"] != "SYNTHETIC_LOCAL_TARGET"
+            or target["data_class"]
+            not in {"SYNTHETIC_LOCAL_TARGET", "OWNER_AUTHORIZED_REAL_TARGET"}
             or not _integer(target["timeout_seconds"])
             or not 1 <= target["timeout_seconds"] <= 180
         ):

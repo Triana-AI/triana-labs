@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-02
 
-Status: **TARGET CONNECTOR V1 LOCAL GREEN; LIVE HRAI INFRASTRUCTURE GAP**
+Status: **REAL CANARY AND OWNER REVIEW COMPLETE; LABS-05 UNPASSED**
 
 Slice ID: `LABS-05-ADAPTIVE-RUNNER-V1`
 
@@ -34,6 +34,11 @@ for the deterministic runner but do not close this superseding target boundary.
 No live run occurs until independent RED, production GREEN, the full gate, and
 separate owner authorization. Those local gates are now complete; the first
 authorized real-endpoint smoke is recorded below and did not reach chat.
+
+The owner has now superseded only the data classification for one exact run by
+freezing `internal/LABS05_REAL_DATA_CANARY_2026-08-03.md`. Its entry gate is a
+new independent RED/GREEN/full-verifier cycle. It expires after the first live
+attempt and does not reopen general real-data support.
 
 Restart evidence: `internal/LABS05_HANDOFF_2026-08-02.md` and
 `internal/LABS04_CASE_REVIEW_2026-08-02.md`.
@@ -618,9 +623,9 @@ Known risks or uncertainty: target-internal calls, tokens, cost, retries, tool
 trace, budget enforcement, and global-state isolation remain typed unavailable
 unless a target reports them. The failed smoke proves endpoint reachability but
 not successful protocol compatibility.
-Human action still required: repair or supply reachable HRAI Postgres/Redis;
-then separately authorize any new live run. After an exact valid three-episode
-run, complete the frozen turn-level owner adaptation review.
+Human action still required: none for closure of this consumed checkpoint.
+Before any successor live run, freeze and independently verify the
+regular-use-first simulator-fidelity repair, then obtain separate authorization.
 ```
 
 Every worker and Codex returns:

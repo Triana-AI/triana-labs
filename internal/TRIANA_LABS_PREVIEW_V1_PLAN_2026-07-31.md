@@ -118,6 +118,22 @@ session, chat turn, or tool call occurred. The smoke therefore does not clear
 the three-trajectory or `LABS05_ADAPTATION_V1` gates; no rerun is authorized by
 this record.
 
+On 2026-08-03 Akarsh subsequently authorized the single private real-data
+canary frozen in `internal/LABS05_REAL_DATA_CANARY_2026-08-03.md`. That bounded
+exception is execution evidence for LABS-05 only. General real-data support,
+public artifacts, and repeat execution remain deferred.
+
+The canary attempted three episodes and produced two valid distinct
+trajectories plus one partial trajectory. Akarsh's four available adaptation
+rulings were Y, N, Y, Y; two required items were unavailable. LABS-05 is
+therefore closed as completed-with-gaps and unpassed. The rejected item exactly
+echoed the target and inverted user/assistant roles because the simulator did
+not receive the verified persona, intent, or turn-policy projection and had no
+semantic anti-echo/role gate. The proposed successor eval and smallest repair
+are recorded in
+`internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`; they require a new
+frozen slice before implementation or live execution.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

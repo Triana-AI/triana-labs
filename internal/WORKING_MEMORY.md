@@ -56,10 +56,18 @@ target-internal HTTP/model/token/cost/tool/global-state evidence is represented
 by typed gaps. Triana persistent/global learning memory remains deferred;
 target-side state is not silently reclassified as Triana memory.
 
-Immediate objective: repair or supply reachable HRAI Postgres and Redis
-configuration before seeking separate authorization for any new live canary;
-then—only if an exact three-episode run produces three valid, nonduplicate
-inspectable trajectories—obtain `LABS05_ADAPTATION_V1`. Akarsh passed
+The one owner-authorized real HRAI canary is consumed. It produced two valid
+distinct trajectories, one partial trajectory, and four reviewable adaptation
+items. Akarsh ruled Y, N, Y, Y, so LABS-05 closes completed-with-gaps and
+unpassed. The N was an exact assistant echo caused by the simulator request
+omitting the verified persona, intent, and turn policy and by the absence of a
+semantic user-role/anti-copy gate.
+
+Immediate objective: discuss and freeze the proposed regular-use-first
+`REGULAR_USER_SIMULATION_FIDELITY_V1` checkpoint in
+`internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`. Do not request
+another provider run before its teacher-forced local eval is independently
+frozen and GREEN. Persistent/global Triana memory remains deferred. Akarsh passed
 `LABS04_USEFULNESS_V1` on 2026-08-02 by
 answering yes to all six frozen questions for all five cases and confirming
 that none depends on a hidden or fabricated fact. The canonical restart

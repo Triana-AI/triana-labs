@@ -108,6 +108,29 @@ remain deferred. The exact contract is `internal/SLICE_PACKET.md` plus
 `internal/LABS05_TARGET_CONNECTOR_V1.md`; restart history remains
 `internal/LABS05_HANDOFF_2026-08-02.md`.
 
+One non-general exception is frozen in
+`internal/LABS05_REAL_DATA_CANARY_2026-08-03.md`: Akarsh authorized exactly one
+private three-episode run against the named real HRAI/RDS target with responses
+sent to the named Azure Foundry simulator. It must be labeled
+`OWNER_AUTHORIZED_REAL_DATA_CANARY`, may remain only under `/private/tmp`, and
+expires after the first attempted run. This does not authorize public,
+portable, repeatable, or general real-data support.
+
+That run is now consumed: three episodes were attempted, two were valid and
+distinct, and one became partial at U3 with `SIMULATOR_INVALID_RESPONSE`.
+LABS-05 therefore remains unpassed with `INSUFFICIENT_DISTINCT_TRAJECTORIES`;
+four adaptation review items exist and no rerun is implied. Akarsh ruled those
+items Y, N, Y, Y. The rejected item exactly copied the preceding target answer
+and assumed the assistant role. The supported cause is a simulator-boundary
+defect: verified persona, intent, and turn policy were not sent to the
+simulator, and semantic validation did not reject role inversion or echoing.
+
+The next proposed checkpoint is regular-use-first simulator fidelity, recorded
+in `internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`. Regular user
+behavior is primary; angry, impatient, skeptical, informal, mistaken, and
+adversarial behavior are declared strata. Persistent/global Triana memory
+remains deferred.
+
 The superseding local implementation reached GREEN on 2026-08-03: 131 frozen
 connector acceptance tests and 539 repository-wide tests pass with the complete
 versioned verification gate. Exact outer HTTP accounting remains deterministic;

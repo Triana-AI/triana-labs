@@ -250,7 +250,8 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
     )
     if not _closed(value, top):
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
-    if value["privacy_class"] != "SYNTHETIC":
+    privacy = value["privacy_class"]
+    if privacy not in {"SYNTHETIC", "OWNER_AUTHORIZED_REAL_DATA_CANARY"}:
         raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
     if not (
         value["artifact_kind"] == "adaptive_runner_config"
@@ -354,6 +355,27 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
         target_http = 0
     else:
         raise AdaptiveRunFailure("TARGET_CONNECTOR_CONFIG_INVALID", 2)
+    if privacy == "SYNTHETIC":
+        if target["data_class"] != "SYNTHETIC_LOCAL_TARGET":
+            raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
+    elif not (
+        kind == "HTTP_JSON_V1"
+        and target["data_class"] == "OWNER_AUTHORIZED_REAL_TARGET"
+        and target["base_url"] == "https://3-6-37-142.sslip.io"
+        and target["allowed_host"] == "3-6-37-142.sslip.io"
+        and target["session"]["mode"] == "REMOTE_SESSION"
+        and target["session"]["create"]["constant_json"].get("client_id")
+        == "client-techcorp"
+        and target["turn"]["operation"]["constant_json"].get("client_id")
+        == "client-techcorp"
+        and target["target_identity"]["protocol"] == "HRAI_FASTAPI_SESSIONS_V1"
+        and simulator["provider_kind"] == "MICROSOFT_FOUNDRY_FIREWORKS"
+        and simulator["deployment"] == "FW-GLM-5.2"
+        and simulator["allowed_host"] == "kairos-openai-1.openai.azure.com"
+        and simulator["endpoint"]
+        == "https://kairos-openai-1.openai.azure.com/openai/v1"
+    ):
+        raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
     expected_budget = {
         "all_http_exchanges": target_http + 6,
         "episode_count": 3,
@@ -439,8 +461,8 @@ class _Episode:
     actual: Decimal | None = None
 
 
-def _lineage(manifest: str, review: str, config: str) -> dict[str, Any]:
-    return {
+def _lineage(manifest: str, review: str, config: str, privacy: str) -> dict[str, Any]:
+    result = {
         "artifact_kind": "labs05_record",
         "schema_version": 1,
         "protocol_version": WIRE,
@@ -448,6 +470,9 @@ def _lineage(manifest: str, review: str, config: str) -> dict[str, Any]:
         "owner_review_hash": review,
         "config_hash": config,
     }
+    if privacy != "SYNTHETIC":
+        result["privacy_class"] = privacy
+    return result
 
 
 def _turn_record(
@@ -1436,6 +1461,7 @@ def _artifacts(
         "manifest_hash": base["case_factory_manifest_hash"],
         "review_state": "PENDING",
         "review_items": review_items,
+        **({"privacy_class": base["privacy_class"]} if "privacy_class" in base else {}),
     }
     payloads: dict[str, bytes] = {
         "episode_attempts.jsonl": b"".join(
@@ -1465,7 +1491,7 @@ def _artifacts(
         "artifact_kind": "adaptive_run_manifest",
         "outcome": outcome,
         "reason_code": reason,
-        "privacy_class": "SYNTHETIC",
+        "privacy_class": base.get("privacy_class", "SYNTHETIC"),
         "producing_component": "triana-labs-adaptive-runner",
         "producing_version": "1",
         "selected_episode_count": 3,
@@ -1550,6 +1576,11 @@ def run(
     config, config_bytes = _read_object(config_path, "CONFIG_INVALID", 2)
     _validate_review(review)
     _validate_config(config, environ)
+    if config["privacy_class"] == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved_output = output_path.parent.resolve(strict=True) / output_path.name
+        if private_root not in resolved_output.parents:
+            raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
     if case_loader is None:
         from .boundaries import CaseFactoryLoader
 
@@ -1564,7 +1595,12 @@ def run(
     if not environ.get(config["simulator"]["api_key_env"]):
         raise AdaptiveRunFailure("SIMULATOR_AUTHORIZATION_REFUSED", 4)
     review_hash, config_hash = _hash(review_bytes), _hash(config_bytes)
-    base = _lineage(source_input.manifest_file_hash, review_hash, config_hash)
+    base = _lineage(
+        source_input.manifest_file_hash,
+        review_hash,
+        config_hash,
+        config["privacy_class"],
+    )
     target = config["target"]
     connector_hash = _hash(_canonical(target))
     if target["connector_kind"] == "EXECUTABLE_JSONL_V1":
