@@ -159,7 +159,7 @@ def _run(
 ) -> tuple[Any, Any, Path]:
     observer, intelligence = build_upstream(tmp_path, traces)
     output = tmp_path / "closure-output"
-    transport = ScriptedRestrictedTransport([_submitted(mutate)] * 8)
+    transport = ScriptedRestrictedTransport([_submitted(mutate)] * 12)
     result = importlib.import_module(
         "triana_labs.case_factory.generate"
     ).generate_restricted(
@@ -347,7 +347,7 @@ def _canary_case_run(
         "reservation_usd_per_agent_call": "0.500000",
     }
     config_path = write_config(root, config)
-    transport = transport or ScriptedRestrictedTransport([_submitted()] * 8)
+    transport = transport or ScriptedRestrictedTransport([_submitted()] * 12)
     output = root / "closure-output"
     result = importlib.import_module(
         "triana_labs.case_factory.generate"

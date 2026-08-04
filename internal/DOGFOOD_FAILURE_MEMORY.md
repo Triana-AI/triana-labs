@@ -26,7 +26,7 @@ Each incident records:
 
 ## DF-2026-08-03-001 — LABS-06 live continuations rejected before U2
 
-Status: `OPEN`
+Status: `CASE_FACTORY_RESOLVED; LABS-06 FOLLOW-UP OPEN`
 
 ### Observed failure
 
@@ -215,3 +215,123 @@ The closure implementation is honest synthetic-only. Existing trace and world
 inventory validators refuse owner-authorized real data. This is not repaired
 by relabeling HRAI/RDS evidence; it requires a separately frozen real-data
 contract and exact custody/egress approval.
+
+## DF-2026-08-04-003 — Real-data Case Factory transport failure blocked LABS-06
+
+Status: `OPEN`
+
+### Observed failure
+
+An owner-authorized real-data canary inspected 15 eligible operational HRAI
+recruiter traces and deterministically selected four distinct traces. Observer
+accepted all four, and Intelligence produced four structural clusters with
+three typed gaps. The first Case Factory exchange returned
+`MATERIAL_INPUT_REQUIRED`; the already-approved authoritative direction was
+then supplied once. That continuation ended `PROVIDER_TRANSPORT_FAILED` after
+three HTTP exchanges and produced zero valid or distinct cases.
+
+Private retained evidence remains local under
+`/private/tmp/triana-labs046-live-20260804.y9Jb0l`. It must not be committed,
+published, uploaded, or converted into fixtures. No private transcript text,
+provider response body, credential, or customer evidence is retained here.
+
+### Accounting and boundary
+
+The Case Factory consumed two logical provider calls and four HTTP exchanges,
+with USD 4 reserved. The first response reported 25,147 input tokens and 826
+output tokens; the failed continuation did not provide trustworthy token or
+actual-cost accounting, so actual cost remains unknown rather than zero.
+
+No retry, repair, provider switch, or fallback followed the transport failure.
+Because no deterministic case/persona/intent/turn-policy bundle existed,
+LABS-06 made zero simulator calls and zero HRAI calls and caused zero target
+side effects. Its result is `NOT_EXECUTED`, not pass or behavioral failure.
+
+### Proven and not proven
+
+The trace-selection, normalization, and structural-clustering path accepted
+the selected input. The failure occurred at the Case Factory provider
+transport boundary before valid generated artifacts existed. This run does
+not evaluate grounded-observed case quality, grounded-expanded case quality,
+regular-user multi-turn fidelity, or HRAI behavior under those cases.
+
+### Next falsifiable check
+
+Diagnose the retained text-free transport metadata locally and reproduce the
+same request/response boundary without HRAI or real-data egress. Any new
+provider, endpoint, real-data, or HRAI execution requires a new explicit
+authorization and must remain a one-attempt, bounded canary. Do not infer or
+reconstruct the missing case bank from the source traces by hand.
+
+### Direct-normalization proof update — 2026-08-04
+
+The authorized direct-submit proof removed the question, search, trace-fetch,
+repair, and agent-graph paths and made one fresh provider exchange for the
+first five slots. Context preflight passed. The request used 24,962 prompt
+tokens, carried a forced `submit_case_batch` tool choice, and reserved USD 2.
+
+`FW-GLM-5.2` returned no tool call. It emitted 25,000 completion tokens as
+plain explanatory/case-drafting text and stopped with finish reason `length`
+after 141.75 seconds. Triana rejected it as `PROVIDER_INVALID_RESPONSE`,
+persisted zero cases, and did not execute the remaining batches, repair,
+retry, fallback, another provider, or HRAI.
+
+This falsifies context duplication as the only blocker. The direct request was
+well beneath the 100,000-token working ceiling; the newly observed boundary is
+forced-tool compatibility plus an oversized five-case output. Before another
+authorized proof, replace provider-specific forced tool submission with an
+explicit structured-response boundary and reduce authoritative batch width so
+one incomplete output cannot erase multiple cases.
+
+### Strict structured-output proof update — 2026-08-04
+
+The next authorized proof used a compact strict JSON-Schema response, one case
+slot, no tools, no agent graph, and the same private evidence/inventory. The
+provider returned complete parseable JSON with finish reason `stop` in one
+exchange: 17,288 input tokens, 8,082 output tokens, and 53.615 seconds.
+
+Triana nevertheless rejected the response as `PROVIDER_INVALID_RESPONSE`
+before normalization because a stale post-transport guard still required the
+old tool path to populate `tools.submission`. That guard was removed only for
+the authoritative structured path. Inspection also showed semantically poor
+field naming: the model placed claim-key tokens in human-readable text fields.
+The wire now names those fields `content` and `claim_text` and explicitly
+requires real human-readable content.
+
+No second exchange, repair, retry, fallback, provider switch, or HRAI call
+followed. The retained response proves strict JSON-Schema support on this
+deployment but does not prove an accepted grounded case because the consumed
+run never reached deterministic normalization.
+
+### Successful structured-normalization proof — 2026-08-04
+
+Proof V9 completed all twelve planned slots after the wire was reduced to
+human-readable content with direct evidence handles, deterministic local
+claims, required primary world binding, deterministic one-trace observed and
+two-trace expanded source selection, structural evaluation/reaction fields,
+and normalized stressor labels.
+
+The result is 12 valid and 12 distinct cases: exactly six
+`OBSERVED_PRODUCTION_CASE` and six `GROUNDED_EXPANDED_CASE`. All twelve provider
+attempts succeeded in their single `GENERATE` phase, with twelve HTTP
+exchanges, 207,640 input tokens, 54,738 output tokens, USD 24 reserved, no
+typed gaps, and no questions, tools, agent graph, repair, SDK retry, fallback,
+provider switch, or HRAI call. Actual provider cost remains unavailable rather
+than zero. Private artifacts are retained under
+`/private/tmp/triana-labs04-structured-proof-v9-20260804`.
+
+Across all authorized proof attempts in this iteration, cumulative reserved
+spend was USD 42, below the owner's USD 100 ceiling. The successful proof
+closes the Case Factory generation boundary only; tests, repository verifier,
+LABS-06 execution, and human fidelity rulings remain separate.
+
+### Acceptance-freeze update — 2026-08-04
+
+The strict normalization behavior is now frozen by four independently authored
+black-box acceptance cases. They reproduced RED 4/4 against base `1460266`,
+pass on the implementation, and the complete Case Factory suite passes 212
+tests. The complete repository verifier passes 617 tests plus source/wheel
+build and clean-wheel installation at
+`/private/tmp/triana-labs-verify.m8oIxX`. The Case Factory blocker is resolved;
+the separate LABS-06 live trajectory and human fidelity assessment remain
+open and must not be inferred from this result.
