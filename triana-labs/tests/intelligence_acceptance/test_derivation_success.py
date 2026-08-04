@@ -76,8 +76,20 @@ def test_owner_authorized_canary_derivation_retains_private_class_and_fidelity(
     ) as root:
         private_root = Path(root)
         source_manifest = build_observer_bundle(private_root / "observed", traces)
+        profile_path = source_manifest.parent / "corpus_profile.json"
+        profile = json.loads(profile_path.read_bytes())
+        profile["privacy_class"] = privacy
+        profile_path.write_bytes(compact_json(profile))
+        markdown_path = source_manifest.parent / "corpus_profile.md"
+        markdown_path.write_bytes(
+            markdown_path.read_bytes().replace(b"Synthetic", privacy.encode())
+        )
         manifest = json.loads(source_manifest.read_bytes())
         manifest["privacy_class"] = privacy
+        for name in manifest["artifacts"]:
+            manifest["artifacts"][name] = digest(
+                (source_manifest.parent / name).read_bytes()
+            )
         source_manifest.write_bytes(compact_json(manifest))
         output = private_root / "intelligence"
 

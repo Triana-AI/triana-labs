@@ -288,6 +288,10 @@ def _canary_upstream(root: Path) -> tuple[Path, Path]:
     profile_markdown.write_bytes(
         profile_markdown.read_bytes().replace(b"Synthetic", CANARY.encode())
     )
+    profile_path = observer.parent / "corpus_profile.json"
+    profile = json.loads(profile_path.read_bytes())
+    profile["privacy_class"] = CANARY
+    profile_path.write_bytes(canonical(profile, lf=True))
     observer_value = json.loads(observer.read_bytes())
     observer_value["privacy_class"] = CANARY
     for name in observer_value["artifacts"]:
