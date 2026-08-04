@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,33 @@ def assert_success_terminal_log(log: dict[str, Any], *, outcome: str) -> None:
     assert log["severity"] == "INFO"
     assert type(log["duration_ms"]) is int
     assert log["duration_ms"] >= 0
+
+
+def test_owner_authorized_canary_is_truthfully_published_in_private_custody(
+    run_cli: Any,
+    tmp_path: Path,
+) -> None:
+    trace = minimal_trace()
+    trace["privacy_class"] = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+    corpus = tmp_path / "canary.jsonl"
+    write_jsonl(corpus, [trace])
+
+    with tempfile.TemporaryDirectory(
+        prefix="triana-observer-", dir="/private/tmp"
+    ) as root:
+        output = Path(root) / "observed"
+        result = run_cli("traces", "observe", corpus, "--out", output)
+
+        assert result.returncode == 0
+        assert_artifact_bundle(output)
+        assert parse_jsonl(output / "normalized_traces.jsonl") == [trace]
+        manifest = json.loads((output / "manifest.json").read_bytes())
+        assert manifest["privacy_class"] == "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+        assert (
+            b"OWNER_AUTHORIZED_REAL_DATA_CANARY"
+            in (output / "corpus_profile.md").read_bytes()
+        )
+        assert b"SYNTHETIC" not in (output / "manifest.json").read_bytes()
 
 
 def test_minimal_valid_trace_creates_exact_bundle(run_cli: Any, tmp_path: Path) -> None:

@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -258,3 +259,150 @@ def test_closure_evidence_uses_byte_ceiling_not_twenty_five_trace_cutoff(
     assert evidence["selected_trace_count"] == len(catalog["traces"])
     assert evidence["excluded_trace_count"] == 30 - len(catalog["traces"])
     assert evidence["projected_byte_count"] <= 90_000
+
+
+CANARY = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+CANARY_FIDELITY = "OWNER_AUTHORIZED_REAL_DATA_GROUNDED"
+CANARY_PROJECTION = "LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1"
+
+
+def _replace_label(value: Any, old: str, new: str) -> Any:
+    if isinstance(value, dict):
+        return {key: _replace_label(item, old, new) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_replace_label(item, old, new) for item in value]
+    return new if value == old else value
+
+
+def _canary_upstream(root: Path) -> tuple[Path, Path]:
+    observer, intelligence = build_upstream(root)
+    normalized = []
+    for line in (observer.parent / "normalized_traces.jsonl").read_bytes().splitlines():
+        item = json.loads(line)
+        item["privacy_class"] = CANARY
+        normalized.append(item)
+    (observer.parent / "normalized_traces.jsonl").write_bytes(
+        b"".join(canonical(item, lf=True) for item in normalized)
+    )
+    profile_markdown = observer.parent / "corpus_profile.md"
+    profile_markdown.write_bytes(
+        profile_markdown.read_bytes().replace(b"Synthetic", CANARY.encode())
+    )
+    observer_value = json.loads(observer.read_bytes())
+    observer_value["privacy_class"] = CANARY
+    for name in observer_value["artifacts"]:
+        observer_value["artifacts"][name] = artifact_hash(
+            (observer.parent / name).read_bytes()
+        )
+    observer.write_bytes(canonical(observer_value, lf=True))
+    input_hash = artifact_hash(observer.read_bytes())
+
+    manifest = json.loads(intelligence.read_bytes())
+    for name in manifest["artifacts"]:
+        path = intelligence.parent / name
+        value = json.loads(path.read_bytes())
+        value = _replace_label(
+            value,
+            "SYNTHETIC_OBSERVED_STRUCTURE",
+            "OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE",
+        )
+        value["input_manifest_hash"] = input_hash
+        path.write_bytes(canonical(value, lf=True))
+        manifest["artifacts"][name] = artifact_hash(path.read_bytes())
+    manifest.update(
+        privacy_class=CANARY,
+        fidelity="OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE",
+        input_manifest_hash=input_hash,
+    )
+    intelligence.write_bytes(canonical(manifest, lf=True))
+    return observer, intelligence
+
+
+def _canary_inventory(root: Path, *, data_class: str = CANARY) -> Path:
+    value = json.loads(_inventory(root).read_bytes())
+    value["data_class"] = data_class
+    value["source_lineage"] = {
+        "source_kind": "OWNER_AUTHORIZED_RDS_EXPORT",
+        "source_id": "rds-export-fixture-v1",
+    }
+    path = root / "canary-world-inventory.json"
+    path.write_bytes(canonical(value, lf=True))
+    return path
+
+
+def _canary_case_run(
+    root: Path,
+    *,
+    inventory_class: str = CANARY,
+    transport: Any = None,
+) -> tuple[Any, Any, Path]:
+    observer, intelligence = _canary_upstream(root)
+    config = config_value()
+    config["protocol_version"] = MODE
+    config["authorization"].update(
+        privacy_classes=[CANARY], allowed_projection=CANARY_PROJECTION
+    )
+    config["generation"] = {
+        "candidate_count": 12,
+        "evidence_byte_limit": 90_000,
+        "seed": 2026080104,
+    }
+    config["budget"] = {
+        "max_usd": "8.700000",
+        "reservation_usd_per_agent_call": "0.500000",
+    }
+    config_path = write_config(root, config)
+    transport = transport or ScriptedRestrictedTransport([_submitted()] * 8)
+    output = root / "closure-output"
+    result = importlib.import_module(
+        "triana_labs.case_factory.generate"
+    ).generate_restricted(
+        observer,
+        intelligence,
+        config_path,
+        output,
+        cache_path=root / "cache",
+        transport=transport,
+        clock=ScriptedClock(list(range(0, 100_000_000, 1_000_000))),
+        environ=ENVIRON,
+        requested_case_count=12,
+        world_inventory=_canary_inventory(root, data_class=inventory_class),
+    )
+    return result, transport, output
+
+
+def test_canary_case_factory_retains_exact_private_labels_and_grounded_fidelity() -> (
+    None
+):
+    with tempfile.TemporaryDirectory(
+        prefix="triana-case-factory-", dir="/private/tmp"
+    ) as raw:
+        result, transport, output = _canary_case_run(Path(raw))
+
+        assert result.outcome == "COMPLETED"
+        assert transport.requests
+        manifest = json.loads((output / "manifest.json").read_bytes())
+        evidence = json.loads((output / "evidence_index.json").read_bytes())
+        cases = [
+            json.loads(line)
+            for line in (output / "case_candidates.jsonl").read_bytes().splitlines()
+        ]
+        assert manifest["privacy_class"] == evidence["privacy_class"] == CANARY
+        assert all(case["fidelity"] == CANARY_FIDELITY for case in cases)
+        assert b"SYNTHETIC_CORPUS_GROUNDED" not in b"".join(
+            path.read_bytes() for path in output.iterdir() if path.is_file()
+        )
+
+
+def test_canary_case_factory_inventory_mismatch_refuses_before_transport() -> None:
+    with tempfile.TemporaryDirectory(
+        prefix="triana-case-refusal-", dir="/private/tmp"
+    ) as raw:
+        root = Path(raw)
+        transport = ScriptedRestrictedTransport([])
+        with pytest.raises(Exception) as caught:
+            _canary_case_run(root, inventory_class="SYNTHETIC", transport=transport)
+        assert caught.value.__class__.__name__ == "GenerateFailure"
+        assert caught.value.reason_code == "PRIVACY_CLASS_MISMATCH"
+        assert transport.requests == []
+        assert not (root / "closure-output").exists()

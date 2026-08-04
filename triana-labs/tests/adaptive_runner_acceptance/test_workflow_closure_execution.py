@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import pytest
 from conftest import (
     ENVIRON,
     INPUT_HASH,
@@ -24,6 +26,7 @@ from conftest import (
     jsonl,
     projections,
 )
+from test_refusals_publication_and_cli import _canary_config
 
 MODE = "LABS046_WORKFLOW_CLOSURE_V1"
 MARKDOWN = "LABS06_TIERED_RESULTS.md"
@@ -286,3 +289,120 @@ def test_tiered_results_are_hashed_private_safe_pending_and_legacy_three_is_unch
     legacy = invoke(tmp_path / "legacy")
     assert legacy.result.attempted_episode_count == 3
     assert MARKDOWN not in legacy.publisher.artifacts
+
+
+CANARY = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+CANARY_FIDELITY = "OWNER_AUTHORIZED_REAL_DATA_GROUNDED"
+
+
+def _canary_closure_run(
+    root: Path,
+    *,
+    inventory_class: str = CANARY,
+    target_class: str = "OWNER_AUTHORIZED_REAL_TARGET",
+) -> tuple[Any, Any, Any, Any, Any]:
+    module = api()
+    cases = _closure_projections(module)
+    for projection in cases:
+        for value in (
+            projection.case,
+            projection.persona,
+            projection.intent,
+            projection.turn_policy,
+        ):
+            value["fidelity"] = CANARY_FIDELITY
+    inventory_value = {
+        "artifact_kind": "labs046_world_inventory",
+        "schema_version": 1,
+        "protocol_version": "LABS046_WORLD_INVENTORY_V1",
+        "data_class": inventory_class,
+        "captured_at": "2026-08-04T00:00:00Z",
+        "source_lineage": {
+            "source_kind": "OWNER_AUTHORIZED_RDS_EXPORT",
+            "source_id": "rds-export-fixture-v1",
+        },
+        "inventory": {"candidate_id": [f"cand-{index:02d}" for index in range(1, 13)]},
+    }
+    inventory_payload = canonical(inventory_value, lf=True)
+    inventory = root / "world-inventory.json"
+    inventory.write_bytes(inventory_payload)
+    inventory_hash = _hash(inventory_payload)
+    manifest, selection, config_path, output = _write_closure_inputs(
+        root, module, inventory_hash, cases
+    )
+    closure_config = json.loads(config_path.read_bytes())
+    config = _canary_config()
+    config.update(
+        protocol_version=MODE,
+        selected_case_ids=closure_config["selected_case_ids"],
+        workflow_closure=closure_config["workflow_closure"],
+        budget=closure_config["budget"],
+    )
+    config["target"]["data_class"] = target_class
+    config_path.write_bytes(canonical(config, lf=True))
+    simulator = ClosureSimulator(module)
+    target = TargetFactory(modes=("success",) * 12)
+    publisher = CapturePublisher()
+    failure = result = None
+    try:
+        result = module.run(
+            manifest,
+            selection,
+            config_path,
+            output,
+            simulator=simulator,
+            target_factory=target,
+            clock=Clock(),
+            environ={**ENVIRON, "LABS05_FAKE_API_KEY": "PRIVATE_SIMULATOR_SECRET"},
+            publisher=publisher,
+            source_verifier=SourceVerifier(module),
+            case_loader=ClosureLoader(module, cases),
+            world_inventory=inventory,
+        )
+    except module.AdaptiveRunFailure as caught:
+        failure = caught
+    return result, failure, simulator, target, publisher
+
+
+def test_canary_closure_runner_keeps_private_custody_and_truthful_labels() -> None:
+    with tempfile.TemporaryDirectory(
+        prefix="triana-runner-", dir="/private/tmp"
+    ) as raw:
+        root = Path(raw)
+        result, failure, simulator, target, publisher = _canary_closure_run(root)
+
+        assert failure is None
+        assert result.outcome == "COMPLETED"
+        assert len(simulator.requests) == 24 and len(target.launches) == 12
+        assert publisher.calls[0][0] == root / "output"
+        manifest = json.loads(publisher.artifacts["manifest.json"])
+        attempts = jsonl(publisher.artifacts["episode_attempts.jsonl"])
+        assert manifest["privacy_class"] == CANARY
+        assert all(attempt["privacy_class"] == CANARY for attempt in attempts)
+        assert b"OWNER_AUTHORIZED_REAL_DATA_CANARY" in publisher.artifacts[MARKDOWN]
+
+
+@pytest.mark.parametrize(
+    ("inventory_class", "target_class", "reason"),
+    [
+        ("SYNTHETIC", "OWNER_AUTHORIZED_REAL_TARGET", "PRIVACY_CLASS_MISMATCH"),
+        (CANARY, "SYNTHETIC_LOCAL_TARGET", "UNSUPPORTED_PRIVACY_CLASS"),
+    ],
+)
+def test_canary_closure_mismatch_refuses_before_target_or_simulator_creation(
+    inventory_class: str,
+    target_class: str,
+    reason: str,
+) -> None:
+    with tempfile.TemporaryDirectory(
+        prefix="triana-runner-refusal-", dir="/private/tmp"
+    ) as raw:
+        result, failure, simulator, target, publisher = _canary_closure_run(
+            Path(raw), inventory_class=inventory_class, target_class=target_class
+        )
+
+        assert result is None
+        assert failure is not None and failure.reason_code == reason
+        assert simulator.requests == []
+        assert target.launches == []
+        assert publisher.calls == []

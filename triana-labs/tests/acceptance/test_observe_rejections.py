@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tempfile
 from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
@@ -11,6 +12,42 @@ import pytest
 from conftest import minimal_trace, parse_jsonl, write_jsonl
 
 Mutator = Callable[[dict[str, Any]], Any]
+
+
+@pytest.mark.parametrize("mode", ["mixed", "unknown", "public-custody"])
+def test_privacy_class_refusals_are_atomic_and_publish_nothing(
+    run_cli: Any,
+    tmp_path: Path,
+    mode: str,
+) -> None:
+    first = minimal_trace(trace_id="trace-one", source_trace_id="source-one")
+    second = minimal_trace(trace_id="trace-two", source_trace_id="source-two")
+    if mode == "mixed":
+        second["privacy_class"] = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+        expected = "PRIVACY_CLASS_MISMATCH"
+    elif mode == "unknown":
+        first["privacy_class"] = "LOCAL_SENSITIVE"
+        expected = "UNSUPPORTED_PRIVACY_CLASS"
+    else:
+        first["privacy_class"] = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+        second["privacy_class"] = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+        expected = "UNSUPPORTED_PRIVACY_CLASS"
+    corpus = tmp_path / f"{mode}.jsonl"
+    write_jsonl(corpus, [first, second])
+
+    if mode == "public-custody":
+        output = tmp_path / "public-output"
+        result = run_cli("traces", "observe", corpus, "--out", output)
+    else:
+        with tempfile.TemporaryDirectory(
+            prefix="triana-observer-refusal-", dir="/private/tmp"
+        ) as root:
+            output = Path(root) / "output"
+            result = run_cli("traces", "observe", corpus, "--out", output)
+
+    assert result.returncode != 0
+    assert result.stderr_json()["reason_code"] == expected
+    assert not output.exists()
 
 
 def _delete(field: str) -> Mutator:
