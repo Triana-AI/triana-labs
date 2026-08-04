@@ -85,11 +85,12 @@ context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
 Public-rollout amendment: Akarsh now wants a public/YC-demonstrable and then
 externally usable Preview, with the allowlisted Triana demo adapted as the Labs
 UI. The current ordered proposal is LABS-06 fidelity repair, LABS-07 report
-contract, LABS-08 UI, LABS-09 public synthetic demo, and LABS-10 local-sensitive
-stranger installation. The full blocker/deferred register is
+contract plus LABS-08 UI as one vertical slice, LABS-09 public synthetic demo,
+and LABS-10 local-sensitive stranger installation. The full blocker/deferred register is
 `internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`. UI provenance,
-license, and the report contract precede UI code; persistent/global memory is
-not a first-public-proof blocker.
+license, accepted wireframes, and the report-as-evidence boundary precede UI
+code; the report and UI are no longer separate milestones. Persistent/global
+memory is not a first-public-proof blocker.
 
 The planning-first LABS-06 handoff is complete: Akarsh accepted every
 recommended option and directed implementation with maximum safe parallelism.
@@ -804,3 +805,17 @@ world-mutation authority, intent-precondition, aggregate-deadline, and target
 availability backlog, with Conversation 7 and partial/unavailable episodes
 remaining visible evidence. LABS-07 is discussion-only until a new bounded
 slice packet and owner decisions are frozen.
+
+Roadmap consolidation (2026-08-04): Akarsh combined LABS-07 and LABS-08 into
+one report-and-UI vertical slice and directed full-journey wireframe discussion
+before implementation. The journey must cover authorized trace setup, corpus
+understanding, grounded personas/intents/cases, execution preflight/progress,
+adaptive conversations, coverage/cost/gaps/lineage, human review, and carried
+backlog. The report remains the only evidence authority, but its minimum schema
+and deterministic projection should be built with the UI rather than as a
+standalone milestone. Reuse only file-level provenance-cleared tokens, layout,
+navigation, drawers, and responsive behavior from the allowlisted Triana demo;
+do not carry Release Review semantics or data. LABS-09 numbering and packaging
+scope remain unchanged. No UI code, source copy, dependency, or implementation
+is authorized until wireframes, provenance, and a replacement slice packet are
+accepted.

@@ -210,8 +210,23 @@ preconditions before downstream actions; use a longer aggregate deadline for
 future twelve-case runs; and keep target protocol/tool-budget availability
 separate from simulator fidelity. Conversation 7 remains negative evidence,
 and partial or unavailable episodes remain typed gaps rather than passes or
-failures. LABS-07 report/static-projection planning is now next; no LABS-07
-implementation is authorized by this closure.
+failures. The next checkpoint is the combined LABS-07/08 report-and-UI vertical
+slice; no implementation is authorized until its full-journey wireframes,
+minimum report boundary, provenance-cleared source files, and bounded slice
+packet are accepted.
+
+LABS-07 and LABS-08 are one milestone rather than sequential projects. The
+canonical report remains the sole evidence authority, but it is designed and
+validated with the read-only UI so the contract follows the actual user
+journey instead of speculative reporting abstractions. That journey spans
+authorized trace setup, observed corpus understanding, grounded persona/intent
+and case derivation, execution preflight and progress, inspectable adaptive
+conversations, coverage/cost/gaps/lineage, human review, and carried backlog.
+The allowlisted Triana demo may supply only file-level provenance-cleared
+visual tokens, layout, navigation, drawers, and responsive behavior; Release
+Review data models, PASS/BLOCK semantics, snapshots, and memory do not cross.
+LABS-09 remains the separate packaging, no-key demo, documentation, licensing,
+and static-publication checkpoint.
 
 ### Public Preview rollout direction
 

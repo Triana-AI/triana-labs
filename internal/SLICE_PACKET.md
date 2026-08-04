@@ -214,7 +214,9 @@ LABS-06 exit and retained as optional future calibration. Backlog is limited
 to generic claimed-world-mutation authority, intent-precondition enforcement,
 a recommended 1,800-second future aggregate deadline with unchanged per-call
 timeouts and no retry, and separately scoped target protocol/tool-budget
-readiness. LABS-07 planning is next; this packet authorizes no LABS-07 edits.
+readiness. Combined LABS-07/08 report-and-UI planning is next; this packet
+authorizes no report, UI, dependency, or Triana-demo source edits. A new packet
+must follow accepted full-journey wireframes and file-level provenance review.
 
 Private machine artifacts remain under
 `/private/tmp/triana-labs06-final-live-20260804-v5/hrai-output`; the readable

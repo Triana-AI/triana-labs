@@ -4,7 +4,7 @@
 
 Date: 2026-08-03
 
-Status: **OWNER-DIRECTED ROADMAP; LABS-06 CLOSED WITH ACCEPTED BACKLOG; LABS-07 NEXT**
+Status: **OWNER-DIRECTED ROADMAP; LABS-06 CLOSED; COMBINED LABS-07/08 WIREFRAMES NEXT**
 
 This plan turns the completed LABS-04 machinery and the closed-but-unpassed
 LABS-05 evidence into the shortest honest path to a public, YC-demonstrable
@@ -72,8 +72,7 @@ The new checkpoint sequence is:
 | Checkpoint | Outcome | Public blocker? |
 |---|---|---:|
 | LABS-06 | Regular-user simulator fidelity — closed with accepted backlog | Cleared for the bounded adaptive claim |
-| LABS-07 | Machine-readable public report and static projection contract | Yes |
-| LABS-08 | Triana Labs demo UI over the frozen report | Yes |
+| LABS-07/08 | Canonical report and full-journey Triana Labs UI vertical slice | Yes |
 | LABS-09 | One-command demo, packaging, docs, license, CI, and static publication | Yes for Exit A |
 | LABS-10 | Authorized local-sensitive data path and stranger installation | Yes for Exit B |
 | LABS-11 | Persistent human rulings and next-run application | No; begins only after LABS-10 |
@@ -129,12 +128,38 @@ exit LABS-06; it remains future calibration before any population-level
 fidelity claim. Accepted backlog comprises a generic claimed-world-mutation
 authority guard, explicit intent-precondition enforcement, a longer aggregate
 deadline for future twelve-case runs, and separately scoped target
-protocol/tool-budget readiness. These items do not block LABS-07's evidence
-report contract, but the report must expose them as limitations and typed gaps.
+protocol/tool-budget readiness. These items do not block the combined
+LABS-07/08 slice, but its report and UI must expose them as limitations and
+typed gaps.
 
-## 4. LABS-07 — report contract and static projection
+## 4. LABS-07/08 — canonical report and full-journey Labs UI
 
-The UI must be a projection of evidence rather than a second reasoning engine.
+LABS-07 and LABS-08 are one vertical slice. The UI must remain a projection of
+evidence rather than a second reasoning engine, but the minimum report contract
+and real UI are designed, implemented, and verified together. This avoids a
+speculative reporting layer while preserving a strict machine boundary.
+
+### Complete user journey
+
+The wireframes must cover the product from first contact to retained review:
+
+1. understand the local-first privacy model and authorize a trace source;
+2. inspect ingestion, normalization, exclusions, redaction, and lineage;
+3. understand the observed corpus and derived personas, intents, and behaviors;
+4. inspect observed and grounded-expanded cases plus selection and dedupe;
+5. review provider, target, privacy, world, budget, and execution preflight;
+6. follow run progress and distinguish complete, partial, unavailable, and
+   not-started episodes;
+7. inspect adaptive conversations as the primary evidence object;
+8. understand coverage, cost, HTTP/tool accounting, fidelity, and typed gaps;
+9. inspect human review without inventing a ruling; and
+10. understand known limitations, carried backlog, and next-run implications.
+
+Exit A remains read-only: setup explains and previews the journey but accepts
+no uploads, credentials, provider calls, target execution, or mutable review.
+Interactive local setup and execution remain later packaging/onboarding work.
+
+### Canonical report boundary
 
 Required machine-readable report sections:
 
@@ -156,9 +181,11 @@ Acceptance requires complete, partial, gaps-only, long-transcript, narrow-
 viewport, redacted, and missing-field fixtures. Static-render failure must not
 destroy or change the machine-readable report.
 
-## 5. LABS-08 — Triana Labs demo UI
+The first implementation adds only fields required by an accepted journey
+screen or a non-negotiable custody/lineage rule. JSON, Markdown, and UI agree
+from the same fixture; the UI cannot become the source of truth.
 
-### Provenance entry gate
+### Triana demo provenance entry gate
 
 The allowlisted source is currently located at
 `/Users/akarshgajbhiye/agentagon/triana-demo-clean-video`. It is a local
@@ -186,12 +213,15 @@ the suspended Release Review screens:
 
 | Route | Question answered |
 |---|---|
-| `/` | What did this run test, and what evidence is complete or missing? |
+| `/` | Where am I in the trace-to-review journey, and what can I inspect next? |
+| `/setup` | What stays local, what must be authorized, and what preflight is required? |
+| `/traces` | What entered, was excluded, was normalized, and was derived from the corpus? |
 | `/cases` | Which grounded user situations were selected, excluded, or deduplicated? |
+| `/runs/[run_id]` | What was configured, what happened, and which episodes completed or became gaps? |
 | `/episodes/[episode_id]` | How did the simulated user adapt to each target response? |
 | `/coverage` | Which personas, intents, behaviors, and trajectories are represented? |
 | `/evidence` | What lineage, cost, fidelity, privacy, and gaps support the visible claims? |
-| `/setup` | How can a developer reproduce the demo or connect an agent locally? |
+| `/review` | What did the human accept, reject, leave unavailable, or carry as backlog? |
 
 The first public UI is read-only. No approve, edit-memory, rerun, upload,
 credential, billing, or target-control action ships in Exit A.
@@ -213,9 +243,10 @@ credential, billing, or target-control action ships in Exit A.
 
 The proposed destination is `triana-labs/web/` using the existing package's
 Next.js/React/npm stack only if provenance and dependency review pass. No UI
-files are copied during this planning slice.
+files are copied during this planning slice. Wireframes must be accepted before
+the implementation packet freezes routes or components.
 
-## 6. LABS-09 — public packaging and one-command demo
+## 5. LABS-09 — public packaging and one-command demo
 
 Exit A requires all of the following:
 
@@ -240,7 +271,7 @@ Exit A requires all of the following:
 Exit A does not wait for persistent memory, baseline/candidate diff, judges,
 real customer data, or a hosted product backend.
 
-## 7. LABS-10 — usable design-partner alpha
+## 6. LABS-10 — usable design-partner alpha
 
 After the public proof is stable:
 
@@ -261,12 +292,12 @@ After the public proof is stable:
 Failure narrows onboarding or product scope. It does not justify hosted
 infrastructure or founder-written bespoke integrations.
 
-## 8. Consolidated deferred-work register
+## 7. Consolidated deferred-work register
 
 ### A. Required before Exit A
 
 - LABS-06 bounded simulator-fidelity closure — completed with accepted backlog;
-- report JSON and static projection contract;
+- combined canonical report and full-journey read-only UI;
 - publication-safe synthetic reference run;
 - Triana demo file-level provenance and Labs IA rewrite;
 - read-only responsive UI and evidence-linked transcript view;
@@ -357,7 +388,7 @@ infrastructure or founder-written bespoke integrations.
 - preserve and learn from the consumed real canary; do not rerun it merely to
   obtain a favorable result.
 
-## 9. What is explicitly not blocking the first public proof
+## 8. What is explicitly not blocking the first public proof
 
 - persistent/global or emotional memory;
 - baseline/candidate comparison;
@@ -369,31 +400,35 @@ infrastructure or founder-written bespoke integrations.
 - broad evaluation expansion;
 - PASS/BLOCK or release-control semantics.
 
-## 10. Decisions still needed before implementation
+## 9. Decisions still needed before implementation
 
 The orchestrator should recommend defaults, but these owner gates remain:
 
-1. Choose whether Exit A's public sample is a newly generated synthetic run or
+1. Accept the full-journey information architecture and wireframes for the
+   combined LABS-07/08 slice.
+2. Choose whether Exit A's public sample is a newly generated synthetic run or
    a fully synthetic reconstruction of the private HRAI canary shape.
-2. Clear the Triana demo immutable source snapshot and per-file ancestry, or
+3. Clear the Triana demo immutable source snapshot and per-file ancestry, or
    direct clean-room reimplementation of the design system.
-3. Confirm Next.js 15 + React 19 + npm as the web stack after dependency audit.
-4. Select the open-source license and contribution policy.
-5. Select the static hosting destination for the read-only demo.
-6. For Exit B, select the first documented BYOK simulator provider boundary
+4. Confirm Next.js 15 + React 19 + npm as the web stack after dependency audit.
+5. Select the open-source license and contribution policy.
+6. Select the static hosting destination for the read-only demo.
+7. For Exit B, select the first documented BYOK simulator provider boundary
    and the first independent installation participant.
 
-## 11. Planning-slice contract and verification
+## 10. Planning-slice contract and verification
 
-Active outcome: make the route from LABS-05 evidence to an honest public
-Preview explicit while preserving every deferred capability.
+Active outcome: turn the completed LABS-04/05/06 evidence path into one
+full-journey report-and-UI vertical slice while preserving every deferred
+capability.
 
 Inputs: charter, canonical plan, LABS-05 closure/fidelity review, working
 memory, provenance ledger, current CLI/package, and the allowlisted local demo
 snapshot.
 
-Outputs: this roadmap, canonical references, and an append-only decision that
-public Preview/UI planning is now the immediate product direction.
+Outputs: this consolidated roadmap, canonical references, and an append-only
+decision that LABS-07/08 wireframes and minimum report/UI contract are now the
+immediate product direction.
 
 Authority: deterministic code will own report identities and calculations;
 the UI will only project; models may propose cases/turns/explanations; humans
@@ -402,16 +437,18 @@ own usefulness, fidelity rulings, and persistent meaning.
 Privacy/execution: planning only; no egress. Exit A remains synthetic-only and
 read-only. Exit B requires a separately frozen local-sensitive contract.
 
-Gaps/refusal: unclear UI ancestry blocks reuse; failed fidelity blocks the
-adaptive claim; missing license blocks public source publication; missing
-privacy/egress proof blocks real/local-sensitive use.
+Gaps/refusal: unclear UI ancestry blocks reuse; unaccepted wireframes block UI
+implementation; missing license blocks public source publication; missing
+privacy/egress proof blocks real/local-sensitive use. LABS-06 accepted backlog
+must remain visible but does not block the bounded adaptive claim.
 
 Provenance: no external implementation is copied in this slice. The Triana demo
 is inspected only as an allowlisted planning source.
 
 Change budget: this document plus `triana-labs/CHARTER.md`, the current Labs
-plan, `internal/WORKING_MEMORY.md`, `internal/DECISION_LOG.md`, and `README.md`;
-no production, test, dependency, lock, UI, schema, fixture, or provenance-ledger
+plan, `docs/ARCHITECTURE.md`, `internal/SLICE_PACKET.md`,
+`internal/WORKING_MEMORY.md`, `internal/DECISION_LOG.md`, and `README.md`; no
+production, test, dependency, lock, UI, schema, fixture, or provenance-ledger
 edit.
 
 Acceptance: governance, decision append-only verification, link/path review,

@@ -132,6 +132,28 @@ model owns wording only; a human owns residual naturalness and fidelity. No
 provider execution, persistent/global memory, model judge, report/UI,
 baseline/candidate comparison, or real-data path is added by this checkpoint.
 
+LABS-06 is now owner-closed with accepted backlog. The next planned boundary is
+one combined LABS-07/08 vertical slice:
+
+```text
+verified retained run artifacts
+  -> deterministic canonical report compiler
+  -> versioned report JSON as sole evidence authority
+  -> deterministic Markdown projection
+  -> read-only full-journey Labs web projection
+```
+
+Report identity, lineage, denominators, accounting, gap classification,
+fidelity labels, and human-ruling custody remain deterministic inputs to the
+projection. TypeScript UI code may navigate, order, filter, disclose, and
+format; it may not independently infer, calculate, upgrade, or persist those
+facts. The planned journey spans trace authorization and normalization, corpus
+understanding, grounded case construction, run preflight/progress, adaptive
+transcripts, evidence/gaps/cost, human review, and carried backlog. Exact
+Triana-demo files may enter only after per-file provenance and license review.
+This is an accepted architecture direction, not yet an implemented report or
+UI boundary.
+
 ## Authority map
 
 ```text

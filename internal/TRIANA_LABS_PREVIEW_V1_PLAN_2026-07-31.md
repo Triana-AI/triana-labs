@@ -139,7 +139,7 @@ frozen slice before implementation or live execution.
 Akarsh directed the next roadmap toward a public, usable Preview and added the
 allowlisted Triana demo UI as an explicit priority. The superseding checkpoint
 order for the immediate generated-multi-turn launch cut is LABS-06 simulator
-fidelity, LABS-07 report/static projection, LABS-08 Labs demo UI, LABS-09
+fidelity, combined LABS-07/08 report-and-Labs-UI vertical slice, LABS-09
 one-command public packaging, and LABS-10 local-sensitive stranger
 installation. Detailed scope, release blockers, deferred work, and owner gates
 are in `internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`.
@@ -167,8 +167,8 @@ and adversarial. `REGULAR_USER_SIMULATION_FIDELITY_V1` requires at least 24
 human-accepted items and zero critical semantic violations. Automated
 acceptance uses fakes only; provider or target execution requires a separate
 one-run owner authorization.
-Public sample generation waits for LABS-07's report schema. Persistent/global
-memory, judges, UI/report, baseline/candidate comparison, real-data support,
+Public sample generation waits for the combined LABS-07/08 report-and-UI
+contract. Persistent/global memory, judges, baseline/candidate comparison,
 generic SDKs, and broad eval expansion remain deferred.
 
 Local implementation completed on 2026-08-03 with 18/18 frozen LABS-06 cases,
@@ -258,8 +258,28 @@ not claim twelve-of-twelve success, universal realism, or production-grade
 fidelity. The accepted backlog is: generic authority for claimed world
 mutations, enforcement of explicit intent preconditions, a recommended
 1,800-second future aggregate run deadline with unchanged per-call/no-retry
-behavior, and separate target protocol/tool-budget readiness work. LABS-07
-report/static-projection planning is next.
+behavior, and separate target protocol/tool-budget readiness work. Combined
+LABS-07/08 full-journey report-and-UI planning is next.
+
+### 2026-08-04 report-and-UI consolidation amendment
+
+Akarsh consolidated LABS-07 and LABS-08 into one vertical slice. The internal
+authority boundary remains strict: a versioned canonical report is the sole
+machine-readable evidence source, and Markdown/static UI surfaces are
+deterministic projections that own no new arithmetic, classification,
+fidelity, or ruling. The report boundary and UI should be designed together so
+the minimum schema is driven by the actual experience rather than a separate
+generic reporting project.
+
+The accepted wireframe journey begins with authorized trace setup and follows
+corpus understanding, grounded persona/intent/case generation, execution
+preflight and progress, adaptive conversations, coverage/cost/gaps/lineage,
+human review, and carried backlog. The allowlisted Triana demo supplies only
+file-level provenance-cleared visual/layout/navigation behavior. LABS-09 keeps
+its historical number and remains responsible for one-command packaging,
+public synthetic fixtures, documentation, licensing, CI parity, and static
+publication. No UI implementation begins before wireframes, exact reusable
+source files, dependencies, and a replacement slice packet are accepted.
 
 ## 1. The commitment
 
@@ -1253,14 +1273,14 @@ Industry sales-bot simulation study (`2025.emnlp-industry.16`). These sources
 motivate the mechanisms and risks; they do not establish Triana product
 passage or authorize external execution.
 
-### M3A — report schema and static projection
+### M3A — report and Labs UI vertical slice
 
 Inputs: deterministic M2 report model and selected paired transcripts.
 
 Outputs:
 
 - versioned machine-readable report;
-- static HTML report;
+- deterministic Markdown and read-only static UI projections;
 - divergence tiers, weak evidence, gaps, lineage, fidelity, denominators,
   cost, variation, and trajectory diversity;
 - paired-transcript overlay;
@@ -1276,8 +1296,11 @@ Acceptance:
 - renderer failure cannot destroy the machine-readable report;
 - adapted UI provenance is recorded per file and commit.
 
-Owner gate before UI edit: exact allowlisted source files after ancestry and
-license inspection, plus final web stack/package manager.
+The active generated-multi-turn launch cut specializes this broader M3A model
+into the LABS-07/08 full journey: setup, trace understanding, derived grounded
+cases, execution, adaptive transcripts, evidence/gaps, and human review. Owner
+gate before UI edit: accepted wireframes, exact allowlisted source files after
+ancestry and license inspection, plus final web stack/package manager.
 
 ### M3B — one-command public demo and documentation
 

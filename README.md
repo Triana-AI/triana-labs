@@ -105,18 +105,21 @@ Adaptive Multi-Turn Runner. LABS-04 produced five valid distinct grounded cases
 and passed owner usefulness review. LABS-05's one private real-target canary
 produced two valid distinct trajectories and one partial trajectory; owner
 adaptation rulings were Y/N/Y/Y, so the checkpoint closed honestly as unpassed.
-The local implementation and target connectors remain supported, while the
-next blocker is regular-user simulator fidelity. Labs still does not generally
-accept real/local-sensitive traces, compare releases, create persistent
-memory, or render a public HTML report.
+The local implementation and target connectors remain supported. LABS-06 is
+closed with accepted backlog after proving deterministic simulator controls,
+live provider compatibility, and genuine adaptive multi-turn execution; its
+bounded closure is not a universal fidelity claim. Labs still does not
+generally accept real/local-sensitive traces, compare releases, create
+persistent memory, or render a public Labs UI.
 
 `triana cases generate` now dispatches explicitly from the config artifact
 kind: the secret-free restricted example selects the pinned GLM-5.2 path while
 existing legacy configs retain the older path. `triana cases resume` continues
 an immutable restricted pause from exact config bytes and owner answers. This
 remains synthetic-only CLI productization, not general real-data support. The
-post-LABS-05 public path is fidelity repair, report contract, Labs demo UI,
-one-command public demo, and then stranger installation.
+next public checkpoint combines the report contract and full-journey Labs demo
+UI as one LABS-07/08 vertical slice, followed by the LABS-09 one-command public
+demo and LABS-10 stranger installation.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.
