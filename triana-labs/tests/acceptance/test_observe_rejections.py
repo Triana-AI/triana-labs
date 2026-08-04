@@ -447,6 +447,11 @@ def test_schema_and_value_rejections_are_safe_and_typed(
 
     result = run_cli("traces", "observe", corpus, "--out", output)
 
+    if expected_code == "UNSUPPORTED_PRIVACY_CLASS":
+        assert result.returncode == 4
+        assert result.stderr_json()["reason_code"] == expected_code
+        assert not output.exists()
+        return
     assert result.returncode == 10
     rejection = parse_jsonl(output / "rejected_traces.jsonl")
     assert len(rejection) == 1

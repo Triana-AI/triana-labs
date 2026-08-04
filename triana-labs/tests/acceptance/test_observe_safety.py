@@ -343,12 +343,9 @@ def test_local_sensitive_line_is_rejected_and_never_normalized(
 
     result = run_cli("traces", "observe", corpus, "--out", output)
 
-    assert result.returncode == 10
-    assert (output / "normalized_traces.jsonl").read_bytes() == b""
-    assert (
-        parse_jsonl(output / "rejected_traces.jsonl")[0]["code"]
-        == "UNSUPPORTED_PRIVACY_CLASS"
-    )
+    assert result.returncode == 4
+    assert result.stderr_json()["reason_code"] == "UNSUPPORTED_PRIVACY_CLASS"
+    assert not output.exists()
 
 
 def test_ambient_locale_timezone_and_environment_do_not_change_artifacts(
