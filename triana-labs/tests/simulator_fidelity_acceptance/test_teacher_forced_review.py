@@ -12,8 +12,50 @@ from conftest import (
     bundle_value,
     canonical,
     digest,
+    foundry_simulator,
+    invoke_lab06,
     jsonl,
+    proposal,
+    provider_envelope,
 )
+
+
+def test_shared_structural_circuit_blocks_only_third_identical_first_failure(
+    tmp_path: Path, legacy: object, monkeypatch: object
+) -> None:
+    invalid = provider_envelope(canonical(proposal(user_utterance=None)).decode())
+    simulator, opener = foundry_simulator(legacy, monkeypatch, [invalid])
+    blocked = invoke_lab06(tmp_path / "blocked", legacy, simulator_override=simulator)
+    attempts = jsonl(blocked.publisher.artifacts["episode_attempts.jsonl"])
+    assert len(opener.requests) == len(blocked.target.launches) == 2
+    assert attempts[2]["termination_reason"] == "SIMULATOR_SHARED_CONFORMANCE_BLOCKED"
+    assert attempts[2]["simulator_http_exchange_count"] == 0
+    assert attempts[2]["target_http_exchange_count"] == 0
+
+    different = provider_envelope(canonical(proposal(disposition=7)).decode())
+    valid = provider_envelope(canonical(proposal()).decode())
+    simulator, opener = foundry_simulator(
+        legacy, monkeypatch, [invalid, different, valid]
+    )
+    continued = invoke_lab06(
+        tmp_path / "different", legacy, simulator_override=simulator
+    )
+    assert len(opener.requests) > 2 and len(continued.target.launches) == 3
+    assert "SIMULATOR_SHARED_CONFORMANCE_BLOCKED" not in {
+        row["termination_reason"]
+        for row in jsonl(continued.publisher.artifacts["episode_attempts.jsonl"])
+    }
+
+    semantic = invoke_lab06(
+        tmp_path / "semantic",
+        legacy,
+        proposals=[proposal(user_utterance="I have updated your account.")],
+    )
+    assert len(semantic.target.launches) == 3
+    assert "SIMULATOR_SHARED_CONFORMANCE_BLOCKED" not in {
+        row["termination_reason"]
+        for row in jsonl(semantic.publisher.artifacts["episode_attempts.jsonl"])
+    }
 
 
 def test_historical_bundle_review_and_no_bundle_accounting_privacy_custody_remain_stable(
@@ -38,6 +80,23 @@ def test_historical_bundle_review_and_no_bundle_accounting_privacy_custody_remai
     bundle = bundle_value(legacy)
     bundle_path = tmp_path / "bundle.json"
     bundle_path.write_bytes(canonical(bundle, lf=True))
+    structural = module.evaluate_teacher_forced(
+        bundle_path,
+        simulator=FidelitySimulator(module, [proposal(user_utterance=None)]),
+    )
+    structural_attempt = jsonl(structural["fidelity_attempts.jsonl"])[0]
+    assert structural_attempt["reason_code"] == "SIMULATOR_INVALID_RESPONSE"
+    assert structural_attempt["detail_codes"] == ["SIMULATOR_EMIT_FIELDS_INVALID"]
+    assert structural_attempt["diagnostic"]["stage"] == "SIMULATOR_EMIT_FIELDS_INVALID"
+    semantic = module.evaluate_teacher_forced(
+        bundle_path,
+        simulator=FidelitySimulator(
+            module, [proposal(user_utterance="I have updated your account.")]
+        ),
+    )
+    semantic_attempt = jsonl(semantic["fidelity_attempts.jsonl"])[0]
+    assert semantic_attempt["reason_code"] == "SIMULATOR_SEMANTIC_INVALID"
+    assert semantic_attempt["diagnostic"] is None
     simulator = FidelitySimulator(module)
     artifacts = module.evaluate_teacher_forced(bundle_path, simulator=simulator)
 

@@ -36,6 +36,7 @@ from .contracts import (
 )
 
 WIRE = "LABS05_WIRE_V1"
+CLOSURE_WIRE = "LABS046_WORKFLOW_CLOSURE_V1"
 MANIFEST_HASH = (
     "sha256:817000637daef25bff9bd95eee46a25976f575d1b2d5aa62965a6c6d9c5b6cb9"
 )
@@ -192,7 +193,46 @@ def _strict_int(value: Any, expected: int) -> bool:
     return type(value) is int and value == expected
 
 
-def _validate_review(value: dict[str, Any]) -> None:
+def _validate_review(value: dict[str, Any], *, closure: bool = False) -> None:
+    if closure:
+        keys = {
+            "artifact_kind",
+            "schema_version",
+            "protocol_version",
+            "case_factory_manifest_hash",
+            "case_candidate_file_hash",
+            "ordered_case_ids",
+            "world_inventory_hash",
+            "context_hash",
+            "reviewer",
+            "review_state",
+        }
+        if not (
+            _closed(value, keys)
+            and value["artifact_kind"] == "labs046_execution_selection"
+            and _strict_int(value["schema_version"], 1)
+            and value["protocol_version"] == CLOSURE_WIRE
+            and value["reviewer"] == "Akarsh"
+            and value["review_state"] == "PASSED"
+            and isinstance(value["ordered_case_ids"], list)
+            and len(value["ordered_case_ids"]) == 12
+            and len(set(value["ordered_case_ids"])) == 12
+            and all(
+                isinstance(item, str) and _PORTABLE_ID.fullmatch(item)
+                for item in value["ordered_case_ids"]
+            )
+            and all(
+                isinstance(value[name], str) and _DIGEST.fullmatch(value[name])
+                for name in (
+                    "case_factory_manifest_hash",
+                    "case_candidate_file_hash",
+                    "world_inventory_hash",
+                    "context_hash",
+                )
+            )
+        ):
+            raise AdaptiveRunFailure("REVIEW_INVALID", 4)
+        return
     keys = set(
         "artifact_kind schema_version rubric_version case_factory_manifest_file_hash case_candidate_file_hash reviewer review_date review_state cases".split()  # noqa: SIM905
     )
@@ -246,9 +286,11 @@ def _validate_review(value: dict[str, Any]) -> None:
 
 
 def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
-    top = set(
+    legacy_top = set(
         "artifact_kind schema_version protocol_version privacy_class selected_case_ids simulator target budget".split()  # noqa: SIM905
     )
+    closure = value.get("protocol_version") == CLOSURE_WIRE
+    top = legacy_top | ({"workflow_closure"} if closure else set())
     if not _closed(value, top):
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
     privacy = value["privacy_class"]
@@ -257,8 +299,14 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
     if not (
         value["artifact_kind"] == "adaptive_runner_config"
         and _strict_int(value["schema_version"], 1)
-        and value["protocol_version"] == WIRE
-        and value["selected_case_ids"] == list(CASE_IDS)
+        and value["protocol_version"] in {WIRE, CLOSURE_WIRE}
+        and (
+            isinstance(value["selected_case_ids"], list)
+            and len(value["selected_case_ids"]) == 12
+            and len(set(value["selected_case_ids"])) == 12
+            if closure
+            else value["selected_case_ids"] == list(CASE_IDS)
+        )
     ):
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
     simulator = value["simulator"]
@@ -391,22 +439,65 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
         "target_http_exchanges": target_http,
         "target_reservation_usd_per_turn": "1.888888",
     }
-    if value["budget"] != expected_budget:
+    if closure:
+        workflow = value["workflow_closure"]
+        closure_budget = value["budget"]
+        closure_expected_budget = {
+            **expected_budget,
+            "all_http_exchanges": 60,
+            "episode_count": 12,
+            "max_usd": "100.000000",
+            "simulator_http_exchanges": 24,
+            "target_http_exchanges": 36,
+        }
+        if not (
+            _closed(
+                workflow,
+                {
+                    "execution_selection_hash",
+                    "world_inventory_hash",
+                    "context_hash",
+                },
+            )
+            and all(
+                isinstance(workflow[name], str) and _DIGEST.fullmatch(workflow[name])
+                for name in workflow
+            )
+            and closure_budget == closure_expected_budget
+        ):
+            raise AdaptiveRunFailure("CONFIG_INVALID", 2)
+    elif value["budget"] != expected_budget:
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
 
 
-def _validate_cases(source: VerifiedCaseFactoryInput) -> None:
+def _validate_cases(
+    source: VerifiedCaseFactoryInput, selection: dict[str, Any] | None = None
+) -> None:
+    closure = selection is not None
+    expected_manifest = (
+        selection["case_factory_manifest_hash"]
+        if selection is not None
+        else MANIFEST_HASH
+    )
+    expected_case_hash = (
+        selection["case_candidate_file_hash"] if selection is not None else CASE_HASH
+    )
     if (
-        source.manifest_file_hash != MANIFEST_HASH
-        or source.case_candidate_file_hash != CASE_HASH
+        source.manifest_file_hash != expected_manifest
+        or source.case_candidate_file_hash != expected_case_hash
     ):
         raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
     if not _DIGEST.fullmatch(source.input_manifest_hash) or not _DIGEST.fullmatch(
         source.intelligence_manifest_hash
     ):
         raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
-    if tuple(item.case.get("case_id") for item in source.cases) != CASE_IDS:
+    expected_ids = (
+        tuple(selection["ordered_case_ids"]) if selection is not None else CASE_IDS
+    )
+    if tuple(item.case.get("case_id") for item in source.cases) != expected_ids:
         raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
+    origins: list[Any] = []
+    strata: list[Any] = []
     for item in source.cases:
         case = item.case
         if not all(
@@ -430,6 +521,97 @@ def _validate_cases(source: VerifiedCaseFactoryInput) -> None:
             and isinstance(case["scenario"]["opening_user_turn"].get("text"), str)
         ):
             raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
+        if closure:
+            origins.append(case.get("case_origin"))
+            strata.append(case.get("workflow_stratum"))
+            if not (
+                case.get("case_origin")
+                in {"OBSERVED_PRODUCTION_CASE", "GROUNDED_EXPANDED_CASE"}
+                and isinstance(case.get("goal"), dict)
+                and isinstance(case.get("done_when"), dict)
+                and case["goal"].get("basis") == "OBSERVED"
+                and case["done_when"].get("basis") == "OBSERVED"
+                and _text(case["goal"].get("text"), nonempty=True)
+                and _text(case["done_when"].get("text"), nonempty=True)
+                and isinstance(case.get("source_trace_ids"), list)
+                and case["source_trace_ids"] == sorted(set(case["source_trace_ids"]))
+                and all(
+                    isinstance(trace_id, str) and _PORTABLE_ID.fullmatch(trace_id)
+                    for trace_id in case["source_trace_ids"]
+                )
+                and isinstance(case.get("required_world_keys"), dict)
+                and case["required_world_keys"]
+                and case.get("workflow_stratum") in {"ORDINARY", "RECOVERY"}
+            ):
+                raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
+    if closure and not (
+        origins.count("OBSERVED_PRODUCTION_CASE") == 6
+        and origins.count("GROUNDED_EXPANDED_CASE") == 6
+        and strata.count("ORDINARY") >= 9
+        and strata.count("RECOVERY") <= 3
+    ):
+        raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
+
+
+def _validate_world_inventory(value: dict[str, Any]) -> None:
+    keys = {
+        "artifact_kind",
+        "schema_version",
+        "protocol_version",
+        "data_class",
+        "captured_at",
+        "source_lineage",
+        "inventory",
+    }
+    inventory = value.get("inventory")
+    if not (
+        _closed(value, keys)
+        and value["artifact_kind"] == "labs046_world_inventory"
+        and _strict_int(value["schema_version"], 1)
+        and value["protocol_version"] == "LABS046_WORLD_INVENTORY_V1"
+        and value["data_class"] == "SYNTHETIC"
+        and isinstance(value["captured_at"], str)
+        and _closed(value["source_lineage"], {"source_kind", "source_id"})
+        and isinstance(inventory, dict)
+        and 1 <= len(inventory) <= 8
+    ):
+        raise AdaptiveRunFailure("WORLD_INVENTORY_INVALID", 4)
+    for name, identifiers in inventory.items():
+        if not (
+            isinstance(name, str)
+            and _PORTABLE_ID.fullmatch(name)
+            and isinstance(identifiers, list)
+            and identifiers == sorted(set(identifiers))
+            and all(
+                isinstance(item, str) and _PORTABLE_ID.fullmatch(item)
+                for item in identifiers
+            )
+        ):
+            raise AdaptiveRunFailure("WORLD_INVENTORY_INVALID", 4)
+
+
+def _missing_world(
+    case: JsonObject, inventory: dict[str, Any]
+) -> dict[str, Any] | None:
+    missing_namespaces: list[str] = []
+    missing_values = 0
+    for namespace, identifiers in case["required_world_keys"].items():
+        available = inventory.get(namespace)
+        absent = (
+            len(identifiers)
+            if not isinstance(available, list)
+            else len(set(identifiers) - set(available))
+        )
+        if absent:
+            missing_namespaces.append(namespace)
+            missing_values += absent
+    if not missing_namespaces:
+        return None
+    return {
+        "missing_namespace_count": len(missing_namespaces),
+        "missing_value_count": missing_values,
+        "namespaces": sorted(missing_namespaces),
+    }
 
 
 @dataclass
@@ -443,6 +625,11 @@ class _Episode:
     ledger: list[dict[str, Any]] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
     gap_details: list[str] = field(default_factory=list)
+    structural_detail: str | None = None
+    structural_diagnostic: dict[str, Any] | None = None
+    case_metadata: dict[str, Any] | None = None
+    world_preflight_status: str = "NOT_APPLICABLE"
+    world_gap_detail: dict[str, Any] | None = None
     termination: str = "TURN_LIMIT_REACHED"
     valid: bool = False
     fingerprint: str | None = None
@@ -738,6 +925,7 @@ def _run_episode(
     identity_seed: dict[str, Any],
     sentinels: tuple[bytes, ...],
     simulator_context: JsonObject | None = None,
+    closure: bool = False,
 ) -> _Episode:
     episode_id = _id(
         "episode", {**identity_seed, "case_id": case.case["case_id"], "slot": slot}
@@ -745,6 +933,19 @@ def _run_episode(
     episode = _Episode(
         episode_id, _id("attempt", [episode_id, 1]), slot, case.case["case_id"]
     )
+    if closure:
+        episode.case_metadata = {
+            name: case.case[name]
+            for name in (
+                "case_origin",
+                "goal",
+                "done_when",
+                "source_trace_ids",
+                "required_world_keys",
+                "workflow_stratum",
+            )
+        }
+        episode.world_preflight_status = "PASSED"
     opening = case.case["scenario"]["opening_user_turn"]["text"]
     episode.transcripts.append(
         _turn_record(
@@ -1014,7 +1215,7 @@ def _run_episode(
                 episode.valid, episode.termination = True, "TURN_LIMIT_REACHED"
                 break
             observation = _observation(assistant, events)
-            if simulator_context is None:
+            if simulator_context is None and not closure:
                 simulator_request = {
                     "protocol_version": WIRE,
                     "episode_id": episode_id,
@@ -1024,7 +1225,7 @@ def _run_episode(
                     "latest_observation": observation,
                     "remaining_turns": 2 - target_index,
                 }
-            else:
+            elif simulator_context is not None:
                 from .simulator_fidelity import PROTOCOL, case_projection
 
                 simulator_request = {
@@ -1033,6 +1234,25 @@ def _run_episode(
                     "turn_index": target_index + 1,
                     "case_context": case_projection(simulator_context),
                     "interaction_state": interaction_state,
+                    "transcript": [
+                        {"role": item["role"], "content": item["content"]}
+                        for item in episode.transcripts
+                    ],
+                    "latest_observation": observation,
+                    "remaining_turns": 2 - target_index,
+                }
+            else:
+                from .simulator_fidelity import PROTOCOL
+
+                simulator_request = {
+                    "protocol_version": PROTOCOL,
+                    "episode_id": episode_id,
+                    "case_id": episode.case_id,
+                    "turn_index": target_index + 1,
+                    "goal": case.case["goal"],
+                    "done_when": case.case["done_when"],
+                    "case_origin": case.case["case_origin"],
+                    "source_trace_ids": case.case["source_trace_ids"],
                     "transcript": [
                         {"role": item["role"], "content": item["content"]}
                         for item in episode.transcripts
@@ -1079,9 +1299,14 @@ def _run_episode(
             invalid = (
                 sim.status not in {"SUCCEEDED", "FAILED"}
                 or not _money(sim.provider_reported_cost_usd)
-                or (simulator_context is None and type(sim.proposed_stop) is not bool)
                 or (
                     simulator_context is None
+                    and not closure
+                    and type(sim.proposed_stop) is not bool
+                )
+                or (
+                    simulator_context is None
+                    and not closure
                     and sim.status == "SUCCEEDED"
                     and (
                         not _text(sim.next_user_content, nonempty=True)
@@ -1092,11 +1317,13 @@ def _run_episode(
                 )
                 or (
                     simulator_context is None
+                    and not closure
                     and sim.proposed_stop
                     and not _text(sim.stop_reason, nonempty=True)
                 )
                 or (
                     simulator_context is None
+                    and not closure
                     and not sim.proposed_stop
                     and sim.stop_reason is not None
                 )
@@ -1122,17 +1349,23 @@ def _run_episode(
                 sentinels,
             )
             over_budget = sim_input > 131072 or sim_output > 4096 or sim_http > 1
-            sim_reason: str | None = (
+            structural_reason: str | None = None
+            structural_diagnostic: dict[str, Any] | None = None
+            if (simulator_context is not None or closure) and not (
+                sim.status == "FAILED" and sim.reason_code == "SIMULATOR_PROVIDER_ERROR"
+            ):
+                from .simulator_fidelity import response_structure_diagnostic
+
+                structural_reason, structural_diagnostic = (
+                    response_structure_diagnostic(sim, privacy_invalid=unsafe)
+                )
+            sim_reason: str | None = structural_reason or (
                 "SIMULATOR_INVALID_RESPONSE"
                 if invalid or unsafe
                 else "BUDGET_EXHAUSTED"
                 if over_budget
                 else sim.reason_code
             )
-            if simulator_context is not None and sim_reason is None:
-                from .simulator_fidelity import response_structure
-
-                sim_reason = response_structure(sim)
             episode.sim_http += sim_http
             episode.sim_input += sim_input
             episode.sim_output += sim_output
@@ -1148,7 +1381,7 @@ def _run_episode(
                         None
                         if unsafe
                         else sim.response_bytes
-                        if simulator_context is not None
+                        if simulator_context is not None or closure
                         else None
                         if sim_reason
                         else sim.response_bytes
@@ -1163,18 +1396,30 @@ def _run_episode(
             )
             if sim_reason:
                 episode.gaps.append(sim_reason)
+                if structural_reason:
+                    episode.structural_diagnostic = structural_diagnostic
+                    episode.structural_detail = (
+                        structural_diagnostic.get("stage")
+                        if structural_diagnostic is not None
+                        else None
+                    )
                 episode.termination = sim_reason
                 break
-            if simulator_context is not None:
+            if simulator_context is not None or closure:
                 from .simulator_fidelity import semantic_codes
 
                 if sim.consumed_observation_hash != observation["observation_hash"]:
                     episode.gaps.append("ADAPTATION_BINDING_MISMATCH")
+                    episode.gap_details.append("ADAPTATION_BINDING_MISMATCH")
                     episode.termination = "ADAPTATION_BINDING_MISMATCH"
                     episode.ledger[-1]["status"] = "FAILED"
                     episode.ledger[-1]["reason_code"] = "ADAPTATION_BINDING_MISMATCH"
                     break
-                details = semantic_codes(sim, simulator_request, simulator_context)
+                details = (
+                    semantic_codes(sim, simulator_request, simulator_context)
+                    if simulator_context is not None
+                    else []
+                )
                 if details:
                     episode.gaps.append("SIMULATOR_SEMANTIC_INVALID")
                     episode.gap_details.extend(details)
@@ -1378,7 +1623,7 @@ def _tokens(episode: _Episode) -> set[str]:
     )
 
 
-def _cluster(episodes: list[_Episode]) -> dict[str, Any]:
+def _cluster(episodes: list[_Episode], *, near_enabled: bool = True) -> dict[str, Any]:
     valid = [episode for episode in episodes if episode.valid]
     parent = {episode.episode_id: episode.episode_id for episode in valid}
     exact: list[list[str]] = []
@@ -1401,7 +1646,7 @@ def _cluster(episodes: list[_Episode]) -> dict[str, Any]:
             if left.fingerprint == right.fingerprint:
                 exact.append([left.episode_id, right.episode_id])
                 edge = exact
-            else:
+            elif near_enabled:
                 left_tools = [(x["name"], x["status"]) for x in left.tools]
                 right_tools = [(x["name"], x["status"]) for x in right.tools]
                 a, b = _tokens(left), _tokens(right)
@@ -1445,6 +1690,110 @@ def _cluster(episodes: list[_Episode]) -> dict[str, Any]:
     }
 
 
+def _tiered_results(episodes: list[_Episode]) -> bytes:
+    def text_block(label: str, value: str) -> list[str]:
+        content = value.splitlines() or [""]
+        return [f"{label}:", "", *(f"    {line}" for line in content)]
+
+    lines = [
+        "# LABS-06 tiered results",
+        "",
+        "Non-authoritative review view. Machine JSON remains authoritative.",
+        "",
+        "## Workflow completed",
+        "",
+        "    none pending owner completion rulings",
+    ]
+    groups = (
+        (
+            "Multi-turn progress, incomplete",
+            [item for item in episodes if item.valid and not item.gaps],
+        ),
+        (
+            "Blocked, invalid, or unavailable",
+            [item for item in episodes if not item.valid or item.gaps],
+        ),
+    )
+    for heading, selected in groups:
+        lines.extend(["", f"## {heading}"])
+        if not selected:
+            lines.extend(["", "    none"])
+        for episode in sorted(selected, key=lambda item: item.slot):
+            metadata = episode.case_metadata or {}
+            lines.extend(
+                [
+                    "",
+                    f"### Episode {episode.slot}",
+                    "",
+                    f"- Episode ID: `{episode.episode_id}`",
+                    f"- Case ID: `{episode.case_id}`",
+                    f"- Origin: `{metadata.get('case_origin', 'UNAVAILABLE')}`",
+                    (
+                        "- Workflow stratum: "
+                        f"`{metadata.get('workflow_stratum', 'UNAVAILABLE')}`"
+                    ),
+                    "- Source traces: "
+                    + ", ".join(
+                        f"`{item}`" for item in metadata.get("source_trace_ids", [])
+                    ),
+                    f"- World preflight: `{episode.world_preflight_status}`",
+                    "",
+                ]
+            )
+            goal = metadata.get("goal")
+            done_when = metadata.get("done_when")
+            if isinstance(goal, dict) and isinstance(goal.get("text"), str):
+                lines.extend([*text_block("Goal", goal["text"]), ""])
+            if isinstance(done_when, dict) and isinstance(done_when.get("text"), str):
+                lines.extend([*text_block("Done when", done_when["text"]), ""])
+            lines.append("Required world data:")
+            world_keys = metadata.get("required_world_keys", {})
+            if isinstance(world_keys, dict) and world_keys:
+                for namespace, identifiers in world_keys.items():
+                    lines.append(
+                        f"- `{namespace}`: "
+                        + ", ".join(f"`{item}`" for item in identifiers)
+                    )
+            else:
+                lines.append("- none")
+            lines.extend(["", "#### Transcript", ""])
+            for turn in sorted(episode.transcripts, key=lambda item: item["ordinal"]):
+                role = "User" if turn["role"] == "USER" else "HRAI"
+                lines.extend(text_block(role, turn["content"]))
+                lines.append("")
+            lines.append("#### Tools")
+            lines.append("")
+            if episode.tools:
+                for item in episode.tools:
+                    lines.append(f"- `{item['name']}` — `{item['status']}`")
+            else:
+                lines.append("- none")
+            lines.extend(
+                [
+                    "",
+                    "#### Accounting and disposition",
+                    "",
+                    f"- Simulator HTTP exchanges: {episode.sim_http}",
+                    f"- Target HTTP exchanges: {episode.target_http}",
+                    f"- Reserved cost (USD): `{episode.reserved:.6f}`",
+                    f"- Termination: `{episode.termination}`",
+                    "- Gaps: "
+                    + (
+                        ", ".join(f"`{item}`" for item in sorted(set(episode.gaps)))
+                        if episode.gaps
+                        else "none"
+                    ),
+                    "",
+                    "owner completion: [ ]",
+                    "owner notes:",
+                    "",
+                    "    ",
+                ]
+            )
+    lines.append("")
+    return "\n".join(lines).encode("utf-8")
+
+
 def _artifacts(
     episodes: list[_Episode],
     cluster: dict[str, Any],
@@ -1452,6 +1801,8 @@ def _artifacts(
     output: Path,
     outcome: str,
     reason: str | None,
+    *,
+    closure: bool = False,
 ) -> tuple[dict[str, bytes], AdaptiveRunResult]:
     effective = [item for item in episodes if item.effective]
     gaps: list[dict[str, Any]] = []
@@ -1460,21 +1811,29 @@ def _artifacts(
             details: list[str | None] = (
                 [*episode.gap_details]
                 if code == "SIMULATOR_SEMANTIC_INVALID"
+                else ["ADAPTATION_BINDING_MISMATCH"]
+                if code == "ADAPTATION_BINDING_MISMATCH"
+                and "ADAPTATION_BINDING_MISMATCH" in episode.gap_details
+                else [episode.structural_detail]
+                if code == "SIMULATOR_INVALID_RESPONSE"
                 else [None]
             )
             for detail in details:
-                gaps.append(
-                    {
-                        **base,
-                        "record_id": _id("gap", [episode.episode_id, code, detail]),
-                        "episode_id": episode.episode_id,
-                        "turn_ordinal": len(episode.transcripts),
-                        "reason_code": code,
-                        "detail_code": detail,
-                        "originating_attempt_id": episode.attempt_id,
-                    }
-                )
-    if len(effective) < 3:
+                gap = {
+                    **base,
+                    "record_id": _id("gap", [episode.episode_id, code, detail]),
+                    "episode_id": episode.episode_id,
+                    "turn_ordinal": len(episode.transcripts),
+                    "reason_code": code,
+                    "detail_code": detail,
+                    "originating_attempt_id": episode.attempt_id,
+                }
+                if code == "SIMULATOR_INVALID_RESPONSE":
+                    gap["diagnostic"] = episode.structural_diagnostic
+                if code == "WORLD_DATA_UNAVAILABLE":
+                    gap["detail"] = episode.world_gap_detail
+                gaps.append(gap)
+    if len(effective) < (12 if closure else 3):
         gaps.append(
             {
                 **base,
@@ -1518,6 +1877,14 @@ def _artifacts(
             "trajectory_fingerprint": episode.fingerprint,
             "effective": episode.effective,
             "gap_codes": sorted(set(episode.gaps)),
+            **(
+                {
+                    **(episode.case_metadata or {}),
+                    "world_preflight_status": episode.world_preflight_status,
+                }
+                if closure
+                else {}
+            ),
         }
         for episode in episodes
     ]
@@ -1573,6 +1940,8 @@ def _artifacts(
         "trajectory_clusters.json": _canonical({**base, **cluster}, lf=True),
         "human_adaptation_review.json": _canonical(human, lf=True),
     }
+    if closure:
+        payloads["LABS06_TIERED_RESULTS.md"] = _tiered_results(episodes)
     sim_http = sum(item.sim_http for item in episodes)
     target_http = sum(item.target_http for item in episodes)
     reserved = sum((item.reserved for item in episodes), Decimal(0))
@@ -1585,7 +1954,7 @@ def _artifacts(
         "privacy_class": base.get("privacy_class", "SYNTHETIC"),
         "producing_component": "triana-labs-adaptive-runner",
         "producing_version": "1",
-        "selected_episode_count": 3,
+        "selected_episode_count": 12 if closure else 3,
         "attempted_episode_count": len(episodes),
         "valid_episode_count": sum(item.valid for item in episodes),
         "effective_trajectory_count": len(effective),
@@ -1659,6 +2028,7 @@ def run(
     case_loader: CaseFactoryInputLoader | None = None,
     simulator_context_bundle: Path | None = None,
     context_loader: SimulatorContextLoader | None = None,
+    world_inventory: Path | None = None,
 ) -> AdaptiveRunResult:
     """Execute the exact three-slot LABS-05 controller and publish safe custody."""
     if os.path.lexists(output_path):
@@ -1667,8 +2037,29 @@ def run(
         raise AdaptiveRunFailure("OUTPUT_PARENT_MISSING", 2)
     review, review_bytes = _read_object(owner_review, "REVIEW_INVALID", 4)
     config, config_bytes = _read_object(config_path, "CONFIG_INVALID", 2)
-    _validate_review(review)
+    closure = config.get("protocol_version") == CLOSURE_WIRE
+    _validate_review(review, closure=closure)
     _validate_config(config, environ)
+    inventory: dict[str, Any] | None = None
+    inventory_hash: str | None = None
+    if closure:
+        if world_inventory is None:
+            raise AdaptiveRunFailure("WORLD_INVENTORY_INVALID", 4)
+        inventory, inventory_bytes = _read_object(
+            world_inventory, "WORLD_INVENTORY_INVALID", 4
+        )
+        _validate_world_inventory(inventory)
+        inventory_hash = _hash(inventory_bytes)
+        workflow = config["workflow_closure"]
+        if not (
+            workflow["execution_selection_hash"] == _hash(review_bytes)
+            and workflow["world_inventory_hash"] == inventory_hash
+            and review["world_inventory_hash"] == inventory_hash
+            and config["selected_case_ids"] == review["ordered_case_ids"]
+        ):
+            raise AdaptiveRunFailure("WORKFLOW_SELECTION_MISMATCH", 4)
+    elif world_inventory is not None:
+        raise AdaptiveRunFailure("CONFIG_INVALID", 2)
     if config["privacy_class"] == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
         private_root = Path("/private/tmp").resolve(strict=True)
         resolved_output = output_path.parent.resolve(strict=True) / output_path.name
@@ -1677,14 +2068,21 @@ def run(
     if case_loader is None:
         from .boundaries import CaseFactoryLoader
 
-        case_loader = CaseFactoryLoader()
+        case_loader = CaseFactoryLoader(review if closure else None)
     try:
         source_input = case_loader.load(case_factory_manifest)
     except AdaptiveRunFailure:
         raise
     except (OSError, ValueError, KeyError, TypeError) as error:
         raise AdaptiveRunFailure("MANIFEST_INVALID", 4) from error
-    _validate_cases(source_input)
+    _validate_cases(source_input, review if closure else None)
+    if closure:
+        context_hash = _hash(_canonical([item.case for item in source_input.cases]))
+        if not (
+            review["context_hash"] == context_hash
+            and config["workflow_closure"]["context_hash"] == context_hash
+        ):
+            raise AdaptiveRunFailure("WORKFLOW_SELECTION_MISMATCH", 4)
     contexts_by_case: dict[str, JsonObject] = {}
     context_bundle_hash: str | None = None
     if simulator_context_bundle is not None:
@@ -1749,11 +2147,68 @@ def run(
             if context_bundle_hash is not None
             else {}
         ),
+        **({"world_inventory_hash": inventory_hash} if closure else {}),
     }
     episodes: list[_Episode] = []
     interrupted = False
     run_started = clock.monotonic_ns()
     for slot, case in enumerate(source_input.cases, start=1):
+        first_structural = [
+            item
+            for item in episodes
+            if item.structural_detail is not None and len(item.transcripts) == 2
+        ]
+        if (
+            (simulator_context_bundle is not None or closure)
+            and len(first_structural) >= 2
+            and first_structural[-1].structural_detail
+            == first_structural[-2].structural_detail
+        ):
+            episode_id = _id(
+                "episode",
+                {**identity_seed, "case_id": case.case["case_id"], "slot": slot},
+            )
+            blocked = _Episode(
+                episode_id,
+                _id("attempt", [episode_id, 1]),
+                slot,
+                case.case["case_id"],
+            )
+            blocked.gaps.append("SIMULATOR_SHARED_CONFORMANCE_BLOCKED")
+            blocked.termination = "SIMULATOR_SHARED_CONFORMANCE_BLOCKED"
+            episodes.append(blocked)
+            continue
+        if closure:
+            assert inventory is not None
+            missing = _missing_world(case.case, inventory["inventory"])
+            if missing is not None:
+                episode_id = _id(
+                    "episode",
+                    {**identity_seed, "case_id": case.case["case_id"], "slot": slot},
+                )
+                partial = _Episode(
+                    episode_id,
+                    _id("attempt", [episode_id, 1]),
+                    slot,
+                    case.case["case_id"],
+                )
+                partial.case_metadata = {
+                    name: case.case[name]
+                    for name in (
+                        "case_origin",
+                        "goal",
+                        "done_when",
+                        "source_trace_ids",
+                        "required_world_keys",
+                        "workflow_stratum",
+                    )
+                }
+                partial.world_preflight_status = "FAILED"
+                partial.world_gap_detail = missing
+                partial.gaps.append("WORLD_DATA_UNAVAILABLE")
+                partial.termination = "WORLD_DATA_UNAVAILABLE"
+                episodes.append(partial)
+                continue
         if (clock.monotonic_ns() - run_started) > 600_000_000_000:
             for timeout_slot, pending in enumerate(
                 source_input.cases[slot - 1 :], start=slot
@@ -1791,6 +2246,7 @@ def run(
                     identity_seed,
                     sentinels,
                     contexts_by_case.get(case.case["case_id"]),
+                    closure,
                 )
             )
         except KeyboardInterrupt:
@@ -1818,16 +2274,18 @@ def run(
             partial.termination = "INTERRUPTED"
             episodes.append(partial)
             break
-    cluster = _cluster(episodes)
+    cluster = _cluster(episodes, near_enabled=not closure)
     outcome = (
         "COMPLETED"
-        if len(episodes) == 3
-        and cluster["effective_n"] == 3
+        if len(episodes) == (12 if closure else 3)
+        and cluster["effective_n"] == (12 if closure else 3)
         and not any(item.gaps for item in episodes)
         else "COMPLETED_WITH_GAPS"
     )
     reason = "INTERRUPTED" if interrupted else None
-    payloads, result = _artifacts(episodes, cluster, base, output_path, outcome, reason)
+    payloads, result = _artifacts(
+        episodes, cluster, base, output_path, outcome, reason, closure=closure
+    )
     try:
         (publisher or AtomicPublisher()).publish(output_path, payloads)
     except PublicationFailure as failure:

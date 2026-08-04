@@ -33,11 +33,17 @@ from triana_labs.case_factory.provider import (
     Clock,
     PublicationFailure,
 )
-from triana_labs.case_factory.semantic import Lane, apply_diversity, convert_lane
+from triana_labs.case_factory.semantic import (
+    Lane,
+    apply_diversity,
+    convert_lane,
+    render_tiered_cases,
+)
 
 MODEL = "FW-GLM-5.2"
 MODEL_VERSION = "1"
 PROVIDER = "MICROSOFT_FOUNDRY_FIREWORKS"
+_WORLD_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$")
 TOOLS = (
     "search_evidence",
     "get_trace_packet",
@@ -253,6 +259,8 @@ class _State:
     sentinels: list[bytes]
     config_hash: str
     clock: Clock
+    world_inventory: Json | None = None
+    world_inventory_hash: str | None = None
 
 
 def generate_restricted(
@@ -267,6 +275,7 @@ def generate_restricted(
     environ: Mapping[str, str],
     publisher: ArtifactPublisher | None = None,
     requested_case_count: int = 10,
+    world_inventory: Path | None = None,
 ) -> RestrictedResult:
     _output(output_path)
     _cache(cache_path, output_path)
@@ -274,11 +283,24 @@ def generate_restricted(
         raise Invalid
     config_bytes = config_path.read_bytes()
     config = strict_json(config_bytes)
+    closure = config.get("protocol_version") == "LABS046_WORKFLOW_CLOSURE_V1"
+    inventory, inventory_hash = (
+        _world_inventory(world_inventory) if closure else (None, None)
+    )
+    if closure and (
+        requested_case_count != 12
+        or config.get("generation")
+        != {"candidate_count": 12, "evidence_byte_limit": 90_000, "seed": 2026080104}
+    ):
+        raise Invalid
     maximum, reservation = _restricted_budget(config)
     evidence, citations, _, excluded = build_evidence(
-        observer_manifest, intelligence_manifest
+        observer_manifest,
+        intelligence_manifest,
+        trace_limit=None if closure else 25,
+        byte_limit=90_000,
     )
-    catalog, handle_map = _catalog(evidence, citations)
+    catalog, handle_map = _catalog(evidence, citations, inventory)
     run_id = domain_hash(
         "restricted-case-factory-run",
         {
@@ -286,6 +308,7 @@ def generate_restricted(
             "intelligence_manifest_hash": evidence["intelligence_manifest_hash"],
             "config_hash": artifact_hash(config_bytes),
             "requested_case_count": requested_case_count,
+            **({"world_inventory_hash": inventory_hash} if closure else {}),
         },
     )
     sentinels = _sentinels(config, environ)
@@ -310,6 +333,8 @@ def generate_restricted(
         sentinels,
         artifact_hash(config_bytes),
         clock,
+        inventory,
+        inventory_hash,
     )
     slots = [f"case_{index}" for index in range(1, requested_case_count + 1)]
     batch_width = 1 if requested_case_count == 5 else 5
@@ -537,7 +562,9 @@ def _batch(
             )
             return "FAILED", "PROVIDER_INVALID_RESPONSE"
         submission = cast(Json, _field(response, "submission"))
-        normalized, current = _normalize(submission, slots, state.handle_map)
+        normalized, current = _normalize(
+            submission, slots, state.handle_map, state.world_inventory
+        )
         lane: Lane | None = None
         if not current and normalized is not None:
             try:
@@ -585,7 +612,59 @@ def _batch(
     return "FAILED", "INTERNAL_INVARIANT_FAILED"
 
 
-def _catalog(evidence: Json, citations: list[Json]) -> tuple[Json, dict[str, Json]]:
+def _world_inventory(path: Path | None) -> tuple[Json, str]:
+    if path is None:
+        raise Invalid
+    try:
+        payload = path.read_bytes()
+        value = strict_json(payload)
+    except (OSError, Invalid) as error:
+        raise Invalid from error
+    keys = {
+        "artifact_kind",
+        "schema_version",
+        "protocol_version",
+        "data_class",
+        "captured_at",
+        "source_lineage",
+        "inventory",
+    }
+    inventory = value.get("inventory") if isinstance(value, dict) else None
+    if (
+        not isinstance(value, dict)
+        or set(value) != keys
+        or value["artifact_kind"] != "labs046_world_inventory"
+        or value["schema_version"] != 1
+        or value["protocol_version"] != "LABS046_WORLD_INVENTORY_V1"
+        or value["data_class"] != "SYNTHETIC"
+        or not isinstance(value["captured_at"], str)
+        or not isinstance(value["source_lineage"], dict)
+        or set(value["source_lineage"]) != {"source_kind", "source_id"}
+        or not isinstance(inventory, dict)
+        or not 1 <= len(inventory) <= 8
+    ):
+        raise Invalid
+    for name, identifiers in inventory.items():
+        if (
+            not isinstance(name, str)
+            or not _WORLD_ID.fullmatch(name)
+            or not isinstance(identifiers, list)
+            or not 1 <= len(identifiers) <= 10_000
+            or identifiers != sorted(set(identifiers))
+            or any(
+                not isinstance(item, str) or not _WORLD_ID.fullmatch(item)
+                for item in identifiers
+            )
+        ):
+            raise Invalid
+    if canonical(value, lf=True) != payload:
+        raise Invalid
+    return cast(Json, value), artifact_hash(payload)
+
+
+def _catalog(
+    evidence: Json, citations: list[Json], inventory: Json | None = None
+) -> tuple[Json, dict[str, Json]]:
     citation_map = {
         (item["trace_id"], item["event_sequences"][0]): item for item in citations
     }
@@ -607,19 +686,22 @@ def _catalog(evidence: Json, citations: list[Json]) -> tuple[Json, dict[str, Jso
                 "events": events,
             }
         )
-    return (
-        {
-            "artifact_kind": "case_factory_evidence_catalog",
-            "schema_version": 1,
-            "traces": traces,
-            "gaps": evidence["gaps"],
-        },
-        handles,
-    )
+    catalog: Json = {
+        "artifact_kind": "case_factory_evidence_catalog",
+        "schema_version": 1,
+        "traces": traces,
+        "gaps": evidence["gaps"],
+    }
+    if inventory is not None:
+        catalog["world_inventory"] = inventory
+    return catalog, handles
 
 
 def _normalize(
-    submission: Json, slots: tuple[str, ...], handles: dict[str, Json]
+    submission: Json,
+    slots: tuple[str, ...],
+    handles: dict[str, Json],
+    inventory: Json | None = None,
 ) -> tuple[Json | None, list[Json]]:
     defects: list[Json] = []
     cases = submission.get("cases")
@@ -634,8 +716,32 @@ def _normalize(
             defects.append(_defect("BROKEN_LOCAL_REFERENCE", f"/{group}"))
             continue
         for index, value in enumerate(values):
+            if inventory is not None and _has_generated_text(value):
+                defects.append(_defect("INVALID_CASE", f"/{group}/{index}/basis"))
             defects.extend(_generated_claim_key_defects(value, f"/{group}/{index}"))
             if group == "cases":
+                if inventory is not None:
+                    if "case_origin" in value or "source_trace_ids" in value:
+                        defects.append(
+                            _defect("INVALID_CASE", f"/cases/{index}/provenance")
+                        )
+                    defects.extend(
+                        _world_key_defects(
+                            value.get("required_world_keys"),
+                            cast(Json, inventory["inventory"]),
+                            f"/cases/{index}/required_world_keys",
+                        )
+                    )
+                    for anchor in ("goal", "done_when"):
+                        item = value.get(anchor)
+                        if (
+                            not isinstance(item, dict)
+                            or item.get("basis") != "OBSERVED"
+                            or not bounded_text(item.get("text"), 16_384)
+                        ):
+                            defects.append(
+                                _defect("INVALID_CASE", f"/cases/{index}/{anchor}")
+                            )
                 scenario = value.get("scenario")
                 stressors = (
                     scenario.get("stressor_codes")
@@ -704,6 +810,42 @@ def _normalize(
     return (None if defects else cast(Json, normalized)), sorted(
         defects, key=lambda item: (item["code"], item["path"], item["related_ids"])
     )
+
+
+def _has_generated_text(value: Any) -> bool:
+    if isinstance(value, dict):
+        if set(value) >= {"text", "basis", "claim_keys"}:
+            return value.get("basis") != "OBSERVED"
+        return any(_has_generated_text(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_generated_text(item) for item in value)
+    return False
+
+
+def _world_key_defects(value: Any, inventory: Json, path: str) -> list[Json]:
+    if (
+        not isinstance(value, dict)
+        or not 1 <= len(value) <= 8
+        or any(
+            not isinstance(name, str) or not _WORLD_ID.fullmatch(name) for name in value
+        )
+    ):
+        return [_defect("INVALID_CASE", path)]
+    for name, identifiers in value.items():
+        available = inventory.get(name)
+        if (
+            not isinstance(identifiers, list)
+            or not 1 <= len(identifiers) <= 16
+            or identifiers != sorted(set(identifiers))
+            or any(
+                not isinstance(item, str) or not _WORLD_ID.fullmatch(item)
+                for item in identifiers
+            )
+            or not isinstance(available, list)
+            or not set(identifiers) <= set(available)
+        ):
+            return [_defect("INVALID_CASE", f"{path}/{name}")]
+    return []
 
 
 def _local_claim_keys(value: Any) -> set[str]:
@@ -938,12 +1080,24 @@ def _portable(
             "selection_algorithm": state.evidence["selection_algorithm"],
             "selected_trace_count": len(state.evidence["selected_traces"]),
             "excluded_trace_count": excluded,
+            **(
+                {
+                    "total_eligible_trace_count": state.evidence[
+                        "total_eligible_trace_count"
+                    ],
+                    "world_inventory_hash": state.world_inventory_hash,
+                }
+                if state.world_inventory is not None
+                else {}
+            ),
             "projected_byte_count": len(canonical(state.evidence)),
             "citations": state.citations,
             "gaps": state.evidence["gaps"],
         },
         lf=True,
     )
+    if state.world_inventory is not None:
+        artifacts["LABS04_TIERED_CASES.md"] = render_tiered_cases(lane.cases)
     evaluation = {
         "artifact_kind": "case_factory_evaluation",
         "schema_version": 1,
@@ -1001,6 +1155,11 @@ def _portable(
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
         "human_review_state": "PENDING",
+        **(
+            {"world_inventory_hash": state.world_inventory_hash}
+            if state.world_inventory is not None
+            else {}
+        ),
         "artifacts": {
             name: artifact_hash(payload) for name, payload in artifacts.items()
         },
@@ -1115,6 +1274,8 @@ def _snapshot(state: _State, excluded: int) -> Json:
         "calls": state.calls,
         "http_exchanges": state.http_exchanges,
         "config_hash": state.config_hash,
+        "world_inventory": state.world_inventory,
+        "world_inventory_hash": state.world_inventory_hash,
         "excluded": excluded,
     }
 
@@ -1141,6 +1302,8 @@ def _restore(value: Json, cache: Path, clock: Clock) -> _State:
         [],
         value["config_hash"],
         clock,
+        value.get("world_inventory"),
+        value.get("world_inventory_hash"),
     )
 
 
@@ -1648,6 +1811,29 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
         "type": "string",
         "enum": list(request.case_slots),
     }
+    inventory = request.evidence_catalog.get("world_inventory")
+    if isinstance(inventory, dict):
+        world = inventory["inventory"]
+        case_draft = schema["$defs"]["caseDraft"]
+        case_draft["required"].extend(["goal", "done_when", "required_world_keys"])
+        case_draft["properties"]["goal"] = {"$ref": "#/$defs/supportedTextDraft"}
+        case_draft["properties"]["done_when"] = {"$ref": "#/$defs/supportedTextDraft"}
+        case_draft["properties"]["required_world_keys"] = {
+            "type": "object",
+            "additionalProperties": False,
+            "minProperties": 1,
+            "maxProperties": 8,
+            "properties": {
+                name: {
+                    "type": "array",
+                    "items": {"type": "string", "enum": identifiers},
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "uniqueItems": True,
+                }
+                for name, identifiers in world.items()
+            },
+        }
     stressors = schema["$defs"]["scenarioDraft"]["properties"]["stressor_codes"]
     stressors["items"] = {"type": "string", "pattern": SAFE_CODE.pattern}
     stressors["maxItems"] = 20

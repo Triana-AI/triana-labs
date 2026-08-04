@@ -123,6 +123,7 @@ def generate_restricted(
     environ: Mapping[str, str],
     publisher: ArtifactPublisher | None = None,
     requested_case_count: int = 10,
+    world_inventory: Path | None = None,
 ) -> Any:
     """Run the restricted handle-grounded Case Factory path."""
 
@@ -139,6 +140,7 @@ def generate_restricted(
         environ=environ,
         publisher=publisher,
         requested_case_count=requested_case_count,
+        world_inventory=world_inventory,
     )
 
 

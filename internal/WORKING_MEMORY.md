@@ -32,10 +32,14 @@ Canonical active documents:
 - `triana-labs/CHARTER.md`
 - `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
 - `internal/DECISION_LOG.md`
+- `internal/DOGFOOD_FAILURE_MEMORY.md` (append-only operational evidence;
+  non-authoritative)
 - `docs/PROVENANCE.md`
 
 Historical research and suspended-product handoff:
 
+- `internal/Wholistic_Company_View/README.md` (non-authoritative company,
+  founder, customer, and narrative synthesis)
 - `internal/BRAINTRUST_HRAI_DOGFOOD_REPORT_2026-07-30.md`
 - `internal/BRAINTRUST_REPLACEMENT_VERDICT_2026-07-30.md`
 - `internal/TRIANA_RESEARCH_CONVERSATION_HANDOFF_2026-07-30.md`
@@ -96,6 +100,32 @@ recovery, cross-client refusal, and bounded status verification; each runs as
 exactly U1/A1/U2/A2/U3/A3 against an opaque configured target. The supported
 local `triana episodes run` surface and both connector kinds are implemented.
 No further provider or target experiment is authorized by the failed smoke.
+
+Latest local LABS-06 objective completed: the final provider-conformance slice
+keeps the three-field simulator wire and all critical semantic rules, but now
+returns one exact structural detail and a closed text-free diagnostic instead
+of collapsing every malformed response into an opaque reason. It preserves
+normalized usage when the envelope is trustworthy, gives privacy first
+precedence, and prevents a third target/simulator slot after two distinct
+first-turn episodes prove the same structural defect. Independent results are
+43/43 focused, 143/143 historical adaptive, and 594/594 complete repository
+tests plus Ruff, strict mypy, build, and clean-wheel installation at
+`/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. Dogfood incident `DF-2026-08-03-001` remains open until a separately
+authorized simulator-only synthetic check achieves Structural Continuation
+Yield `3/3`; human fidelity remains owner-only and unpassed.
+
+Active closure objective: Akarsh approved
+`LABS-046-GROUNDED-WORKFLOW-CLOSURE-V1`. It adds a separately versioned
+twelve-case path with six directly observed production workflows and six
+multi-trace grounded expansions. Every goal, done condition, behavior, and
+world identifier must resolve to authorized trace evidence or the captured
+HRAI inventory; no AI-authored invention is eligible. LABS-04 emits a tiered
+case Markdown view, LABS-06 emits a tiered conversation/result view, and the
+simulator advances goal before persona. Legacy pinned behavior remains exact.
+Implementation is local/test-first; read-only RDS discovery is authorized,
+while provider and target execution still wait for local GREEN and exact
+pre-egress owner approval.
 
 Historical superseded 2026-08-02 diagnostic: Akarsh authorized one synthetic episode
 against a localhost HRAI endpoint using OpenRouter. The checked-out HRAI commit
@@ -729,3 +759,16 @@ three-field provider response bytes are intentionally unavailable in published
 artifacts; diagnosing the exact provider envelope/schema incompatibility would
 require a separately authorized evidence-custody slice, not another rerun or
 semantic weakening.
+
+Latest grounded-workflow closure state (2026-08-03): local implementation is
+GREEN with 9/9 new acceptance cases, 43/43 preserved LABS-06 cases, and the
+complete 603-test verifier at `/private/tmp/triana-labs-verify.eLaFCb`. The
+synthetic tiered previews demonstrate six observed/six grounded-expanded cases
+and twelve U1/A1/U2/A2/U3/A3 trajectories, but they are not HRAI production
+evidence and carry no owner completion rulings. Live execution is blocked
+before RDS/provider/target egress because the current Observer/Intelligence
+trace contracts and both closure inventory validators admit only `SYNTHETIC`.
+The next bounded question is whether Akarsh authorizes a real-data contract
+slice covering read-only RDS export, truthful privacy class, private custody,
+inventory lineage, and the exact provider/target budget. Do not relabel real
+evidence as synthetic.

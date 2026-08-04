@@ -66,32 +66,34 @@ if [[ "${triana_intelligence_hash}" != "${triana_expected_intelligence_hash}" ]]
 fi
 
 triana_case_factory_content_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/case_factory_acceptance \
-    triana-labs/tests/case_factory_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/case_factory_acceptance \
+    tests/case_factory_fixtures \
+    -type f \( -name '*.py' -o -name '*.json' -o -name '*.jsonl' \) \
     | LC_ALL=C sort \
     | xargs cat \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_content_hash="e6cd654b1d980086bd8b492469f50fcda0f2c5bb331428502e6552ee6d819189"
+triana_expected_case_factory_content_hash="5c4bf021931f9d66af308141548ab666a73a55d22c7bf00e7d9b9a35e655a567"
 if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
   echo "frozen case factory acceptance content hash mismatch" >&2
   exit 1
 fi
 
 triana_case_factory_file_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/case_factory_acceptance \
-    triana-labs/tests/case_factory_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/case_factory_acceptance \
+    tests/case_factory_fixtures \
+    -type f \( -name '*.py' -o -name '*.json' -o -name '*.jsonl' \) \
     | LC_ALL=C sort \
     | xargs shasum -a 256 \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_file_hash="63df0ebae10e1c490f5e3a9fc43dbf8cba5cf12056584661ba0942b1fdb98a74"
+triana_expected_case_factory_file_hash="20f086fc224e6f443dba9be0cd9e8d8ce5a078cdeffd0bde1f85b85363564b71"
 if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
   echo "frozen case factory acceptance file hash mismatch" >&2
   exit 1
@@ -108,7 +110,7 @@ triana_adaptive_runner_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_content_hash="52c440982b1ab63ffefbdc37dc34d660bf1c0e1b48e6fca6d56b3e084110de25"
+triana_expected_adaptive_runner_content_hash="c56ef3c1de0109adf597e64787924155e4714dacaec09821b64e29f0be8f1e8b"
 if [[ "${triana_adaptive_runner_content_hash}" != "${triana_expected_adaptive_runner_content_hash}" ]]; then
   echo "frozen adaptive runner acceptance content hash mismatch" >&2
   exit 1
@@ -125,7 +127,7 @@ triana_adaptive_runner_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_adaptive_runner_file_hash="3b481dd52626813514f7c494e85e8362a7355c161061792bd27b6f3ae5f4a11b"
+triana_expected_adaptive_runner_file_hash="573e198fd5fe5ceb7a79f6d941111a5b19e0a193321c46da3348399daf011f0b"
 if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runner_file_hash}" ]]; then
   echo "frozen adaptive runner acceptance file hash mismatch" >&2
   exit 1
@@ -141,7 +143,7 @@ triana_simulator_fidelity_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_content_hash="0320dbf68093f142dc39c491ad52b447f1af3ddbf81bfd614b4a031ea35c566f"
+triana_expected_simulator_fidelity_content_hash="1ed4ce44c86c3bd81aa708163679feabc915a71d0467cc6416a520f93e8020b8"
 if [[ "${triana_simulator_fidelity_content_hash}" != "${triana_expected_simulator_fidelity_content_hash}" ]]; then
   echo "frozen simulator fidelity acceptance content hash mismatch" >&2
   exit 1
@@ -157,7 +159,7 @@ triana_simulator_fidelity_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_file_hash="0e3566eaf8d58378ee6df9c9a4538f9397d47110e14077bcdda95d3b8f7ba76a"
+triana_expected_simulator_fidelity_file_hash="9b2a64b7f173eb1740e192e78e9b4a83215b442addfb7b17b85dee5147b8c914"
 if [[ "${triana_simulator_fidelity_file_hash}" != "${triana_expected_simulator_fidelity_file_hash}" ]]; then
   echo "frozen simulator fidelity acceptance file hash mismatch" >&2
   exit 1

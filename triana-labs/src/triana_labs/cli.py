@@ -117,6 +117,7 @@ def _build_parser() -> _SafeArgumentParser:
         help="Private exact-response cache directory.",
     )
     generate_parser.add_argument("--out", required=True)
+    generate_parser.add_argument("--world-inventory")
     resume_parser = case_commands.add_parser(
         "resume", help="Resume a restricted case run after human answers."
     )
@@ -138,6 +139,7 @@ def _build_parser() -> _SafeArgumentParser:
     run_parser.add_argument("--review", required=True)
     run_parser.add_argument("--config", required=True)
     run_parser.add_argument("--out", required=True)
+    run_parser.add_argument("--world-inventory")
     return parser
 
 
@@ -364,6 +366,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                     requested_case_count=restricted_config["generation"][
                         "candidate_count"
                     ],
+                    world_inventory=(
+                        Path(arguments.world_inventory)
+                        if arguments.world_inventory
+                        else None
+                    ),
                 )
                 restricted = True
             else:
@@ -553,6 +560,9 @@ def _run_episodes(arguments: argparse.Namespace) -> int:
             target_factory=target_factory,
             clock=SystemClock(),
             environ=os.environ,
+            world_inventory=(
+                Path(arguments.world_inventory) if arguments.world_inventory else None
+            ),
         )
     except _CliRefusal as failure:
         _write_json(
@@ -753,7 +763,8 @@ def _restricted_configuration(
         generation = config["generation"]
         budget = config["budget"]
         if (
-            set(config) != _RESTRICTED_KEYS
+            set(config)
+            not in (_RESTRICTED_KEYS, _RESTRICTED_KEYS | {"protocol_version"})
             or config["artifact_kind"] != "case_factory_restricted_config"
             or type(config["schema_version"]) is not int
             or config["schema_version"] != 1
@@ -765,11 +776,27 @@ def _restricted_configuration(
             or type(provider["request_timeout_seconds"]) is not int
             or not 1 <= provider["request_timeout_seconds"] <= 600
             or not isinstance(generation, dict)
-            or set(generation) != {"candidate_count"}
+            or set(generation)
+            not in (
+                {"candidate_count"},
+                {"candidate_count", "evidence_byte_limit", "seed"},
+            )
             or type(generation["candidate_count"]) is not int
-            or generation["candidate_count"] != 5
+            or generation["candidate_count"] not in {5, 12}
             or not isinstance(budget, dict)
             or set(budget) != {"max_usd", "reservation_usd_per_agent_call"}
+        ):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        closure = config.get("protocol_version") == "LABS046_WORKFLOW_CLOSURE_V1"
+        if (
+            closure != (generation["candidate_count"] == 12)
+            or closure
+            and generation
+            != {
+                "candidate_count": 12,
+                "evidence_byte_limit": 90_000,
+                "seed": 2026080104,
+            }
         ):
             raise _CliRefusal("CONFIG_INVALID", 2)
         names = [provider["endpoint_env"], provider["api_key_env"]]

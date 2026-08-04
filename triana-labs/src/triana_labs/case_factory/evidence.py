@@ -39,7 +39,11 @@ def _gap_key(item: Json) -> tuple[str, str, int]:
 
 
 def build(
-    observer_path: Path, intelligence_path: Path
+    observer_path: Path,
+    intelligence_path: Path,
+    *,
+    trace_limit: int | None = 25,
+    byte_limit: int = 90_000,
 ) -> tuple[Json, list[Json], Json, int]:
     try:
         observer_bytes, observer, traces = read_bundle(observer_path)
@@ -108,7 +112,7 @@ def build(
     gaps: list[Json] = []
     eligible = [trace_id for trace_id in candidates if _eligible(trace_by_id[trace_id])]
     for trace_id in eligible:
-        if len(selected) == 25:
+        if trace_limit is not None and len(selected) == trace_limit:
             gaps.append({"reason_code": "EVIDENCE_TRACE_LIMIT_REACHED"})
             break
         projected, event_gaps = _project(
@@ -123,7 +127,9 @@ def build(
             )
             continue
         trial = _root(observer_bytes, intelligence_bytes, [*selected, projected], gaps)
-        if len(canonical(trial)) > 90_000:
+        if trace_limit is None:
+            trial["total_eligible_trace_count"] = len(eligible)
+        if len(canonical(trial)) > byte_limit:
             gaps.append(
                 {"reason_code": "EVIDENCE_BYTE_LIMIT_REACHED", "trace_id": trace_id}
             )
@@ -131,6 +137,8 @@ def build(
         selected.append(projected)
     gaps.sort(key=_gap_key)
     root = _root(observer_bytes, intelligence_bytes, selected, gaps)
+    if trace_limit is None:
+        root["total_eligible_trace_count"] = len(eligible)
     if not selected:
         raise Invalid("NO_USABLE_SEMANTIC_EVIDENCE")
     citations = _citations(selected)

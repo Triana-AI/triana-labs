@@ -154,6 +154,30 @@ occurred. `REGULAR_USER_SIMULATION_FIDELITY_V1` and the Accepted Continuation
 Rate gate remain unpassed; another provider/target run requires a new owner
 decision, and general real-data support remains deferred.
 
+The final local LABS-06 provider-conformance pass is now also GREEN. It keeps
+the exact three-field authority and every semantic/privacy gate, adds one
+closed structural detail plus a bounded text-free diagnostic, preserves valid
+usage accounting on later content rejection, and blocks a third slot only
+after two distinct first-continuation episodes prove the same structural
+detail. Independent verification passed 43/43 focused cases, 143/143
+historical adaptive cases, and the complete 594-test/build/install gate at
+`/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. The dogfood incident, live Structural Continuation Yield, Accepted
+Continuation Rate, and human fidelity gate remain open; any simulator-only or
+end-to-end live execution requires a separate owner decision.
+
+The grounded-workflow closure path is now locally GREEN under
+`LABS-046-GROUNDED-WORKFLOW-CLOSURE-V1`. It adds a separate twelve-case mode
+with six deterministically observed production cases, six deterministically
+grounded expansions, captured-world preflight, goal-first continuations, and
+readable manifest-hashed LABS-04/LABS-06 evidence while preserving all legacy
+paths. The complete verifier passed 603 tests at
+`/private/tmp/triana-labs-verify.eLaFCb`. This is synthetic acceptance only:
+the current trace and inventory contracts reject owner-authorized real data,
+so no truthful RDS-backed case bank or live HRAI result exists yet. Supporting
+that requires a separately frozen real-data contract and exact egress approval;
+human completion and fidelity rulings remain solely Akarsh's.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a

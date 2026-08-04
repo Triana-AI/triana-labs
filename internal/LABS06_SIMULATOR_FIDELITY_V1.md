@@ -377,3 +377,62 @@ reserved with actual cost unavailable. No retry or rerun occurred. Raw rejected
 provider content is not retained, so the exact provider-envelope/schema defect
 is unavailable and cannot be inferred. The structural and multi-turn gates fail
 before owner naturalness/intent scoring.
+
+## 12. Final provider conformance and safe diagnostics
+
+On 2026-08-03 Akarsh accepted the bounded
+`LABS-06-FINAL-PROVIDER-CONFORMANCE-V1` local repair after the two live runs
+had collapsed six distinct rejected responses into the same generic reason.
+The provider authority remains exactly the three-field
+`disposition`/`user_utterance`/`stop_reason_code` union. Its schema and
+instruction now state the complete companion rules: `EMIT` requires a
+nonempty safe utterance and null stop reason; `STOP` requires a null utterance
+and a nonempty declared safe stop reason. No validator was weakened.
+
+Structural rejection keeps the stable top-level
+`SIMULATOR_INVALID_RESPONSE` reason and adds one stage-specific detail from a
+closed set covering envelope JSON and shape, content type/JSON/keys, usage,
+response authority, deterministic projection, disposition, EMIT companions,
+STOP companions, and privacy. A closed, text-free diagnostic records only
+bounded classes, byte counts, known-field presence/counts, and the selected
+stage. It never records rejected utterance text, unknown key names or values,
+hidden facts, transcript content, secrets, or raw provider bytes. Privacy has
+first refusal precedence. Teacher-forced review uses the same detail and safe
+diagnostic; unrelated semantic, binding, target, and provider gaps do not gain
+one.
+
+When an envelope and its usage are parseable but later content validation
+fails, normalized token accounting is preserved. Malformed usage remains a
+typed structural failure and does not invent partial accounting. After two
+distinct LABS-06 episodes terminate on their first continuation with the same
+structural detail, the next slot is blocked as
+`SIMULATOR_SHARED_CONFORMANCE_BLOCKED` before target or simulator egress. One
+failure, differing details, later-turn failures, semantic rejection, provider
+error, and LABS-05 mode do not trigger that circuit. There is still exactly
+one attempt and no retry, repair, fallback, default utterance, or hidden state.
+
+Independent acceptance passed 43/43 focused cases, including every ordered
+structural stage and the privacy/accounting/circuit edges; the inherited
+adaptive suite passed 143/143. The complete repository verifier passed 594
+tests, Ruff, strict mypy, build, and clean CPython 3.13.14 wheel installation
+at `/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. `DF-2026-08-03-001` therefore remains `OPEN`: local conformance is
+implemented, while live Structural Continuation Yield and all human fidelity
+rulings remain unpassed and require separately authorized evidence.
+
+## 13. Grounded-workflow closure integration
+
+`LABS046_WORKFLOW_CLOSURE_V1` now projects exact observed `goal`, `done_when`,
+`case_origin`, and `source_trace_ids` into the unchanged three-field LABS-06
+simulator boundary. A captured world inventory is hash-bound to selection and
+execution; missing values become `WORLD_DATA_UNAVAILABLE` before target
+creation, simulator reservation, or egress. Closure-mode dedupe is exact so
+distinct declared workflows are not collapsed by shared conversational
+phrasing. Tiered Markdown shows every `User` and `HRAI` turn plus blank owner
+completion fields; it never creates a completion ruling.
+
+The local closure gate passed 9/9 new cases, 43/43 preserved LABS-06 cases,
+and the complete 603-test verifier at `/private/tmp/triana-labs-verify.eLaFCb`.
+No provider, HRAI, RDS, target, or real data ran. The synthetic-only trace and
+inventory contracts are an explicit live blocker and must not be bypassed by
+relabeling production evidence.

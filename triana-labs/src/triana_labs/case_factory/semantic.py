@@ -296,6 +296,38 @@ def _case(
         ):
             raise CaseInvalid
         scenario.update(expected_tool_names=tools, stressor_codes=stressors)
+        closure = all(
+            name in value for name in ("goal", "done_when", "required_world_keys")
+        )
+        goal = done_when = None
+        required_world_keys: Json | None = None
+        source_trace_ids: list[str] = []
+        case_origin: str | None = None
+        if closure:
+            goal = _text(value["goal"], claim_keys, used)
+            done_when = _text(value["done_when"], claim_keys, used)
+            required_world_keys = _world_keys(value["required_world_keys"])
+            anchors = (scenario["opening_user_turn"], goal, done_when)
+            if any(item["basis"] != "OBSERVED" for item in anchors):
+                raise CaseInvalid
+            anchor_claims = {
+                claim_id for item in anchors for claim_id in item["claim_ids"]
+            }
+            source_trace_ids = sorted(
+                {
+                    citations[citation_id]["trace_id"]
+                    for claim in claims
+                    if claim["claim_id"] in anchor_claims
+                    for citation_id in claim["citation_ids"]
+                }
+            )
+            if not source_trace_ids:
+                raise CaseInvalid
+            case_origin = (
+                "OBSERVED_PRODUCTION_CASE"
+                if len(source_trace_ids) == 1
+                else "GROUNDED_EXPANDED_CASE"
+            )
         evaluation = {
             name: _texts(value["proposed_evaluation"][name], claim_keys, used)
             for name in ("criteria", "abstain_conditions")
@@ -321,6 +353,14 @@ def _case(
             "proposed_evaluation": evaluation,
             "gaps": gaps,
         }
+        if closure:
+            record.update(
+                goal=goal,
+                done_when=done_when,
+                required_world_keys=required_world_keys,
+                source_trace_ids=source_trace_ids,
+                case_origin=case_origin,
+            )
         if not any(
             item["basis"] == "OBSERVED" for item in _supported(record)
         ) or _forbidden(record):
@@ -336,6 +376,31 @@ def _case(
         raise
     except Invalid as error:
         raise CaseInvalid from error
+
+
+def _world_keys(value: Any) -> Json:
+    if (
+        not isinstance(value, dict)
+        or not 1 <= len(value) <= 8
+        or any(
+            not isinstance(name, str) or not SAFE_ID.fullmatch(name) for name in value
+        )
+    ):
+        raise Invalid
+    result: Json = {}
+    for name, identifiers in value.items():
+        if (
+            not isinstance(identifiers, list)
+            or not 1 <= len(identifiers) <= 16
+            or identifiers != sorted(set(identifiers))
+            or any(
+                not isinstance(item, str) or not SAFE_ID.fullmatch(item)
+                for item in identifiers
+            )
+        ):
+            raise Invalid
+        result[name] = identifiers
+    return {name: result[name] for name in sorted(result)}
 
 
 def _claims(
@@ -552,6 +617,70 @@ def _strings(value: Any) -> list[str]:
     if isinstance(value, list):
         return list(chain.from_iterable(_strings(item) for item in value))
     return []
+
+
+def render_tiered_cases(cases: list[Json]) -> bytes:
+    """Render a deterministic non-authoritative view without active markup data."""
+
+    def text_block(label: str, value: str) -> list[str]:
+        content = value.splitlines() or [""]
+        return [f"{label}:", "", *(f"    {line}" for line in content)]
+
+    lines = [
+        "# LABS-04 tiered cases",
+        "",
+        "Non-authoritative review view. Machine JSON remains authoritative.",
+    ]
+    groups = (
+        ("Observed production cases", "OBSERVED_PRODUCTION_CASE"),
+        ("Grounded expanded cases", "GROUNDED_EXPANDED_CASE"),
+    )
+    for heading, origin in groups:
+        lines.extend(["", f"## {heading}"])
+        selected = sorted(
+            (item for item in cases if item.get("case_origin") == origin),
+            key=lambda item: item["case_id"],
+        )
+        if not selected:
+            lines.extend(["", "    none"])
+        for case in selected:
+            lines.extend(
+                [
+                    "",
+                    f"### `{case['case_id']}`",
+                    "",
+                    f"- Origin: `{origin}`",
+                    "- Source traces: "
+                    + ", ".join(f"`{item}`" for item in case["source_trace_ids"]),
+                    "- Workflow stratum: "
+                    + f"`{case.get('workflow_stratum', 'UNDECLARED')}`",
+                    "- Gaps: "
+                    + (
+                        ", ".join(f"`{item}`" for item in case["gaps"])
+                        if case["gaps"]
+                        else "none"
+                    ),
+                    "- Owner accepted: not recorded",
+                    "",
+                    *text_block("Goal", case["goal"]["text"]),
+                    "",
+                    *text_block("Done when", case["done_when"]["text"]),
+                    "",
+                    *text_block(
+                        "Opening user turn",
+                        case["scenario"]["opening_user_turn"]["text"],
+                    ),
+                    "",
+                    "Required world data:",
+                ]
+            )
+            for namespace, identifiers in case["required_world_keys"].items():
+                lines.append(
+                    f"- `{namespace}`: "
+                    + ", ".join(f"`{item}`" for item in identifiers)
+                )
+    lines.extend(["", "## Invalid or unavailable evidence", "", "    none", ""])
+    return "\n".join(lines).encode("utf-8")
 
 
 def _references(groups: list[list[Json]]) -> int:

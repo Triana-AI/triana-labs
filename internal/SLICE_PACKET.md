@@ -1,370 +1,357 @@
-# LABS-06 intent-first continuation repair slice packet
+# LABS-04 through LABS-06 grounded-workflow closure packet
 
 Date frozen: 2026-08-03
 
-Status: **LOCAL GREEN; SINGLE LIVE RUN CONSUMED WITH GAPS; HUMAN GATE UNPASSED**
+Status: **LOCAL GREEN; LIVE REAL-DATA EXECUTION BLOCKED PENDING A NEW CONTRACT SLICE AND EXACT EGRESS APPROVAL**
 
-Slice ID: `LABS-06-INTENT-FIRST-CONTINUATION-REPAIR-V1`
+Slice ID: `LABS-046-GROUNDED-WORKFLOW-CLOSURE-V1`
 
-Canonical base: `b5a9faa` on branch
-`codex/labs-06-regular-user-fidelity`.
+Canonical base: commit `909f6cb` on branch
+`codex/labs-06-regular-user-fidelity`, plus the already verified uncommitted
+LABS-06 final-conformance slice and orchestrator documentation. Those frozen
+LABS-06 test bytes remain unchanged.
 
 Authority: `triana-labs/CHARTER.md` -> `internal/DECISION_LOG.md` ->
 `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md` -> this packet.
 
-Normative inherited contract: `internal/LABS06_SIMULATOR_FIDELITY_V1.md` except
-where this packet explicitly supersedes the simulator response, intent priority,
-state-transition, and live acceptance behavior.
-
 ## 1. Product outcome
 
-Make the existing bounded LABS-06 multi-turn runner good enough to produce
-grounded next-user continuations after live HRAI responses. This is a repair,
-not a redesign: keep the same three-episode controller, context bundle, target
-connector, budgets, privacy, custody, no-retry behavior, and readable private
-review flow.
+Close the supported LABS-04/05/06 loop with production-trace-derived,
+world-valid, outcome-bearing workflows rather than optimizing isolated
+conversation turns. LABS-04 must visibly separate observed production cases
+from grounded expansions. LABS-05 must execute a nontrivial ordered panel.
+LABS-06 must advance the verified workflow goal until its declared completion
+condition or an allowed structured stop.
 
-The repair has exactly three product changes:
+Local implementation and fake acceptance come first. Read-only HRAI RDS
+discovery is owner-authorized, but no provider, HRAI target, or real-data
+episode execution occurs until local GREEN and a separate exact pre-egress
+bundle, endpoint, and cost approval.
 
-1. reduce the provider-authored response from seven fields to three;
-2. make user intent primary and persona a tone/persistence modifier;
-3. evaluate three purposeful episodes spanning valid-world deepening,
-   unavailable-item recovery, and a boundary or unexpected-status challenge.
+## 2. Case contract
 
-No claim of multi-turn fidelity passes until Akarsh grades the live generated
-turns against the frozen acceptance metric.
+The restricted LABS-04 closure mode requests exactly twelve cases. Each draft
+adds only:
 
-## 2. Accepted owner decisions
-
-1. The provider returns exactly:
-
-   ```json
-   {
-     "disposition": "EMIT",
-     "user_utterance": "one next user message",
-     "stop_reason_code": null
-   }
-   ```
-
-2. `EMIT` requires a nonempty utterance and null stop reason. `STOP` requires
-   null utterance and a declared stop reason. Unknown fields remain invalid.
-3. Deterministic code binds the response to the exact outstanding simulator
-   attempt and latest observation, assigns the `USER` role, owns custody, and
-   applies critical semantic checks. The model does not echo hashes, declare
-   its role, or select internal reaction/action identifiers.
-4. Accepted `EMIT` leaves the closed episode interaction state unchanged.
-   State remains episode-local and deterministic; the model cannot mutate it.
-   Accepted `STOP` terminates once. No new classifier or state abstraction is
-   introduced.
-5. Intent is primary. Persona affects tone, patience, and persistence only.
-   The simulator continues when a useful next step exists and naturally
-   clarifies, corrects, selects an offered alternative, or challenges once
-   when an unavailable premise blocks the original request.
-6. The same three source cases remain bounded to recovery, boundary pressure,
-   and existing-status/deeper lookup. No broad case-library expansion occurs.
-7. One private three-episode HRAI/Foundry run is authorized after complete
-   local GREEN. It uses the same named HRAI target, `client-techcorp`, Azure
-   Foundry `FW-GLM-5.2`, private `/private/tmp` custody, USD 23 ceiling, 21 HTTP
-   ceiling, bounded target-owned side effects, and no automatic rerun.
-8. Akarsh alone supplies naturalness, intent-advancement, appropriate-stop,
-   and overall acceptance rulings. Software and Codex do not approve them.
-
-## 3. Exact provider instruction
-
-```text
-You simulate the next USER message in an ongoing conversation.
-
-The user's goal is the primary authority. The persona affects tone,
-communication style, patience, and persistence; it must not replace or weaken
-the goal.
-
-Read the full conversation, the assistant's latest response, and the verified
-current facts. Produce exactly one natural user message that advances the goal
-from the current state. Continue by default when a useful next step exists.
-
-If the requested item is unavailable, naturally clarify, correct the request,
-select an offered alternative, or challenge once when the persona supports it.
-Stop only when the goal is satisfied, abandoned, or a final boundary has been
-established.
-
-Do not answer as the assistant, copy or paraphrase the assistant, invent facts,
-tools, records, permissions, or results, reveal hidden facts, or take an action
-outside the supplied user authority. Use structured STOP, never a visible stop
-token.
+```json
+{
+  "goal": {"text": "...", "basis": "OBSERVED", "claim_keys": ["..."]},
+  "done_when": {"text": "...", "basis": "OBSERVED", "claim_keys": ["..."]},
+  "required_world_keys": {
+    "candidate_id": ["cand-example"],
+    "position_id": ["pos-example"]
+  }
+}
 ```
 
-The request retains the verified persona, intent, known facts, hidden fact IDs,
-user-owned policy, episode-local state, transcript, latest observation, and
-remaining-turn count. Hidden values remain controller-local.
+`goal` and `done_when` must be nonempty `OBSERVED` supported text. Closure-mode
+cases reject `GENERATED_VARIATION` in the opening, goal, done condition, case
+scenario, linked intent, linked persona, or linked turn policy. An LLM may
+extract or summarize cited evidence; it cannot invent behavior, facts,
+identifiers, goals, completion conditions, or task requirements.
 
-## 4. Evaluation point and metric
+`required_world_keys` is a closed mapping whose field names and values are
+portable safe identifiers, sorted and unique, with at most eight namespaces
+and sixteen values per namespace. It is provider-authored only by selection
+from the exact verified world inventory supplied to generation. Unknown or
+unavailable values invalidate the case. It is not repaired, substituted, or
+defaulted.
 
-Evaluation point: immediately after every simulator proposal and before it is
-added as a `USER` turn or sent to HRAI.
+Deterministic code derives and writes:
 
-Primary metric: **Accepted Continuation Rate**.
+- `case_origin = OBSERVED_PRODUCTION_CASE` when the opening, goal, done
+  condition, and their supporting case claims resolve to exactly one common
+  source trace;
+- `case_origin = GROUNDED_EXPANDED_CASE` when those same wholly observed
+  anchors resolve across two or more source traces;
+- `source_trace_ids`, the sorted unique union of trace IDs supporting the
+  opening, goal, and done condition.
 
-```text
-Akarsh-accepted generated user turns / eligible simulator opportunities
+The model cannot author or override `case_origin` or `source_trace_ids`.
+Zero-source, unknown-source, mixed generated/observed, or unsupported anchors
+are invalid and cannot publish as a case or pass.
+
+## 3. Larger trace evidence
+
+The closure path removes the arbitrary 25-trace evidence-count cutoff. It
+walks the entire eligible, deterministically round-robin corpus and includes
+traces until the existing bounded provider-evidence byte ceiling is reached.
+The ceiling, not a chosen trace count, stops projection. Exact total eligible,
+selected, excluded, and byte-limit counts remain in the evidence index. No
+trace is silently counted as used when it was excluded.
+
+The production RDS export may contain any number of authorized traces. Local
+Observer and Corpus Intelligence process the full exported corpus; the case
+provider sees only the privacy-validated bounded evidence projection.
+
+## 4. World inventory and preflight
+
+Closure generation and execution receive the same versioned
+`LABS046_WORLD_INVENTORY_V1` JSON artifact. It contains only allowlisted
+namespaces and sorted unique identifiers plus its declared data class and
+source lineage. Its exact bytes are hashed into case generation, case
+identity, owner selection, run identity, and both Markdown reports.
+
+For every selected episode, deterministic code verifies that every
+`required_world_keys` value exists in the inventory before target creation or
+simulator reservation. A missing value produces one partial shell episode and
+typed gap `WORLD_DATA_UNAVAILABLE`, with safe namespace/count details, zero
+target starts, zero target/simulator exchanges, and zero reservation. Later
+world-valid slots continue. No target query, retry, repair, substitution, or
+fallback occurs during preflight.
+
+This check proves consistency with the separately captured target-world
+inventory. It does not claim that arbitrary remote target state cannot change
+after capture; inventory identity and capture time stay visible.
+
+## 5. Goal-first LABS-06 continuation
+
+The LABS-06 simulator request carries exact top-level `goal`, `done_when`,
+`case_origin`, and `source_trace_ids` ahead of the existing verified context,
+episode state, transcript, and latest observation.
+
+The provider instruction says: advance the declared goal using the latest
+assistant response; do not stop merely because the assistant asks a question,
+offers alternatives, returns partial information, or needs a valid selection;
+return structured STOP only when `done_when` is satisfied, the supported goal
+is genuinely impossible, or an existing allowed final boundary applies.
+Persona controls language, patience, and reaction only.
+
+The provider still returns exactly `disposition`, `user_utterance`, and
+`stop_reason_code`. Deterministic code does not invent a next turn or infer
+semantic goal completion. Existing role, echo, hidden-fact, fixed-fact,
+action, stop, privacy, identity, observation-binding, termination, accounting,
+custody, dedupe, diagnostics, and no-retry rules remain exact. Human review
+owns usefulness and workflow completion.
+
+## 6. Versioned 12-case execution mode
+
+Legacy LABS-05 and LABS-06 pinned inputs and behavior remain supported without
+change. The new `LABS046_WORKFLOW_CLOSURE_V1` mode is separately closed:
+
+- exactly twelve ordered case IDs;
+- exactly six `OBSERVED_PRODUCTION_CASE` and six
+  `GROUNDED_EXPANDED_CASE` cases;
+- at least nine ordinary workflows and at most three declared recovery,
+  mistaken-user, boundary, or adversarial workflows;
+- a new owner execution-selection artifact names the exact manifest hash,
+  case file hash, ordered IDs, inventory hash, and context hash;
+- config, selection artifact, manifest, inventory, and context must agree;
+- any mismatch refuses before egress;
+- the legacy exact-three descriptor remains unchanged.
+
+The closure run retains U1/A1/U2/A2/U3/A3, one simulator attempt per
+continuation, per-episode continuation after typed partial failures, and the
+shared conformance circuit. The config declares exact arithmetic for twelve
+episodes, at most 24 simulator exchanges, target connector exchanges, time,
+tokens, and a maximum USD ceiling no greater than 100. The exact live ceiling
+requires separate owner approval.
+
+## 7. Tiered results
+
+LABS-04 publishes manifest-hashed `LABS04_TIERED_CASES.md`, explicitly
+non-authoritative:
+
+1. `Observed production cases`
+2. `Grounded expanded cases`
+3. `Invalid or unavailable evidence`
+
+For each valid case it shows origin, goal, done condition, source trace IDs,
+opening, required world keys, declared workflow stratum, gaps, and pending
+human state. Untrusted content is escaped or placed in fenced/indented blocks;
+it cannot create headings or raw HTML. It never includes secrets, provider
+bytes, private hidden facts, or uncited evidence.
+
+LABS-06 publishes manifest-hashed `LABS06_TIERED_RESULTS.md`, also
+non-authoritative:
+
+1. `Workflow completed` — owner ruling may later confirm completion;
+2. `Multi-turn progress, incomplete` — reached A2 or A3 without confirmed
+   completion;
+3. `Blocked, invalid, or unavailable` — typed gaps or no continuation.
+
+Each episode shows case tier, goal/done condition, transcript, tools by safe
+name/status, accounting, termination, typed gaps, world-preflight status, and
+blank owner grading fields. Deterministic code may place episodes in tiers 2
+or 3 from evidence. Tier 1 remains empty until Akarsh supplies a completion
+ruling; software cannot approve it.
+
+Machine JSON/JSONL remains authoritative. Markdown is a deterministic view of
+the same custody and never adds a finding or ruling.
+
+## 8. Evaluation and exit
+
+Local acceptance proves:
+
+1. both exact origins and unspoofable trace provenance;
+2. rejection of generated, unsupported, unknown, duplicate, or unsafe case
+   fields;
+3. evidence selection is byte-bounded rather than count-25-bounded;
+4. inventory agreement and no-egress `WORLD_DATA_UNAVAILABLE`;
+5. exact goal/done projection and goal-first instruction;
+6. legacy three-case compatibility;
+7. exact twelve-case accounting, continuation, circuit, and denominator;
+8. both deterministic privacy-safe Markdown artifacts and manifest hashes.
+
+The later live close metric is:
+
+- 12/12 production-trace-lined and inventory-valid before execution;
+- structural simulator yield at least 95%;
+- at least 11/12 reach A2;
+- at least 9/12 reach A3 or receive an owner-accepted earlier STOP;
+- at least 9/12 owner-confirmed workflow completions;
+- zero fabricated identifiers/behavior, role inversion, assistant echo,
+  hidden-fact leakage, privacy violation, retry, repair, or fallback;
+- observed and expanded denominators reported separately.
+
+Missing owner rulings keep completion and LABS-06 passage unpassed.
+
+## 9. Non-goals
+
+No general world builder, mutable sandbox framework, persistent/global or
+emotion memory, judge, model/prompt tournament, baseline/candidate diff,
+generic SDK, UI, hosted execution, automatic fixture synthesis, database
+mutation, target repair, broad eval import, retry, repair, or fallback.
+
+No source is copied from Agentagon or another repository. Existing permitted
+HRAI data access is evidence input, not an implementation source.
+
+## 10. Change budget and ownership
+
+Independent test author may edit only:
+
+- `triana-labs/tests/case_factory_acceptance/**`
+- `triana-labs/tests/adaptive_runner_acceptance/**`
+- new purpose-built synthetic fixtures under those directories
+
+Budget: at most eight new/changed black-box functions, 48 collected cases,
+and 700 changed/new physical test lines. Mechanical existing artifact-name or
+fixture-shape updates count toward lines but not functions. The frozen
+`tests/simulator_fidelity_acceptance/**` bytes are untouched.
+
+Implementation author may edit only:
+
+- `triana-labs/src/triana_labs/case_factory/evidence.py`
+- `triana-labs/src/triana_labs/case_factory/generate.py` (public restricted
+  wrapper forwarding the frozen inventory path only)
+- `triana-labs/src/triana_labs/case_factory/schemas/proposal.schema.json`
+- `triana-labs/src/triana_labs/case_factory/semantic.py`
+- `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`
+- `triana-labs/src/triana_labs/cli.py`
+- `triana-labs/src/triana_labs/adaptive_runner/boundaries.py`
+- `triana-labs/src/triana_labs/adaptive_runner/runner.py`
+
+Budget: at most 850 changed/new physical production lines. No dependency is
+allowed. `contracts.py`, `simulator_fidelity.py`, connectors, core, UI, report
+system, and external repositories are explicitly untouched. Workers stop
+before expanding this budget.
+
+Orchestrator owns this packet, canonical docs, decision memory, verifier hash
+literals, private run configuration/evidence outside the repository, and
+final verification. Pre-existing untracked user files remain untouched.
+
+## 11. Verification
+
+Focused RED/GREEN:
+
+```bash
+cd triana-labs
+uv run pytest tests/case_factory_acceptance tests/adaptive_runner_acceptance -q
 ```
 
-A generated turn is owner-accepted only when it is a plausible regular user,
-materially responds to the latest HRAI answer, advances or naturally resolves
-the intent, remains grounded in the transcript/current world, and has no
-critical semantic violation.
-
-The one-run good-enough gate is:
-
-- all three episodes reach at least opening -> HRAI A1 -> generated U2 -> HRAI A2;
-- at least five of six planned simulator opportunities are structurally valid;
-- at least four generated turns are accepted by Akarsh;
-- zero role inversion, exact/near assistant echo, hidden-fact leak, fixed-fact
-  conflict, or unauthorized literal action;
-- no retry, repair, fallback, skipped denominator, or invented pass;
-- an early structured stop reduces the denominator only when Akarsh accepts
-  that the stop was appropriate.
-
-Until the owner ruling exists, the live result remains `PENDING` or unpassed.
-
-## 5. Input, output, and authority
-
-Inputs remain the verified three-case LABS-04 projection, reviewed LABS-06
-context bundle, transcript, latest target observation, current episode-local
-state, and one provider response.
-
-Outputs remain the existing eight adaptive-run artifacts plus the private
-human-readable grading Markdown. No public report schema is added.
-
-Deterministic code owns request/response identity, latest-observation binding,
-role assignment, structural and critical semantic validation, termination,
-budgets, accounting, custody, dedupe, privacy, publication, and typed gaps. The
-simulator owns only disposition and wording. HRAI owns its target behavior and
-side effects. Akarsh owns human fidelity truth.
-
-## 6. Refusal and gap behavior
-
-- Invalid context remains pre-egress `SIMULATOR_CONTEXT_INVALID`.
-- Provider/network failure remains `SIMULATOR_PROVIDER_ERROR`.
-- Malformed three-field output remains `SIMULATOR_INVALID_RESPONSE`.
-- Deterministic critical defects remain `SIMULATOR_SEMANTIC_INVALID` with the
-  existing applicable detail codes.
-- `STOP` with an undeclared reason is `SIMULATOR_SEMANTIC_INVALID` with
-  `STOP_NOT_ALLOWED`.
-- No invalid response enters transcript custody as a user turn.
-- No retry, response repair, provider/model/target fallback, default message,
-  or hidden second attempt exists.
-- Later already-funded episode slots may continue under inherited behavior.
-
-## 7. Minimum independent acceptance set
-
-The independent test author changes only test-owned paths and freezes no more
-than eight focused black-box functions:
-
-1. intent-first provider instruction and exact three-field schema;
-2. a valid emit is deterministically bound to the latest observation, assigned
-   `USER`, and advances to a second target response;
-3. unavailable-item recovery accepts clarification or offered-alternative
-   selection without reaction/action IDs;
-4. valid-world deepening accepts a grounded follow-up and preserves state;
-5. valid structured stop terminates once with no visible stop token;
-6. malformed legacy seven-field and malformed three-field outputs fail once;
-7. role inversion, assistant echo, hidden/fixed-fact defect, and unauthorized
-   literal action remain critical failures;
-8. historical no-bundle LABS-05 behavior, accounting, privacy, custody, and
-   cross-episode isolation remain unchanged.
-
-No test may require exact model wording, helper shape, combinatorial enum
-coverage, new metric artifacts, or speculative abstractions.
-
-Valid RED requires collection success, no setup/import error, unchanged
-historical acceptance GREEN, and focused failures caused only by the missing
-three-field/intent-first behavior.
-
-## 8. Three-role protocol
-
-Codex is orchestrator. One independent test-author agent edits only frozen
-test-owned paths and proves RED. Codex audits and freezes those bytes. A
-different implementation-author agent then edits only production-owned paths.
-Workers run serially in the shared worktree. Codex alone reconciles scope,
-verifies final behavior, performs the separately authorized live run, records
-evidence, and declares completion.
-
-## 9. Change budget
-
-Orchestrator-owned:
-
-```text
-internal/SLICE_PACKET.md
-internal/LABS06_SIMULATOR_FIDELITY_V1.md
-internal/DECISION_LOG.md
-internal/WORKING_MEMORY.md
-internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md
-triana-labs/CHARTER.md
-triana-labs/scripts/verify.sh (frozen LABS-06 acceptance hashes only)
-.decision-memory/2026-08-03-codex-labs-06-regular-user-fidelity.md
-/private/tmp LABS-06 live driver, bundle, artifacts, and readable report
-```
-
-Test-author-owned:
-
-```text
-triana-labs/tests/simulator_fidelity_acceptance/**
-```
-
-Implementation-author-owned after RED freeze:
-
-```text
-triana-labs/src/triana_labs/adaptive_runner/boundaries.py
-triana-labs/src/triana_labs/adaptive_runner/simulator_fidelity.py
-triana-labs/src/triana_labs/adaptive_runner/runner.py
-```
-
-Maximum production files: three. Maximum changed production physical lines:
-260. Maximum changed/new test physical lines: 500. No dependency, lockfile,
-package metadata, context-bundle schema, CLI, config schema, connector, target,
-generic SDK, UI, public report, judge, memory, baseline/candidate, external repo,
-or HRAI code change is allowed.
-
-Explicitly untouched unrelated user files:
-
-```text
-internal/RESEARCH_BRIEFING_SIMULATION_FIDELITY_2026-08-02.md
-internal/SPC_APPLICATION_EVIDENCE_MAP_2026-08-02.md
-internal/SPC_INTERVIEW_VERBATIM_2026-08-02.md
-```
-
-Any worker stops before crossing this budget. No cleanup or opportunistic
-refactor is allowed.
-
-Mechanical budget clarification after implementation: the complete verifier
-correctly rejected the superseded LABS-06 frozen hashes after all 566 tests
-passed. `triana-labs/scripts/verify.sh` is therefore added to orchestrator
-ownership for exactly two expected-hash literal replacements. This changes no
-test or product behavior and is not a material scope expansion. The verifier's
-own ordered `shasum` stream identity is
-`0e3566eaf8d58378ee6df9c9a4538f9397d47110e14077bcdda95d3b8f7ba76a`;
-the packet's earlier `f493...` identity used a different explicit path/hash
-encoding and remains a valid independent freeze identity.
-
-## 10. Verification
-
-RED and focused GREEN:
+Preserved frozen LABS-06:
 
 ```bash
 cd triana-labs
 uv run pytest tests/simulator_fidelity_acceptance -q
 ```
 
-Historical adaptive regression:
+Static and complete:
 
 ```bash
 cd triana-labs
-uv run pytest tests/adaptive_runner_acceptance -q
-```
-
-Complete repository gate:
-
-```bash
-cd triana-labs
+uv run ruff check src tests/case_factory_acceptance tests/adaptive_runner_acceptance
+uv run ruff format --check src tests/case_factory_acceptance tests/adaptive_runner_acceptance
+uv run mypy src/triana_labs
 ./scripts/verify.sh
 ```
 
-The live run occurs only after all three commands are GREEN and consumes the
-single authorization at the first provider or HRAI request. A zero-egress
-preflight refusal does not consume it; any external request does. There is no
-automatic rerun.
+No command above authorizes RDS, provider, HRAI, target, or real-data episode
+execution.
 
-## 11. Exit evidence and structured uncertainty handoff
+## 12. Uncertainty handoff
 
-Every worker and the orchestrator reports: changed files and why; budget
-reconciliation; exact commands/results/artifacts; unverified work; assumptions;
-unexpected findings; dependencies; deliberately excluded problems; known
-risks; and required human action, using `none` explicitly.
+Every worker reports changed files and necessity, budget reconciliation,
+exact commands/results/artifacts, unverified work, assumptions, unexpected
+findings, dependencies, deliberately excluded problems, known risks, and
+human action required, using `none` explicitly.
 
-The slice exits only with frozen RED, separate implementation GREEN, focused
-and complete verifier evidence, one consumed live result or typed pre-egress
-refusal, a readable private grading Markdown, canonical status updates, and an
-owner-pending human ruling.
+The incident remains open after local GREEN. The orchestrator may perform the
+owner-authorized read-only RDS inventory/export only after validating the
+exact command cannot mutate data. Simulator-only and end-to-end calls remain
+separate explicit egress approvals.
 
-## 12. Independent RED freeze
+## 13. Independent RED freeze
 
-The independent test author changed exactly the four existing test-owned Python
-files with 244 additions and 255 deletions, exactly 499 changed physical lines
-against the 500-line budget. The suite contains eight black-box functions and
-collects 15 cases.
-
-Frozen whole-file identities:
+The independent test author added exactly two test-owned files:
 
 ```text
-conftest.py                 92ec4143191ca801f2b8c0b7091c104433582005c169457d24413c078a059749
-test_runtime_contract.py    f43669e5c91776204a876197f59ef01286a509ea2bd2db18a5af5de11d9cd1f7
-test_semantic_refusals.py   615f664519975043050856b3f5f75e2b03e8c9b6af1fb2c421eb43a32bd7c9af
-test_teacher_forced_review.py 94833e8b35ba5914f3d389b88f096d0d3046d08a60d12d5c4cbef896f7cb9d09
+tests/case_factory_acceptance/test_grounded_workflow_closure.py
+  sha256 2af87a94cb41803130cbeb31ca4e67857ca438b1cf0578587801e9514f84761c
+tests/adaptive_runner_acceptance/test_workflow_closure_execution.py
+  sha256 8428d3971a4690bbac73a77bf42b3e5c2f6099cb866652b56d85cd3aecb8da8e
 ```
 
-Ordered concatenated content SHA-256:
-`0320dbf68093f142dc39c491ad52b447f1af3ddbf81bfd614b4a031ea35c566f`.
-Ordered path/hash-stream SHA-256:
-`f493fa51d1bdf2ea59b010b86b6d38fda92354f099d579bdf02eaca6516402ec`.
+The frozen set is six black-box functions, nine collected cases, and 549 new
+physical lines, within the 8/48/700 budget. Codex independently reproduced
+nine clean RED failures, all at the absent public
+`generate_restricted(..., world_inventory=...)` or
+`run(..., world_inventory=...)` behavior after one pre-freeze temporary-path
+setup defect was corrected. There are no syntax, import, collection, or setup
+failures.
 
-Codex independently reproduced focused valid RED as 11 failures and four
-control passes, with no collection/setup/import error, and reproduced 143/143
-historical adaptive-runner passes. Ruff and diff checks are GREEN. Frozen
-test-owned bytes may not change during implementation.
+Independent controls passed: four LABS-04 success/legacy restricted cases,
+four adaptive success cases, and all 43 frozen LABS-06 fidelity cases. Ruff and
+format checks are GREEN. Frozen `simulator_fidelity_acceptance` hashes remain
+unchanged. These two files are now frozen; the implementation author may read
+but must not edit them.
 
-## 13. Implementation, verification, and live result
+Post-freeze audit correction: Codex found that one assertion assumed provider
+submission order even though canonical publication sorts by hashed `case_id`.
+The test author changed only that assertion to require six one-trace and six
+two-trace cases independent of order, reproduced the same nine-failure RED,
+and superseded only the case-test hash above. Meaning and every budget remain
+unchanged.
 
-The separate implementation author changed exactly the three authorized
-production files: 26 insertions plus 69 deletions, 95 changed physical lines
-against the 260-line ceiling. Frozen test bytes remained exact. No dependency,
-CLI/config, connector, context schema, target, report, memory, judge, or
-external repository changed.
+A second audit found the fixture used each five-wide batch's local enumeration
+to choose one versus two trace handles, making every slot appear single-trace.
+The test author corrected only fixture construction to use the global
+`case_N` ordinal, retained the established 5/5/2 production batching, and
+proved exact 6/6 origins. Candidate state after that correction is six
+case-factory passes plus three expected missing runner-inventory failures.
+The final case-test hash above supersedes both earlier hashes.
 
-Final local verification:
+## 14. Local completion and live boundary
 
-```text
-focused repair acceptance: 15/15 passed
-historical adaptive acceptance: 143/143 passed
-complete repository suite: 566/566 passed
-Ruff, format, strict mypy, deterministic/versioned gates: passed
-source/wheel build and clean CPython 3.13.14 install: passed
-evidence: /private/tmp/triana-labs-verify.HqCiRi
-```
+The independent implementation author changed only the eight authorized
+production paths. Relative to the packet's post-LABS-06 baseline, the closure
+delta is 806 added production lines, within the 850-line ceiling. The two
+frozen acceptance files retain the hashes recorded above.
 
-The one authorized private run used the frozen three-context bundle
-`sha256:ca7627ac232793421164005abc12fa563c6505c2b03412c4ddb3aac4e8194987`,
-live HRAI for `client-techcorp`, and Azure Foundry `FW-GLM-5.2`. It was consumed
-once and not rerun. Result:
+Local verification is GREEN: 9/9 closure acceptance cases, 43/43 preserved
+LABS-06 cases, Ruff, formatting, strict mypy, and the complete 603-test,
+build, clean-wheel, frozen-hash, and artifact verifier at
+`/private/tmp/triana-labs-verify.eLaFCb`. The full gate initially exposed a
+shared proposal-schema compatibility regression; the static legacy schema was
+restored byte-for-byte and the three closure fields now exist only in the
+dynamic closure schema. The final full gate is clean.
 
-```text
-outcome: COMPLETED_WITH_GAPS
-attempted episodes: 3
-valid/effective trajectories: 0/0
-target/simulator/all HTTP: 9/3/12
-typed gaps: 13
-termination: SIMULATOR_INVALID_RESPONSE for all three episodes
-reserved/actual USD: 8.666664/unavailable
-generated simulator transcript turns: 0
-```
-
-All three HRAI openings received one assistant response, but each first
-three-field simulator continuation was rejected before transcript insertion or
-A2. Thus all-three-reach-A2 fails, structural yield is 0 of 3 attempted and 0
-of 6 planned opportunities, and owner Accepted Continuation Rate is unavailable
-rather than zero or pass. Raw rejected provider content is not present in the
-published artifacts, so the exact provider envelope/schema defect is unknown.
-No retry, repair, fallback, or second run occurred.
-
-Private readable report:
-`/private/tmp/triana-labs06-hrai-intent-first-live-20260803-c/LABS06_HRAI_CONVERSATIONS_READABLE.md`.
-
-Structured uncertainty handoff: unverified work is the exact live provider
-structural subcause and all human naturalness/intent rulings. Assumptions are
-none beyond the frozen inputs. Unexpected finding is the repeated structural
-failure after schema reduction. Dependencies added: none. Deliberately excluded
-problems are provider-response diagnostics, retry/repair, model/provider change,
-new cases, memory, judges, UI/report, and HRAI changes. Known risk is that local
-fake compatibility does not establish Foundry/GLM response-envelope
-compatibility. Human action required: Akarsh may read the report, but there are
-no generated continuations to grade; any further live or diagnostic work needs
-a new decision.
+The local artifacts are synthetic acceptance evidence, not production
+results. No RDS, provider, HRAI, target, or real-data execution occurred. Both
+closure world-inventory validators currently admit only `SYNTHETIC`, while
+the existing Observer/Corpus Intelligence trace contracts also reject real
+privacy classes. Therefore an honest owner-authorized production-trace run
+cannot be assembled by relabeling RDS data under this packet. It requires a
+new bounded real-data contract slice, exact read-only export path and custody,
+then a separate pre-egress bundle/endpoint/cost approval before any provider
+or target call.

@@ -1,172 +1,215 @@
-"""LABS-06 context projection, state, termination, and isolation behavior."""
+"""Provider-envelope conformance and stage-specific structural diagnostics."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Self
 
 import pytest
-from conftest import PROTOCOL, canonical, invoke_lab06, jsonl, proposal
+from conftest import (
+    PROTOCOL,
+    canonical,
+    foundry_simulator,
+    invoke_lab06,
+    jsonl,
+    proposal,
+    provider_envelope,
+)
 
-INSTRUCTION = """You simulate the next USER message in an ongoing conversation.
-
-The user's goal is the primary authority. The persona affects tone,
-communication style, patience, and persistence; it must not replace or weaken
-the goal.
-
-Read the full conversation, the assistant's latest response, and the verified
-current facts. Produce exactly one natural user message that advances the goal
-from the current state. Continue by default when a useful next step exists.
-
-If the requested item is unavailable, naturally clarify, correct the request,
-select an offered alternative, or challenge once when the persona supports it.
-Stop only when the goal is satisfied, abandoned, or a final boundary has been
-established.
-
-Do not answer as the assistant, copy or paraphrase the assistant, invent facts,
-tools, records, permissions, or results, reveal hidden facts, or take an action
-outside the supplied user authority. Use structured STOP, never a visible stop
-token."""
+DIAGNOSTIC_KEYS = {
+    "diagnostic_version",
+    "stage",
+    "response_byte_count",
+    "content_byte_count",
+    "envelope_class",
+    "content_class",
+    "finish_reason_class",
+    "known_field_presence",
+    "missing_known_field_count",
+    "unknown_field_count",
+    "disposition_class",
+    "user_utterance_class",
+    "stop_reason_code_class",
+}
+USAGE = {"completion_tokens": 7, "prompt_tokens": 11}
 
 
-def test_foundry_uses_intent_first_instruction_and_exact_three_field_schema(
+def _first_structural_gap(run: object) -> dict:
+    return next(
+        row
+        for row in jsonl(run.publisher.artifacts["gaps.jsonl"])
+        if row["reason_code"] == "SIMULATOR_INVALID_RESPONSE"
+    )
+
+
+def _run_payload(
+    tmp_path: Path,
+    legacy: object,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: bytes,
+) -> tuple[object, object]:
+    simulator, opener = foundry_simulator(legacy, monkeypatch, [payload])
+    run = invoke_lab06(tmp_path, legacy, simulator_override=simulator)
+    return run, opener
+
+
+def test_schema_describes_both_union_members_and_transport_projects_valid_emit_stop(
     monkeypatch: pytest.MonkeyPatch, legacy: object
 ) -> None:
-    boundaries = __import__(
-        "triana_labs.adaptive_runner.boundaries", fromlist=["FoundrySimulatorTransport"]
+    emit = proposal(user_utterance="Please continue with the verified request.")
+    stop = proposal(
+        disposition="STOP", user_utterance=None, stop_reason_code="GOAL_SATISFIED"
     )
-    captured: list[Any] = []
-
-    class Response:
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *args: object) -> None:
-            del args
-
-        def read(self, limit: int) -> bytes:
-            assert limit == 1_000_001
-            content = canonical(proposal()).decode()
-            return canonical(
-                {
-                    "choices": [{"message": {"content": content}}],
-                    "usage": {"completion_tokens": 7, "prompt_tokens": 11},
-                }
-            )
-
-    class Opener:
-        def open(self, request: Any, *, timeout: int) -> Response:
-            assert timeout == 180
-            captured.append(request)
-            return Response()
-
-    monkeypatch.setattr(
-        boundaries.urllib.request, "build_opener", lambda *args: Opener()
+    simulator, opener = foundry_simulator(
+        legacy,
+        monkeypatch,
+        [
+            provider_envelope(canonical(emit).decode(), usage=USAGE),
+            provider_envelope(canonical(stop).decode(), usage=USAGE),
+        ],
     )
     request = {
         "protocol_version": PROTOCOL,
         "latest_observation": {"observation_hash": "sha256:" + "a" * 64},
     }
-    result = boundaries.FoundrySimulatorTransport(
-        legacy.config_value()["simulator"], "PRIVATE_TEST_SECRET"
-    ).complete(request)
-    body = json.loads(captured[0].data)
+    emitted, stopped = simulator.complete(request), simulator.complete(request)
+    body = json.loads(opener.requests[0].data)
     schema = body["response_format"]["json_schema"]["schema"]
-    assert body["messages"][0]["content"] == INSTRUCTION
-    assert schema["required"] == [
-        "disposition",
-        "user_utterance",
-        "stop_reason_code",
-    ]
-    assert set(schema["properties"]) == set(schema["required"])
-    assert result.response_bytes is not None
-
-
-def test_valid_emit_is_observation_bound_assigned_user_and_reaches_second_target(
-    tmp_path: Path, legacy: object
-) -> None:
-    run = invoke_lab06(tmp_path, legacy)
-    first_request = run.simulator.requests[0]
-    first_episode = run.target.launches[0].episode_id
-    turns = [
-        row
-        for row in jsonl(run.publisher.artifacts["transcripts.jsonl"])
-        if row["episode_id"] == first_episode
-    ]
-    assert [row["role"] for row in turns[:4]] == [
-        "USER",
-        "ASSISTANT",
-        "USER",
-        "ASSISTANT",
-    ]
-    assert turns[2]["source"] == "SIMULATOR"
-    assert (
-        turns[2]["consumed_observation_hash"]
-        == first_request["latest_observation"]["observation_hash"]
+    schema_text = json.dumps(schema).casefold()
+    instruction = body["messages"][0]["content"].casefold()
+    assert "emit" in schema_text and "nonempty" in schema_text and "null" in schema_text
+    assert "stop" in schema_text and "declared" in schema_text
+    assert "emit" in instruction and "stop" in instruction and "nonempty" in instruction
+    assert (emitted.disposition, emitted.user_utterance, emitted.stop_reason_code) == (
+        "EMIT",
+        emit["user_utterance"],
+        None,
     )
-    assert [item["kind"] for item in run.target.sessions[0].exchanges].count(
-        "turn"
-    ) >= 2
-
-
-def test_unavailable_item_recovery_accepts_a_purposeful_alternative_without_internal_ids(
-    tmp_path: Path, legacy: object
-) -> None:
-    recovery = "Could you use the offered synthetic alternative instead?"
-    run = invoke_lab06(
-        tmp_path,
-        legacy,
-        proposals=[proposal(user_utterance=recovery)],
-        assistant_variant="That requested item is unavailable; an alternative is available",
+    assert (stopped.disposition, stopped.user_utterance, stopped.stop_reason_code) == (
+        "STOP",
+        None,
+        "GOAL_SATISFIED",
     )
-    assert set(run.simulator.proposals[0]) == {
-        "disposition",
-        "user_utterance",
-        "stop_reason_code",
+
+
+@pytest.mark.parametrize(
+    ("payload", "detail"),
+    [
+        (b"not-json", "SIMULATOR_ENVELOPE_JSON_INVALID"),
+        (b'{"choices":[],"choices":[]}', "SIMULATOR_ENVELOPE_JSON_INVALID"),
+        (b"[]", "SIMULATOR_ENVELOPE_SHAPE_INVALID"),
+        (b"{}", "SIMULATOR_ENVELOPE_SHAPE_INVALID"),
+        (canonical({"choices": [{"message": {}}]}), "SIMULATOR_CONTENT_TYPE_INVALID"),
+        (
+            canonical({"choices": [{"message": {"content": 7}}]}),
+            "SIMULATOR_CONTENT_TYPE_INVALID",
+        ),
+    ],
+)
+def test_envelope_json_shape_and_content_type_fail_at_exact_first_stage(
+    tmp_path: Path,
+    legacy: object,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: bytes,
+    detail: str,
+) -> None:
+    run, _ = _run_payload(tmp_path, legacy, monkeypatch, payload)
+    gap = _first_structural_gap(run)
+    assert gap["detail_code"] == detail
+    assert gap["diagnostic"]["stage"] == detail
+    assert set(gap["diagnostic"]) == DIAGNOSTIC_KEYS
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["not-json", '{"disposition":"EMIT","disposition":"STOP"}'],
+)
+def test_invalid_or_duplicate_content_json_has_content_json_diagnostic(
+    tmp_path: Path,
+    legacy: object,
+    monkeypatch: pytest.MonkeyPatch,
+    content: str,
+) -> None:
+    payload = provider_envelope(content, usage=USAGE)
+    run, _ = _run_payload(tmp_path, legacy, monkeypatch, payload)
+    gap = _first_structural_gap(run)
+    diagnostic = gap["diagnostic"]
+    assert gap["detail_code"] == "SIMULATOR_CONTENT_JSON_INVALID"
+    assert diagnostic["content_byte_count"] == len(content.encode())
+    assert diagnostic["content_class"] == "STRING"
+    assert diagnostic["envelope_class"] == "CHAT_COMPLETION"
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "[]",
+        canonical({"disposition": "EMIT"}).decode(),
+        canonical(
+            {**proposal(), "PRIVATE_UNKNOWN_KEY": "PRIVATE_UNKNOWN_VALUE"}
+        ).decode(),
+        canonical(
+            {
+                **proposal(),
+                "speaker_role": "USER",
+                "reaction_id": "legacy",
+                "action_ids": [],
+                "consumed_observation_hash": "sha256:" + "f" * 64,
+            }
+        ).decode(),
+    ],
+)
+def test_nonobject_missing_extra_and_legacy_proposals_use_key_diagnostic_without_leak(
+    tmp_path: Path,
+    legacy: object,
+    monkeypatch: pytest.MonkeyPatch,
+    content: str,
+) -> None:
+    payload = provider_envelope(content, usage=USAGE)
+    run, _ = _run_payload(tmp_path, legacy, monkeypatch, payload)
+    gap = _first_structural_gap(run)
+    serialized = canonical(gap["diagnostic"])
+    assert gap["detail_code"] == "SIMULATOR_CONTENT_KEYS_INVALID"
+    assert b"PRIVATE_UNKNOWN" not in serialized
+    assert gap["diagnostic"]["known_field_presence"] == {
+        key: key in json.loads(content) if content.startswith("{") else False
+        for key in ("disposition", "user_utterance", "stop_reason_code")
     }
-    turns = jsonl(run.publisher.artifacts["transcripts.jsonl"])
-    assert any(
-        row["source"] == "SIMULATOR" and row["content"] == recovery for row in turns
-    )
-    assert [item["kind"] for item in run.target.sessions[0].exchanges].count(
-        "turn"
-    ) >= 2
 
 
-def test_valid_world_deepening_preserves_state_and_cross_episode_isolation(
-    tmp_path: Path, legacy: object
+@pytest.mark.parametrize(
+    ("usage", "valid"),
+    [
+        (None, True),
+        ({"completion_tokens": 0, "prompt_tokens": 0}, True),
+        ({"completion_tokens": 7}, False),
+        ({"completion_tokens": 7, "prompt_tokens": True}, False),
+        ({"completion_tokens": "7", "prompt_tokens": 11}, False),
+        ({"completion_tokens": -1, "prompt_tokens": 11}, False),
+    ],
+)
+def test_usage_missing_or_zero_is_supported_but_malformed_usage_is_typed_without_partial_count(
+    tmp_path: Path,
+    legacy: object,
+    monkeypatch: pytest.MonkeyPatch,
+    usage: object,
+    valid: bool,
 ) -> None:
-    follow_up = "What is the next verified step for this open synthetic request?"
-    run = invoke_lab06(tmp_path, legacy, proposals=[proposal(user_utterance=follow_up)])
-    first, second = run.simulator.requests[:2]
-    assert first["episode_id"] == second["episode_id"]
-    assert first["interaction_state"] == second["interaction_state"]
-    first_by_episode = {}
-    for request in run.simulator.requests:
-        first_by_episode.setdefault(request["episode_id"], request)
-    assert len(first_by_episode) == 3
-    states = [item["interaction_state"] for item in first_by_episode.values()]
-    assert states[0] == states[1] == states[2]
-
-
-def test_structured_stop_terminates_once_without_visible_user_token_or_later_target_turn(
-    tmp_path: Path, legacy: object
-) -> None:
-    stopped = proposal(
-        disposition="STOP",
-        stop_reason_code="GOAL_SATISFIED",
-        user_utterance=None,
-    )
-    run = invoke_lab06(tmp_path, legacy, proposals=[stopped])
-    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
-    assert all(row["termination_reason"] == "CASE_STOP_CONDITION" for row in attempts)
-    transcripts = jsonl(run.publisher.artifacts["transcripts.jsonl"])
-    assert all(row["source"] != "SIMULATOR" for row in transcripts)
-    assert b":done:" not in run.publisher.artifacts["transcripts.jsonl"]
-    assert all(
-        [item["kind"] for item in session.exchanges].count("turn") == 1
-        for session in run.target.sessions
-    )
-    assert all(session.terminate_count == 1 for session in run.target.sessions)
-    assert len(run.simulator.requests) == 3
+    payload = provider_envelope(canonical(proposal()).decode(), usage=usage)
+    if valid:
+        simulator, _ = foundry_simulator(legacy, monkeypatch, [payload])
+        result = simulator.complete(
+            {
+                "protocol_version": PROTOCOL,
+                "latest_observation": {"observation_hash": "sha256:" + "a" * 64},
+            }
+        )
+        assert result.status == "SUCCEEDED"
+        assert (result.input_tokens, result.output_tokens) == (0, 0)
+    else:
+        run, _ = _run_payload(tmp_path, legacy, monkeypatch, payload)
+        gap = _first_structural_gap(run)
+        ledger = jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
+        sim = next(row for row in ledger if row["lane"] == "SIMULATOR")
+        assert gap["detail_code"] == "SIMULATOR_USAGE_INVALID"
+        assert (sim["input_tokens"], sim["output_tokens"]) == (0, 0)

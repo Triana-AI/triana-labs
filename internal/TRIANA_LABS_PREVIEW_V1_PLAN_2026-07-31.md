@@ -199,6 +199,32 @@ the all-three-reach-A2 and structural-yield gates before human Accepted
 Continuation Rate can be scored. Live provider compatibility and LABS-06 remain
 unpassed.
 
+The final bounded local conformance repair then retained that exact three-field
+authority while aligning its EMIT/STOP descriptions with deterministic rules,
+adding closed stage-specific structural details and a privacy-safe text-free
+diagnostic, preserving normalized usage on later invalid content, and blocking
+a third slot only after two distinct first-continuation episodes prove the same
+structural detail. It passed 43/43 focused cases, 143/143 inherited adaptive
+cases, and the complete 594-test/build/install verifier at
+`/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. This closes the local implementation defect but does not close the
+dogfood incident or establish live compatibility: a separately authorized
+three-case simulator-only check must first achieve Structural Continuation
+Yield `3/3`, with zero privacy leakage and zero retry/repair/fallback, before
+another end-to-end HRAI run is considered.
+
+The subsequent bounded grounded-workflow closure is locally complete. Its
+separate `LABS046_WORKFLOW_CLOSURE_V1` route requires twelve ordered cases,
+deterministically splits six observed from six multi-trace grounded expansions,
+preflights exact world keys before egress, advances the declared goal through
+the LABS-06 three-field user boundary, and publishes readable tiered LABS-04
+and LABS-06 Markdown. Independent acceptance is 9/9, preserved LABS-06
+acceptance is 43/43, and the complete verifier is 603/603 at
+`/private/tmp/triana-labs-verify.eLaFCb`. No external system ran. Because the
+current trace and world-inventory contracts accept only `SYNTHETIC`, the
+planned production-RDS execution remains blocked on a new bounded real-data
+contract rather than being mislabeled or silently widened.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

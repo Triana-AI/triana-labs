@@ -44,9 +44,20 @@ def _json(payload: bytes) -> Any:
 
 
 class CaseFactoryLoader:
+    def __init__(self, descriptor: Mapping[str, Any] | None = None) -> None:
+        self._manifest_hash = (
+            descriptor["case_factory_manifest_hash"] if descriptor else MANIFEST_HASH
+        )
+        self._case_hash = (
+            descriptor["case_candidate_file_hash"] if descriptor else CASE_HASH
+        )
+        self._case_ids = (
+            tuple(descriptor["ordered_case_ids"]) if descriptor else CASE_IDS
+        )
+
     def load(self, manifest_path: Path) -> VerifiedCaseFactoryInput:
         manifest_bytes = _regular(manifest_path)
-        if _hash(manifest_bytes) != MANIFEST_HASH:
+        if _hash(manifest_bytes) != self._manifest_hash:
             raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
         manifest = _json(manifest_bytes)
         if (
@@ -73,7 +84,7 @@ class CaseFactoryLoader:
             if _hash(payload) != digest:
                 raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
             loaded[name] = payload
-        if _hash(loaded.get("case_candidates.jsonl", b"")) != CASE_HASH:
+        if _hash(loaded.get("case_candidates.jsonl", b"")) != self._case_hash:
             raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
 
         def records(name: str, id_key: str) -> dict[str, dict[str, Any]]:
@@ -101,13 +112,13 @@ class CaseFactoryLoader:
                     intents[cases[case_id]["intent_id"]],
                     policies[cases[case_id]["turn_policy_id"]],
                 )
-                for case_id in CASE_IDS
+                for case_id in self._case_ids
             )
         except KeyError as error:
             raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4) from error
         return VerifiedCaseFactoryInput(
-            MANIFEST_HASH,
-            CASE_HASH,
+            self._manifest_hash,
+            self._case_hash,
             manifest["input_manifest_hash"],
             manifest["intelligence_manifest_hash"],
             projections,
@@ -205,9 +216,18 @@ class FoundrySimulatorTransport:
             schema = {
                 "additionalProperties": False,
                 "properties": {
-                    "disposition": {"enum": ["EMIT", "STOP"]},
-                    "user_utterance": {"type": ["string", "null"]},
-                    "stop_reason_code": {"type": ["string", "null"]},
+                    "disposition": {
+                        "description": "EMIT a user turn or STOP with a declared reason.",
+                        "enum": ["EMIT", "STOP"],
+                    },
+                    "user_utterance": {
+                        "description": "For EMIT, a nonempty safe user utterance; for STOP, null.",
+                        "type": ["string", "null"],
+                    },
+                    "stop_reason_code": {
+                        "description": "For EMIT, null; for STOP, a nonempty safe declared stop reason.",
+                        "type": ["string", "null"],
+                    },
                 },
                 "required": [
                     "disposition",
@@ -231,6 +251,10 @@ class FoundrySimulatorTransport:
                 "The user's goal is the primary authority. The persona affects tone,\n"
                 "communication style, patience, and persistence; it must not replace or weaken\n"
                 "the goal.\n\n"
+                "When explicit goal and done_when fields are present, advance that goal using\n"
+                "the latest assistant response. Do not stop for a question, alternatives,\n"
+                "partial information, or a needed valid selection. STOP only when done_when is\n"
+                "satisfied, the supported goal is impossible, or an allowed final boundary applies.\n\n"
                 "Read the full conversation, the assistant's latest response, and the verified\n"
                 "current facts. Produce exactly one natural user message that advances the goal\n"
                 "from the current state. Continue by default when a useful next step exists.\n\n"
@@ -241,7 +265,8 @@ class FoundrySimulatorTransport:
                 "Do not answer as the assistant, copy or paraphrase the assistant, invent facts,\n"
                 "tools, records, permissions, or results, reveal hidden facts, or take an action\n"
                 "outside the supplied user authority. Use structured STOP, never a visible stop\n"
-                "token."
+                "token. Return EMIT with a nonempty safe user utterance and null stop reason.\n"
+                "Return STOP with a null user utterance and nonempty safe declared stop reason."
             )
         body_value["messages"][1]["content"] = _canonical(request).decode()
         body_value["response_format"]["json_schema"]["schema"] = schema
@@ -274,13 +299,27 @@ class FoundrySimulatorTransport:
                 None,
                 "SIMULATOR_PROVIDER_ERROR",
             )
+        input_tokens = output_tokens = 0
         try:
             envelope = _json(response_bytes)
+            if labs06 and isinstance(envelope, dict) and "usage" in envelope:
+                usage = envelope["usage"]
+                if (
+                    not isinstance(usage, dict)
+                    or "prompt_tokens" not in usage
+                    or "completion_tokens" not in usage
+                    or not _integer(usage["prompt_tokens"])
+                    or not _integer(usage["completion_tokens"])
+                ):
+                    raise ValueError
+                input_tokens = usage["prompt_tokens"]
+                output_tokens = usage["completion_tokens"]
             content = envelope["choices"][0]["message"]["content"]
             value = _json(content.encode())
-            usage = envelope.get("usage", {})
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
+            if not labs06:
+                usage = envelope.get("usage", {})
+                input_tokens = usage.get("prompt_tokens", 0)
+                output_tokens = usage.get("completion_tokens", 0)
             expected = (
                 {
                     "disposition",
@@ -295,11 +334,10 @@ class FoundrySimulatorTransport:
                     "stop_reason",
                 }
             )
-            if (
-                not isinstance(value, dict)
-                or not _integer(input_tokens)
-                or not _integer(output_tokens)
-                or set(value) != expected
+            if not isinstance(value, dict) or set(value) != expected:
+                raise ValueError
+            if not labs06 and (
+                not _integer(input_tokens) or not _integer(output_tokens)
             ):
                 raise ValueError
             if labs06:
@@ -332,7 +370,14 @@ class FoundrySimulatorTransport:
                 None,
                 None,
             )
-        except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError):
+        except (
+            AttributeError,
+            KeyError,
+            IndexError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ):
             return SimulatorResponse(
                 "INVALID",
                 body,
@@ -341,8 +386,8 @@ class FoundrySimulatorTransport:
                 None,
                 None,
                 None,
-                0,
-                0,
+                input_tokens if labs06 else 0,
+                output_tokens if labs06 else 0,
                 1,
                 None,
                 "SIMULATOR_INVALID_RESPONSE",

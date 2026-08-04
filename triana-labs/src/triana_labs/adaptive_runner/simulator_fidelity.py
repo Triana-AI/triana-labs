@@ -558,54 +558,196 @@ def _echo_codes(utterance: str, transcript: list[JsonObject]) -> set[str]:
 
 
 def response_structure(response: SimulatorResponse) -> str | None:
-    expected = {
-        "disposition",
-        "user_utterance",
-        "stop_reason_code",
+    reason, _ = response_structure_diagnostic(response)
+    return reason
+
+
+_PROPOSAL_KEYS = {"disposition", "user_utterance", "stop_reason_code"}
+
+
+def _field_class(value: Any, present: bool) -> str:
+    if not present:
+        return "MISSING"
+    if value is None:
+        return "NULL"
+    if isinstance(value, str):
+        return "EMPTY_STRING" if not value else "NONEMPTY_STRING"
+    return "OTHER"
+
+
+def _disposition_class(value: Any, present: bool) -> str:
+    if not present:
+        return "MISSING"
+    if value == "EMIT":
+        return "EMIT"
+    if value == "STOP":
+        return "STOP"
+    return "NON_STRING" if not isinstance(value, str) else "OTHER"
+
+
+def _finish_class(value: Any, present: bool) -> str:
+    if not present:
+        return "MISSING"
+    if not isinstance(value, str):
+        return "NON_STRING"
+    return {
+        "stop": "STOP",
+        "length": "LENGTH",
+        "content_filter": "CONTENT_FILTER",
+        "tool_calls": "TOOL_CALLS",
+    }.get(value, "OTHER")
+
+
+def _diagnostic(
+    stage: str,
+    response_bytes: bytes,
+    envelope_class: str,
+    content_class: str,
+    finish_reason_class: str,
+    content: str | None,
+    proposal: Any,
+) -> dict[str, Any]:
+    mapping = proposal if isinstance(proposal, dict) else {}
+    presence = {key: key in mapping for key in sorted(_PROPOSAL_KEYS)}
+    return {
+        "diagnostic_version": "LABS06_SIMULATOR_DIAGNOSTIC_V1",
+        "stage": stage,
+        "response_byte_count": len(response_bytes),
+        "content_byte_count": len(content.encode("utf-8"))
+        if content is not None
+        else None,
+        "envelope_class": envelope_class,
+        "content_class": content_class,
+        "finish_reason_class": finish_reason_class,
+        "known_field_presence": presence,
+        "missing_known_field_count": sum(not item for item in presence.values()),
+        "unknown_field_count": len(set(mapping) - _PROPOSAL_KEYS)
+        if isinstance(proposal, dict)
+        else None,
+        "disposition_class": _disposition_class(
+            mapping.get("disposition"), "disposition" in mapping
+        ),
+        "user_utterance_class": _field_class(
+            mapping.get("user_utterance"), "user_utterance" in mapping
+        ),
+        "stop_reason_code_class": _field_class(
+            mapping.get("stop_reason_code"), "stop_reason_code" in mapping
+        ),
     }
+
+
+def response_structure_diagnostic(
+    response: SimulatorResponse, *, privacy_invalid: bool = False
+) -> tuple[str | None, dict[str, Any] | None]:
+    """Reparse provider bytes and return the first safe structural failure."""
+
+    response_bytes = response.response_bytes or b""
+    envelope_class = "INVALID_JSON"
+    content_class = "NOT_APPLICABLE"
+    finish_class = "MISSING"
+    content: str | None = None
+    proposal: Any = None
+
+    def fail(stage: str) -> tuple[str, dict[str, Any]]:
+        return (
+            "SIMULATOR_INVALID_RESPONSE",
+            _diagnostic(
+                stage,
+                response_bytes,
+                envelope_class,
+                content_class,
+                finish_class,
+                content,
+                proposal,
+            ),
+        )
+
+    if privacy_invalid:
+        return fail("SIMULATOR_RESPONSE_PRIVACY_INVALID")
     try:
-        raw = json.loads(response.response_bytes or b"", object_pairs_hook=_pairs)
-        if not isinstance(raw, dict):
-            return "SIMULATOR_INVALID_RESPONSE"
-        proposal = raw
-        if "disposition" not in raw:
-            content = raw["choices"][0]["message"]["content"]
-            if not isinstance(content, str):
-                return "SIMULATOR_INVALID_RESPONSE"
+        raw = json.loads(response_bytes, object_pairs_hook=_pairs)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        return fail("SIMULATOR_ENVELOPE_JSON_INVALID")
+    if not isinstance(raw, dict):
+        envelope_class = "NON_OBJECT"
+        return fail("SIMULATOR_ENVELOPE_SHAPE_INVALID")
+    if "choices" in raw:
+        envelope_class = "CHAT_COMPLETION"
+        choices = raw.get("choices")
+        if (
+            not isinstance(choices, list)
+            or not choices
+            or not isinstance(choices[0], dict)
+            or not isinstance(choices[0].get("message"), dict)
+        ):
+            return fail("SIMULATOR_ENVELOPE_SHAPE_INVALID")
+        first = choices[0]
+        finish_class = _finish_class(
+            first.get("finish_reason"), "finish_reason" in first
+        )
+        message = first["message"]
+        raw_content = message.get("content")
+        content_class = (
+            "MISSING"
+            if "content" not in message
+            else "NULL"
+            if raw_content is None
+            else "STRING"
+            if isinstance(raw_content, str)
+            else "OTHER"
+        )
+        if not isinstance(raw_content, str):
+            return fail("SIMULATOR_CONTENT_TYPE_INVALID")
+        content = raw_content
+        try:
             proposal = json.loads(content, object_pairs_hook=_pairs)
-        if not isinstance(proposal, dict) or set(proposal) != expected:
-            return "SIMULATOR_INVALID_RESPONSE"
-        projected = {
-            "disposition": response.disposition,
-            "user_utterance": response.user_utterance,
-            "stop_reason_code": response.stop_reason_code,
-        }
-        if proposal != projected:
-            return "SIMULATOR_INVALID_RESPONSE"
-    except (
-        UnicodeDecodeError,
-        json.JSONDecodeError,
-        IndexError,
-        KeyError,
-        TypeError,
-        ValueError,
-    ):
-        return "SIMULATOR_INVALID_RESPONSE"
-    common = (
+        except (json.JSONDecodeError, ValueError):
+            return fail("SIMULATOR_CONTENT_JSON_INVALID")
+    elif _PROPOSAL_KEYS & set(raw):
+        envelope_class = "DIRECT_PROPOSAL"
+        proposal = raw
+    else:
+        envelope_class = "OTHER_OBJECT"
+        return fail("SIMULATOR_ENVELOPE_SHAPE_INVALID")
+    if not isinstance(proposal, dict) or set(proposal) != _PROPOSAL_KEYS:
+        return fail("SIMULATOR_CONTENT_KEYS_INVALID")
+    if envelope_class == "CHAT_COMPLETION" and "usage" in raw:
+        usage = raw["usage"]
+        if (
+            not isinstance(usage, dict)
+            or {"prompt_tokens", "completion_tokens"} - set(usage)
+            or not all(
+                type(usage[key]) is int and usage[key] >= 0
+                for key in ("prompt_tokens", "completion_tokens")
+            )
+        ):
+            return fail("SIMULATOR_USAGE_INVALID")
+    if not (
         response.status == "SUCCEEDED"
         and response.reason_code is None
         and isinstance(response.consumed_observation_hash, str)
         and _DIGEST.fullmatch(response.consumed_observation_hash)
         and response.speaker_role == "USER"
-        and response.disposition in {"EMIT", "STOP"}
-    )
-    if not common:
-        return "SIMULATOR_INVALID_RESPONSE"
-    if response.disposition == "EMIT":
-        valid = _text(response.user_utterance) and response.stop_reason_code is None
-    else:
-        valid = response.user_utterance is None and _text(response.stop_reason_code)
-    return None if valid else "SIMULATOR_INVALID_RESPONSE"
+    ):
+        return fail("SIMULATOR_RESPONSE_AUTHORITY_INVALID")
+    projected = {
+        "disposition": response.disposition,
+        "user_utterance": response.user_utterance,
+        "stop_reason_code": response.stop_reason_code,
+    }
+    if proposal != projected:
+        return fail("SIMULATOR_RESPONSE_PROJECTION_MISMATCH")
+    if response.disposition not in {"EMIT", "STOP"}:
+        return fail("SIMULATOR_DISPOSITION_INVALID")
+    if response.disposition == "EMIT" and not (
+        _text(response.user_utterance) and response.stop_reason_code is None
+    ):
+        return fail("SIMULATOR_EMIT_FIELDS_INVALID")
+    if response.disposition == "STOP" and not (
+        response.user_utterance is None and _text(response.stop_reason_code)
+    ):
+        return fail("SIMULATOR_STOP_FIELDS_INVALID")
+    return None, None
 
 
 def semantic_codes(
@@ -687,6 +829,7 @@ def evaluate_teacher_forced(
         request = _teacher_request(item, context)
         reason: str | None = None
         details: list[str] = []
+        diagnostic: dict[str, Any] | None = None
         try:
             response = simulator.complete(request)
         except (OSError, TimeoutError):
@@ -701,7 +844,9 @@ def evaluate_teacher_forced(
             response = SimulatorResponse("INVALID", _canonical(request), None)
             reason = "SIMULATOR_INVALID_RESPONSE"
         if reason is None:
-            reason = response_structure(response)
+            reason, diagnostic = response_structure_diagnostic(response)
+            if diagnostic is not None:
+                details = [cast(str, diagnostic["stage"])]
         if (
             reason is None
             and response.consumed_observation_hash
@@ -726,6 +871,7 @@ def evaluate_teacher_forced(
                 "outcome": outcome,
                 "reason_code": reason,
                 "detail_codes": details,
+                "diagnostic": diagnostic,
                 "request_hash": _hash(response.request_bytes or _canonical(request)),
                 "response_hash": _hash(response.response_bytes)
                 if response.response_bytes is not None

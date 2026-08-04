@@ -9,7 +9,7 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import pytest
 
@@ -48,6 +48,61 @@ def identity(prefix: str, value: Any) -> str:
 
 def jsonl(payload: bytes) -> list[dict[str, Any]]:
     return [json.loads(line) for line in payload.splitlines()]
+
+
+def provider_envelope(
+    content: Any,
+    *,
+    usage: Any = None,
+    finish_reason: Any = "stop",
+) -> bytes:
+    value: dict[str, Any] = {
+        "choices": [{"finish_reason": finish_reason, "message": {"content": content}}]
+    }
+    if usage is not None:
+        value["usage"] = usage
+    return canonical(value)
+
+
+class EnvelopeResponse:
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        del args
+
+    def read(self, limit: int) -> bytes:
+        assert limit == 1_000_001
+        return self.payload
+
+
+class EnvelopeOpener:
+    def __init__(self, payloads: list[bytes]) -> None:
+        self.payloads = payloads
+        self.requests: list[Any] = []
+
+    def open(self, request: Any, *, timeout: int) -> EnvelopeResponse:
+        assert timeout == 180
+        self.requests.append(request)
+        index = min(len(self.requests) - 1, len(self.payloads) - 1)
+        return EnvelopeResponse(self.payloads[index])
+
+
+def foundry_simulator(legacy: Any, monkeypatch: Any, payloads: list[bytes]) -> Any:
+    boundaries = __import__(
+        "triana_labs.adaptive_runner.boundaries", fromlist=["FoundrySimulatorTransport"]
+    )
+    opener = EnvelopeOpener(payloads)
+    monkeypatch.setattr(boundaries.urllib.request, "build_opener", lambda *args: opener)
+    return (
+        boundaries.FoundrySimulatorTransport(
+            legacy.config_value()["simulator"], "PRIVATE_TEST_SECRET"
+        ),
+        opener,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -300,6 +355,7 @@ def invoke_lab06(
     bundle_mutator: Any = None,
     assistant_variant: str = "bounded",
     include_case_id: bool = True,
+    simulator_override: Any = None,
 ) -> Lab06Run:
     module = legacy.api()
     bundle = bundle_value(legacy)
@@ -307,7 +363,7 @@ def invoke_lab06(
         bundle_mutator(bundle)
     context_loader = ContextLoader(module, bundle)
     inputs = legacy.write_inputs(tmp_path)
-    simulator = FidelitySimulator(module, proposals)
+    simulator = simulator_override or FidelitySimulator(module, proposals)
     target = legacy.TargetFactory(
         assistant_variant=assistant_variant, include_case_id=include_case_id
     )
