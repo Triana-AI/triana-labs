@@ -64,6 +64,9 @@ For owner-authorized inputs:
 - generated personas, intents, policies, and cases carry fidelity
   `OWNER_AUTHORIZED_REAL_DATA_GROUNDED`;
 - Case Factory evidence index and manifest carry the same privacy class;
+- the canary evidence authorization projection is exactly
+  `LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1`, while the existing
+  synthetic projection remains byte-identical;
 - world inventory accepts exactly the canary class and hash-binds it as before;
 - closure selection/config/cases/inventory must agree on privacy identity;
 - adaptive manifests, records, gaps, tiered Markdown, and result custody retain
@@ -131,11 +134,13 @@ The implementation author works only in isolated worktree
 - `triana-labs/src/triana_labs/intelligence/input.py`
 - `triana-labs/src/triana_labs/intelligence/derive.py`
 - `triana-labs/src/triana_labs/case_factory/evidence.py`
+- `triana-labs/src/triana_labs/case_factory/generate.py` (public restricted
+  wrapper translates only the new privacy refusal to `GenerateFailure`)
 - `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`
 - `triana-labs/src/triana_labs/case_factory/semantic.py`
 - `triana-labs/src/triana_labs/adaptive_runner/runner.py`
 
-Budget: at most 420 changed/new physical production lines. No dependency,
+Budget: at most 430 changed/new physical production lines. No dependency,
 schema package, connector, simulator-fidelity, CLI, test, docs, script, or
 external-repository change.
 
@@ -176,11 +181,53 @@ uv run mypy src/triana_labs
 
 No command above authorizes RDS, provider, HRAI, target, or real-data egress.
 
-## 9. Exit and later live gate
+## 9. Independent RED freeze
+
+The independent test author committed `62627edf31fcd00bf0198ab1bc6abb7ec6c95886`
+(integrated as `421a780`), the assertion-supersession follow-up
+`20e397a19b9bcd5ad38affc03ad4395174c4ee9c` (integrated as `eb2dc25`), and
+the public-derive fixture correction `38840927b7833430bc76d7a1dba1cfe393e7620b`
+(integrated as `ff1b711`). The final set has exactly seven black-box functions,
+ten cases, and 394 changed/new physical lines across six authorized test files.
+The frozen
+file SHA-256 values are:
+
+```text
+tests/acceptance/test_observe_success.py
+  9785048c869867ba8085181bf04c1c034c1e154e71cd2da80476ad04b7c81680
+tests/acceptance/test_observe_rejections.py
+  974f55f959eb839651a237ca0d4e629574afeb11f933e67f12907b84172fd944
+tests/acceptance/test_observe_safety.py
+  4526030cbbc80c878b66565f517bdf35a4038da80ef2adc44cdf7f164d733ad4
+tests/intelligence_acceptance/test_derivation_success.py
+  9a03ffa0314690d94fa51291b840322cfc064213c628ff2d3a353d4ffd93dae7
+tests/case_factory_acceptance/test_grounded_workflow_closure.py
+  63b717755f14971ab4c70a9a2f7a410d7d6823c65fdf5b41a3caac2c5b8cc359
+tests/adaptive_runner_acceptance/test_workflow_closure_execution.py
+  9bc0fa6a8b08e89a3251e03151ac6abe640fcf8a57b9361e6dfcbb84d9447ad6
+```
+
+Codex independently reproduced nine behavioral RED failures and one existing
+target-class refusal control pass: four Observer, one Intelligence, two Case
+Factory, and two runner failures. Four separate synthetic stage controls pass.
+Collection, imports, lint, formatting, and setup are valid; no external call
+occurred. These test bytes are frozen before integration of production.
+
+## 10. Exit and later live gate
 
 Local exit requires independent RED provenance, candidate GREEN, all legacy
 controls, complete repository GREEN, exact change-budget reconciliation, and
 canonical decision/doc updates.
+
+The implementation author committed `1851f9815c26b7778ed259d370237d6e7605615b`
+(integrated as `7058053`) with 356 changed physical production lines across
+the eleven authorized files, within the 430-line budget. The final test fixture
+uses the public deterministic Observer-to-Intelligence boundary rather than
+forging an Intelligence bundle. Focused stage acceptance is GREEN, Ruff and
+strict mypy are GREEN, and the complete repository verifier passes 613 tests,
+build, clean-wheel install, frozen hashes, artifact replay, and governance at
+`/private/tmp/triana-labs-verify.ccgGCu`. No provider, HRAI, target, RDS, or
+real-data execution occurred.
 
 Only after local exit may the orchestrator inspect a concrete read-only RDS
 export command. Before any provider or HRAI execution, Akarsh must see and

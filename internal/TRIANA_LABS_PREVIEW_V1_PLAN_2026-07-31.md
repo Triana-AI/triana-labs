@@ -232,6 +232,14 @@ agreement before egress. Synthetic behavior remains immutable. Local plumbing
 does not itself authorize an RDS export, provider call, HRAI session, target
 side effect, or paid run; the exact live bundle remains a later owner gate.
 
+The bounded local implementation is complete with independent stage-to-stage
+acceptance and the complete 613-test/build/install verifier GREEN at
+`/private/tmp/triana-labs-verify.ccgGCu`. The exact canary authorization
+projection is `LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1`; all
+unknown, mixed, custody-invalid, or cross-stage privacy states fail before
+transport or target creation. This changes no live gate: RDS export and any
+provider/HRAI/target execution still require an exact separately approved run.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may
@@ -1175,6 +1183,54 @@ Acceptance:
 Owner gate before tests: generation model(s), realism rubric/pass threshold,
 trajectory representation, similarity threshold, duplicate budget, and
 deduplicate-versus-down-weight policy.
+
+#### Future simulator-fidelity hardening after the current launch checkpoint
+
+The current LABS-06 semantic and structural gate proves bounded simulator-turn
+validity; it does not by itself prove that a population of simulated users
+behaves like real users. After the current launch checkpoint, simulator work
+must keep three evidence lanes distinct:
+
+1. **simulator validity** — the proposed turn obeys the declared role, facts,
+   policy, world, and stopping contract;
+2. **simulator fidelity** — the distribution of user behavior matches a frozen
+   held-out human or authorized real-user comparator on separately reported
+   dimensions; and
+3. **agent outcome** — the target agent completes the task and obeys the
+   applicable policy under that interaction.
+
+The first hardening slice should add deterministic, inspectable telemetry for
+fact front-loading, information released per turn, clarification behavior,
+repetition, pushback and recovery after agent error, abandonment, and turn and
+conversation length. Scenario contracts should distinguish essential facts,
+facts revealed only when requested, flexible preferences, and non-negotiable
+constraints. A small trace-grounded factorial panel may cross information
+precision, assertiveness, and ordinary/stress behavior, but deterministic code
+must own panel identity and the report must not present panel weights as
+production prevalence.
+
+Later calibration requires the same tasks and same target agent for held-out
+human/real-user and simulated interactions; a measured human-human ceiling;
+separate communication-style, information-pattern, clarification,
+error-reaction, and outcome-calibration results; and human adjudication of a
+frozen calibration subset. Prompt changes must report regressions as well as
+improvements across those dimensions. Simulator model selection is based on
+measured fidelity rather than general model capability.
+
+Policy/tool coverage graphs and coherent symbolic world-state fixtures are
+permitted future mechanisms. Graph nodes, edges, frequencies, and difficulty
+weights must come from authoritative policy, observed traces, or explicit
+human rulings; an LLM may propose missing structure but its estimates remain
+proposals. Any model judge is optional, dimension-specific, identity-recorded,
+human-calibrated, and unable to replace deterministic checks or human fidelity
+authority. One model family must not silently generate scenarios, simulate the
+user, and issue the authoritative verdict.
+
+Research basis: IntellAgent (`arXiv:2501.11067`), *Mind the Sim2Real Gap in
+User Simulation for Agentic Tasks* (`arXiv:2603.11245`), and the EMNLP 2025
+Industry sales-bot simulation study (`2025.emnlp-industry.16`). These sources
+motivate the mechanisms and risks; they do not establish Triana product
+passage or authorize external execution.
 
 ### M3A — report schema and static projection
 

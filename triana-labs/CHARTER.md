@@ -185,6 +185,15 @@ exact class agreement from source trace through report. This does not open
 general real-data support or authorize RDS, provider, HRAI, or target execution;
 those remain separately exact-bundle and cost gated.
 
+The bounded plumbing implementation is now locally complete. Independent
+acceptance covers the exact class through Observer, Intelligence, Case Factory,
+world inventory, adaptive execution, and report custody; unknown, mixed,
+non-private, and cross-stage mismatches refuse before egress. The complete
+repository verifier passes 613 tests plus build/install/artifact gates at
+`/private/tmp/triana-labs-verify.ccgGCu`. No external system or real dataset
+ran, so this is local contract evidence only and creates no human fidelity
+ruling.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a

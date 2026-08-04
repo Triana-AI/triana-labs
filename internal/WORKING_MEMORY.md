@@ -772,3 +772,14 @@ The next bounded question is whether Akarsh authorizes a real-data contract
 slice covering read-only RDS export, truthful privacy class, private custody,
 inventory lineage, and the exact provider/target budget. Do not relabel real
 evidence as synthetic.
+
+Latest owner-authorized real-data plumbing state (2026-08-04): the accidental
+synthetic-only block is removed locally for exactly
+`OWNER_AUTHORIZED_REAL_DATA_CANARY`. The class now remains truthful across
+Observer, Intelligence, Case Factory, world inventory, runner artifacts, and
+tiered reports under private `/private/tmp` custody. Unknown, mixed,
+non-private, and cross-stage mismatches refuse before transport or target
+creation. Independent focused acceptance, Ruff, strict mypy, and the complete
+613-test/build/install verifier at `/private/tmp/triana-labs-verify.ccgGCu` are
+GREEN. No RDS export, provider, HRAI, target, or real-data run occurred; the
+next step is exact live-bundle inspection and a separate egress/cost decision.

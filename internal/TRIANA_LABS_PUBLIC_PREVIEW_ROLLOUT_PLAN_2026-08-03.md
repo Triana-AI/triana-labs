@@ -289,6 +289,27 @@ infrastructure or founder-written bespoke integrations.
 
 ### D. Post-M3.5 product roadmap
 
+- separate simulator validity, behavioral fidelity, and target-agent outcome
+  into independently reported evidence lanes;
+- deterministic behavioral telemetry for fact front-loading, information
+  release, clarification, repetition, pushback/error reaction, recovery or
+  abandonment, and turn/conversation length;
+- scenario truth that distinguishes essential facts, request-gated facts,
+  flexible preferences, and non-negotiable constraints;
+- trace-grounded factorial behavior panels, initially information precision,
+  assertiveness, and ordinary/stress strata, with deterministic panel identity
+  and no unsupported production-frequency claim;
+- held-out same-task/same-agent human or authorized real-user calibration,
+  including a measured human-human ceiling and separately reported
+  communication, information, clarification, error-reaction, and outcome
+  calibration dimensions;
+- prompt/model comparisons that disclose cross-dimension regressions and
+  choose simulators by measured fidelity rather than general capability;
+- policy/tool coverage graphs and coherent symbolic world-state fixtures whose
+  weights are grounded in authoritative policy, observed traces, or human
+  rulings rather than LLM-estimated prevalence;
+- optional dimension-specific model judges only after frozen human calibration,
+  with recorded identity and no generate/simulate/judge authority monoculture;
 - append-only human-confirmed persistent rulings;
 - compatible next-run retrieval and stale/conflict handling;
 - ProtectedCase draft promotion with human completion;
