@@ -225,6 +225,13 @@ current trace and world-inventory contracts accept only `SYNTHETIC`, the
 planned production-RDS execution remains blocked on a new bounded real-data
 contract rather than being mislabeled or silently widened.
 
+That bounded contract was accepted on 2026-08-04. The implementation may admit
+only `OWNER_AUTHORIZED_REAL_DATA_CANARY`, propagate it without conversion, and
+enforce private custody plus trace/intelligence/inventory/config/target
+agreement before egress. Synthetic behavior remains immutable. Local plumbing
+does not itself authorize an RDS export, provider call, HRAI session, target
+side effect, or paid run; the exact live bundle remains a later owner gate.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

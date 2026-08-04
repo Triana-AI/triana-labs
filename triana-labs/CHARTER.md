@@ -178,6 +178,13 @@ so no truthful RDS-backed case bank or live HRAI result exists yet. Supporting
 that requires a separately frozen real-data contract and exact egress approval;
 human completion and fidelity rulings remain solely Akarsh's.
 
+On 2026-08-04 Akarsh removed the accidental synthetic-only plumbing block for
+the grounded-workflow path. Exactly `OWNER_AUTHORIZED_REAL_DATA_CANARY` may now
+be implemented alongside `SYNTHETIC`, with private `/private/tmp` custody and
+exact class agreement from source trace through report. This does not open
+general real-data support or authorize RDS, provider, HRAI, or target execution;
+those remain separately exact-bundle and cost gated.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a
