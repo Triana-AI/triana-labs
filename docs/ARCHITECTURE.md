@@ -154,6 +154,18 @@ Triana-demo files may enter only after per-file provenance and license review.
 This is an accepted architecture direction, not yet an implemented report or
 UI boundary.
 
+The owner-accepted projection shape is now frozen in
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. It uses one local
+trace file at setup; transparent adapter/trace-understanding counts;
+deterministically owned behavior-group membership and support with separately
+labeled model-proposed summaries; intuitive seen-in-traces and grounded-
+variation cases; `World availability` with `Case data items` as the currently
+specified child; one independent conversation per case; transcript-primary
+evidence; and four independent human rulings. The UI cannot collapse those
+rulings into one verdict or write them back into memory. Current structural
+clusters remain structurally truthful until a later deterministic
+corpus-scale semantic-population pipeline is implemented and evaluated.
+
 ## Authority map
 
 ```text

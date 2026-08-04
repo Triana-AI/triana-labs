@@ -223,3 +223,21 @@ Private machine artifacts remain under
 owner-review report is
 `/private/tmp/triana-labs06-final-live-20260804-v5/LABS06_READABLE_CONVERSATIONS_AND_ANALYSIS.md`.
 No private transcript content is committed.
+
+## Successor design handoff
+
+This packet remains the immutable historical LABS-06 closure packet. It does
+not authorize LABS-07/08 implementation.
+
+The owner accepted the combined LABS-07/08 product journey and wireframes on
+2026-08-04. Read next:
+
+- `internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`
+- `internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`
+- `internal/LABS06_BACKLOG_2026-08-04.md`
+
+Before any report, schema, fixture, or UI worker starts, replace this file with
+a bounded LABS-07/08 implementation packet after resolving the remaining
+owner gates and exact Triana-demo provenance/dependency boundary. Use the
+independent three-role protocol. No provider, target, endpoint, or real-data
+execution is authorized by the accepted wireframes.

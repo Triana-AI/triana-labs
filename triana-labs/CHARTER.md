@@ -228,6 +228,26 @@ Review data models, PASS/BLOCK semantics, snapshots, and memory do not cross.
 LABS-09 remains the separate packaging, no-key demo, documentation, licensing,
 and static-publication checkpoint.
 
+On 2026-08-04 Akarsh accepted the complete LABS-07/08 information architecture,
+terminology, human-review contract, and ASCII wireframes in
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. Setup currently
+selects one local trace file and exposes transparent trace-understanding
+denominators rather than an opaque quality score. The intended corpus-scale
+behavior pipeline freezes deterministic clustering before model-authored
+summaries; current structural grouping may not be mislabeled as that future
+semantic population capability. `World availability` remains the durable
+umbrella and `Case data items` is its currently specified subsection. Human
+review records four independent rulings—simulated-user realism, follow-up
+adaptation, agent goal completion, and scope/privacy/boundary compliance—with
+no aggregate Triana verdict or automatic memory mutation. The exact build
+restart context is `internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`; LABS-06
+evaluation debt is retained in `internal/LABS06_BACKLOG_2026-08-04.md`.
+
+The accepted wireframes clear the design gate, not the implementation entry
+gate. Report/UI work still waits for the remaining owner choices, exact
+Triana-demo per-file provenance and license review or clean-room
+reimplementation, and a replacement bounded `internal/SLICE_PACKET.md`.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a

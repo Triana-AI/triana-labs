@@ -4,7 +4,7 @@
 
 Date: 2026-08-03
 
-Status: **OWNER-DIRECTED ROADMAP; LABS-06 CLOSED; COMBINED LABS-07/08 WIREFRAMES NEXT**
+Status: **OWNER-DIRECTED ROADMAP; LABS-06 CLOSED; COMBINED LABS-07/08 WIREFRAMES ACCEPTED**
 
 This plan turns the completed LABS-04 machinery and the closed-but-unpassed
 LABS-05 evidence into the shortest honest path to a public, YC-demonstrable
@@ -138,6 +138,22 @@ LABS-07 and LABS-08 are one vertical slice. The UI must remain a projection of
 evidence rather than a second reasoning engine, but the minimum report contract
 and real UI are designed, implemented, and verified together. This avoids a
 speculative reporting layer while preserving a strict machine boundary.
+
+The complete owner-accepted terminology, behavior, and ASCII screens are
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. The exact
+decision-driving prompts and copyable build-session restart are
+`internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`. They supersede any earlier
+informal wireframe summary where wording or route structure differs.
+
+Accepted top-level rail: Overview, User behavior, Cases, Runs, and Review.
+Setup precedes the persistent rail; conversation and evidence views are
+drill-down surfaces. Setup supports one local trace file only. Trace
+understanding exposes explicit denominators rather than an opaque score.
+`World availability` remains the umbrella, with `Case data items` as its
+currently specified subsection. Each case produces one independent
+conversation. Human review records four independent rulings for realism,
+adaptation, goal completion, and scope/privacy/boundary compliance; there is no
+aggregate verdict or automatic memory mutation.
 
 ### Complete user journey
 
@@ -322,6 +338,10 @@ infrastructure or founder-written bespoke integrations.
 
 ### C. Quality and evaluation backlog
 
+The canonical LABS-06 backlog is
+`internal/LABS06_BACKLOG_2026-08-04.md`. It is required deferred work and must
+not be erased by this shorter summary.
+
 - representative retrieval-quality set;
 - clarification-question material-relevance evaluation;
 - persona/intent/turn-policy support and ambiguity calibration;
@@ -404,8 +424,9 @@ infrastructure or founder-written bespoke integrations.
 
 The orchestrator should recommend defaults, but these owner gates remain:
 
-1. Accept the full-journey information architecture and wireframes for the
-   combined LABS-07/08 slice.
+1. ~~Accept the full-journey information architecture and wireframes for the
+   combined LABS-07/08 slice.~~ Accepted on 2026-08-04 in the normative
+   wireframe specification.
 2. Choose whether Exit A's public sample is a newly generated synthetic run or
    a fully synthetic reconstruction of the private HRAI canary shape.
 3. Clear the Triana demo immutable source snapshot and per-file ancestry, or

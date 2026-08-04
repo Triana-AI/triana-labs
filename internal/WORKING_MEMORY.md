@@ -1,6 +1,6 @@
 # Working memory
 
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 ## Active strategic position
 
@@ -819,3 +819,24 @@ do not carry Release Review semantics or data. LABS-09 numbering and packaging
 scope remain unchanged. No UI code, source copy, dependency, or implementation
 is authorized until wireframes, provenance, and a replacement slice packet are
 accepted.
+
+Accepted LABS-07/08 design update (2026-08-04): Akarsh accepted the complete
+full-journey terminology and ASCII wireframes in
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. Setup currently
+selects one local file; adapter understanding is shown through transparent
+counts and rejection reasons; current structural groups are not mislabeled as
+semantic populations; intuitive case labels explain why each case exists;
+`World availability` is retained with `Case data items` as its first specified
+subsection; each case maps to one Conversation run; transcripts are primary;
+and review records four independent realism/adaptation/completion/boundary
+rulings with no aggregate verdict or automatic memory mutation. The
+fresh-session prompt and remaining owner gates are in
+`internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`.
+
+LABS-06 deferred behavior, testing, and evaluation obligations are now
+consolidated in `internal/LABS06_BACKLOG_2026-08-04.md`. They include generic
+world-mutation authority, intent-precondition enforcement, a longer future
+aggregate deadline, target protocol/tool-budget readiness, population-fidelity
+calibration, semantic population derivation, case/retrieval/duplicate quality,
+and accounting/custody hardening. This register is required debt, not an
+implicit LABS-06 reopening or live-run authorization.

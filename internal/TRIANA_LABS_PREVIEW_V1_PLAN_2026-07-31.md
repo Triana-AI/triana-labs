@@ -281,6 +281,24 @@ public synthetic fixtures, documentation, licensing, CI parity, and static
 publication. No UI implementation begins before wireframes, exact reusable
 source files, dependencies, and a replacement slice packet are accepted.
 
+The owner accepted the full-journey design on 2026-08-04. The normative design
+input is `internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`, and the
+fresh-session prompt/decision memory is
+`internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`. The accepted UI begins with
+one local trace file, makes trace understanding transparent through counts and
+rejection reasons, separates deterministic behavior-group membership from
+model-proposed summaries, explains directly observed and grounded-expanded
+cases in plain language, retains `World availability` with `Case data items`
+as its current subsection, follows one independent conversation per case, and
+asks four independent human-review questions without creating an aggregate
+verdict or automatic memory update. The deferred LABS-06 behavior and
+evaluation obligations are consolidated in
+`internal/LABS06_BACKLOG_2026-08-04.md` and must remain visible limitations.
+
+These design decisions do not freeze the report schema, web dependencies,
+source-file reuse, or implementation change budget. Those remain the next
+bounded entry gate.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may
