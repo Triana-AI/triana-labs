@@ -783,3 +783,24 @@ creation. Independent focused acceptance, Ruff, strict mypy, and the complete
 613-test/build/install verifier at `/private/tmp/triana-labs-verify.ccgGCu` are
 GREEN. No RDS export, provider, HRAI, target, or real-data run occurred; the
 next step is exact live-bundle inspection and a separate egress/cost decision.
+
+Latest LABS-06 owner grading update (2026-08-04): Akarsh accepted final live
+Conversations 3 and 4. Conversation 4 is green for this round while its
+unsupported uploaded-file claim remains backlog; Conversation 7 and the
+partial/unavailable conversations remain unrated, and LABS-06 is not thereby
+passed. The bounded candidate fix is a generic authorized-world-mutation gate,
+not a file-action allowlist. It remains unimplemented. For any separately
+authorized future twelve-case run, use a recommended 1,800-second overall
+deadline instead of 600 seconds, retain per-call deadlines and no retry, and
+continue to report timeout/network attribution as owner context rather than a
+proven technical cause.
+
+LABS-06 final disposition (2026-08-04): Akarsh closed the checkpoint as
+`CLOSED_WITH_ACCEPTED_BACKLOG` and directed a local-main merge followed by
+LABS-07 discussion. The old 30-item/24-accepted gate is optional future
+population calibration, not a remaining checkpoint blocker. Do not reopen
+LABS-06 merely to rerun unavailable cases. Carry forward only the recorded
+world-mutation authority, intent-precondition, aggregate-deadline, and target
+availability backlog, with Conversation 7 and partial/unavailable episodes
+remaining visible evidence. LABS-07 is discussion-only until a new bounded
+slice packet and owner decisions are frozen.

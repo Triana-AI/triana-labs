@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-03
 
-Status: **intent-first repair locally GREEN; repaired live smoke consumed and unpassed**
+Status: **CLOSED_WITH_ACCEPTED_BACKLOG; bounded adaptive claim accepted**
 
 Protocol: `LABS06_SIMULATOR_FIDELITY_V1`
 
@@ -481,3 +481,56 @@ that rejects new entity/file/path/position/URL/upload claims unless present in
 the bound inventory or latest target observation, and rejects action requests
 that violate explicit intent preconditions. It remains unimplemented and must
 not gain repair, retry, fallback, memory, judge, UI, or broader-eval scope.
+
+## 15. Owner ruling update and bounded backlog
+
+On 2026-08-04 Akarsh accepted final live Conversation 3 and Conversation 4 as
+legitimate for this round. Conversation 3 is the valid single-turn stop.
+Conversation 4 receives a current-round green light, while its unsupported
+claim that test files were uploaded remains an explicit fidelity backlog item;
+the ruling does not generally authorize invented files or world mutations.
+No ruling was supplied for Conversation 7 or the partial/unavailable episodes,
+and these two conversation rulings do not by themselves pass overall LABS-06.
+
+The minimum backlog design is generic rather than file-specific: a proposed
+user turn that claims a world mutation such as uploading, creating, changing,
+approving, or deleting an object must have both a case-authorized mutation
+class and a bound object or target-observed evidence. Absence yields a typed
+semantic gap before transcript admission, with no retry, repair, or fallback.
+This guard remains unimplemented.
+
+A future twelve-case live run should use a longer overall deadline than the
+consumed 600-second run because network instability prevented Conversations
+9-12 from starting. The recommended next-run value is 1,800 seconds while
+preserving the existing per-call deadlines, budgets, one-attempt behavior,
+accounting, and shared-failure circuit. This records no rerun authorization.
+
+## 16. Final checkpoint disposition
+
+On 2026-08-04 Akarsh closed LABS-06 as `CLOSED_WITH_ACCEPTED_BACKLOG` and
+directed progression to LABS-07 discussion. This supersedes the original
+30-item/24-accepted/zero-critical panel as a mandatory LABS-06 exit; that panel
+remains optional future calibration before any population-level simulator
+fidelity claim.
+
+The accepted closure claim is deliberately narrow: deterministic simulator
+controls are locally verified, the exact live provider boundary produced valid
+structured continuations, genuine six-role-turn adaptive execution occurred,
+and the owner accepted final Conversations 3 and 4. The closure does not claim
+that all twelve cases succeeded, that Conversation 7 is acceptable, or that
+the simulator has universal or production-grade fidelity.
+
+Accepted backlog and gaps are:
+
+1. add generic authority for claimed world mutations against a bound or newly
+   target-observed object;
+2. reject downstream actions that contradict explicit intent preconditions;
+3. use a recommended 1,800-second aggregate deadline for a future twelve-case
+   run while preserving per-call limits and no retry;
+4. address target protocol/tool-budget availability in a separate target or
+   onboarding slice rather than scoring it as simulator fidelity;
+5. retain Conversation 7 and every unruled partial/unavailable episode as
+   visible evidence, never as an implicit pass.
+
+No provider, endpoint, real-data execution, LABS-07 implementation, or new
+public fidelity claim is authorized by this disposition.

@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-04
 
-Status: **LOCAL GREEN; LIVE COMPLETED WITH GAPS; HUMAN RULINGS PENDING**
+Status: **CLOSED_WITH_ACCEPTED_BACKLOG**
 
 Slice ID: `LABS06-LIVE-GROUNDED-CLOSURE-V1`
 
@@ -200,12 +200,21 @@ That rerun retained:
 - 28 typed gaps, including target protocol/accounting/isolation gaps, one
   target-tool budget exhaustion, and four run-timeout episodes.
 
-The slice is not a LABS-06 fidelity pass. The two multi-turn conversations
-prove adaptive mechanics but expose world-grounding defects: the simulator
-invented unavailable files, people, positions, URLs, and claimed uploads. A
-separate partial trajectory contradicted the case's verification-before-action
-intent by requesting shortlist/outreach actions despite stated verification
-gaps. Human fidelity and completion fields remain blank for Akarsh.
+The slice is owner-closed with accepted backlog, not a clean or universal
+fidelity pass. The two multi-turn conversations prove adaptive mechanics.
+Akarsh accepted Conversation 3 and Conversation 4 for this round; Conversation
+4's invented-upload claim remains backlog. Conversation 7's invented person,
+position, paths, and URL remains negative evidence, while a separate partial
+trajectory contradicted its verification-before-action intent. All other
+unruled, partial, and unavailable items remain typed gaps, not passes or
+failures.
+
+The old 30-item/24-accepted/zero-critical gate is superseded as a required
+LABS-06 exit and retained as optional future calibration. Backlog is limited
+to generic claimed-world-mutation authority, intent-precondition enforcement,
+a recommended 1,800-second future aggregate deadline with unchanged per-call
+timeouts and no retry, and separately scoped target protocol/tool-budget
+readiness. LABS-07 planning is next; this packet authorizes no LABS-07 edits.
 
 Private machine artifacts remain under
 `/private/tmp/triana-labs06-final-live-20260804-v5/hrai-output`; the readable

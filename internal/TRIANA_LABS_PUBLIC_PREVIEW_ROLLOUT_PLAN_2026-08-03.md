@@ -4,7 +4,7 @@
 
 Date: 2026-08-03
 
-Status: **OWNER-DIRECTED ROADMAP; IMPLEMENTATION SLICES NOT YET FROZEN**
+Status: **OWNER-DIRECTED ROADMAP; LABS-06 CLOSED WITH ACCEPTED BACKLOG; LABS-07 NEXT**
 
 This plan turns the completed LABS-04 machinery and the closed-but-unpassed
 LABS-05 evidence into the shortest honest path to a public, YC-demonstrable
@@ -71,7 +71,7 @@ The new checkpoint sequence is:
 
 | Checkpoint | Outcome | Public blocker? |
 |---|---|---:|
-| LABS-06 | Regular-user simulator fidelity | Yes for the adaptive claim |
+| LABS-06 | Regular-user simulator fidelity — closed with accepted backlog | Cleared for the bounded adaptive claim |
 | LABS-07 | Machine-readable public report and static projection contract | Yes |
 | LABS-08 | Triana Labs demo UI over the frozen report | Yes |
 | LABS-09 | One-command demo, packaging, docs, license, CI, and static publication | Yes for Exit A |
@@ -112,6 +112,25 @@ Minimum scope:
 
 Persistent/global memory, judges, model tournaments, and broad eval import are
 not part of LABS-06.
+
+### LABS-06 closure — 2026-08-04
+
+LABS-06 is `CLOSED_WITH_ACCEPTED_BACKLOG`. The final owner-authorized
+twelve-case run created three valid/effective trajectories: one valid
+single-turn stop and two genuine six-role-turn conversations. Akarsh accepted
+Conversations 3 and 4. The checkpoint may support the bounded statement that
+Triana enforces deterministic simulator controls, is compatible with the named
+live provider boundary, and generated genuine adaptive multi-turn execution.
+It may not support universal realism, production-grade fidelity, or a
+twelve-of-twelve success claim.
+
+The original 30-item/24-accepted/zero-critical gate is no longer required to
+exit LABS-06; it remains future calibration before any population-level
+fidelity claim. Accepted backlog comprises a generic claimed-world-mutation
+authority guard, explicit intent-precondition enforcement, a longer aggregate
+deadline for future twelve-case runs, and separately scoped target
+protocol/tool-budget readiness. These items do not block LABS-07's evidence
+report contract, but the report must expose them as limitations and typed gaps.
 
 ## 4. LABS-07 — report contract and static projection
 
@@ -246,7 +265,7 @@ infrastructure or founder-written bespoke integrations.
 
 ### A. Required before Exit A
 
-- LABS-06 simulator-fidelity repair and 30-item human gate;
+- LABS-06 bounded simulator-fidelity closure — completed with accepted backlog;
 - report JSON and static projection contract;
 - publication-safe synthetic reference run;
 - Triana demo file-level provenance and Labs IA rewrite;
@@ -354,15 +373,14 @@ infrastructure or founder-written bespoke integrations.
 
 The orchestrator should recommend defaults, but these owner gates remain:
 
-1. Accept the LABS-06 30-item/24-accepted/zero-critical fidelity gate.
-2. Choose whether Exit A's public sample is a newly generated synthetic run or
+1. Choose whether Exit A's public sample is a newly generated synthetic run or
    a fully synthetic reconstruction of the private HRAI canary shape.
-3. Clear the Triana demo immutable source snapshot and per-file ancestry, or
+2. Clear the Triana demo immutable source snapshot and per-file ancestry, or
    direct clean-room reimplementation of the design system.
-4. Confirm Next.js 15 + React 19 + npm as the web stack after dependency audit.
-5. Select the open-source license and contribution policy.
-6. Select the static hosting destination for the read-only demo.
-7. For Exit B, select the first documented BYOK simulator provider boundary
+3. Confirm Next.js 15 + React 19 + npm as the web stack after dependency audit.
+4. Select the open-source license and contribution policy.
+5. Select the static hosting destination for the read-only demo.
+6. For Exit B, select the first documented BYOK simulator provider boundary
    and the first independent installation participant.
 
 ## 11. Planning-slice contract and verification

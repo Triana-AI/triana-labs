@@ -412,6 +412,29 @@ Private evidence remains under
 `/private/tmp/triana-labs06-final-live-20260804-v5` and must not be committed or
 used as a public fixture.
 
+### Owner disposition and backlog update — 2026-08-04
+
+Akarsh accepted Conversation 3 and Conversation 4 for the current round.
+Conversation 4's unsupported uploaded-file claim remains a known backlog
+defect rather than a blocker for that conversation's owner ruling. This does
+not accept Conversation 7, close the broader world-grounding incident, or pass
+LABS-06 overall.
+
+The smallest candidate fix is a generic mutation-authority contract, not a
+hard-coded action list: mutation claims require an allowed mutation class and
+a bound or newly observed object. A missing authority or object becomes a
+typed pre-admission gap with no retry, repair, or fallback. The fix is not yet
+implemented. A future twelve-case execution should also raise the overall run
+deadline above 600 seconds; the recommended value is 1,800 seconds with
+unchanged per-call timeouts and no retry. Network instability is the owner's
+attribution for the four not-started episodes, not a proven target defect.
+
+Closure disposition: `ACCEPTED_BACKLOG`. Akarsh closed LABS-06 without
+closing this operational incident or converting its negative evidence into a
+pass. The world-mutation and intent-precondition guards move forward as
+bounded backlog; target availability remains separately typed. This entry
+must be consulted before any later simulator-fidelity or live-run slice.
+
 ## DF-2026-08-04-005 — Case Factory cache preserved evidence but did not replay it
 
 Status: `OPEN`

@@ -240,6 +240,27 @@ unknown, mixed, custody-invalid, or cross-stage privacy states fail before
 transport or target creation. This changes no live gate: RDS export and any
 provider/HRAI/target execution still require an exact separately approved run.
 
+The final live closure then exercised twelve selected cases against the
+authorized HRAI/Azure boundaries. It retained three valid/effective machine
+trajectories, including two six-role-turn conversations, with 31 target plus
+eight simulator HTTP exchanges and 111 target tool calls. Four cases did not
+start before the 600-second aggregate deadline; other partial cases retained
+target protocol or tool-budget gaps. Akarsh accepted Conversation 3 and
+Conversation 4, with Conversation 4's unsupported uploaded-file claim kept as
+backlog.
+
+LABS-06 is therefore `CLOSED_WITH_ACCEPTED_BACKLOG` as of 2026-08-04. This
+supersedes the 30-item/24-accepted/zero-critical panel as a required checkpoint
+exit, while retaining that panel as optional future population-fidelity
+calibration. The bounded closure proves deterministic controls, exact live
+provider compatibility, and genuine adaptive multi-turn mechanics. It does
+not claim twelve-of-twelve success, universal realism, or production-grade
+fidelity. The accepted backlog is: generic authority for claimed world
+mutations, enforcement of explicit intent preconditions, a recommended
+1,800-second future aggregate run deadline with unchanged per-call/no-retry
+behavior, and separate target protocol/tool-budget readiness work. LABS-07
+report/static-projection planning is next.
+
 ## 1. The commitment
 
 The first deliverable is this plan. No Triana Labs implementation worker may

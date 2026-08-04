@@ -194,6 +194,25 @@ repository verifier passes 613 tests plus build/install/artifact gates at
 ran, so this is local contract evidence only and creates no human fidelity
 ruling.
 
+LABS-06 closed on 2026-08-04 as `CLOSED_WITH_ACCEPTED_BACKLOG`. The final
+private twelve-case HRAI canary produced three valid/effective trajectories:
+one valid single-turn stop and two genuine six-role-turn conversations. Akarsh
+accepted Conversations 3 and 4 for this round. This closes the launch
+checkpoint on deterministic simulator controls, live provider compatibility,
+and demonstrated adaptive multi-turn execution; it does not establish
+universal, population-level, or production-grade simulator fidelity.
+
+The earlier 30-item/24-accepted/zero-critical panel is superseded as a required
+LABS-06 milestone exit and retained as optional future calibration before any
+broader fidelity claim. Known backlog remains: authorize claimed world
+mutations against bound or newly observed objects; preserve explicit intent
+preconditions before downstream actions; use a longer aggregate deadline for
+future twelve-case runs; and keep target protocol/tool-budget availability
+separate from simulator fidelity. Conversation 7 remains negative evidence,
+and partial or unavailable episodes remain typed gaps rather than passes or
+failures. LABS-07 report/static-projection planning is now next; no LABS-07
+implementation is authorized by this closure.
+
 ### Public Preview rollout direction
 
 On 2026-08-03 Akarsh directed Triana to move from component proofs toward a
