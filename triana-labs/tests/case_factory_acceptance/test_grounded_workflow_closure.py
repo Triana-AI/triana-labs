@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -266,16 +267,8 @@ CANARY_FIDELITY = "OWNER_AUTHORIZED_REAL_DATA_GROUNDED"
 CANARY_PROJECTION = "LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1"
 
 
-def _replace_label(value: Any, old: str, new: str) -> Any:
-    if isinstance(value, dict):
-        return {key: _replace_label(item, old, new) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_replace_label(item, old, new) for item in value]
-    return new if value == old else value
-
-
 def _canary_upstream(root: Path) -> tuple[Path, Path]:
-    observer, intelligence = build_upstream(root)
+    observer, _ = build_upstream(root)
     normalized = []
     for line in (observer.parent / "normalized_traces.jsonl").read_bytes().splitlines():
         item = json.loads(line)
@@ -299,27 +292,25 @@ def _canary_upstream(root: Path) -> tuple[Path, Path]:
             (observer.parent / name).read_bytes()
         )
     observer.write_bytes(canonical(observer_value, lf=True))
-    input_hash = artifact_hash(observer.read_bytes())
-
-    manifest = json.loads(intelligence.read_bytes())
-    for name in manifest["artifacts"]:
-        path = intelligence.parent / name
-        value = json.loads(path.read_bytes())
-        value = _replace_label(
-            value,
-            "SYNTHETIC_OBSERVED_STRUCTURE",
-            "OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE",
-        )
-        value["input_manifest_hash"] = input_hash
-        path.write_bytes(canonical(value, lf=True))
-        manifest["artifacts"][name] = artifact_hash(path.read_bytes())
-    manifest.update(
-        privacy_class=CANARY,
-        fidelity="OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE",
-        input_manifest_hash=input_hash,
+    canary_intelligence = root / "canary-intelligence"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "triana_labs",
+            "corpus",
+            "derive",
+            str(observer),
+            "--out",
+            str(canary_intelligence),
+        ],
+        cwd=HARNESS.PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        timeout=30,
     )
-    intelligence.write_bytes(canonical(manifest, lf=True))
-    return observer, intelligence
+    assert completed.returncode == 10, completed.stderr.decode(errors="replace")
+    return observer, canary_intelligence / "manifest.json"
 
 
 def _canary_inventory(root: Path, *, data_class: str = CANARY) -> Path:
