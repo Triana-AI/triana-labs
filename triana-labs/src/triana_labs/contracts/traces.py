@@ -26,6 +26,7 @@ EVENT_KINDS = (
     "USER_MESSAGE",
 )
 TERMINAL_STATES = ("ABORTED", "ERROR", "SUCCESS")
+PRIVACY_CLASSES = ("SYNTHETIC", "OWNER_AUTHORIZED_REAL_DATA_CANARY")
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$")
 _SAFE_CODE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
@@ -154,7 +155,7 @@ def validate_trace(value: Any) -> ValidatedTrace:
     if type(version) is int and version != 1:
         raise LineRejection("UNSUPPORTED_SCHEMA_VERSION", "/schema_version")
     privacy_class = trace.get("privacy_class")
-    if isinstance(privacy_class, str) and privacy_class != "SYNTHETIC":
+    if isinstance(privacy_class, str) and privacy_class not in PRIVACY_CLASSES:
         raise LineRejection("UNSUPPORTED_PRIVACY_CLASS", "/privacy_class")
 
     if set(trace) != {
@@ -170,7 +171,7 @@ def validate_trace(value: Any) -> ValidatedTrace:
         raise LineRejection("SCHEMA_VALIDATION_FAILED", "/contract_kind")
     if type(trace["schema_version"]) is not int or trace["schema_version"] != 1:
         raise LineRejection("SCHEMA_VALIDATION_FAILED", "/schema_version")
-    if trace["privacy_class"] != "SYNTHETIC":
+    if trace["privacy_class"] not in PRIVACY_CLASSES:
         raise LineRejection("SCHEMA_VALIDATION_FAILED", "/privacy_class")
     if not _is_safe_id(trace["trace_id"]):
         raise LineRejection("SCHEMA_VALIDATION_FAILED", "/trace_id")

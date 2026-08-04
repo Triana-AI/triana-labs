@@ -34,6 +34,8 @@ def publish_bundle(
     accepted: list[JsonObject],
     rejected: list[JsonObject],
     profile: JsonObject,
+    *,
+    privacy_class: str = "SYNTHETIC",
 ) -> None:
     """Render authoritative bytes, construct their manifest, and publish once."""
 
@@ -43,7 +45,7 @@ def publish_bundle(
     normalized_bytes = b"".join(compact_json(trace) for trace in accepted)
     rejected_bytes = b"".join(compact_json(record) for record in rejected)
     profile_bytes = compact_json(profile)
-    markdown_bytes = render_markdown(profile)
+    markdown_bytes = render_markdown(profile, privacy_class=privacy_class)
     artifacts = {
         "normalized_traces.jsonl": normalized_bytes,
         "rejected_traces.jsonl": rejected_bytes,
@@ -53,7 +55,7 @@ def publish_bundle(
     manifest = {
         "artifact_kind": "corpus_manifest",
         "schema_version": 1,
-        "privacy_class": "SYNTHETIC",
+        "privacy_class": privacy_class,
         "input_count": profile["input_count"],
         "accepted_count": profile["accepted_count"],
         "rejected_count": profile["rejected_count"],

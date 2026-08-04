@@ -185,6 +185,25 @@ def _read_object(
     return value, payload
 
 
+def _require_private_path(path: Path | None, *, existing: bool) -> None:
+    if path is None:
+        raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
+    try:
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved = (
+            path.resolve(strict=True)
+            if existing
+            else path.parent.resolve(strict=True) / path.name
+        )
+    except OSError as error:
+        raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4) from error
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
+
+
 def _closed(value: Any, keys: set[str]) -> bool:
     return isinstance(value, dict) and set(value) == keys
 
@@ -471,7 +490,9 @@ def _validate_config(value: dict[str, Any], environ: Mapping[str, str]) -> None:
 
 
 def _validate_cases(
-    source: VerifiedCaseFactoryInput, selection: dict[str, Any] | None = None
+    source: VerifiedCaseFactoryInput,
+    selection: dict[str, Any] | None = None,
+    privacy_class: str = "SYNTHETIC",
 ) -> None:
     closure = selection is not None
     expected_manifest = (
@@ -498,6 +519,11 @@ def _validate_cases(
         raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
     origins: list[Any] = []
     strata: list[Any] = []
+    expected_fidelity = (
+        "OWNER_AUTHORIZED_REAL_DATA_GROUNDED"
+        if closure and privacy_class == "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+        else "SYNTHETIC_CORPUS_GROUNDED"
+    )
     for item in source.cases:
         case = item.case
         if not all(
@@ -509,7 +535,11 @@ def _validate_cases(
             case.get("artifact_kind") == "simulation_case_candidate"
             and case.get("schema_version") == 1
             and case.get("proposal_state") == "PROPOSED"
-            and case.get("fidelity") == "SYNTHETIC_CORPUS_GROUNDED"
+            and case.get("fidelity") == expected_fidelity
+            and all(
+                asset.get("fidelity") == expected_fidelity
+                for asset in (item.persona, item.intent, item.turn_policy)
+            )
             and case.get("persona_id") == item.persona.get("persona_id")
             and case.get("intent_id") == item.intent.get("intent_id")
             and case.get("turn_policy_id") == item.turn_policy.get("turn_policy_id")
@@ -553,7 +583,7 @@ def _validate_cases(
         raise AdaptiveRunFailure("CASE_INTEGRITY_FAILED", 4)
 
 
-def _validate_world_inventory(value: dict[str, Any]) -> None:
+def _validate_world_inventory(value: dict[str, Any], privacy_class: str) -> None:
     keys = {
         "artifact_kind",
         "schema_version",
@@ -569,13 +599,15 @@ def _validate_world_inventory(value: dict[str, Any]) -> None:
         and value["artifact_kind"] == "labs046_world_inventory"
         and _strict_int(value["schema_version"], 1)
         and value["protocol_version"] == "LABS046_WORLD_INVENTORY_V1"
-        and value["data_class"] == "SYNTHETIC"
+        and value["data_class"] in {"SYNTHETIC", "OWNER_AUTHORIZED_REAL_DATA_CANARY"}
         and isinstance(value["captured_at"], str)
         and _closed(value["source_lineage"], {"source_kind", "source_id"})
         and isinstance(inventory, dict)
         and 1 <= len(inventory) <= 8
     ):
         raise AdaptiveRunFailure("WORLD_INVENTORY_INVALID", 4)
+    if value["data_class"] != privacy_class:
+        raise AdaptiveRunFailure("PRIVACY_CLASS_MISMATCH", 4)
     for name, identifiers in inventory.items():
         if not (
             isinstance(name, str)
@@ -1690,7 +1722,9 @@ def _cluster(episodes: list[_Episode], *, near_enabled: bool = True) -> dict[str
     }
 
 
-def _tiered_results(episodes: list[_Episode]) -> bytes:
+def _tiered_results(
+    episodes: list[_Episode], privacy_class: str = "SYNTHETIC"
+) -> bytes:
     def text_block(label: str, value: str) -> list[str]:
         content = value.splitlines() or [""]
         return [f"{label}:", "", *(f"    {line}" for line in content)]
@@ -1700,10 +1734,12 @@ def _tiered_results(episodes: list[_Episode]) -> bytes:
         "",
         "Non-authoritative review view. Machine JSON remains authoritative.",
         "",
-        "## Workflow completed",
-        "",
-        "    none pending owner completion rulings",
     ]
+    if privacy_class != "SYNTHETIC":
+        lines.extend([f"**Privacy class:** `{privacy_class}`", ""])
+    lines.extend(
+        ["## Workflow completed", "", "    none pending owner completion rulings"]
+    )
     groups = (
         (
             "Multi-turn progress, incomplete",
@@ -1941,7 +1977,9 @@ def _artifacts(
         "human_adaptation_review.json": _canonical(human, lf=True),
     }
     if closure:
-        payloads["LABS06_TIERED_RESULTS.md"] = _tiered_results(episodes)
+        payloads["LABS06_TIERED_RESULTS.md"] = _tiered_results(
+            episodes, base.get("privacy_class", "SYNTHETIC")
+        )
     sim_http = sum(item.sim_http for item in episodes)
     target_http = sum(item.target_http for item in episodes)
     reserved = sum((item.reserved for item in episodes), Decimal(0))
@@ -2048,7 +2086,7 @@ def run(
         inventory, inventory_bytes = _read_object(
             world_inventory, "WORLD_INVENTORY_INVALID", 4
         )
-        _validate_world_inventory(inventory)
+        _validate_world_inventory(inventory, config["privacy_class"])
         inventory_hash = _hash(inventory_bytes)
         workflow = config["workflow_closure"]
         if not (
@@ -2061,11 +2099,15 @@ def run(
     elif world_inventory is not None:
         raise AdaptiveRunFailure("CONFIG_INVALID", 2)
     if config["privacy_class"] == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
-        private_root = Path("/private/tmp").resolve(strict=True)
-        resolved_output = output_path.parent.resolve(strict=True) / output_path.name
-        if private_root not in resolved_output.parents:
-            raise AdaptiveRunFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
+        _require_private_path(output_path, existing=False)
     if case_loader is None:
+        case_manifest_value, _ = _read_object(
+            case_factory_manifest, "MANIFEST_INVALID", 4
+        )
+        if case_manifest_value.get("artifact_kind") != "case_factory_manifest":
+            raise AdaptiveRunFailure("MANIFEST_INVALID", 4)
+        if case_manifest_value.get("privacy_class") != config["privacy_class"]:
+            raise AdaptiveRunFailure("PRIVACY_CLASS_MISMATCH", 4)
         from .boundaries import CaseFactoryLoader
 
         case_loader = CaseFactoryLoader(review if closure else None)
@@ -2075,7 +2117,7 @@ def run(
         raise
     except (OSError, ValueError, KeyError, TypeError) as error:
         raise AdaptiveRunFailure("MANIFEST_INVALID", 4) from error
-    _validate_cases(source_input, review if closure else None)
+    _validate_cases(source_input, review if closure else None, config["privacy_class"])
     if closure:
         context_hash = _hash(_canonical([item.case for item in source_input.cases]))
         if not (

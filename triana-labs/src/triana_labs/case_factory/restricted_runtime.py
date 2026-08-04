@@ -278,15 +278,11 @@ def generate_restricted(
     world_inventory: Path | None = None,
 ) -> RestrictedResult:
     _output(output_path)
-    _cache(cache_path, output_path)
     if not 1 <= requested_case_count <= 25:
         raise Invalid
     config_bytes = config_path.read_bytes()
     config = strict_json(config_bytes)
     closure = config.get("protocol_version") == "LABS046_WORKFLOW_CLOSURE_V1"
-    inventory, inventory_hash = (
-        _world_inventory(world_inventory) if closure else (None, None)
-    )
     if closure and (
         requested_case_count != 12
         or config.get("generation")
@@ -300,6 +296,15 @@ def generate_restricted(
         trace_limit=None if closure else 25,
         byte_limit=90_000,
     )
+    privacy_class = cast(str, evidence.get("privacy_class", "SYNTHETIC"))
+    inventory, inventory_hash = (
+        _world_inventory(world_inventory, privacy_class) if closure else (None, None)
+    )
+    if closure and inventory is None:
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
+    if privacy_class != "SYNTHETIC":
+        _private_custody(output_path, cache_path)
+    _cache(cache_path, output_path)
     catalog, handle_map = _catalog(evidence, citations, inventory)
     run_id = domain_hash(
         "restricted-case-factory-run",
@@ -396,10 +401,18 @@ def resume_restricted(
         or manifest.get("outcome") != "NEEDS_INPUT"
     ):
         raise Invalid("RESUME_INPUT_INVALID")
+    if manifest.get("privacy_class") == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
+        if resume.get("privacy_class") != manifest["privacy_class"]:
+            raise Invalid("PRIVACY_CLASS_MISMATCH")
+        _private_custody(output_path, cache_path)
     run_id = resume["run_id"]
     private = _run_root(cache_path, run_id) / "resume-private.json"
     value = strict_json(private.read_bytes())
     state = _restore(value, cache_path, clock)
+    if state.evidence.get("privacy_class", "SYNTHETIC") != manifest.get(
+        "privacy_class", "SYNTHETIC"
+    ):
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
     ordered_answers = [
         {"question_id": item, "answer": answers[item]} for item in expected
     ]
@@ -574,6 +587,9 @@ def _batch(
                     _lineage(state, phase),
                     cast(str, state.evidence["input_manifest_hash"]),
                     cast(str, state.evidence["intelligence_manifest_hash"]),
+                    privacy_class=cast(
+                        str, state.evidence.get("privacy_class", "SYNTHETIC")
+                    ),
                     strict_cases=True,
                     expected_case_count=len(slots),
                 )
@@ -612,7 +628,7 @@ def _batch(
     return "FAILED", "INTERNAL_INVARIANT_FAILED"
 
 
-def _world_inventory(path: Path | None) -> tuple[Json, str]:
+def _world_inventory(path: Path | None, privacy_class: str) -> tuple[Json, str]:
     if path is None:
         raise Invalid
     try:
@@ -636,7 +652,7 @@ def _world_inventory(path: Path | None) -> tuple[Json, str]:
         or value["artifact_kind"] != "labs046_world_inventory"
         or value["schema_version"] != 1
         or value["protocol_version"] != "LABS046_WORLD_INVENTORY_V1"
-        or value["data_class"] != "SYNTHETIC"
+        or value["data_class"] not in {"SYNTHETIC", "OWNER_AUTHORIZED_REAL_DATA_CANARY"}
         or not isinstance(value["captured_at"], str)
         or not isinstance(value["source_lineage"], dict)
         or set(value["source_lineage"]) != {"source_kind", "source_id"}
@@ -644,6 +660,10 @@ def _world_inventory(path: Path | None) -> tuple[Json, str]:
         or not 1 <= len(inventory) <= 8
     ):
         raise Invalid
+    if value["data_class"] != privacy_class:
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
+    if privacy_class != "SYNTHETIC":
+        _private_existing_path(path)
     for name, identifiers in inventory.items():
         if (
             not isinstance(name, str)
@@ -692,6 +712,11 @@ def _catalog(
         "traces": traces,
         "gaps": evidence["gaps"],
     }
+    if "privacy_class" in evidence:
+        catalog.update(
+            privacy_class=evidence["privacy_class"],
+            authorization_projection=evidence["authorization_projection"],
+        )
     if inventory is not None:
         catalog["world_inventory"] = inventory
     return catalog, handles
@@ -1093,11 +1118,22 @@ def _portable(
             "projected_byte_count": len(canonical(state.evidence)),
             "citations": state.citations,
             "gaps": state.evidence["gaps"],
+            **(
+                {"privacy_class": state.evidence["privacy_class"]}
+                if "privacy_class" in state.evidence
+                else {}
+            ),
         },
         lf=True,
     )
     if state.world_inventory is not None:
-        artifacts["LABS04_TIERED_CASES.md"] = render_tiered_cases(lane.cases)
+        tiered = render_tiered_cases(lane.cases)
+        if "privacy_class" in state.evidence:
+            tiered = (
+                f"**Privacy class:** `{state.evidence['privacy_class']}`\n\n".encode()
+                + tiered
+            )
+        artifacts["LABS04_TIERED_CASES.md"] = tiered
     evaluation = {
         "artifact_kind": "case_factory_evaluation",
         "schema_version": 1,
@@ -1138,7 +1174,7 @@ def _portable(
         "schema_version": 1,
         "input_manifest_hash": state.evidence["input_manifest_hash"],
         "intelligence_manifest_hash": state.evidence["intelligence_manifest_hash"],
-        "privacy_class": "SYNTHETIC",
+        "privacy_class": state.evidence.get("privacy_class", "SYNTHETIC"),
         "producing_component": "triana-labs-case-factory",
         "producing_component_version": __version__,
         "provider_kind": PROVIDER,
@@ -1195,6 +1231,11 @@ def _pause(
         "provider_http_exchange_count": state.http_exchanges,
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
+        **(
+            {"privacy_class": state.evidence["privacy_class"]}
+            if "privacy_class" in state.evidence
+            else {}
+        ),
     }
     private = _snapshot(state, excluded)
     _private_write(
@@ -1213,6 +1254,11 @@ def _pause(
                 "intelligence_manifest_hash": state.evidence[
                     "intelligence_manifest_hash"
                 ],
+                **(
+                    {"privacy_class": state.evidence["privacy_class"]}
+                    if "privacy_class" in state.evidence
+                    else {}
+                ),
             },
             lf=True,
         ),
@@ -1235,6 +1281,11 @@ def _pause(
             "outcome": "NEEDS_INPUT",
             "reason_code": "MATERIAL_INPUT_REQUIRED",
             "provider_http_exchange_count": state.http_exchanges,
+            **(
+                {"privacy_class": state.evidence["privacy_class"]}
+                if "privacy_class" in state.evidence
+                else {}
+            ),
             "artifacts": {
                 name: artifact_hash(payload) for name, payload in artifacts.items()
             },
@@ -1433,6 +1484,35 @@ def _cache(path: Path, output: Path) -> None:
     if not path.exists():
         path.mkdir(mode=0o700)
     os.chmod(path, 0o700)
+
+
+def _private_custody(output: Path, cache: Path) -> None:
+    private_root = Path("/private/tmp").resolve(strict=True)
+    resolved_output = output.parent.resolve(strict=True) / output.name
+    resolved_cache = cache.resolve(strict=False)
+    package_root = Path(__file__).resolve().parents[3]
+    if (
+        private_root not in resolved_output.parents
+        or private_root not in resolved_cache.parents
+        or resolved_output == package_root
+        or package_root in resolved_output.parents
+        or resolved_cache == package_root
+        or package_root in resolved_cache.parents
+    ):
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS")
+
+
+def _private_existing_path(path: Path) -> None:
+    try:
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved = path.resolve(strict=True)
+    except OSError as error:
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS") from error
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS")
 
 
 def _money(value: Decimal) -> str:

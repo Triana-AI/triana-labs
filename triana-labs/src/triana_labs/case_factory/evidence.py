@@ -126,7 +126,13 @@ def build(
                 {"reason_code": "NO_USABLE_USER_EVIDENCE", "trace_id": trace_id}
             )
             continue
-        trial = _root(observer_bytes, intelligence_bytes, [*selected, projected], gaps)
+        trial = _root(
+            observer_bytes,
+            intelligence_bytes,
+            [*selected, projected],
+            gaps,
+            cast(str, observer["privacy_class"]),
+        )
         if trace_limit is None:
             trial["total_eligible_trace_count"] = len(eligible)
         if len(canonical(trial)) > byte_limit:
@@ -136,7 +142,13 @@ def build(
             continue
         selected.append(projected)
     gaps.sort(key=_gap_key)
-    root = _root(observer_bytes, intelligence_bytes, selected, gaps)
+    root = _root(
+        observer_bytes,
+        intelligence_bytes,
+        selected,
+        gaps,
+        cast(str, observer["privacy_class"]),
+    )
     if trace_limit is None:
         root["total_eligible_trace_count"] = len(eligible)
     if not selected:
@@ -147,9 +159,13 @@ def build(
 
 
 def _root(
-    observer: bytes, intelligence: bytes, selected: list[Json], gaps: list[Json]
+    observer: bytes,
+    intelligence: bytes,
+    selected: list[Json],
+    gaps: list[Json],
+    privacy_class: str,
 ) -> Json:
-    return {
+    result = {
         "artifact_kind": "case_factory_provider_evidence",
         "schema_version": 1,
         "input_manifest_hash": artifact_hash(observer),
@@ -158,6 +174,14 @@ def _root(
         "selected_traces": selected,
         "gaps": sorted(gaps, key=_gap_key),
     }
+    if privacy_class != "SYNTHETIC":
+        result.update(
+            privacy_class=privacy_class,
+            authorization_projection=(
+                "LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1"
+            ),
+        )
+    return result
 
 
 def _round_robin(clusters: list[list[str]]) -> list[str]:

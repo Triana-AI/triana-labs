@@ -176,6 +176,7 @@ def convert_lane(
     input_hash: str,
     intelligence_hash: str,
     *,
+    privacy_class: str = "SYNTHETIC",
     strict_cases: bool,
     expected_case_count: int = 5,
 ) -> Lane:
@@ -191,7 +192,11 @@ def convert_lane(
     common = {
         "schema_version": 1,
         "proposal_state": "PROPOSED",
-        "fidelity": "SYNTHETIC_CORPUS_GROUNDED",
+        "fidelity": (
+            "OWNER_AUTHORIZED_REAL_DATA_GROUNDED"
+            if privacy_class == "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+            else "SYNTHETIC_CORPUS_GROUNDED"
+        ),
         "input_manifest_hash": input_hash,
         "intelligence_manifest_hash": intelligence_hash,
         "lineage": lineage,

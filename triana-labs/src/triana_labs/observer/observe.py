@@ -25,6 +25,7 @@ JsonObject = dict[str, Any]
 _MAX_INPUT_BYTES = 16 * 1024 * 1024
 _MAX_LINE_BYTES = 1024 * 1024
 _MAX_LINES = 1_000
+_CANARY = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,7 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
     seen_trace_ids: set[str] = set()
     seen_source_ids: set[str] = set()
     eligible_count = 0
+    privacy_class: str | None = None
 
     for line_number, (line, raw_size) in enumerate(lines, start=1):
         # Raw size includes the original line ending. CR is removed only after the
@@ -87,8 +89,14 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
             if source_id in seen_source_ids:
                 raise LineRejection("DUPLICATE_SOURCE_TRACE_ID", "/source_trace_id")
         except LineRejection as rejection:
+            if rejection.code == "UNSUPPORTED_PRIVACY_CLASS":
+                raise ObserveFailure(rejection.code, 4) from rejection
             rejected.append(rejection.as_record(line_number))
             continue
+        trace_privacy = cast(str, validated.value["privacy_class"])
+        if privacy_class is not None and trace_privacy != privacy_class:
+            raise ObserveFailure("PRIVACY_CLASS_MISMATCH", 4)
+        privacy_class = trace_privacy
         # IDs are reserved only after complete line validation. A rejected line can
         # therefore never prevent a later valid trace from using either identifier.
         accepted.append(validated.value)
@@ -103,7 +111,13 @@ def observe(input_path: Path, output_path: Path) -> ObserveResult:
         eligible_count=eligible_count,
     )
     try:
-        publish_bundle(output_path, accepted, rejected, profile)
+        effective_privacy = privacy_class or "SYNTHETIC"
+        if effective_privacy == _CANARY:
+            _require_private_path(output_path)
+            profile["privacy_class"] = effective_privacy
+        publish_bundle(
+            output_path, accepted, rejected, profile, privacy_class=effective_privacy
+        )
     except PublicationFailure as failure:
         raise ObserveFailure(failure.reason_code, failure.exit_code) from failure
     # The outcome describes corpus accounting, not agent quality. Partial success and
@@ -139,6 +153,18 @@ def _validate_output_boundary(output_path: Path) -> None:
         raise ObserveFailure("OUTPUT_PARENT_MISSING", 2) from error
     if parent.is_symlink() or not stat.S_ISDIR(parent_stat.st_mode):
         raise ObserveFailure("OUTPUT_PARENT_MISSING", 2)
+
+
+def _require_private_path(path: Path) -> None:
+    """Require a not-yet-created artifact root beneath ``/private/tmp``."""
+
+    private_root = Path("/private/tmp").resolve(strict=True)
+    resolved = path.parent.resolve(strict=True) / path.name
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise ObserveFailure("UNSUPPORTED_PRIVACY_CLASS", 4)
 
 
 def _read_input(input_path: Path) -> bytes:

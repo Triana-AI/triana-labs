@@ -12,7 +12,7 @@ from triana_labs import __version__
 from triana_labs.intelligence.input import InputFailure, JsonObject, read_bundle
 from triana_labs.intelligence.publication import PublicationFailure, publish
 
-_FIDELITY = "SYNTHETIC_OBSERVED_STRUCTURE"
+_CANARY = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
 
 
 @dataclass(frozen=True)
@@ -38,6 +38,8 @@ def derive(manifest_path: Path, output_path: Path) -> DeriveResult:
 
     try:
         manifest_bytes, manifest, traces = read_bundle(manifest_path)
+        if manifest["privacy_class"] == _CANARY:
+            _require_private_output(output_path)
         artifacts, result = _derive_artifacts(manifest_bytes, manifest, traces)
         publish(output_path, artifacts)
     except InputFailure as failure:
@@ -55,6 +57,12 @@ def _derive_artifacts(
     manifest_bytes: bytes, manifest: JsonObject, traces: list[JsonObject]
 ) -> tuple[dict[str, bytes], DeriveResult]:
     input_hash = _digest(manifest_bytes)
+    privacy_class = cast(str, manifest["privacy_class"])
+    fidelity = (
+        "OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE"
+        if privacy_class == _CANARY
+        else "SYNTHETIC_OBSERVED_STRUCTURE"
+    )
     grouped: dict[bytes, tuple[JsonObject, list[str]]] = {}
     for trace in traces:
         fingerprint = _fingerprint(trace)
@@ -69,7 +77,7 @@ def _derive_artifacts(
             {
                 "ambiguity_state": "SEMANTICS_NOT_EVALUATED",
                 "cluster_id": f"cluster-{hashlib.sha256(preimage).hexdigest()[:16]}",
-                "fidelity": _FIDELITY,
+                "fidelity": fidelity,
                 "fingerprint": fingerprint,
                 "member_trace_ids": members,
                 "support_count": support,
@@ -89,9 +97,10 @@ def _derive_artifacts(
     cluster_count = len(clusters)
     trace_count = len(traces)
     common = {
-        "fidelity": _FIDELITY,
+        "fidelity": fidelity,
         "input_manifest_hash": input_hash,
         "schema_version": 1,
+        **({"privacy_class": privacy_class} if privacy_class != "SYNTHETIC" else {}),
     }
     values: dict[str, JsonObject] = {
         "clusters.json": {
@@ -141,11 +150,11 @@ def _derive_artifacts(
                 name: _digest(payload) for name, payload in artifacts.items()
             },
             "cluster_count": cluster_count,
-            "fidelity": _FIDELITY,
+            "fidelity": fidelity,
             "gap_count": len(gap_codes),
             "input_manifest_hash": input_hash,
             "outcome": "COMPLETED_WITH_GAPS",
-            "privacy_class": "SYNTHETIC",
+            "privacy_class": privacy_class,
             "producing_component": "corpus_intelligence",
             "producing_component_version": __version__,
             "schema_version": 1,
@@ -222,10 +231,27 @@ def _exit_code(reason: str) -> int:
         return 2
     if reason == "INPUT_TOO_LARGE":
         return 3
-    if reason in {"MANIFEST_INVALID", "UNSUPPORTED_PRIVACY_CLASS"}:
+    if reason in {
+        "MANIFEST_INVALID",
+        "PRIVACY_CLASS_MISMATCH",
+        "UNSUPPORTED_PRIVACY_CLASS",
+    }:
         return 4
     if reason in {"CORPUS_INTEGRITY_FAILED", "EMPTY_CORPUS"}:
         return 5
     if reason == "OUTPUT_WRITE_FAILED":
         return 7
     return 70
+
+
+def _require_private_output(path: Path) -> None:
+    try:
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved = path.parent.resolve(strict=True) / path.name
+    except OSError as error:
+        raise InputFailure("INPUT_READ_FAILED") from error
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise InputFailure("UNSUPPORTED_PRIVACY_CLASS")
