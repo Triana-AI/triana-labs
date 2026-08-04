@@ -53,13 +53,15 @@ def _run_payload(
     return run, opener
 
 
-def test_schema_describes_both_union_members_and_transport_projects_valid_emit_stop(
+def _wire(*, action: str = "EMIT", content: str = "Please continue.") -> dict:
+    return {"action": action, "content": content}
+
+
+def test_schema_is_exact_two_field_wire_and_transport_projects_emit_stop(
     monkeypatch: pytest.MonkeyPatch, legacy: object
 ) -> None:
-    emit = proposal(user_utterance="Please continue with the verified request.")
-    stop = proposal(
-        disposition="STOP", user_utterance=None, stop_reason_code="GOAL_SATISFIED"
-    )
+    emit = _wire(content="Please continue with the verified request.")
+    stop = _wire(action="STOP", content="GOAL_SATISFIED")
     simulator, opener = foundry_simulator(
         legacy,
         monkeypatch,
@@ -75,21 +77,110 @@ def test_schema_describes_both_union_members_and_transport_projects_valid_emit_s
     emitted, stopped = simulator.complete(request), simulator.complete(request)
     body = json.loads(opener.requests[0].data)
     schema = body["response_format"]["json_schema"]["schema"]
-    schema_text = json.dumps(schema).casefold()
-    instruction = body["messages"][0]["content"].casefold()
-    assert "emit" in schema_text and "nonempty" in schema_text and "null" in schema_text
-    assert "stop" in schema_text and "declared" in schema_text
-    assert "emit" in instruction and "stop" in instruction and "nonempty" in instruction
+    assert schema == {
+        "additionalProperties": False,
+        "properties": {
+            "action": {"enum": ["EMIT", "STOP"], "type": "string"},
+            "content": {"minLength": 1, "type": "string"},
+        },
+        "required": ["action", "content"],
+        "type": "object",
+    }
     assert (emitted.disposition, emitted.user_utterance, emitted.stop_reason_code) == (
         "EMIT",
-        emit["user_utterance"],
+        emit["content"],
         None,
     )
     assert (stopped.disposition, stopped.user_utterance, stopped.stop_reason_code) == (
         "STOP",
         None,
-        "GOAL_SATISFIED",
+        stop["content"],
     )
+
+
+def test_labs06_rejects_old_three_field_content_without_retry(
+    monkeypatch: pytest.MonkeyPatch, legacy: object
+) -> None:
+    payload = provider_envelope(canonical(proposal()).decode(), usage=USAGE)
+    simulator, opener = foundry_simulator(legacy, monkeypatch, [payload])
+    response = simulator.complete(
+        {
+            "protocol_version": PROTOCOL,
+            "latest_observation": {"observation_hash": "sha256:" + "a" * 64},
+        }
+    )
+    assert len(opener.requests) == 1
+    assert (response.status, response.reason_code) == (
+        "INVALID",
+        "SIMULATOR_INVALID_RESPONSE",
+    )
+    assert (
+        response.disposition,
+        response.user_utterance,
+        response.stop_reason_code,
+    ) == (None, None, None)
+
+
+def test_labs05_provider_request_remains_byte_compatible(
+    monkeypatch: pytest.MonkeyPatch, legacy: object
+) -> None:
+    request = {"latest_observation": {"synthetic": True}}
+    content = {
+        "consumed_observation_hash": "sha256:" + "a" * 64,
+        "next_user_content": "bounded synthetic follow-up",
+        "proposed_stop": False,
+        "stop_reason": None,
+    }
+    simulator, opener = foundry_simulator(
+        legacy,
+        monkeypatch,
+        [provider_envelope(canonical(content).decode(), usage=USAGE)],
+    )
+    response = simulator.complete(request)
+    config = legacy.config_value()["simulator"]
+    expected = canonical(
+        {
+            "messages": [
+                {
+                    "content": (
+                        "LABS05_ADAPTIVE_USER_V1: react only to the latest bounded "
+                        "evidence."
+                    ),
+                    "role": "system",
+                },
+                {"content": canonical(request).decode(), "role": "user"},
+            ],
+            "model": config["deployment"],
+            "n": 1,
+            "response_format": {
+                "json_schema": {
+                    "name": "next_user_turn",
+                    "schema": {
+                        "additionalProperties": False,
+                        "properties": {
+                            "consumed_observation_hash": {"type": "string"},
+                            "next_user_content": {"type": "string"},
+                            "proposed_stop": {"type": "boolean"},
+                            "stop_reason": {"type": ["string", "null"]},
+                        },
+                        "required": [
+                            "next_user_content",
+                            "consumed_observation_hash",
+                            "proposed_stop",
+                            "stop_reason",
+                        ],
+                        "type": "object",
+                    },
+                    "strict": True,
+                },
+                "type": "json_schema",
+            },
+            "seed": config["seed"],
+            "temperature": 0,
+        }
+    )
+    assert response.status == "SUCCEEDED"
+    assert opener.requests[0].data == expected
 
 
 @pytest.mark.parametrize(
@@ -122,7 +213,7 @@ def test_envelope_json_shape_and_content_type_fail_at_exact_first_stage(
 
 @pytest.mark.parametrize(
     "content",
-    ["not-json", '{"disposition":"EMIT","disposition":"STOP"}'],
+    ["not-json", '{"action":"EMIT","action":"STOP"}'],
 )
 def test_invalid_or_duplicate_content_json_has_content_json_diagnostic(
     tmp_path: Path,
@@ -144,10 +235,8 @@ def test_invalid_or_duplicate_content_json_has_content_json_diagnostic(
     "content",
     [
         "[]",
-        canonical({"disposition": "EMIT"}).decode(),
-        canonical(
-            {**proposal(), "PRIVATE_UNKNOWN_KEY": "PRIVATE_UNKNOWN_VALUE"}
-        ).decode(),
+        canonical({"action": "EMIT"}).decode(),
+        canonical({**_wire(), "PRIVATE_UNKNOWN_KEY": "PRIVATE_UNKNOWN_VALUE"}).decode(),
         canonical(
             {
                 **proposal(),
@@ -173,7 +262,7 @@ def test_nonobject_missing_extra_and_legacy_proposals_use_key_diagnostic_without
     assert b"PRIVATE_UNKNOWN" not in serialized
     assert gap["diagnostic"]["known_field_presence"] == {
         key: key in json.loads(content) if content.startswith("{") else False
-        for key in ("disposition", "user_utterance", "stop_reason_code")
+        for key in ("action", "content")
     }
 
 
@@ -195,7 +284,7 @@ def test_usage_missing_or_zero_is_supported_but_malformed_usage_is_typed_without
     usage: object,
     valid: bool,
 ) -> None:
-    payload = provider_envelope(canonical(proposal()).decode(), usage=usage)
+    payload = provider_envelope(canonical(_wire()).decode(), usage=usage)
     if valid:
         simulator, _ = foundry_simulator(legacy, monkeypatch, [payload])
         result = simulator.complete(

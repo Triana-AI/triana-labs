@@ -26,7 +26,7 @@ Each incident records:
 
 ## DF-2026-08-03-001 — LABS-06 live continuations rejected before U2
 
-Status: `CASE_FACTORY_RESOLVED; LABS-06 FOLLOW-UP OPEN`
+Status: `WIRE RESOLVED; WORLD-GROUNDING/INTENT FOLLOW-UP OPEN`
 
 ### Observed failure
 
@@ -178,6 +178,23 @@ authorized simulator-only synthetic check must produce Structural
 Continuation Yield `3/3` with exact accounting, zero privacy leakage, and zero
 retry/repair/fallback before another HRAI run is considered.
 
+### Live conformance update — 2026-08-04
+
+The owner-authorized production-transport synthetic check made exactly three
+Azure exchanges and produced Structural Continuation Yield `2/3`. Two `EMIT`
+responses were structurally valid. The failed response returned `STOP` with
+both a nonempty stop reason and a non-null user utterance; the new diagnostic
+typed it exactly `SIMULATOR_STOP_FIELDS_INVALID`. Input/output tokens were
+retained for all three, USD 3 was reserved, and no retry, repair, fallback,
+provider switch, HRAI, RDS, or target call occurred.
+
+This proves the bounded hypothesis: the provider-facing schema allowed two
+nullable companion fields whose cross-field relationship it could not enforce.
+The next check is a two-field `action` plus single `content` wire in which the
+observed invalid combination is unrepresentable and deterministic code maps
+content to the unchanged internal EMIT/STOP authority. HRAI remains blocked
+until a fresh three-call check reaches `3/3`.
+
 ## DF-2026-08-03-002 — Shared schema drift broke legacy LABS-04
 
 ### Observation
@@ -218,7 +235,7 @@ contract and exact custody/egress approval.
 
 ## DF-2026-08-04-003 — Real-data Case Factory transport failure blocked LABS-06
 
-Status: `OPEN`
+Status: `CASE_FACTORY RESOLVED; LABS-06 FOLLOW-UP RECORDED`
 
 ### Observed failure
 
@@ -335,3 +352,92 @@ build and clean-wheel installation at
 `/private/tmp/triana-labs-verify.m8oIxX`. The Case Factory blocker is resolved;
 the separate LABS-06 live trajectory and human fidelity assessment remain
 open and must not be inferred from this result.
+
+## DF-2026-08-04-004 — LABS-06 multi-turn mechanics passed while world fidelity failed
+
+Status: `OPEN`
+
+### Observed failure
+
+The final identical HRAI canary retained three valid/effective machine
+trajectories from twelve selected grounded workflows. Two reached six role
+turns, proving that the repaired action/content wire can produce real adaptive
+continuations. Both multi-turn conversations nevertheless introduced world
+claims absent from the authorized inventory and latest HRAI observation:
+nonexistent uploaded files, a new candidate, an unavailable position, resume
+paths, and a LinkedIn URL. One additional partial conversation abandoned its
+verification-before-shortlisting intent and requested recommendation upgrade,
+shortlisting, outreach, database mutation, and ATS ranking despite explicit
+verification gaps.
+
+The live output therefore closed `COMPLETED_WITH_GAPS`, not passed. It retained
+12 attempted episodes, 3 valid/effective trajectories, 31 target plus 8
+simulator HTTP exchanges, 111 target tool calls, USD 36.333320 reserved, and
+actual cost unavailable. Target internal errors/tool budgets and the frozen
+run deadline made the other nine episodes partial or unavailable. Human
+fidelity and completion rulings remain blank.
+
+### Smallest reproduction
+
+Conversation 7 is sufficient:
+
+1. HRAI asks for missing resume, position, and candidate context.
+2. The simulator invents Daniel Whitfield, `POS-2041`, a resume path, and a
+   LinkedIn URL rather than selecting only bound or observed world values.
+3. HRAI truthfully reports that the position/file/profile do not exist and
+   lists actual positions.
+4. The simulator selects a real position but invents a second resume path.
+
+Conversation 4 independently shows the same class by claiming three security
+test PDFs were uploaded after HRAI said it could only parse supplied files.
+
+### Falsified interpretation
+
+The earlier belief that the strict persona/intent policy merely stopped too
+early is incomplete. After the structural wire was repaired, the simulator did
+continue adaptively. The remaining dominant defect is the opposite: semantic
+validation permits plausible but unauthorized world-state additions and does
+not enforce intent preconditions strongly enough.
+
+### Bounded next hypothesis
+
+Before transcript admission, deterministically reject a proposed next user turn
+that introduces an entity, file/path, position, URL, or claimed upload absent
+from both the bound world inventory and latest HRAI observation. Also reject an
+action request that contradicts an explicit case-intent precondition such as
+verification before shortlisting. Preserve a typed semantic gap with no repair,
+retry, fallback, invented alternative, memory, judge, or target rerun.
+
+Private evidence remains under
+`/private/tmp/triana-labs06-final-live-20260804-v5` and must not be committed or
+used as a public fixture.
+
+## DF-2026-08-04-005 — Case Factory cache preserved evidence but did not replay it
+
+Status: `OPEN`
+
+### Observed failure
+
+During V11 through V17 regeneration, the private directory named `cache`
+preserved exact provider requests/responses and stage artifacts but fresh runs
+still called Azure from batch one. The operator initially interpreted the
+directory as an executable exact-response cache and described later attempts
+as cached progress. Attempt accounting disproved that interpretation: fresh
+runs reported new provider HTTP exchanges and different response hashes.
+
+### Impact and recovery
+
+Repeated explicit runs consumed USD 52 reserved before the mistake was
+corrected. No budget ceiling was exceeded, and no hidden retry occurred, but
+the labeling and operator expectation were wrong. The original V9 cache did
+retain all twelve exact successful request/response pairs. A private replay
+transport verified the system instruction, user request, strict schema, and
+response wire for every slot, then replayed those responses through the
+repaired deterministic normalizer with zero provider HTTP exchanges. V19
+completed 12/12 valid and distinct.
+
+### Bounded next hypothesis
+
+Rename the current surface to evidence custody or implement an explicit,
+hash-verified replay command with distinct accounting for logical replay versus
+provider HTTP exchange. Do not silently infer replay from file presence.

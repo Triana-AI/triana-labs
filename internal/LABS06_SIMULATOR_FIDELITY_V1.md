@@ -436,3 +436,48 @@ and the complete 603-test verifier at `/private/tmp/triana-labs-verify.eLaFCb`.
 No provider, HRAI, RDS, target, or real data ran. The synthetic-only trace and
 inventory contracts are an explicit live blocker and must not be bypassed by
 relabeling production evidence.
+
+## 14. Final live closure evidence
+
+On 2026-08-04 the provider-authored continuation wire was reduced to exactly
+`action` and `content`; deterministic code projects those two fields into the
+existing internal EMIT/STOP union. Live publication-safe synthetic conformance
+passed `3/3`. Independent acceptance passed the focused simulator-fidelity
+suite, and the complete repository verifier passed 619 tests before live
+closure execution.
+
+The LABS-04-to-LABS-06 integration also required an identity-bearing
+`workflow_stratum`. The provider does not author it. Deterministic Case Factory
+normalization classifies `RECOVERY` only when a cited user-message opening
+follows an earlier assistant message in the same authorized trace; otherwise
+the required nonempty user-message citation subset yields `ORDINARY`.
+Non-user citations may support expanded opening content but never decide the
+stratum. Exact V9 request/response replay through that repaired boundary
+produced V19 with 12/12 valid distinct cases, six observed and six
+grounded-expanded, all `ORDINARY`, and zero provider HTTP exchanges.
+
+The final identical live HRAI canary closed `COMPLETED_WITH_GAPS`:
+
+- twelve attempted episodes;
+- three valid and three effective machine trajectories;
+- two six-role-turn trajectories and one valid single-turn stop;
+- thirty-one target and eight simulator HTTP exchanges;
+- 111 target tool calls;
+- USD 36.333320 reserved, with actual cost unavailable rather than zero;
+- four episodes not started before the frozen run deadline.
+
+This evidence does not pass `REGULAR_USER_SIMULATION_FIDELITY_V1`. The
+multi-turn mechanics are proven, but both six-role-turn conversations contain
+unauthorized world-state additions: invented uploaded files, candidate/person
+identity, unavailable position, resume paths, or URL. Another partial
+trajectory contradicts its verification-before-shortlisting intent by asking
+for recommendation upgrade and downstream actions despite explicit evidence
+gaps. Target internal errors and target-owned tool budgets make several other
+items unavailable. Human fidelity/completion fields remain pending and cannot
+be filled by Codex or software.
+
+The smallest proposed successor is a separate deterministic semantic boundary
+that rejects new entity/file/path/position/URL/upload claims unless present in
+the bound inventory or latest target observation, and rejects action requests
+that violate explicit intent preconditions. It remains unimplemented and must
+not gain repair, retry, fallback, memory, judge, UI, or broader-eval scope.

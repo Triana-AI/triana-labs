@@ -76,7 +76,7 @@ triana_case_factory_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_content_hash="7ac6d8bd9cb94fe55478e442b08f22780651ba6a0433fd0f7622b8e121f53058"
+triana_expected_case_factory_content_hash="e19eb315c235e233927ec71c82e7cfd7d8db73c3d2b7facec254c524b2c83c77"
 if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
   echo "frozen case factory acceptance content hash mismatch" >&2
   exit 1
@@ -93,7 +93,7 @@ triana_case_factory_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_file_hash="2170fe4151da2999b5613dec0f134a5d26c4654432fbbdd73424dd3dd2f583f8"
+triana_expected_case_factory_file_hash="d0fae2c721b750ad189b59d5a826e8c30c9d006e27847205f5834d857f96b096"
 if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
   echo "frozen case factory acceptance file hash mismatch" >&2
   exit 1
@@ -143,7 +143,7 @@ triana_simulator_fidelity_content_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_content_hash="1ed4ce44c86c3bd81aa708163679feabc915a71d0467cc6416a520f93e8020b8"
+triana_expected_simulator_fidelity_content_hash="6d60074699477ce426d1c2654c87a7d5f7bb37a0cd00571411934d75dd7bc306"
 if [[ "${triana_simulator_fidelity_content_hash}" != "${triana_expected_simulator_fidelity_content_hash}" ]]; then
   echo "frozen simulator fidelity acceptance content hash mismatch" >&2
   exit 1
@@ -159,7 +159,7 @@ triana_simulator_fidelity_file_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_simulator_fidelity_file_hash="9b2a64b7f173eb1740e192e78e9b4a83215b442addfb7b17b85dee5147b8c914"
+triana_expected_simulator_fidelity_file_hash="febbf30ce0a9d2b2fd4d2c330dc7fd4c8083ad599b0a6427054d55f5e154985c"
 if [[ "${triana_simulator_fidelity_file_hash}" != "${triana_expected_simulator_fidelity_file_hash}" ]]; then
   echo "frozen simulator fidelity acceptance file hash mismatch" >&2
   exit 1

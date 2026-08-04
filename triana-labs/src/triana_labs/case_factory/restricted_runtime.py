@@ -708,12 +708,28 @@ def _catalog(
     evidence_index = 1
     for trace_index, trace in enumerate(evidence["selected_traces"], start=1):
         events = []
+        assistant_seen = False
         for event in trace["events"]:
             handle = f"E{evidence_index:06d}"
             evidence_index += 1
             projected = {"evidence_handle": handle, **event}
             events.append(projected)
-            handles[handle] = citation_map[(trace["trace_id"], event["sequence"])]
+            citation = citation_map[(trace["trace_id"], event["sequence"])]
+            handles[handle] = (
+                {
+                    **citation,
+                    "opening_workflow_stratum": (
+                        "RECOVERY" if assistant_seen else "ORDINARY"
+                    )
+                    if event["event_kind"] == "USER_MESSAGE"
+                    else None,
+                }
+                if inventory is not None
+                else citation
+            )
+            assistant_seen = (
+                assistant_seen or event["event_kind"] == "ASSISTANT_MESSAGE"
+            )
         traces.append(
             {
                 "trace_handle": f"T{trace_index:03d}",
@@ -817,6 +833,7 @@ def _normalize(
                 continue
             referenced_claims = _local_claim_keys(value)
             claim_traces: dict[str, set[str]] = {}
+            claim_strata: dict[str, set[Any]] = {}
             for claim_index, claim in enumerate(claims):
                 claim_key = claim.get("claim_key")
                 if isinstance(claim_key, str) and claim_key not in referenced_claims:
@@ -842,6 +859,10 @@ def _normalize(
                 traces = {handles[item]["trace_id"] for item in selected}
                 if isinstance(claim_key, str):
                     claim_traces[claim_key] = traces
+                    claim_strata[claim_key] = {
+                        handles[item].get("opening_workflow_stratum")
+                        for item in selected
+                    }
                 kind = claim.pop("support_kind", None)
                 claim.pop("evidence_handles", None)
                 claim["support_state"] = (
@@ -859,6 +880,23 @@ def _normalize(
                     if isinstance(scenario, dict)
                     else {}
                 )
+                opening_keys = _local_claim_keys(anchors)
+                opening_strata = set().union(
+                    *(claim_strata.get(key, set()) for key in opening_keys)
+                )
+                opening_strata.discard(None)
+                if (
+                    not opening_keys
+                    or not opening_strata
+                    or not opening_strata <= {"ORDINARY", "RECOVERY"}
+                ):
+                    defects.append(
+                        _defect("INVALID_CASE", f"/cases/{index}/workflow_stratum")
+                    )
+                else:
+                    value["workflow_stratum"] = (
+                        "RECOVERY" if "RECOVERY" in opening_strata else "ORDINARY"
+                    )
                 anchor_keys = _local_claim_keys(
                     [anchors, value.get("goal"), value.get("done_when")]
                 )

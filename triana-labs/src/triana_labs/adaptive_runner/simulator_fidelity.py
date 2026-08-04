@@ -562,7 +562,8 @@ def response_structure(response: SimulatorResponse) -> str | None:
     return reason
 
 
-_PROPOSAL_KEYS = {"disposition", "user_utterance", "stop_reason_code"}
+_PROVIDER_PROPOSAL_KEYS = {"action", "content"}
+_INTERNAL_PROPOSAL_KEYS = {"disposition", "user_utterance", "stop_reason_code"}
 
 
 def _field_class(value: Any, present: bool) -> str:
@@ -608,7 +609,9 @@ def _diagnostic(
     proposal: Any,
 ) -> dict[str, Any]:
     mapping = proposal if isinstance(proposal, dict) else {}
-    presence = {key: key in mapping for key in sorted(_PROPOSAL_KEYS)}
+    presence = {key: key in mapping for key in sorted(_PROVIDER_PROPOSAL_KEYS)}
+    action = mapping.get("action")
+    content_value = mapping.get("content")
     return {
         "diagnostic_version": "LABS06_SIMULATOR_DIAGNOSTIC_V1",
         "stage": stage,
@@ -621,17 +624,17 @@ def _diagnostic(
         "finish_reason_class": finish_reason_class,
         "known_field_presence": presence,
         "missing_known_field_count": sum(not item for item in presence.values()),
-        "unknown_field_count": len(set(mapping) - _PROPOSAL_KEYS)
+        "unknown_field_count": len(set(mapping) - _PROVIDER_PROPOSAL_KEYS)
         if isinstance(proposal, dict)
         else None,
-        "disposition_class": _disposition_class(
-            mapping.get("disposition"), "disposition" in mapping
-        ),
+        "disposition_class": _disposition_class(action, "action" in mapping),
         "user_utterance_class": _field_class(
-            mapping.get("user_utterance"), "user_utterance" in mapping
+            content_value if action == "EMIT" else None,
+            "content" in mapping and action == "EMIT",
         ),
         "stop_reason_code_class": _field_class(
-            mapping.get("stop_reason_code"), "stop_reason_code" in mapping
+            content_value if action == "STOP" else None,
+            "content" in mapping and action == "STOP",
         ),
     }
 
@@ -703,13 +706,35 @@ def response_structure_diagnostic(
             proposal = json.loads(content, object_pairs_hook=_pairs)
         except (json.JSONDecodeError, ValueError):
             return fail("SIMULATOR_CONTENT_JSON_INVALID")
-    elif _PROPOSAL_KEYS & set(raw):
+    elif _INTERNAL_PROPOSAL_KEYS & set(raw):
         envelope_class = "DIRECT_PROPOSAL"
         proposal = raw
     else:
         envelope_class = "OTHER_OBJECT"
         return fail("SIMULATOR_ENVELOPE_SHAPE_INVALID")
-    if not isinstance(proposal, dict) or set(proposal) != _PROPOSAL_KEYS:
+    expected_keys = (
+        _PROVIDER_PROPOSAL_KEYS
+        if envelope_class == "CHAT_COMPLETION"
+        else _INTERNAL_PROPOSAL_KEYS
+    )
+    if (
+        envelope_class == "CHAT_COMPLETION"
+        and isinstance(proposal, dict)
+        and set(proposal) == _INTERNAL_PROPOSAL_KEYS
+    ):
+        disposition = proposal["disposition"]
+        if disposition not in {"EMIT", "STOP"}:
+            return fail("SIMULATOR_DISPOSITION_INVALID")
+        if disposition == "EMIT" and not (
+            _text(proposal["user_utterance"]) and proposal["stop_reason_code"] is None
+        ):
+            return fail("SIMULATOR_EMIT_FIELDS_INVALID")
+        if disposition == "STOP" and not (
+            proposal["user_utterance"] is None and _text(proposal["stop_reason_code"])
+        ):
+            return fail("SIMULATOR_STOP_FIELDS_INVALID")
+        return fail("SIMULATOR_CONTENT_KEYS_INVALID")
+    if not isinstance(proposal, dict) or set(proposal) != expected_keys:
         return fail("SIMULATOR_CONTENT_KEYS_INVALID")
     if envelope_class == "CHAT_COMPLETION" and "usage" in raw:
         usage = raw["usage"]
@@ -730,11 +755,20 @@ def response_structure_diagnostic(
         and response.speaker_role == "USER"
     ):
         return fail("SIMULATOR_RESPONSE_AUTHORITY_INVALID")
-    projected = {
-        "disposition": response.disposition,
-        "user_utterance": response.user_utterance,
-        "stop_reason_code": response.stop_reason_code,
-    }
+    projected = (
+        {
+            "action": response.disposition,
+            "content": response.user_utterance
+            if response.disposition == "EMIT"
+            else response.stop_reason_code,
+        }
+        if envelope_class == "CHAT_COMPLETION"
+        else {
+            "disposition": response.disposition,
+            "user_utterance": response.user_utterance,
+            "stop_reason_code": response.stop_reason_code,
+        }
+    )
     if proposal != projected:
         return fail("SIMULATOR_RESPONSE_PROJECTION_MISMATCH")
     if response.disposition not in {"EMIT", "STOP"}:

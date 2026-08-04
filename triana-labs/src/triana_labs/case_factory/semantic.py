@@ -308,6 +308,7 @@ def _case(
         required_world_keys: Json | None = None
         source_trace_ids: list[str] = []
         case_origin: str | None = None
+        workflow_stratum: str | None = None
         if closure:
             goal = _text(value["goal"], claim_keys, used)
             done_when = _text(value["done_when"], claim_keys, used)
@@ -333,6 +334,9 @@ def _case(
                 if len(source_trace_ids) == 1
                 else "GROUNDED_EXPANDED_CASE"
             )
+            workflow_stratum = value.get("workflow_stratum")
+            if workflow_stratum not in {"ORDINARY", "RECOVERY"}:
+                raise CaseInvalid
         evaluation = {
             name: _texts(value["proposed_evaluation"][name], claim_keys, used)
             for name in ("criteria", "abstain_conditions")
@@ -365,6 +369,7 @@ def _case(
                 required_world_keys=required_world_keys,
                 source_trace_ids=source_trace_ids,
                 case_origin=case_origin,
+                workflow_stratum=workflow_stratum,
             )
         if not any(
             item["basis"] == "OBSERVED" for item in _supported(record)

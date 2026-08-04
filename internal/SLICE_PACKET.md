@@ -1,136 +1,214 @@
-# LABS-04 proof-first Case Factory packet
+# LABS-06 final live closure packet
 
 Date frozen: 2026-08-04
 
-Status: **FROZEN AND VERIFIED**
+Status: **LOCAL GREEN; LIVE COMPLETED WITH GAPS; HUMAN RULINGS PENDING**
 
-Slice ID: `LABS04-STRICT-STRUCTURED-NORMALIZATION-PROOF-V2`
+Slice ID: `LABS06-LIVE-GROUNDED-CLOSURE-V1`
+
+Canonical base: `946fffb` on `codex/labs-06-regular-user-fidelity`.
 
 ## Outcome
 
-Prove that the Case Factory can normalize the four already-selected private
-HRAI traces against the captured current-world inventory through a
-provider-neutral strict JSON-Schema response, producing and immediately
-persisting one valid grounded or expanded case per exchange.
+Resolve dogfood incident `DF-2026-08-03-001` and exercise genuine multi-turn
+behavior using the twelve valid LABS-04 V9 cases: six observed-production and
+six grounded-expanded. Produce a private human-readable transcript report and
+honest machine evidence. Akarsh retains every human fidelity/completion ruling.
 
-## Accepted behavior
+## Inputs and execution order
 
-For an authoritative LABS046 workflow-closure request only:
+1. Use the production `FoundrySimulatorTransport` for exactly three
+   publication-safe synthetic goal-first requests. No HRAI, RDS, or customer
+   content enters this conformance check.
+2. Continue only if Structural Continuation Yield is exactly `3/3`, with one
+   HTTP exchange per request and no retry, repair, fallback, or provider switch.
+3. Run `LABS046_WORKFLOW_CLOSURE_V1` over the exact private V9 Case Factory
+   manifest and exact hash-matched world inventory. Selected membership is all
+   twelve cases in manifest order.
+4. Target only `https://3-6-37-142.sslip.io`, protocol
+   `HRAI_FASTAPI_SESSIONS_V1`, client `client-techcorp`; simulator only Microsoft
+   Azure Foundry host `kairos-openai-1.openai.azure.com`, deployment
+   `FW-GLM-5.2`, version `1`.
 
-- the run configuration and world inventory are complete; model questions are
-  unavailable;
-- the selected trace catalog is already the evidence packet, so the model gets
-  no search, trace-fetch, budget-inspection, or submission tools;
-- the provider must support strict `response_format: json_schema`; unsupported,
-  malformed, refused, length-truncated, or schema-invalid output is a typed
-  failure and never enters a parser/repair fallback;
-- each authoritative exchange requests and may persist exactly one case bundle;
-- case slots 1-6 are grounded observed normalizations and slots 7-12 are
-  grounded expansions;
-- all world identifiers must resolve in the supplied inventory;
-- the working context ceiling is `min(100,000 tokens, configured model context
-  limit)` with 20% instruction/schema, 55% evidence, and 25% output/safety;
-- context refusal occurs before egress and provider timeout remains typed;
-- every accepted bundle is atomically retained before the next planned slot;
-- no retry, repair, fallback, provider switch, prose extraction, or invented identifier is
-  allowed.
+## Authority and invariants
 
-Non-authoritative and legacy Case Factory behavior is deliberately untouched.
+- Deterministic code owns identity, membership, source lineage, world
+  preflight, latest-observation binding, structural validity, termination,
+  budgets, accounting, custody, dedupe, gaps, and publication.
+- The simulator owns only one `EMIT` utterance or `STOP` proposal.
+- HRAI remains opaque and owns its tools, state, credentials, and side effects.
+- Akarsh owns fidelity, completion, correctness, privacy acceptance, and release
+  rulings; software and Codex do not fill them.
+- Preserve private `/private/tmp` custody, secret reflection guards, one attempt
+  per slot, and zero retry, repair, fallback, redirect, proxy, or provider
+  switching.
+- Typed failure is retained as failure. The existing shared-conformance circuit
+  blocks later slots after two matching first-continuation structural failures.
+
+## Budgets and stop behavior
+
+- Synthetic conformance: three simulator HTTP exchanges, USD 3 reserved.
+- Grounded closure: at most twelve episodes, 24 simulator exchanges, 36 target
+  exchanges, 60 total exchanges, and USD 100 frozen maximum.
+- The owner authorized paid Azure execution up to USD 100 and directed
+  continued bounded diagnosis without another approval round.
+- Stop before HRAI if conformance is below 3/3, custody/configuration is invalid,
+  the exact inventory/case hashes disagree, or egress would name another host.
+- During the closure, preserve each observed partial result and apply the
+  existing circuit. Do not rerun a failed slot or replay until green.
 
 ## Change budget
 
+The first synthetic conformance produced Structural Continuation Yield `2/3`.
+The failed slot returned `STOP` plus a non-null user utterance and was correctly
+typed `SIMULATOR_STOP_FIELDS_INVALID`. This proves the old three-field schema's
+independent nullable companions are the live mismatch.
+
+The one accepted repair replaces only the provider-authored continuation wire
+with exactly:
+
+```json
+{"action":"EMIT|STOP","content":"one nonempty safe string"}
+```
+
+Deterministic code maps `EMIT` content to `user_utterance` with null stop reason,
+and maps `STOP` content to `stop_reason_code` with null utterance. Observation
+binding and USER role remain deterministic. The model cannot author both
+companions, so the observed invalid combination is unrepresentable.
+
 Production ownership is limited to:
 
-- `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`
-- one additive strict wire-schema file under
-  `triana-labs/src/triana_labs/case_factory/schemas/` only if required
+- `triana-labs/src/triana_labs/adaptive_runner/boundaries.py`
+- `triana-labs/src/triana_labs/adaptive_runner/simulator_fidelity.py` only if
+  the safe diagnostic field names require alignment
 
-Documentation ownership is limited to:
+Test ownership is limited to existing files under
+`triana-labs/tests/simulator_fidelity_acceptance/`. Maximum eight essential
+black-box cases and 220 changed physical test lines. Maximum production change:
+160 physical lines. No dependency, connector, runner policy, semantic matcher,
+privacy, accounting, target, Case Factory, or external-repository edit.
+
+`triana-labs/scripts/verify.sh` may receive only the two mechanically
+recomputed simulator-fidelity acceptance hashes after independent RED and
+orchestrator GREEN review.
+
+Independent RED must prove the exact two-field schema/mapping and that legacy
+three-field or mixed content is rejected without retry. Focused GREEN is the
+simulator-fidelity acceptance directory; final GREEN is
+`./triana-labs/scripts/verify.sh`.
+
+Private preparation scripts, configs, selections, receipts, and reports remain
+limited to one root below `/private/tmp`.
+
+After execution, documentation-only closure may update:
 
 - `internal/SLICE_PACKET.md`
 - `internal/DOGFOOD_FAILURE_MEMORY.md`
 - `internal/DECISION_LOG.md`
+- `internal/LABS06_SIMULATOR_FIDELITY_V1.md`
 - `.decision-memory/2026-08-04-codex-labs-06-regular-user-fidelity.md`
 
-Test ownership is limited to one new black-box module:
+Any production defect returns to a separately frozen independent test/production
+slice. No validation weakening, raw rejected provider body retention, manual
+case repair, invented world value, or hidden retry is permitted.
 
-- `triana-labs/tests/case_factory_acceptance/test_authoritative_structured_normalization.py`
-- `triana-labs/tests/case_factory_acceptance/test_grounded_workflow_closure.py`
-  may receive only the mechanical fixture update from one five-case scripted
-  response to twelve one-case scripted responses. This bounded expansion was
-  added after the focused suite showed three fixture-exhaustion failures while
-  the remaining 205 Case Factory acceptance tests passed; assertions may not
-  be weakened.
-- `triana-labs/scripts/verify.sh` may receive only the two mechanically
-  recomputed Case Factory acceptance freeze hashes after the orchestrator has
-  reviewed the final test content and independently reproduced RED and GREEN.
+## Frozen LABS-04 to LABS-06 integration repair
 
-No dependency, schema, connector, simulator, target, fixture, unrelated
-formatting, or external-repository change is allowed. Maximum production
-change: 520 physical lines across the bounded production paths. The final
-increase covers the compact Azure-subset wire, recursive wire validation, and
-deterministic translation into the unchanged internal submission contract. No dependency,
-connector, simulator, target, or unrelated production file is allowed.
+The repaired two-field simulator wire passed the required live synthetic gate
+`3/3`. The first grounded closure launch was then rejected before any provider
+or target call with `CASE_INTEGRITY_FAILED`: the LABS-06 closure contract
+requires `workflow_stratum`, while the authoritative LABS-04 Case Factory
+normalizer did not persist one. The acceptance fixture had manually inserted
+that field and therefore masked the real artifact incompatibility.
 
-The acceptance freeze covers only the authoritative closure behavior already
-proven live: strict schema output without tools, one independently retained
-case per exchange, exact observed/expanded slot derivation, deterministic
-projection of evidence handles and world bindings, partial retention on a
-later typed provider failure, context refusal before egress, and preservation
-of accounting/privacy/no-retry behavior. It must not copy private traces or
-provider bodies into fixtures.
+The accepted trace-mechanical definition is:
 
-## Freeze verification
+- `RECOVERY` only when an opening-user-turn claim cites a user-message event
+  that follows an earlier assistant-message event in the same authorized
+  projected trace;
+- `ORDINARY` when the required nonempty user-message citation subset contains
+  only initial user messages;
+- a multi-trace opening is `RECOVERY` if any cited opening evidence meets the
+  recovery rule.
 
-Independent RED command against canonical base `1460266`:
+Non-user citations may support the content of an expanded opening but never
+decide its workflow stratum. A claim with no user-message citation still fails
+closed. This refinement was frozen after exact V9 replay showed a valid
+expanded opening jointly citing an initial user request and an assistant
+capability description; treating all citations as user-turn-position evidence
+incorrectly rejected that grounded case.
 
-```text
-uv run --project triana-labs --locked pytest -q triana-labs/tests/case_factory_acceptance/test_authoritative_structured_normalization.py
-```
+The provider cannot author this field. Deterministic normalization derives it
+only after evidence-handle validation, and semantic conversion validates and
+persists it before case identity is calculated. It is not inferred from prose,
+stressor names, case origin, source count, slot position, or owner judgment.
+Existing V9 artifacts are not manually repaired: they must be regenerated
+through exact cached response replay where available, producing new case IDs,
+hashes, manifest, context hash, and execution selection.
 
-Focused GREEN command in the integration worktree:
+Additional production ownership is limited to:
 
-```text
-uv run --project triana-labs --locked pytest -q triana-labs/tests/case_factory_acceptance/test_authoritative_structured_normalization.py triana-labs/tests/case_factory_acceptance/test_grounded_workflow_closure.py
-```
+- `triana-labs/src/triana_labs/case_factory/restricted_runtime.py`
+- `triana-labs/src/triana_labs/case_factory/semantic.py`
 
-Complete repository verifier:
+Additional test ownership is limited to existing Case Factory acceptance files
+and at most two essential black-box cases / 180 changed physical test lines.
+Maximum additional production change is 120 physical lines. No provider schema,
+prompt, connector, runner validation, privacy, budget, accounting, dependency,
+or external-repository change is permitted. `verify.sh` may receive only the
+mechanically recomputed Case Factory acceptance hashes after independent RED
+and GREEN.
 
-```text
-./triana-labs/scripts/verify.sh
-```
+Independent RED must prove that a closed provider response with no stratum
+field yields `ORDINARY` for an initial user opening and `RECOVERY` for a cited
+continuation after an assistant message. It must also preserve non-closure
+generation bytes. Focused GREEN is the minimum touched Case Factory acceptance
+module plus the LABS-04 to LABS-06 closure test; final GREEN remains the complete
+repository verifier.
 
-Freeze evidence:
+## Required output
 
-- canonical-base RED at `1460266`: 4/4 acceptance cases failed on the absent
-  authoritative path;
-- focused integration GREEN: 12/12 tests passed;
-- full Case Factory acceptance: 212/212 passed;
-- final acceptance module SHA-256:
-  `c25d183bae367722dc87e21d4cfc6857a9bd3361ef7fc852dbae5fa702c6c0cb`;
-- complete repository verifier: 617 tests plus sdist, wheel, and clean-wheel
-  installation passed; evidence retained at
-  `/private/tmp/triana-labs-verify.m8oIxX`.
+- machine manifest, attempts, transcripts, tool events, provider ledger, gaps,
+  and trajectory clusters;
+- `LABS06_TIERED_RESULTS.md` from production;
+- one additional private readable Markdown report containing every created
+  conversation and a non-authoritative Codex analysis separated from owner
+  ruling fields;
+- exact Structural Continuation Yield, multi-turn count, valid/effective count,
+  typed gaps, HTTP/token/cost accounting, privacy class, and unverified claims.
 
-## Proof execution
+## Exit evidence
 
-The user explicitly authorized one fresh proof run using the same four
-selected HRAI traces, private world inventory, Microsoft Foundry deployment
-`FW-GLM-5.2`, and `/private/tmp` custody. The existing LABS-04 USD 25 maximum
-and USD 2 reservation per logical Case Factory call remain in force. This
-authorization does not permit an HRAI target run, another provider, a retry,
-repair, or fallback.
+The two-field provider wire passed live synthetic conformance `3/3`. The
+trace-mechanical stratum repair passed its independent RED/GREEN protocol,
+212/212 Case Factory acceptance cases, and the LABS-04-to-LABS-06 closure
+tests. Exact V9 response replay through the repaired normalizer produced V19:
+12/12 valid distinct cases, exactly six observed and six grounded-expanded,
+all truthfully `ORDINARY`, with zero provider HTTP exchanges.
 
-The proof-first round intentionally added and ran no test files and did not
-run the repository verifier. The live proof visibly reported tool-call
-names, prompt/context accounting, generated tier counts, inventory binding,
-provider exchanges, cost accounting, and typed gaps. Tests and the complete
-repository verifier are now authorized because the proof succeeded and the
-owner requested the freeze.
+The first final HRAI run completed with gaps: 12 attempted, 0 valid, 19 HTTP
+exchanges. HRAI later returned healthy (`/health` 200; database and model OK),
+so one identical final rerun was executed within the owner's authorization.
+That rerun retained:
 
-## Stop conditions
+- 12 attempted episodes;
+- 3 valid and 3 effective machine trajectories;
+- two genuine six-role-turn trajectories and one valid single-turn stop;
+- 31 target plus 8 simulator HTTP exchanges;
+- 111 target tool calls;
+- USD 36.333320 reserved; actual cost unavailable rather than zero;
+- 28 typed gaps, including target protocol/accounting/isolation gaps, one
+  target-tool budget exhaustion, and four run-timeout episodes.
 
-Stop on ambiguity, context preflight refusal, private custody failure,
-unapproved egress, any model/tool call, provider failure, length truncation,
-schema/semantic rejection, budget exhaustion, or any edit outside the change
-budget. Do not retry or repair during the live proof.
+The slice is not a LABS-06 fidelity pass. The two multi-turn conversations
+prove adaptive mechanics but expose world-grounding defects: the simulator
+invented unavailable files, people, positions, URLs, and claimed uploads. A
+separate partial trajectory contradicted the case's verification-before-action
+intent by requesting shortlist/outreach actions despite stated verification
+gaps. Human fidelity and completion fields remain blank for Akarsh.
+
+Private machine artifacts remain under
+`/private/tmp/triana-labs06-final-live-20260804-v5/hrai-output`; the readable
+owner-review report is
+`/private/tmp/triana-labs06-final-live-20260804-v5/LABS06_READABLE_CONVERSATIONS_AND_ANALYSIS.md`.
+No private transcript content is committed.

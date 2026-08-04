@@ -41,7 +41,13 @@ def _wire(prompt: str) -> dict[str, Any]:
     else:
         pairs = ((0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3))
         selected = [traces[index] for index in pairs[slot - 7]]
-    handles = [trace["events"][0]["evidence_handle"] for trace in selected]
+    # Non-user support does not reclassify an opening with initial USER evidence.
+    event_indexes = (0, 1) if slot == 1 else (2,) if slot == 2 else (0,)
+    handles = [
+        trace["events"][event_index]["evidence_handle"]
+        for trace in selected
+        for event_index in event_indexes
+    ]
     supported = _text(f"Observed content for slot {slot}", handles)
     inventory = request["evidence_catalog"]["world_inventory"]["inventory"]
     namespace = min(inventory)
@@ -119,7 +125,9 @@ class _Model:
                 raise httpx.ConnectTimeout("synthetic timeout")
             content = b'{"malformed":true}'
         else:
-            content = canonical(_wire(prompt))
+            value = _wire(prompt)
+            self.state["provider_values"].append(value)
+            content = canonical(value)
         self.capture.on_response(_Response(content))
         return SimpleNamespace(
             content=content.decode(),
@@ -140,6 +148,7 @@ def _install_model(
         "bindings": [],
         "factory_calls": 0,
         "invocations": 0,
+        "provider_values": [],
         "failure": failure,
     }
 
@@ -169,7 +178,12 @@ def _inputs(root: Path) -> tuple[Path, Path, Path, Path, Path]:
                     "sequence": 1,
                     "event_kind": "ASSISTANT_MESSAGE",
                     "content": f"Synthetic bounded response {index}.",
-                    "is_final": True,
+                    "is_final": False,
+                },
+                {
+                    "sequence": 2,
+                    "event_kind": "USER_MESSAGE",
+                    "content": f"Synthetic bounded continuation {index}.",
                 },
             ],
         }
@@ -314,13 +328,19 @@ def test_strict_no_tool_exchange_persists_twelve_inventory_bound_origins(
         assert result.provider_call_count == result.provider_http_exchange_count == 12
         assert result.conservative_cost_usd == "24.000000"
         assert state["factory_calls"] == state["invocations"] == 12
+        assert all(
+            "workflow_stratum" not in value["case"]
+            for value in state["provider_values"]
+        )
         assert len(state["bindings"]) == 12
         for binding in state["bindings"]:
             assert set(binding) == {"response_format", "max_tokens"}
             response_format = binding["response_format"]
             assert response_format["type"] == "json_schema"
             assert response_format["json_schema"]["strict"] is True
-            depth, _ = _schema_stats(response_format["json_schema"]["schema"])
+            schema = response_format["json_schema"]["schema"]
+            assert "workflow_stratum" not in schema["properties"]["case"]["properties"]
+            depth, _ = _schema_stats(schema)
             assert depth <= 5
             assert binding["max_tokens"] == 25_000
 
@@ -344,6 +364,15 @@ def test_strict_no_tool_exchange_persists_twelve_inventory_bound_origins(
         )
         assert all(case["fidelity"] == CANARY_FIDELITY for case in cases)
         assert all(case["required_world_keys"] for case in cases)
+        by_opening = {
+            case["scenario"]["opening_user_turn"]["text"]: case for case in cases
+        }
+        assert by_opening["Observed content for slot 1"]["workflow_stratum"] == (
+            "ORDINARY"
+        )
+        assert by_opening["Observed content for slot 2"]["workflow_stratum"] == (
+            "RECOVERY"
+        )
         manifest = json.loads((output / "manifest.json").read_bytes())
         evidence = json.loads((output / "evidence_index.json").read_bytes())
         evaluation = json.loads((output / "case_factory_eval.json").read_bytes())

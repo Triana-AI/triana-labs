@@ -216,24 +216,10 @@ class FoundrySimulatorTransport:
             schema = {
                 "additionalProperties": False,
                 "properties": {
-                    "disposition": {
-                        "description": "EMIT a user turn or STOP with a declared reason.",
-                        "enum": ["EMIT", "STOP"],
-                    },
-                    "user_utterance": {
-                        "description": "For EMIT, a nonempty safe user utterance; for STOP, null.",
-                        "type": ["string", "null"],
-                    },
-                    "stop_reason_code": {
-                        "description": "For EMIT, null; for STOP, a nonempty safe declared stop reason.",
-                        "type": ["string", "null"],
-                    },
+                    "action": {"enum": ["EMIT", "STOP"], "type": "string"},
+                    "content": {"minLength": 1, "type": "string"},
                 },
-                "required": [
-                    "disposition",
-                    "user_utterance",
-                    "stop_reason_code",
-                ],
+                "required": ["action", "content"],
                 "type": "object",
             }
         else:
@@ -265,8 +251,9 @@ class FoundrySimulatorTransport:
                 "Do not answer as the assistant, copy or paraphrase the assistant, invent facts,\n"
                 "tools, records, permissions, or results, reveal hidden facts, or take an action\n"
                 "outside the supplied user authority. Use structured STOP, never a visible stop\n"
-                "token. Return EMIT with a nonempty safe user utterance and null stop reason.\n"
-                "Return STOP with a null user utterance and nonempty safe declared stop reason."
+                "token. Return action EMIT with content containing one nonempty safe user\n"
+                "utterance, or action STOP with content containing one nonempty safe declared\n"
+                "stop reason. Return exactly those two fields."
             )
         body_value["messages"][1]["content"] = _canonical(request).decode()
         body_value["response_format"]["json_schema"]["schema"] = schema
@@ -321,11 +308,7 @@ class FoundrySimulatorTransport:
                 input_tokens = usage.get("prompt_tokens", 0)
                 output_tokens = usage.get("completion_tokens", 0)
             expected = (
-                {
-                    "disposition",
-                    "user_utterance",
-                    "stop_reason_code",
-                }
+                {"action", "content"}
                 if labs06
                 else {
                     "next_user_content",
@@ -341,6 +324,13 @@ class FoundrySimulatorTransport:
             ):
                 raise ValueError
             if labs06:
+                if (
+                    value["action"] not in {"EMIT", "STOP"}
+                    or not isinstance(value["content"], str)
+                    or not value["content"]
+                ):
+                    raise ValueError
+                emit = value["action"] == "EMIT"
                 return SimulatorResponse(
                     status="SUCCEEDED",
                     request_bytes=body,
@@ -352,9 +342,9 @@ class FoundrySimulatorTransport:
                     output_tokens=output_tokens,
                     provider_http_exchange_count=1,
                     speaker_role="USER",
-                    disposition=value["disposition"],
-                    user_utterance=value["user_utterance"],
-                    stop_reason_code=value["stop_reason_code"],
+                    disposition=value["action"],
+                    user_utterance=value["content"] if emit else None,
+                    stop_reason_code=None if emit else value["content"],
                 )
             return SimulatorResponse(
                 "SUCCEEDED",
