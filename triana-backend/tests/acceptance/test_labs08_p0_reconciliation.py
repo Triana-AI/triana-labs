@@ -8,6 +8,9 @@ tracked fixtures; they never connect to PostgreSQL, AWS, DBOS, or the network.
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import hashlib
 import importlib
 import io
 import json
@@ -74,8 +77,8 @@ def test_module_level_asgi_app_uses_injected_composition_without_external_io(
     import triana_backend.config as config
 
     sentinel_settings = object()
-    sentinel_app = FastAPI()
     calls: list[object] = []
+    closes: list[bool] = []
 
     monkeypatch.setattr(
         config.BackendSettings,
@@ -86,13 +89,21 @@ def test_module_level_asgi_app_uses_injected_composition_without_external_io(
         composition,
         "compose_backend",
         lambda settings: calls.append(settings)
-        or SimpleNamespace(app=sentinel_app, close=lambda: None),
+        or SimpleNamespace(app=FastAPI(), close=lambda: closes.append(True)),
     )
     sys.modules.pop("triana_backend.main", None)
     module = importlib.import_module("triana_backend.main")
 
-    assert module.app is sentinel_app
-    assert calls == [sentinel_settings]
+    assert isinstance(module.app, FastAPI)
+    assert calls == []
+
+    async def exercise_lifespan() -> None:
+        async with module.app.router.lifespan_context(module.app):
+            assert calls == [sentinel_settings]
+            assert closes == []
+
+    asyncio.run(exercise_lifespan())
+    assert closes == [True]
 
 
 def test_runtime_environment_names_agree_and_app_does_not_receive_backend_secrets() -> (
@@ -302,7 +313,7 @@ class _Artifacts:
         return io.BytesIO(json.dumps(body).encode())
 
 
-def _report(report_id: str, artifact_id: str, *, report_hash: str = "a" * 64) -> Report:
+def _report(report_id: str, artifact_id: str, *, report_hash: str) -> Report:
     return Report(
         id=report_id,
         run_id=f"run-{report_id}",
@@ -313,18 +324,20 @@ def _report(report_id: str, artifact_id: str, *, report_hash: str = "a" * 64) ->
     )
 
 
-def _artifact(artifact_id: str) -> Artifact:
+def _artifact(artifact_id: str, body: dict[str, Any]) -> Artifact:
+    body_bytes = json.dumps(body).encode()
+    digest = hashlib.sha256(body_bytes).hexdigest()
     return Artifact(
         id=artifact_id,
         artifact_kind="LABS_REPORT",
-        content_sha256="b" * 64,
-        byte_count=1,
+        content_sha256=digest,
+        byte_count=len(body_bytes),
         media_type="application/json",
         storage_backend="S3",
         storage_bucket="private",
         storage_key=f"reports/{artifact_id}",
         kms_key_id="arn:aws:kms:ap-south-1:123456789012:key/key-id",
-        checksum_sha256_b64="checksum",
+        checksum_sha256_b64=base64.b64encode(bytes.fromhex(digest)).decode(),
         availability="AVAILABLE",
     )
 
@@ -332,22 +345,23 @@ def _artifact(artifact_id: str) -> Artifact:
 def test_report_body_identity_mismatch_refuses_instead_of_serving_wrong_report() -> (
     None
 ):
-    report = _report("report-requested", "artifact-wrong")
-    artifact = _artifact("artifact-wrong")
+    wrong_body = {
+        "artifact_kind": "labs_report",
+        "schema_version": 1,
+        "report_id": "report-other",
+        "run_id": "run-report-other",
+    }
+    artifact = _artifact("artifact-wrong", wrong_body)
+    report = _report(
+        "report-requested",
+        artifact.id,
+        report_hash=artifact.content_sha256,
+    )
     reads = PostgresS3Reads(
         sessions=_Sessions(
             {(Report, report.id): report, (Artifact, artifact.id): artifact}, [report]
         ),
-        artifacts=_Artifacts(
-            {
-                artifact.id: {
-                    "artifact_kind": "labs_report",
-                    "schema_version": 1,
-                    "report_id": "report-other",
-                    "run_id": "run-report-other",
-                }
-            }
-        ),
+        artifacts=_Artifacts({artifact.id: wrong_body}),
     )
 
     with pytest.raises(IntegrityConflict):
@@ -355,20 +369,37 @@ def test_report_body_identity_mismatch_refuses_instead_of_serving_wrong_report()
 
 
 def test_missing_unrelated_report_does_not_hide_healthy_conversation() -> None:
-    missing = _report("report-a-missing", "artifact-missing")
-    healthy = _report("report-b-healthy", "artifact-healthy")
+    missing_body = {
+        "artifact_kind": "labs_report",
+        "schema_version": 1,
+        "report_id": "report-a-missing",
+        "run_id": "run-report-a-missing",
+        "conversations": [],
+    }
+    missing_artifact = _artifact("artifact-missing", missing_body)
+    missing = _report(
+        "report-a-missing",
+        missing_artifact.id,
+        report_hash=missing_artifact.content_sha256,
+    )
     healthy_body = {
         "artifact_kind": "labs_report",
         "schema_version": 1,
-        "report_id": healthy.id,
-        "run_id": healthy.run_id,
+        "report_id": "report-b-healthy",
+        "run_id": "run-report-b-healthy",
         "conversations": [{"conversation_id": "conversation-healthy"}],
     }
+    healthy_artifact = _artifact("artifact-healthy", healthy_body)
+    healthy = _report(
+        "report-b-healthy",
+        healthy_artifact.id,
+        report_hash=healthy_artifact.content_sha256,
+    )
     rows = {
         (Report, missing.id): missing,
-        (Artifact, missing.artifact_id): _artifact(missing.artifact_id),
+        (Artifact, missing.artifact_id): missing_artifact,
         (Report, healthy.id): healthy,
-        (Artifact, healthy.artifact_id): _artifact(healthy.artifact_id),
+        (Artifact, healthy.artifact_id): healthy_artifact,
     }
     reads = PostgresS3Reads(
         sessions=_Sessions(rows, [missing, healthy]),
