@@ -1,0 +1,261 @@
+@import "tailwindcss";
+@import "../tokens.css";
+@import "../styles/triana-shell.css";
+@import "../styles/labs-report.css";
+
+/* ==========================================================================
+   Design tokens — Triana warm technical instrument panel
+   Accent is Triana's sparse acid signal. Most pixel area stays cream,
+   near-white surface, ink, and gray-green hairline. Accent stays below 2%,
+   and never on two things in the same viewport.
+   ========================================================================== */
+
+:root {
+  /* warm cream product surfaces, aligned with triana-site */
+  --canvas: oklch(96.2% 0.014 112);
+  --canvas-2: oklch(93.8% 0.016 112);
+  --surface: oklch(99.4% 0.003 112);
+  --surface-subtle: oklch(97.4% 0.01 112);
+  --panel: oklch(94.2% 0.012 112);
+  --rail-white: var(--surface);
+
+  /* ink ramp */
+  --ink: oklch(15% 0.008 120);
+  --ink-2: oklch(40% 0.012 118);
+  --ink-3: oklch(57% 0.012 118);
+  --ink-4: oklch(67% 0.012 118);
+
+  /* dark surface */
+  --dark-surface: var(--ink);
+  --dark-surface-2: oklch(22% 0.01 120);
+  --dark-text: var(--surface);
+  --dark-text-2: oklch(70% 0.01 118);
+  --dark-text-3: oklch(78% 0.012 112);
+
+  /* sparse acid signal; blue stays inside the official Lazo only */
+  --accent: oklch(91% 0.19 118);
+  --accent-2: oklch(84% 0.19 118);
+  --accent-ink: var(--ink);
+  --spark: oklch(91% 0.19 118);
+  --logo-blue: oklch(55% 0.20 262);
+
+  /* hairlines */
+  --hairline: oklch(88% 0.012 112);
+  --hairline-2: oklch(85% 0.014 112);
+  --hairline-3: oklch(73% 0.018 112);
+
+  /* semantic evidence states — complete, uncertain, and unavailable */
+  --pos: oklch(52% 0.15 152);
+  --pos-soft: oklch(93% 0.06 152);
+  --pos-line: oklch(72% 0.15 152);
+  --neg: oklch(53% 0.21 27);
+  --neg-soft: oklch(94% 0.05 27);
+  --neg-line: oklch(65% 0.20 27);
+  --warn: oklch(58% 0.13 75);
+  --warn-soft: oklch(95% 0.05 80);
+  --warn-ink: oklch(46% 0.11 75);
+  --danger: var(--neg);
+
+  /* spacing */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast: 100ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+
+  /* radii */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-pill: 999px;
+
+  /* the only ambient shadow on the page surface; overlays get the lift */
+  --shadow-card: 0 1px 2px oklch(20% 0.02 112 / 0.07),
+    0 1px 3px oklch(20% 0.02 112 / 0.05);
+  --shadow-lift: 0 12px 40px oklch(20% 0.02 112 / 0.16),
+    0 2px 8px oklch(20% 0.02 112 / 0.08);
+  --scrim: oklch(20% 0.02 112 / 0.32);
+
+  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", monospace;
+}
+
+/* ------------------------------------------------------------------ base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* ------------------------------------------------------------ primitives */
+
+.container {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--sp-6);
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding-inline: var(--sp-10);
+  }
+}
+
+/* Mono label — the single biggest "why does this look engineered" lever. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sec-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.rule {
+  height: 1px;
+  background: var(--hairline);
+  border: 0;
+  margin: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Tile group: 1px gaps over a hairline background fake the internal borders,
+   so structure comes from rules rather than a grid of drop-shadowed cards. */
+.tile-row {
+  display: grid;
+  gap: 1px;
+  background: var(--hairline-2);
+  border: 1px solid var(--hairline-2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.tile {
+  background: var(--surface);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.tile-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accent beam — reserve for exactly one element per viewport. */
+.beam {
+  position: relative;
+}
+
+.beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.live-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--spark);
+  animation: pulse-live 2.2s var(--ease-inout) infinite;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

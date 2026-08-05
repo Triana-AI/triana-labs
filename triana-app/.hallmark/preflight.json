@@ -1,0 +1,9 @@
+{
+  "date": "2026-08-05",
+  "framework": "Next.js 15 App Router",
+  "fonts": ["Manrope", "Hanken Grotesk", "JetBrains Mono"],
+  "palette": "Triana warm cream OKLCH hue-112 instrument-panel tokens",
+  "spacing": "Existing 4-point scale",
+  "motion": "CSS-only, motion-cut",
+  "preserved": ["fonts", "spacing", "component language", "official Lazo"]
+}

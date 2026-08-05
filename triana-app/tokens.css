@@ -1,0 +1,42 @@
+/* Hallmark · designed-as-app · pre-emit critique: P5 H5 E5 S5 R5 V5 · macrostructure: Workbench · tone: warm technical instrument panel · anchor hue: acid */
+
+:root {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-3);
+  --color-rule: var(--hairline-2);
+  --color-rule-strong: var(--hairline-3);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-focus: var(--accent-ink);
+  --color-positive: var(--pos);
+  --color-negative: var(--neg);
+  --color-warning: var(--warn);
+
+  --space-2xs: var(--sp-1);
+  --space-xs: var(--sp-2);
+  --space-sm: var(--sp-3);
+  --space-md: var(--sp-4);
+  --space-lg: var(--sp-6);
+  --space-xl: var(--sp-10);
+  --space-2xl: var(--sp-16);
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.5rem;
+  --text-xl: 2.125rem;
+
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --rule-soft: 1px solid var(--color-rule);
+  --radius-control: var(--r-sm);
+  --radius-panel: var(--r-lg);
+}
