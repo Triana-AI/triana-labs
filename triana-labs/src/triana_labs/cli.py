@@ -154,6 +154,26 @@ def _write_json(stream: Any, value: dict[str, Any]) -> None:
     )
 
 
+def _run_backend_command(arguments: list[str]) -> int:
+    """Delegate backend transport semantics to the installed backend package."""
+
+    try:
+        from triana_backend.cli import main as backend_main
+    except ModuleNotFoundError as error:
+        if error.name != "triana_backend":
+            raise
+        _write_json(
+            sys.stderr,
+            {
+                "code": "BACKEND_CLI_UNAVAILABLE",
+                "outcome": "REJECTED",
+                "service": _SERVICE,
+            },
+        )
+        return 69
+    return backend_main(arguments)
+
+
 def _terminal_log(
     *,
     event_name: str,
@@ -198,6 +218,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     global _usage_command
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
+    if raw_arguments[:1] == ["backend"]:
+        return _run_backend_command(raw_arguments)
     if raw_arguments[:2] in (["cases", "generate"], ["cases", "resume"]):
         _usage_command = f"cases.{raw_arguments[1]}"
     elif raw_arguments[:2] == ["episodes", "run"]:
