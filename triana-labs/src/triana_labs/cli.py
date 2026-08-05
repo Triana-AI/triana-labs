@@ -16,8 +16,9 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal, InvalidOperation
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Never
+from typing import Any, Never, Protocol, cast
 from urllib.parse import urlsplit
 
 from triana_labs import __version__
@@ -26,6 +27,12 @@ from triana_labs.observer import ObserveFailure, observe
 
 _SERVICE = "triana-labs-cli"
 _usage_command = "traces.observe"
+
+
+class _BackendMain(Protocol):
+    """Type the optional backend package without making it a Labs dependency."""
+
+    def __call__(self, arguments: list[str], /) -> int: ...
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -158,7 +165,7 @@ def _run_backend_command(arguments: list[str]) -> int:
     """Delegate backend transport semantics to the installed backend package."""
 
     try:
-        from triana_backend.cli import main as backend_main
+        backend_module = import_module("triana_backend.cli")
     except ModuleNotFoundError as error:
         if error.name != "triana_backend":
             raise
@@ -171,6 +178,7 @@ def _run_backend_command(arguments: list[str]) -> int:
             },
         )
         return 69
+    backend_main = cast(_BackendMain, backend_module.main)
     return backend_main(arguments)
 
 
