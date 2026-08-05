@@ -41,7 +41,7 @@ export default async function ResultsPage() {
           <Fact label="Repairs"><span className="num">{results.accounting.repair_count}</span></Fact>
           <Fact label="Fallbacks"><span className="num">{results.accounting.fallback_count}</span></Fact>
         </dl>
-        <div className="lineage-line"><span>Lineage</span><code>{lineage.report_contract}</code><code>{lineage.report_hash}</code></div>
+        <div className="lineage-line"><span>Lineage</span><code>{lineage.report_contract}</code><code>{lineage.compiler_result_hash ?? lineage.report_hash}</code></div>
       </Section>
       <Section title="Visible limitations" description="Claims blocked by missing evaluation stay in the interface.">
         <ul className="limitation-list">{limitations.map((item) => <li key={item.limitation_id}><Status value={item.status} /><div><strong>{item.title}</strong><p>{item.detail}</p><small>{item.claim_blocked}</small></div></li>)}</ul>

@@ -31,6 +31,7 @@ class ReportProjectionInput:
     compiler_version: str
     compiler_result_hash: str
     rejected_evidence: Sequence[dict[str, Any]] = ()
+    analysis_artifact_sha256: str | None = None
 
 
 class ReportProjectionUnavailable(ValueError):
@@ -99,16 +100,25 @@ def project_labs_report(source: ReportProjectionInput) -> dict[str, Any]:
         "created_at": source.created_at,
         "lineage": {
             "report_contract": "LABS07_08_REPORT_V1",
-            # This identifies the compiler result used by the projection. The
-            # immutable artifact content hash is verified against RDS on reads.
-            "report_hash": source.compiler_result_hash,
+            "compiler_result_hash": source.compiler_result_hash,
+            **(
+                {"analysis_artifact_sha256": source.analysis_artifact_sha256}
+                if source.analysis_artifact_sha256 is not None
+                else {}
+            ),
             "source_sha256": source.source_sha256,
             "source_artifact_hashes": [
                 {"artifact_kind": "SOURCE_TRACE_JSONL", "hash": source.source_sha256},
-                {
-                    "artifact_kind": "LABS_ANALYSIS_FACTS",
-                    "hash": source.compiler_result_hash,
-                },
+                *(
+                    [
+                        {
+                            "artifact_kind": "LABS_ANALYSIS_FACTS",
+                            "hash": source.analysis_artifact_sha256,
+                        }
+                    ]
+                    if source.analysis_artifact_sha256 is not None
+                    else []
+                ),
             ],
             "compiler": {"name": "triana-labs-report", "version": "1"},
         },

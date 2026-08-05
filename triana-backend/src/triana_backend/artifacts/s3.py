@@ -102,7 +102,7 @@ class S3ArtifactStore:
             expected_checksum=expected_checksum,
             expected_size=byte_count,
             expected_kind=kind,
-            expected_kms_key=None,
+            expected_kms_key=self._kms_key_id,
         )
         return ArtifactRef(
             id=deterministic_id("art", {"kind": kind.value, "sha256": expected_sha256}),
@@ -147,7 +147,7 @@ class S3ArtifactStore:
             expected_checksum=checksum,
             expected_size=len(payload),
             expected_kind=kind,
-            expected_kms_key=None,
+            expected_kms_key=self._kms_key_id,
         )
         return ArtifactRef(
             id=deterministic_id("art", {"kind": kind.value, "sha256": digest}),

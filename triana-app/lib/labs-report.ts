@@ -102,14 +102,16 @@ export interface LabsReport {
   report_id: string;
   title: string;
   evidence_class: "SYNTHETIC_EXISTING_TRACE_CORPUS";
-  mode: "GENERATED_MULTI_TURN_SIMULATION";
+  mode: "RETAINED_TRACE_ACCOUNTING" | "GENERATED_MULTI_TURN_SIMULATION";
   privacy_class: string;
   sample_class: string;
   sample_disclosure: string;
   created_at: string;
   lineage: {
     report_contract: "LABS07_08_REPORT_V1";
-    report_hash: string;
+    report_hash?: string;
+    compiler_result_hash?: string;
+    analysis_artifact_sha256?: string;
     source_sha256?: string;
     source_artifact_hashes: Array<{ artifact_kind: string; hash: string }>;
     compiler: { name: "triana-labs-report"; version: "1" };
@@ -246,13 +248,25 @@ function assertLoadedReport(value: unknown): asserts value is LabsReport {
   if (report.evidence_class !== "SYNTHETIC_EXISTING_TRACE_CORPUS") {
     throw new Error("Unsupported Labs report evidence class");
   }
+  if (report.mode !== "RETAINED_TRACE_ACCOUNTING" && report.mode !== "GENERATED_MULTI_TURN_SIMULATION") {
+    throw new Error("Unsupported Labs report mode");
+  }
   requireString(report.privacy_class, "privacy_class");
   requireString(report.sample_class, "sample_class");
   requireString(report.sample_disclosure, "sample_disclosure");
 
   const lineage = requireRecord(report.lineage, "lineage");
   requireString(lineage.report_contract, "lineage.report_contract");
-  requireString(lineage.report_hash, "lineage.report_hash");
+  if (lineage.report_hash === undefined && lineage.compiler_result_hash === undefined) {
+    throw new Error("Missing Labs report lineage hash");
+  }
+  if (lineage.report_hash !== undefined) requireString(lineage.report_hash, "lineage.report_hash");
+  if (lineage.compiler_result_hash !== undefined) {
+    requireString(lineage.compiler_result_hash, "lineage.compiler_result_hash");
+  }
+  if (lineage.analysis_artifact_sha256 !== undefined) {
+    requireString(lineage.analysis_artifact_sha256, "lineage.analysis_artifact_sha256");
+  }
   requireArray(lineage.source_artifact_hashes, "lineage.source_artifact_hashes").forEach((item, index) => {
     requireFields(requireRecord(item, `lineage.source_artifact_hashes[${index}]`), ["artifact_kind", "hash"], `lineage.source_artifact_hashes[${index}]`);
   });

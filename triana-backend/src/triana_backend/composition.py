@@ -114,11 +114,18 @@ class PostgresS3Reads(BackendReadPort):
                 else "ARTIFACT_INTEGRITY_FAILED",
             )
         body = _read_json_object(
-            self._artifacts.open_verified(ref), "report", report_id
+            self._artifacts.open_verified(ref),
+            "report",
+            report_id,
+            expected_sha256=ref.content_sha256,
+        )
+        body_run = body.get("run")
+        body_run_id = (
+            body_run.get("run_id") if isinstance(body_run, dict) else body.get("run_id")
         )
         if (
             body.get("report_id") != report_id
-            or body.get("run_id") != run_id
+            or body_run_id != run_id
             or ref.content_sha256 != expected_hash
         ):
             raise IntegrityConflict("report", report_id)
@@ -498,6 +505,7 @@ class PostgresWorkflowServices(WorkflowServices):
                 created_at=created_at,
                 compiler_version=compiler_version,
                 compiler_result_hash=result_hash,
+                analysis_artifact_sha256=analysis_ref.content_sha256,
                 conversations=(),
                 gaps=({"reason_code": "SEMANTIC_ANALYSIS_NOT_RUN"},),
                 facts=tuple(
@@ -825,11 +833,22 @@ def _artifact_ref(row: Artifact) -> ArtifactRef:
     )
 
 
-def _read_json_object(stream: BinaryIO, kind: str, identity: str) -> dict[str, Any]:
+def _read_json_object(
+    stream: BinaryIO,
+    kind: str,
+    identity: str,
+    *,
+    expected_sha256: str | None = None,
+) -> dict[str, Any]:
     try:
-        value: Any = json.load(stream)
+        raw = stream.read()
     finally:
         stream.close()
+    if expected_sha256 is not None:
+        actual_sha256 = hashlib.sha256(raw).hexdigest()
+        if actual_sha256 != expected_sha256:
+            raise IntegrityConflict(kind, identity)
+    value: Any = json.loads(raw)
     if not isinstance(value, dict):
         raise IntegrityConflict(kind, identity)
     return cast(dict[str, Any], value)

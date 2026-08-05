@@ -23,6 +23,7 @@ jobs:
           persist-credentials: false
       - run: ./scripts/verify-governance.sh --working-tree
       - run: ./ops/verify-deployment-assets.sh
+      - run: ./ops/verify-no-secrets.sh
 
   labs:
     runs-on: ubuntu-latest
@@ -52,6 +53,7 @@ jobs:
       - run: uv run ruff check tests --ignore E402,S101,S603,S607,S608
       - run: uv run ruff format --check src tests migrations
       - run: uv run mypy src/triana_backend --strict
+      - run: uv run pytest -q tests/acceptance/test_labs08_p0_reconciliation.py::test_first_alembic_bootstrap_creates_schema_before_version_table
       - run: uv run pytest --collect-only --quiet
 
   app:
