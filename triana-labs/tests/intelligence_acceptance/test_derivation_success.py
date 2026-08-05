@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +59,57 @@ def fingerprint(trace: dict[str, Any]) -> dict[str, Any]:
         "terminal_state": terminal_state,
         "tool_name_sequence": names,
     }
+
+
+def test_owner_authorized_canary_derivation_retains_private_class_and_fidelity(
+    run_cli: Any,
+    tmp_path: Path,
+) -> None:
+    privacy = "OWNER_AUTHORIZED_REAL_DATA_CANARY"
+    fidelity = "OWNER_AUTHORIZED_REAL_DATA_OBSERVED_STRUCTURE"
+    traces = read_fixture_traces()
+    for trace in traces:
+        trace["privacy_class"] = privacy
+
+    with tempfile.TemporaryDirectory(
+        prefix="triana-intelligence-", dir="/private/tmp"
+    ) as root:
+        private_root = Path(root)
+        source_manifest = build_observer_bundle(private_root / "observed", traces)
+        profile_path = source_manifest.parent / "corpus_profile.json"
+        profile = json.loads(profile_path.read_bytes())
+        profile["privacy_class"] = privacy
+        profile_path.write_bytes(compact_json(profile))
+        markdown_path = source_manifest.parent / "corpus_profile.md"
+        markdown_path.write_bytes(
+            markdown_path.read_bytes().replace(b"Synthetic", privacy.encode())
+        )
+        manifest = json.loads(source_manifest.read_bytes())
+        manifest["privacy_class"] = privacy
+        for name in manifest["artifacts"]:
+            manifest["artifacts"][name] = digest(
+                (source_manifest.parent / name).read_bytes()
+            )
+        source_manifest.write_bytes(compact_json(manifest))
+        output = private_root / "intelligence"
+
+        result = run_cli("corpus", "derive", source_manifest, "--out", output)
+
+        assert result.returncode == 10
+        values = {
+            path.relative_to(output).as_posix(): json.loads(path.read_bytes())
+            for path in output.rglob("*.json")
+        }
+        assert set(values) == OUTPUT_NAMES
+        assert values["manifest.json"]["privacy_class"] == privacy
+        assert values["manifest.json"]["fidelity"] == fidelity
+        assert all(
+            value.get("fidelity") == fidelity
+            for name, value in values.items()
+            if name != "manifest.json"
+        )
+        combined = b"".join(path.read_bytes() for path in output.rglob("*.*"))
+        assert b"SYNTHETIC_OBSERVED_STRUCTURE" not in combined
 
 
 def expected_outputs(

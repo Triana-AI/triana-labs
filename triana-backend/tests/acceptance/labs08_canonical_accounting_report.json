@@ -1,0 +1,153 @@
+{
+  "artifact_kind": "labs_report",
+  "schema_version": 1,
+  "report_id": "rpt_labs08_hrai_accounting_v1",
+  "title": "HRAI run_200 retained trace accounting",
+  "evidence_class": "SYNTHETIC_EXISTING_TRACE_CORPUS",
+  "mode": "RETAINED_TRACE_ACCOUNTING",
+  "privacy_class": "PRIVATE_OPERATOR_DEMO",
+  "sample_class": "EXISTING_SYNTHETIC_TRACE_CORPUS",
+  "sample_disclosure": "Retained synthetic HRAI traces; not production, customer, or real-user evidence.",
+  "created_at": "2026-08-05T00:00:00Z",
+  "lineage": {
+    "report_contract": "LABS08_HRAI_ACCOUNTING_REPORT_V1",
+    "report_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "source_sha256": "76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b",
+    "source_artifact_hashes": [
+      {
+        "artifact_kind": "SOURCE_TRACE_JSONL",
+        "hash": "76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b"
+      }
+    ],
+    "compiler": {
+      "name": "triana-labs-hrai-accounting",
+      "version": "1"
+    }
+  },
+  "setup": {
+    "source": {
+      "source_kind": "HRAI_NORMALIZED_TRACE_V2",
+      "display_name": "normalized_traces.jsonl",
+      "authorization": "OWNER_AUTHORIZED_RETAINED_CORPUS",
+      "custody": "PRIVATE_S3_SSE_KMS"
+    },
+    "adapter": {
+      "adapter_id": "hrai-normalized-trace-v2",
+      "adapter_version": "1",
+      "mapping_status": "UNDERSTOOD"
+    },
+    "understanding": {
+      "physical_record_count": 200,
+      "accepted_record_count": 186,
+      "rejected_record_count": 14,
+      "usable_conversation_count": 186,
+      "source_status_counts": {
+        "COMPLETED": 186,
+        "HARNESS_ERROR": 14
+      },
+      "rejection_reasons": [
+        {
+          "reason_code": "SOURCE_EXECUTION_INCOMPLETE",
+          "label": "Harness execution incomplete",
+          "count": 14
+        }
+      ],
+      "unassessed_semantics": [
+        "No semantic behavior groups, cases, simulations, or human rulings were created by this accounting import."
+      ]
+    }
+  },
+  "behavior": {
+    "derivation_kind": "NOT_RUN",
+    "membership_authority": "DETERMINISTIC",
+    "semantic_summary_authority": "NOT_RUN",
+    "population_claim": "NOT_ESTABLISHED",
+    "groups": []
+  },
+  "cases": [],
+  "run": {
+    "run_id": "run_labs08_hrai_accounting_v1",
+    "recorded_state": "COMPLETED_WITH_GAPS",
+    "target": {
+      "target_id": "not-run",
+      "label": "Not run",
+      "connection_state": "UNKNOWN"
+    },
+    "simulator": {
+      "provider_label": "Not used",
+      "model_label": "Not used",
+      "identity_count": 0
+    },
+    "limits": {
+      "selected_case_count": 0,
+      "max_turns_per_conversation": 0,
+      "max_conversations": 0,
+      "max_http_exchanges": 0,
+      "max_minutes_per_conversation": 0,
+      "reserved_cost_ceiling_usd": "0",
+      "retry_policy": "NONE",
+      "repair_policy": "NONE",
+      "fallback_policy": "NONE"
+    },
+    "privacy_egress": {
+      "provider": "NONE",
+      "target": "NONE",
+      "authorization": "NO_PROVIDER_EGRESS"
+    },
+    "conversation_order": []
+  },
+  "conversations": [],
+  "results": {
+    "learned": {
+      "headline": "Source accounting compiled",
+      "detail": "Only deterministic retained-source counts were compiled.",
+      "group_count": 0,
+      "usable_conversation_count": 186
+    },
+    "created": {
+      "headline": "No cases created",
+      "detail": "Case generation was not part of this import.",
+      "selected_count": 0,
+      "seen_count": 0,
+      "variation_count": 0,
+      "excluded_count": 0
+    },
+    "happened": {
+      "headline": "No simulation executed",
+      "detail": "This run persisted retained-source accounting only.",
+      "complete_count": 0,
+      "partial_count": 0,
+      "unavailable_count": 0,
+      "running_count": 0,
+      "queued_count": 0,
+      "not_started_count": 0,
+      "goal_met_count": 0,
+      "goal_review_required_count": 0
+    },
+    "judgment": {
+      "headline": "No human rulings recorded",
+      "detail": "Accounting does not create human judgment.",
+      "review_eligible_count": 0,
+      "reviewed_count": 0
+    },
+    "accounting": {
+      "http_exchange_count": 0,
+      "tool_call_count": 0,
+      "actual_cost_usd": null,
+      "privacy_gap_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "fallback_count": 0
+    }
+  },
+  "reviews": [],
+  "limitations": [
+    {
+      "limitation_id": "semantic-analysis-not-run",
+      "title": "Semantic analysis not run",
+      "detail": "The report contains source accounting only.",
+      "status": "KNOWN_GAP",
+      "claim_blocked": "No behavior, simulation, quality, or release claim is established."
+    }
+  ]
+}

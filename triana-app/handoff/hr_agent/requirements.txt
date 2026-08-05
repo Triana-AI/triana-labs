@@ -1,0 +1,5 @@
+# Minimal deps for run_gate.py's FrozenLabelModel-only import chain -- verified by
+# actually importing agentagon.behavioral_evals.gate in a bare venv with only this
+# installed (see vendor/README.md). No AWS/Bedrock/OpenRouter client is needed here
+# because this Action never calls a live judge model.
+litellm>=1.0

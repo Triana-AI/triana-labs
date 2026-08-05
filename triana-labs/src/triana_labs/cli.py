@@ -11,12 +11,14 @@ import argparse
 import json
 import os
 import re
+import stat
 import sys
 import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal, InvalidOperation
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Never
+from typing import Any, Never, Protocol, cast
 from urllib.parse import urlsplit
 
 from triana_labs import __version__
@@ -25,6 +27,12 @@ from triana_labs.observer import ObserveFailure, observe
 
 _SERVICE = "triana-labs-cli"
 _usage_command = "traces.observe"
+
+
+class _BackendMain(Protocol):
+    """Type the optional backend package without making it a Labs dependency."""
+
+    def __call__(self, arguments: list[str], /) -> int: ...
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -42,6 +50,12 @@ class _SafeArgumentParser(argparse.ArgumentParser):
                 command=_usage_command,
                 event_name=f"triana.{_usage_command}.rejected",
                 severity="ERROR",
+                outcome="REJECTED",
+                reason_code="CLI_USAGE_ERROR",
+                duration_ms=0,
+            )
+        elif _usage_command == "episodes.run":
+            event = _episode_terminal_log(
                 outcome="REJECTED",
                 reason_code="CLI_USAGE_ERROR",
                 duration_ms=0,
@@ -110,6 +124,7 @@ def _build_parser() -> _SafeArgumentParser:
         help="Private exact-response cache directory.",
     )
     generate_parser.add_argument("--out", required=True)
+    generate_parser.add_argument("--world-inventory")
     resume_parser = case_commands.add_parser(
         "resume", help="Resume a restricted case run after human answers."
     )
@@ -122,6 +137,16 @@ def _build_parser() -> _SafeArgumentParser:
         help="Private exact-response cache directory used by the paused run.",
     )
     resume_parser.add_argument("--out", required=True)
+    episodes = commands.add_parser("episodes", help="Run bounded adaptive episodes.")
+    episode_commands = episodes.add_subparsers(dest="episode_command")
+    run_parser = episode_commands.add_parser(
+        "run", help="Run the frozen LABS-05 synthetic episode panel."
+    )
+    run_parser.add_argument("manifest")
+    run_parser.add_argument("--review", required=True)
+    run_parser.add_argument("--config", required=True)
+    run_parser.add_argument("--out", required=True)
+    run_parser.add_argument("--world-inventory")
     return parser
 
 
@@ -134,6 +159,27 @@ def _write_json(stream: Any, value: dict[str, Any]) -> None:
         json.dumps(value, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
         + "\n"
     )
+
+
+def _run_backend_command(arguments: list[str]) -> int:
+    """Delegate backend transport semantics to the installed backend package."""
+
+    try:
+        backend_module = import_module("triana_backend.cli")
+    except ModuleNotFoundError as error:
+        if error.name != "triana_backend":
+            raise
+        _write_json(
+            sys.stderr,
+            {
+                "code": "BACKEND_CLI_UNAVAILABLE",
+                "outcome": "REJECTED",
+                "service": _SERVICE,
+            },
+        )
+        return 69
+    backend_main = cast(_BackendMain, backend_module.main)
+    return backend_main(arguments)
 
 
 def _terminal_log(
@@ -180,14 +226,21 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     global _usage_command
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
+    if raw_arguments[:1] == ["backend"]:
+        return _run_backend_command(raw_arguments)
     if raw_arguments[:2] in (["cases", "generate"], ["cases", "resume"]):
         _usage_command = f"cases.{raw_arguments[1]}"
+    elif raw_arguments[:2] == ["episodes", "run"]:
+        _usage_command = "episodes.run"
     elif raw_arguments[:2] == ["corpus", "derive"]:
         _usage_command = "corpus.derive"
     else:
         _usage_command = "traces.observe"
     parser = _build_parser()
     arguments = parser.parse_args(raw_arguments)
+
+    if arguments.command == "episodes" and arguments.episode_command == "run":
+        return _run_episodes(arguments)
 
     if arguments.command == "traces" and arguments.trace_command == "observe":
         start = time.monotonic_ns()
@@ -343,6 +396,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                     requested_case_count=restricted_config["generation"][
                         "candidate_count"
                     ],
+                    world_inventory=(
+                        Path(arguments.world_inventory)
+                        if arguments.world_inventory
+                        else None
+                    ),
                 )
                 restricted = True
             else:
@@ -447,6 +505,152 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parser.print_help()
     return 0
+
+
+def _episode_terminal_log(
+    *,
+    outcome: str,
+    reason_code: str | None,
+    duration_ms: int,
+    attempted: int | None = None,
+    valid: int | None = None,
+    effective: int | None = None,
+    simulator_http: int | None = None,
+    target_http: int | None = None,
+    all_http: int | None = None,
+    reserved: str | None = None,
+    actual: str | None = None,
+) -> dict[str, Any]:
+    """Build the content-free LABS-05 terminal event."""
+
+    event: dict[str, Any] = {
+        "command": "episodes.run",
+        "duration_ms": duration_ms,
+        "outcome": outcome,
+        "reason_code": reason_code,
+        "service": _SERVICE,
+        "service_version": __version__,
+    }
+    if attempted is not None:
+        event.update(
+            attempted_episode_count=attempted,
+            valid_episode_count=valid,
+            effective_trajectory_count=effective,
+            simulator_http_exchange_count=simulator_http,
+            target_http_exchange_count=target_http,
+            all_http_exchange_count=all_http,
+            reserved_cost_usd=reserved,
+            actual_cost_usd=actual,
+        )
+    return event
+
+
+def _run_episodes(arguments: argparse.Namespace) -> int:
+    """Construct real boundaries and translate the typed LABS-05 result."""
+
+    from triana_labs.adaptive_runner import (
+        AdaptiveRunFailure,
+        HttpJsonTargetFactory,
+        JsonlTargetProcessFactory,
+        run,
+    )
+    from triana_labs.adaptive_runner.boundaries import FoundrySimulatorTransport
+    from triana_labs.case_factory.provider import SystemClock
+
+    start = time.monotonic_ns()
+    try:
+        config_path = Path(arguments.config)
+        config_bytes = _read_bytes(config_path, "CONFIG_INVALID")
+        config = _parse_object(config_bytes, "CONFIG_INVALID")
+        simulator_config = config.get("simulator")
+        if not isinstance(simulator_config, dict):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        key_name = simulator_config.get("api_key_env")
+        api_key = os.environ.get(key_name, "") if isinstance(key_name, str) else ""
+        if _read_bytes(config_path, "CONFIG_INVALID") != config_bytes:
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        target_config = config.get("target")
+        connector_kind = (
+            target_config.get("connector_kind")
+            if isinstance(target_config, dict)
+            else None
+        )
+        if connector_kind == "HTTP_JSON_V1":
+            target_factory: Any = HttpJsonTargetFactory()
+        elif connector_kind == "EXECUTABLE_JSONL_V1":
+            target_factory = JsonlTargetProcessFactory()
+        else:
+            raise _CliRefusal("TARGET_CONNECTOR_CONFIG_INVALID", 2)
+        result = run(
+            Path(arguments.manifest),
+            Path(arguments.review),
+            config_path,
+            Path(arguments.out),
+            simulator=FoundrySimulatorTransport(simulator_config, api_key),
+            target_factory=target_factory,
+            clock=SystemClock(),
+            environ=os.environ,
+            world_inventory=(
+                Path(arguments.world_inventory) if arguments.world_inventory else None
+            ),
+        )
+    except _CliRefusal as failure:
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code=failure.reason_code,
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return failure.exit_code
+    except AdaptiveRunFailure as failure:
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code=failure.reason_code,
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return failure.exit_code
+    except Exception:  # noqa: BLE001 - redact the outer process boundary.
+        _write_json(
+            sys.stderr,
+            _episode_terminal_log(
+                outcome="REJECTED",
+                reason_code="INTERNAL_INVARIANT_FAILED",
+                duration_ms=_duration_ms(start),
+            ),
+        )
+        return 70
+    _write_json(
+        sys.stdout,
+        {
+            "attempted_episode_count": result.attempted_episode_count,
+            "effective_trajectory_count": result.effective_trajectory_count,
+            "manifest_path": f"{arguments.out}/manifest.json",
+            "outcome": result.outcome,
+            "valid_episode_count": result.valid_episode_count,
+        },
+    )
+    _write_json(
+        sys.stderr,
+        _episode_terminal_log(
+            outcome=result.outcome,
+            reason_code=result.reason_code,
+            duration_ms=_duration_ms(start),
+            attempted=result.attempted_episode_count,
+            valid=result.valid_episode_count,
+            effective=result.effective_trajectory_count,
+            simulator_http=result.simulator_http_exchange_count,
+            target_http=result.target_http_exchange_count,
+            all_http=result.all_http_exchange_count,
+            reserved=result.reserved_cost_usd,
+            actual=result.actual_cost_usd,
+        ),
+    )
+    return result.exit_code
 
 
 def _duration_ms(start_ns: int) -> int:
@@ -556,7 +760,11 @@ _PROVIDER_KEYS = {
 
 def _read_bytes(path: Path, reason: str) -> bytes:
     try:
-        return path.read_bytes()
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise OSError
+            return stream.read()
     except OSError as error:
         raise _CliRefusal(reason, 2) from error
 
@@ -585,7 +793,8 @@ def _restricted_configuration(
         generation = config["generation"]
         budget = config["budget"]
         if (
-            set(config) != _RESTRICTED_KEYS
+            set(config)
+            not in (_RESTRICTED_KEYS, _RESTRICTED_KEYS | {"protocol_version"})
             or config["artifact_kind"] != "case_factory_restricted_config"
             or type(config["schema_version"]) is not int
             or config["schema_version"] != 1
@@ -597,11 +806,27 @@ def _restricted_configuration(
             or type(provider["request_timeout_seconds"]) is not int
             or not 1 <= provider["request_timeout_seconds"] <= 600
             or not isinstance(generation, dict)
-            or set(generation) != {"candidate_count"}
+            or set(generation)
+            not in (
+                {"candidate_count"},
+                {"candidate_count", "evidence_byte_limit", "seed"},
+            )
             or type(generation["candidate_count"]) is not int
-            or generation["candidate_count"] != 5
+            or generation["candidate_count"] not in {5, 12}
             or not isinstance(budget, dict)
             or set(budget) != {"max_usd", "reservation_usd_per_agent_call"}
+        ):
+            raise _CliRefusal("CONFIG_INVALID", 2)
+        closure = config.get("protocol_version") == "LABS046_WORKFLOW_CLOSURE_V1"
+        if (
+            closure != (generation["candidate_count"] == 12)
+            or closure
+            and generation
+            != {
+                "candidate_count": 12,
+                "evidence_byte_limit": 90_000,
+                "seed": 2026080104,
+            }
         ):
             raise _CliRefusal("CONFIG_INVALID", 2)
         names = [provider["endpoint_env"], provider["api_key_env"]]

@@ -1,0 +1,68 @@
+/* Triana brand tokens — self-contained (hex values, no external deps).
+   Source of truth: Triana demo app/globals.css + tokens.css (oklch),
+   converted to sRGB hex for tools that do not support oklch. */
+
+:root {
+  /* surfaces */
+  --triana-canvas: #f2f4e9; /* warm paper page background */
+  --triana-paper: #fdfdfb; /* card / panel surface */
+  --triana-panel: #f6f7f0; /* secondary surface */
+  --triana-paper-warm: #fbfbf6;
+  --triana-dark: #080a05; /* nav, code blocks, inverted panels */
+
+  /* ink ramp (text) */
+  --triana-ink: #0b0c08;
+  --triana-ink-2: #3a3b37;
+  --triana-ink-3: #686965;
+  --triana-ink-4: #92938f;
+  --triana-dark-text: #cdcec9; /* text on --triana-dark */
+
+  /* accent — acid green signal. <2% of pixel area, one element at a time */
+  --triana-accent: #d7f144;
+  --triana-accent-strong: #c3de00;
+  --triana-accent-ink: #354b00; /* green-tinted text on light surfaces */
+
+  /* status — state only, never decoration */
+  --triana-pass: #008039;
+  --triana-pass-soft: #cbf4d5;
+  --triana-block: #c90f1a;
+  --triana-block-soft: #ffdfd9;
+  --triana-review: #a66d00;
+  --triana-review-soft: #ffecc9;
+
+  /* hairlines */
+  --triana-hairline: #e1e2dc;
+  --triana-hairline-2: #cfd0c9;
+  --triana-hairline-3: #b7b8b0;
+
+  /* logo only — never elsewhere */
+  --triana-logo-blue: #2867e4;
+
+  /* typography */
+  --triana-font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --triana-font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --triana-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* radii */
+  --triana-r-sm: 4px;
+  --triana-r-md: 8px;
+  --triana-r-window: 16px;
+  --triana-r-pill: 999px;
+
+  /* shadow — the only ambient shadow allowed */
+  --triana-shadow-card: 0 1px 2px rgba(24, 28, 16, 0.07),
+    0 1px 3px rgba(24, 28, 16, 0.05);
+}
+
+/* engineering-paper texture: faint dot grid on the canvas */
+.triana-canvas {
+  background-color: var(--triana-canvas);
+  background-image: radial-gradient(
+    circle,
+    rgba(164, 167, 147, 0.6) 1px,
+    transparent 1px
+  );
+  background-size: 26px 26px;
+  color: var(--triana-ink);
+  font-family: var(--triana-font-body);
+}

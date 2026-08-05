@@ -31,7 +31,7 @@ def compact_json(value: Any) -> bytes:
     )
 
 
-def render_markdown(profile: JsonObject) -> bytes:
+def render_markdown(profile: JsonObject, *, privacy_class: str = "SYNTHETIC") -> bytes:
     """Project supplied profile values and explicit non-evaluations as Markdown."""
 
     # Table order is inherited from the already closed/sorted profile. Explicit
@@ -41,7 +41,7 @@ def render_markdown(profile: JsonObject) -> bytes:
     lines = [
         "# Triana Labs Corpus Profile",
         "",
-        "**Fidelity:** `SYNTHETIC`",
+        f"**Fidelity:** `{privacy_class}`",
         "",
         "## Accounting",
         "",

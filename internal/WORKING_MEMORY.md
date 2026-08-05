@@ -1,6 +1,6 @@
 # Working memory
 
-Updated: 2026-08-02
+Updated: 2026-08-04
 
 ## Active strategic position
 
@@ -32,10 +32,14 @@ Canonical active documents:
 - `triana-labs/CHARTER.md`
 - `internal/TRIANA_LABS_PREVIEW_V1_PLAN_2026-07-31.md`
 - `internal/DECISION_LOG.md`
+- `internal/DOGFOOD_FAILURE_MEMORY.md` (append-only operational evidence;
+  non-authoritative)
 - `docs/PROVENANCE.md`
 
 Historical research and suspended-product handoff:
 
+- `internal/Wholistic_Company_View/README.md` (non-authoritative company,
+  founder, customer, and narrative synthesis)
 - `internal/BRAINTRUST_HRAI_DOGFOOD_REPORT_2026-07-30.md`
 - `internal/BRAINTRUST_REPLACEMENT_VERDICT_2026-07-30.md`
 - `internal/TRIANA_RESEARCH_CONVERSATION_HANDOFF_2026-07-30.md`
@@ -43,10 +47,133 @@ Historical research and suspended-product handoff:
 
 ## Current objective
 
-Immediate objective after LABS-04: obtain Akarsh's
-`LABS04_USEFULNESS_V1` ruling, then freeze the smallest LABS-05 Adaptive
-Multi-Turn Runner. The canonical restart context and carried backlog are in
-`internal/LABS05_HANDOFF_2026-08-02.md`. No LABS-05 implementation is active.
+Target-boundary correction is locally complete. The owner-approved
+`internal/LABS05_TARGET_CONNECTOR_V1.md` keeps the adaptive controller but
+invokes opaque existing agents through restricted HTTP/JSON or a strict
+customer executable bridge. HRAI is the first localhost HTTP configuration.
+Independent acceptance proves both an HRAI-shaped remote-session endpoint and
+a non-HRAI stateless-transcript endpoint: 131 focused tests and 539 complete
+repository tests pass the versioned gate.
+
+Triana counts only connector HTTP/executable exchanges it observes. Missing
+target-internal HTTP/model/token/cost/tool/global-state evidence is represented
+by typed gaps. Triana persistent/global learning memory remains deferred;
+target-side state is not silently reclassified as Triana memory.
+
+The one owner-authorized real HRAI canary is consumed. It produced two valid
+distinct trajectories, one partial trajectory, and four reviewable adaptation
+items. Akarsh ruled Y, N, Y, Y, so LABS-05 closes completed-with-gaps and
+unpassed. The N was an exact assistant echo caused by the simulator request
+omitting the verified persona, intent, and turn policy and by the absence of a
+semantic user-role/anti-copy gate.
+
+Immediate objective completed locally: the owner-frozen synthetic-only
+`LABS-06-REGULAR-USER-SIMULATOR-FIDELITY-V1` passed independent RED,
+production GREEN, adversarial audit, and the complete 569-test verifier. The
+accepted wire is
+`internal/LABS06_SIMULATOR_FIDELITY_V1.md`: one attempt, versioned user-owned
+context migration, bounded episode state, declared-matcher semantic gates,
+structured stop, and a 30-item/24-accepted/zero-critical human fidelity gate.
+No provider or target execution was authorized; the 30 human fidelity rulings
+remain pending and public sample generation waits for LABS-07. Persistent/
+global Triana memory remains deferred. Akarsh passed
+`LABS04_USEFULNESS_V1` on 2026-08-02 by
+answering yes to all six frozen questions for all five cases and confirming
+that none depends on a hidden or fabricated fact. The canonical restart
+context and carried backlog are in `internal/LABS05_HANDOFF_2026-08-02.md`.
+
+Public-rollout amendment: Akarsh now wants a public/YC-demonstrable and then
+externally usable Preview, with the allowlisted Triana demo adapted as the Labs
+UI. The current ordered proposal is LABS-06 fidelity repair, LABS-07 report
+contract plus LABS-08 UI as one vertical slice, LABS-09 public synthetic demo,
+and LABS-10 local-sensitive stranger installation. The full blocker/deferred register is
+`internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`. UI provenance,
+license, accepted wireframes, and the report-as-evidence boundary precede UI
+code; the report and UI are no longer separate milestones. Persistent/global
+memory is not a first-public-proof blocker.
+
+The planning-first LABS-06 handoff is complete: Akarsh accepted every
+recommended option and directed implementation with maximum safe parallelism.
+The exact active contract is `internal/SLICE_PACKET.md` plus
+`internal/LABS06_SIMULATOR_FIDELITY_V1.md`; LABS-05 connector and retained
+episode/artifact rules remain inherited. The selected cases are context
+recovery, cross-client refusal, and bounded status verification; each runs as
+exactly U1/A1/U2/A2/U3/A3 against an opaque configured target. The supported
+local `triana episodes run` surface and both connector kinds are implemented.
+No further provider or target experiment is authorized by the failed smoke.
+
+Latest local LABS-06 objective completed: the final provider-conformance slice
+keeps the three-field simulator wire and all critical semantic rules, but now
+returns one exact structural detail and a closed text-free diagnostic instead
+of collapsing every malformed response into an opaque reason. It preserves
+normalized usage when the envelope is trustworthy, gives privacy first
+precedence, and prevents a third target/simulator slot after two distinct
+first-turn episodes prove the same structural defect. Independent results are
+43/43 focused, 143/143 historical adaptive, and 594/594 complete repository
+tests plus Ruff, strict mypy, build, and clean-wheel installation at
+`/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. Dogfood incident `DF-2026-08-03-001` remains open until a separately
+authorized simulator-only synthetic check achieves Structural Continuation
+Yield `3/3`; human fidelity remains owner-only and unpassed.
+
+Active closure objective: Akarsh approved
+`LABS-046-GROUNDED-WORKFLOW-CLOSURE-V1`. It adds a separately versioned
+twelve-case path with six directly observed production workflows and six
+multi-trace grounded expansions. Every goal, done condition, behavior, and
+world identifier must resolve to authorized trace evidence or the captured
+HRAI inventory; no AI-authored invention is eligible. LABS-04 emits a tiered
+case Markdown view, LABS-06 emits a tiered conversation/result view, and the
+simulator advances goal before persona. Legacy pinned behavior remains exact.
+Implementation is local/test-first; read-only RDS discovery is authorized,
+while provider and target execution still wait for local GREEN and exact
+pre-egress owner approval.
+
+Historical superseded 2026-08-02 diagnostic: Akarsh authorized one synthetic episode
+against a localhost HRAI endpoint using OpenRouter. The checked-out HRAI commit
+is `728f6c5`, but its production model builder is Bedrock-backed and its `.env`
+points to remote RDS/Redis, so Codex did not start that configuration. A
+disposable localhost bridge instead combined the pinned v3 recruiter prompt
+and Triana's four-tool in-memory synthetic world with a single no-fallback
+OpenRouter `deepseek/deepseek-v3.2` boundary. The first A1 attempt received HTTP
+401. After Akarsh refreshed the key, authentication succeeded and the target
+made live model calls, but it returned `ModelCallLimitExceededError` at the
+frozen four-call ceiling before producing A1. No U2/U3 ran; no remote database,
+Redis, real data, or persistent memory was touched; the endpoint was stopped.
+The leading hypothesis is a protocol/prompt mismatch: the pinned
+`candidate-screening-v3-decision-followthrough` prompt mandates
+`submit_evaluation`, memory, and sometimes decision terminal tools, while the
+synthetic LABS-05 adapter intentionally exposes only four read-only lookup
+tools. Do not retry or relax budgets until the owner chooses whether to freeze
+a chat-specific prompt overlay or expand the target tool/world contract.
+
+2026-08-03 real-endpoint smoke update: Akarsh explicitly authorized starting
+unchanged HRAI commit `728f6c5` with its configured Redis/Postgres startup side
+effects and one synthetic read-only connector turn. Startup completed only
+after its configured Postgres endpoint timed out; the startup seed was skipped.
+The `/health` route unexpectedly made one target-internal OpenRouter diagnostic
+call and returned after the 30-second client deadline, so its model usage and
+cost are unavailable. Triana then attempted exactly one `POST /sessions`; HRAI
+returned HTTP 500 because its configured Redis hostname did not resolve. No
+session, chat turn, tool call, target response, or persistent target state was
+created, and HRAI shut down cleanly. The non-JSON 500 exposed a Triana status
+classification defect; an independent 131st regression froze it, production
+now reports create failure before parsing a non-success body, and the complete
+539-test gate is GREEN. The observed smoke itself remains failed infrastructure
+evidence and does not pass `LABS05_ADAPTATION_V1`. Do not rerun without a new
+owner authorization after HRAI connectivity is repaired.
+
+Memory decision: immutable accepted case evidence is read-only; transcript and
+target state are episode-only and discarded after publication; HRAI persistent
+memory is disabled; persistent/global evaluated memory remains deferred until
+a reviewed result has a concrete next-run consumer.
+
+Final independent LABS-05 acceptance: 108/108 focused cases and 516/516 full
+repository cases pass. The final eight test-owned files/2,792 lines are frozen
+at content SHA-256
+`e3eb48819cc0bd098a0ed6b270317d964512f29181a56f391cad30347377f196`
+and per-file hash-stream SHA-256
+`347bf5d65b743e40291ba8f526ef34ccac06ab9368fd3593bb4cce16be3eab27`.
+The full verifier evidence is `/private/tmp/triana-labs-verify.LZNfkB`.
 
 The older long-horizon objective below remains strategic context, not the next
 implementation authorization.
@@ -607,3 +734,109 @@ LABS-04 result, current implementation boundary, failed paths, proposed
 LABS-05 checkpoint, seven material owner decisions, and categorized backlog.
 Earlier open-blocker paragraphs in this working memory are chronological
 history and are superseded by the final LABS-04 close where they conflict.
+
+Latest LABS-06 live evidence (2026-08-03): Akarsh inspected and authorized the
+exact three-context migration bundle before one private HRAI/Foundry run. HRAI
+returned one assistant turn for every opening, but all three first Foundry
+continuations were rejected as `SIMULATOR_INVALID_RESPONSE`; no simulator user
+turn entered custody. The run ended `COMPLETED_WITH_GAPS` with 0 valid/effective
+trajectories, 13 gaps, 9 target plus 3 simulator HTTP exchanges, and USD
+8.666664 reserved. No retry or rerun is authorized. The provider response bytes
+are intentionally not retained, so the structural subcause cannot be recovered
+from artifacts and must not be guessed. Akarsh owns any grading of the retained
+opening/assistant conversations; local LABS-06 mechanics stay GREEN while live
+compatibility and the human fidelity gate remain unpassed.
+
+Latest LABS-06 intent-first repair evidence (2026-08-03): the bounded
+three-field proposal and intent-first prompt are locally GREEN (15 focused, 143
+historical adaptive, 566 complete verifier). The one authorized repaired live
+run was consumed without rerun and reproduced the same earlier boundary shape:
+three successful HRAI opening responses followed by three
+`SIMULATOR_INVALID_RESPONSE` first continuations, 13 gaps, 12 total HTTP
+exchanges, USD 8.666664 reserved, and 0 valid/effective trajectories. No
+generated user turn entered custody and no episode reached A2, so structural
+yield and Accepted Continuation Rate are unpassed before human scoring. The
+three-field provider response bytes are intentionally unavailable in published
+artifacts; diagnosing the exact provider envelope/schema incompatibility would
+require a separately authorized evidence-custody slice, not another rerun or
+semantic weakening.
+
+Latest grounded-workflow closure state (2026-08-03): local implementation is
+GREEN with 9/9 new acceptance cases, 43/43 preserved LABS-06 cases, and the
+complete 603-test verifier at `/private/tmp/triana-labs-verify.eLaFCb`. The
+synthetic tiered previews demonstrate six observed/six grounded-expanded cases
+and twelve U1/A1/U2/A2/U3/A3 trajectories, but they are not HRAI production
+evidence and carry no owner completion rulings. Live execution is blocked
+before RDS/provider/target egress because the current Observer/Intelligence
+trace contracts and both closure inventory validators admit only `SYNTHETIC`.
+The next bounded question is whether Akarsh authorizes a real-data contract
+slice covering read-only RDS export, truthful privacy class, private custody,
+inventory lineage, and the exact provider/target budget. Do not relabel real
+evidence as synthetic.
+
+Latest owner-authorized real-data plumbing state (2026-08-04): the accidental
+synthetic-only block is removed locally for exactly
+`OWNER_AUTHORIZED_REAL_DATA_CANARY`. The class now remains truthful across
+Observer, Intelligence, Case Factory, world inventory, runner artifacts, and
+tiered reports under private `/private/tmp` custody. Unknown, mixed,
+non-private, and cross-stage mismatches refuse before transport or target
+creation. Independent focused acceptance, Ruff, strict mypy, and the complete
+613-test/build/install verifier at `/private/tmp/triana-labs-verify.ccgGCu` are
+GREEN. No RDS export, provider, HRAI, target, or real-data run occurred; the
+next step is exact live-bundle inspection and a separate egress/cost decision.
+
+Latest LABS-06 owner grading update (2026-08-04): Akarsh accepted final live
+Conversations 3 and 4. Conversation 4 is green for this round while its
+unsupported uploaded-file claim remains backlog; Conversation 7 and the
+partial/unavailable conversations remain unrated, and LABS-06 is not thereby
+passed. The bounded candidate fix is a generic authorized-world-mutation gate,
+not a file-action allowlist. It remains unimplemented. For any separately
+authorized future twelve-case run, use a recommended 1,800-second overall
+deadline instead of 600 seconds, retain per-call deadlines and no retry, and
+continue to report timeout/network attribution as owner context rather than a
+proven technical cause.
+
+LABS-06 final disposition (2026-08-04): Akarsh closed the checkpoint as
+`CLOSED_WITH_ACCEPTED_BACKLOG` and directed a local-main merge followed by
+LABS-07 discussion. The old 30-item/24-accepted gate is optional future
+population calibration, not a remaining checkpoint blocker. Do not reopen
+LABS-06 merely to rerun unavailable cases. Carry forward only the recorded
+world-mutation authority, intent-precondition, aggregate-deadline, and target
+availability backlog, with Conversation 7 and partial/unavailable episodes
+remaining visible evidence. LABS-07 is discussion-only until a new bounded
+slice packet and owner decisions are frozen.
+
+Roadmap consolidation (2026-08-04): Akarsh combined LABS-07 and LABS-08 into
+one report-and-UI vertical slice and directed full-journey wireframe discussion
+before implementation. The journey must cover authorized trace setup, corpus
+understanding, grounded personas/intents/cases, execution preflight/progress,
+adaptive conversations, coverage/cost/gaps/lineage, human review, and carried
+backlog. The report remains the only evidence authority, but its minimum schema
+and deterministic projection should be built with the UI rather than as a
+standalone milestone. Reuse only file-level provenance-cleared tokens, layout,
+navigation, drawers, and responsive behavior from the allowlisted Triana demo;
+do not carry Release Review semantics or data. LABS-09 numbering and packaging
+scope remain unchanged. No UI code, source copy, dependency, or implementation
+is authorized until wireframes, provenance, and a replacement slice packet are
+accepted.
+
+Accepted LABS-07/08 design update (2026-08-04): Akarsh accepted the complete
+full-journey terminology and ASCII wireframes in
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. Setup currently
+selects one local file; adapter understanding is shown through transparent
+counts and rejection reasons; current structural groups are not mislabeled as
+semantic populations; intuitive case labels explain why each case exists;
+`World availability` is retained with `Case data items` as its first specified
+subsection; each case maps to one Conversation run; transcripts are primary;
+and review records four independent realism/adaptation/completion/boundary
+rulings with no aggregate verdict or automatic memory mutation. The
+fresh-session prompt and remaining owner gates are in
+`internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`.
+
+LABS-06 deferred behavior, testing, and evaluation obligations are now
+consolidated in `internal/LABS06_BACKLOG_2026-08-04.md`. They include generic
+world-mutation authority, intent-precondition enforcement, a longer future
+aggregate deadline, target protocol/tool-budget readiness, population-fidelity
+calibration, semantic population derivation, case/retrieval/duplicate quality,
+and accounting/custody hardening. This register is required debt, not an
+implicit LABS-06 reopening or live-run authorization.

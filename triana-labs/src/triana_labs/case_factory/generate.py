@@ -123,23 +123,34 @@ def generate_restricted(
     environ: Mapping[str, str],
     publisher: ArtifactPublisher | None = None,
     requested_case_count: int = 10,
+    world_inventory: Path | None = None,
 ) -> Any:
     """Run the restricted handle-grounded Case Factory path."""
 
     from triana_labs.case_factory.restricted_runtime import generate_restricted
 
-    return generate_restricted(
-        observer_manifest,
-        intelligence_manifest,
-        config_path,
-        output_path,
-        cache_path=cache_path,
-        transport=transport,
-        clock=clock,
-        environ=environ,
-        publisher=publisher,
-        requested_case_count=requested_case_count,
-    )
+    try:
+        return generate_restricted(
+            observer_manifest,
+            intelligence_manifest,
+            config_path,
+            output_path,
+            cache_path=cache_path,
+            transport=transport,
+            clock=clock,
+            environ=environ,
+            publisher=publisher,
+            requested_case_count=requested_case_count,
+            world_inventory=world_inventory,
+        )
+    except Invalid as error:
+        reason = str(error)
+        if reason not in {
+            "PRIVACY_CLASS_MISMATCH",
+            "UNSUPPORTED_PRIVACY_CLASS",
+        }:
+            raise
+        raise GenerateFailure(reason, 4) from error
 
 
 def resume_restricted(
@@ -1385,7 +1396,11 @@ def _exit(reason: str) -> int:
         return 2
     if reason in {"INPUT_TOO_LARGE", "EVIDENCE_TOO_LARGE"}:
         return 3
-    if reason in {"MANIFEST_INVALID", "UNSUPPORTED_PRIVACY_CLASS"}:
+    if reason in {
+        "MANIFEST_INVALID",
+        "PRIVACY_CLASS_MISMATCH",
+        "UNSUPPORTED_PRIVACY_CLASS",
+    }:
         return 4
     if reason in {
         "CORPUS_INTEGRITY_FAILED",

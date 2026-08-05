@@ -13,6 +13,7 @@ from typing import Any, cast
 
 from triana_labs.contracts.traces import (
     EVENT_KINDS,
+    PRIVACY_CLASSES,
     LineRejection,
     parse_and_validate_line,
 )
@@ -48,6 +49,8 @@ def read_bundle(manifest_path: Path) -> tuple[bytes, JsonObject, list[JsonObject
     manifest_bytes = _read_manifest(manifest_path)
     manifest = _parse_object(manifest_bytes, "MANIFEST_INVALID")
     _validate_manifest(manifest)
+    if manifest["privacy_class"] == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
+        _require_private_path(manifest_path.parent)
     if (
         manifest["input_count"]
         != manifest["accepted_count"] + manifest["rejected_count"]
@@ -61,6 +64,8 @@ def read_bundle(manifest_path: Path) -> tuple[bytes, JsonObject, list[JsonObject
         if _digest(payload) != manifest["artifacts"][name]:
             raise InputFailure("CORPUS_INTEGRITY_FAILED")
     traces = _parse_traces(payloads["normalized_traces.jsonl"])
+    if any(trace["privacy_class"] != manifest["privacy_class"] for trace in traces):
+        raise InputFailure("PRIVACY_CLASS_MISMATCH")
     if len(traces) != manifest["accepted_count"]:
         raise InputFailure("CORPUS_INTEGRITY_FAILED")
     if not traces:
@@ -175,7 +180,7 @@ def _validate_manifest(value: JsonObject) -> None:
         raise InputFailure("MANIFEST_INVALID")
     if value.get("schema_version") != 1 or type(value.get("schema_version")) is not int:
         raise InputFailure("MANIFEST_INVALID")
-    if value.get("privacy_class") != "SYNTHETIC":
+    if value.get("privacy_class") not in PRIVACY_CLASSES:
         if isinstance(value.get("privacy_class"), str):
             raise InputFailure("UNSUPPORTED_PRIVACY_CLASS")
         raise InputFailure("MANIFEST_INVALID")
@@ -257,6 +262,8 @@ def _validate_profile(
         "terminal_state_counts",
         "tool_call_counts",
     }
+    if manifest["privacy_class"] != "SYNTHETIC":
+        keys.add("privacy_class")
     if set(profile) != keys:
         raise InputFailure("CORPUS_INTEGRITY_FAILED")
     fixed = {
@@ -268,6 +275,11 @@ def _validate_profile(
         "case_generation_eligible_count": manifest["case_generation_eligible_count"],
         "language_analysis": "NOT_EVALUATED",
         "distress_analysis": "NOT_EVALUATED",
+        **(
+            {"privacy_class": manifest["privacy_class"]}
+            if manifest["privacy_class"] != "SYNTHETIC"
+            else {}
+        ),
     }
     if not all(
         type(profile.get(key)) is int
@@ -353,3 +365,16 @@ def _is_count_map(value: Any) -> bool:
 
 def _digest(payload: bytes) -> str:
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def _require_private_path(path: Path) -> None:
+    try:
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved = path.resolve(strict=True)
+    except OSError as error:
+        raise InputFailure("INPUT_READ_FAILED") from error
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise InputFailure("UNSUPPORTED_PRIVACY_CLASS")

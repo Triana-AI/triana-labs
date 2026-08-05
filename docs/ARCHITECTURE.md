@@ -37,7 +37,7 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
-LABS-04 is the implemented, mechanically passed, owner-review-pending boundary:
+LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text
 verified synthetic Observer + intelligence manifests
@@ -64,17 +64,107 @@ configs retain the older engine. `cases resume` verifies exact config bytes,
 the immutable pause bundle, complete bounded answers, and the same private
 cache before transport construction. Unknown or malformed state refuses; no
 engine, credential, model, or provider fallback exists.
-The closing experiment is `AWAITING_HUMAN_REVIEW`, so LABS-05 remains blocked.
+The owner passed all five cases under `LABS04_USEFULNESS_V1`.
 
-The proposed LABS-05 boundary is documented, but not authorized, in
-`internal/LABS05_HANDOFF_2026-08-02.md`: one deterministic episode controller,
-one reviewed grounded case at a time, one adaptive simulated user, and one
-explicitly named target-agent protocol. Episode identity, termination,
-budgets, HTTP accounting, tool normalization, transcript custody, trajectory
-dedupe, and typed gaps remain deterministic. The simulator may propose the
-next user turn after observing the latest target response/tool event; it may
-not mutate rulings or persistent memory. No runner implementation begins until
-the owner review and a replacement slice packet are complete.
+LABS-05 is the active test-first boundary:
+
+```text
+accepted LABS-04 case + reproducible owner ruling
+  -> deterministic three-slot episode controller
+  -> U1 copied from case
+  -> strict HRAI Recruiter Chat ReAct subprocess -> A1 + normalized tools
+  -> Foundry GLM-5.2 consumes latest observation -> U2
+  -> same isolated target session -> A2
+  -> Foundry GLM-5.2 consumes latest observation -> U3
+  -> same isolated target session -> A3
+  -> immutable transcript/tool/HTTP/budget/gap artifacts
+  -> deterministic trajectory fingerprint and duplicate clusters
+  -> owner adaptation review
+```
+
+The HRAI target is pinned to commit `728f6c5`, historical Qwen 235B model, and
+the executable `candidate-screening-v3-decision-followthrough` prompt at that
+commit, but runs through a Triana-owned target-specific JSONL adapter
+against a fresh in-memory synthetic read-only world. HRAI persistent memory,
+database writes, web, email, evaluation submission, and sub-agents are absent.
+The target process and episode state are discarded after each episode.
+
+The simulator may propose only U2/U3 and a stop suggestion. Deterministic code
+owns every identity, sequence, observation binding, termination, reservation,
+HTTP/token/tool count, custody, and duplicate denominator. Provider or target
+failure is typed partial evidence; no retry or fallback exists. Persistent or
+global learning memory remains deferred: only immutable evidence memory and
+discarded episode memory exist in this checkpoint.
+
+This boundary is locally implemented behind `triana episodes run`. Repository
+verification proves the deterministic/fake boundary and strict process
+contract; it does not prove live Foundry or HRAI/Qwen compatibility, valid live
+trajectories, or the owner adaptation ruling.
+
+The owner-approved Target Connector V1 supersedes the preceding LABS-05 target
+paragraphs while retaining the episode controller and artifacts. Triana now
+owns only the adaptive outer loop and connector-observed facts. An existing
+agent owns its prompt, model/provider, tools, internal orchestration, and
+target-side state. `HTTP_JSON_V1` provides restricted request-pointer insertion,
+response-pointer extraction, explicit remote-session or transcript-replay
+lifecycle, exact endpoint authorization, and no retry/redirect/fallback.
+`EXECUTABLE_JSONL_V1` retains the shell-free process isolation as a customer
+bridge rather than an HRAI reconstruction. HRAI maps its existing
+`POST /sessions`, `POST /sessions/{id}/chat`, and `DELETE /sessions/{id}`
+surface through configuration. Target-internal accounting and state isolation
+are recorded only when reported or evidenced; absence is a typed gap. The
+normative contract is `internal/LABS05_TARGET_CONNECTOR_V1.md`.
+
+This superseding boundary is locally GREEN with 131 focused connector tests
+and 539 repository-wide tests. The first authorized real HRAI smoke proved
+endpoint reachability only: configured Postgres timed out and Redis DNS failed,
+so session creation returned HTTP 500 before any chat turn. The attempt is a
+typed target-infrastructure gap, not an adaptive episode or owner passage.
+
+LABS-06 is the locally implemented simulator-only correction. It preserves the
+opaque target connector boundary and adds a versioned user-owned simulator context derived
+without mutating LABS-04 artifacts, a closed episode-local interaction state,
+one-attempt strict user-turn/structured-stop proposals, deterministic declared-
+matcher semantic validation, and a synthetic teacher-forced review contract.
+Deterministic code owns context identity, visibility, allowlists, state
+transitions, binding, rejection, termination, accounting, and custody. The
+model owns wording only; a human owns residual naturalness and fidelity. No
+provider execution, persistent/global memory, model judge, report/UI,
+baseline/candidate comparison, or real-data path is added by this checkpoint.
+
+LABS-06 is now owner-closed with accepted backlog. The next planned boundary is
+one combined LABS-07/08 vertical slice:
+
+```text
+verified retained run artifacts
+  -> deterministic canonical report compiler
+  -> versioned report JSON as sole evidence authority
+  -> deterministic Markdown projection
+  -> read-only full-journey Labs web projection
+```
+
+Report identity, lineage, denominators, accounting, gap classification,
+fidelity labels, and human-ruling custody remain deterministic inputs to the
+projection. TypeScript UI code may navigate, order, filter, disclose, and
+format; it may not independently infer, calculate, upgrade, or persist those
+facts. The planned journey spans trace authorization and normalization, corpus
+understanding, grounded case construction, run preflight/progress, adaptive
+transcripts, evidence/gaps/cost, human review, and carried backlog. Exact
+Triana-demo files may enter only after per-file provenance and license review.
+This is an accepted architecture direction, not yet an implemented report or
+UI boundary.
+
+The owner-accepted projection shape is now frozen in
+`internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`. It uses one local
+trace file at setup; transparent adapter/trace-understanding counts;
+deterministically owned behavior-group membership and support with separately
+labeled model-proposed summaries; intuitive seen-in-traces and grounded-
+variation cases; `World availability` with `Case data items` as the currently
+specified child; one independent conversation per case; transcript-primary
+evidence; and four independent human rulings. The UI cannot collapse those
+rulings into one verdict or write them back into memory. Current structural
+clusters remain structurally truthful until a later deterministic
+corpus-scale semantic-population pipeline is implemented and evaluated.
 
 ## Authority map
 

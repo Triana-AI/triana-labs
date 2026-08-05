@@ -33,11 +33,18 @@ from triana_labs.case_factory.provider import (
     Clock,
     PublicationFailure,
 )
-from triana_labs.case_factory.semantic import Lane, apply_diversity, convert_lane
+from triana_labs.case_factory.semantic import (
+    Lane,
+    apply_diversity,
+    convert_lane,
+    render_tiered_cases,
+)
 
 MODEL = "FW-GLM-5.2"
 MODEL_VERSION = "1"
 PROVIDER = "MICROSOFT_FOUNDRY_FIREWORKS"
+DEFAULT_MODEL_CONTEXT_LIMIT_TOKENS = 131_072
+_WORLD_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$")
 TOOLS = (
     "search_evidence",
     "get_trace_packet",
@@ -253,6 +260,8 @@ class _State:
     sentinels: list[bytes]
     config_hash: str
     clock: Clock
+    world_inventory: Json | None = None
+    world_inventory_hash: str | None = None
 
 
 def generate_restricted(
@@ -267,18 +276,37 @@ def generate_restricted(
     environ: Mapping[str, str],
     publisher: ArtifactPublisher | None = None,
     requested_case_count: int = 10,
+    world_inventory: Path | None = None,
 ) -> RestrictedResult:
     _output(output_path)
-    _cache(cache_path, output_path)
     if not 1 <= requested_case_count <= 25:
         raise Invalid
     config_bytes = config_path.read_bytes()
     config = strict_json(config_bytes)
+    closure = config.get("protocol_version") == "LABS046_WORKFLOW_CLOSURE_V1"
+    if closure and (
+        requested_case_count != 12
+        or config.get("generation")
+        != {"candidate_count": 12, "evidence_byte_limit": 90_000, "seed": 2026080104}
+    ):
+        raise Invalid
     maximum, reservation = _restricted_budget(config)
     evidence, citations, _, excluded = build_evidence(
-        observer_manifest, intelligence_manifest
+        observer_manifest,
+        intelligence_manifest,
+        trace_limit=None if closure else 25,
+        byte_limit=90_000,
     )
-    catalog, handle_map = _catalog(evidence, citations)
+    privacy_class = cast(str, evidence.get("privacy_class", "SYNTHETIC"))
+    inventory, inventory_hash = (
+        _world_inventory(world_inventory, privacy_class) if closure else (None, None)
+    )
+    if closure and inventory is None:
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
+    if privacy_class != "SYNTHETIC":
+        _private_custody(output_path, cache_path)
+    _cache(cache_path, output_path)
+    catalog, handle_map = _catalog(evidence, citations, inventory)
     run_id = domain_hash(
         "restricted-case-factory-run",
         {
@@ -286,6 +314,7 @@ def generate_restricted(
             "intelligence_manifest_hash": evidence["intelligence_manifest_hash"],
             "config_hash": artifact_hash(config_bytes),
             "requested_case_count": requested_case_count,
+            **({"world_inventory_hash": inventory_hash} if closure else {}),
         },
     )
     sentinels = _sentinels(config, environ)
@@ -310,9 +339,11 @@ def generate_restricted(
         sentinels,
         artifact_hash(config_bytes),
         clock,
+        inventory,
+        inventory_hash,
     )
     slots = [f"case_{index}" for index in range(1, requested_case_count + 1)]
-    batch_width = 1 if requested_case_count == 5 else 5
+    batch_width = 1 if closure or requested_case_count == 5 else 5
     for offset in range(0, len(slots), batch_width):
         batch_slots = tuple(slots[offset : offset + batch_width])
         result = _batch(
@@ -326,6 +357,14 @@ def generate_restricted(
             state.lanes.append(cast(Lane, result[1]))
             continue
         if result[0] == "NEEDS_INPUT":
+            if closure:
+                return _terminal(
+                    state,
+                    "PROVIDER_INVALID_RESPONSE",
+                    excluded,
+                    output_path,
+                    publisher,
+                )
             return _pause(
                 state,
                 cast(list[Json], result[1]),
@@ -371,10 +410,18 @@ def resume_restricted(
         or manifest.get("outcome") != "NEEDS_INPUT"
     ):
         raise Invalid("RESUME_INPUT_INVALID")
+    if manifest.get("privacy_class") == "OWNER_AUTHORIZED_REAL_DATA_CANARY":
+        if resume.get("privacy_class") != manifest["privacy_class"]:
+            raise Invalid("PRIVACY_CLASS_MISMATCH")
+        _private_custody(output_path, cache_path)
     run_id = resume["run_id"]
     private = _run_root(cache_path, run_id) / "resume-private.json"
     value = strict_json(private.read_bytes())
     state = _restore(value, cache_path, clock)
+    if state.evidence.get("privacy_class", "SYNTHETIC") != manifest.get(
+        "privacy_class", "SYNTHETIC"
+    ):
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
     ordered_answers = [
         {"question_id": item, "answer": answers[item]} for item in expected
     ]
@@ -439,7 +486,9 @@ def _batch(
     batch_id = f"batch-{number:03d}"
     prior: Json | None = None
     defects: list[Json] = []
-    for phase in ("GENERATE", "REPAIR"):
+    authoritative = state.world_inventory is not None and state.requested == 12
+    phases = ("GENERATE",) if authoritative else ("GENERATE", "REPAIR")
+    for phase in phases:
         if state.reserved + state.reservation > state.maximum:
             state.attempts.append(
                 _attempt(
@@ -510,6 +559,8 @@ def _batch(
             )
             return "FAILED", cast(str, reason)
         if status == "NEEDS_INPUT":
+            if authoritative:
+                return "FAILED", "PROVIDER_INVALID_RESPONSE"
             questions = cast(list[Json], _field(response, "questions"))
             state.attempts.append(
                 _attempt(
@@ -523,7 +574,7 @@ def _batch(
                 )
             )
             return "NEEDS_INPUT", questions
-        if status == "SUBMITTED" and tools.submission is None:
+        if status == "SUBMITTED" and tools.submission is None and not authoritative:
             state.attempts.append(
                 _attempt(
                     state,
@@ -537,7 +588,9 @@ def _batch(
             )
             return "FAILED", "PROVIDER_INVALID_RESPONSE"
         submission = cast(Json, _field(response, "submission"))
-        normalized, current = _normalize(submission, slots, state.handle_map)
+        normalized, current = _normalize(
+            submission, slots, state.handle_map, state.world_inventory
+        )
         lane: Lane | None = None
         if not current and normalized is not None:
             try:
@@ -547,6 +600,9 @@ def _batch(
                     _lineage(state, phase),
                     cast(str, state.evidence["input_manifest_hash"]),
                     cast(str, state.evidence["intelligence_manifest_hash"]),
+                    privacy_class=cast(
+                        str, state.evidence.get("privacy_class", "SYNTHETIC")
+                    ),
                     strict_cases=True,
                     expected_case_count=len(slots),
                 )
@@ -577,6 +633,8 @@ def _batch(
                 response,
             )
         )
+        if authoritative:
+            return "FAILED", "INVALID_CASE_BATCH"
         if phase == "REPAIR":
             return "FAILED", "INVALID_CASE_BATCH"
         prior, defects = submission, current
@@ -585,7 +643,63 @@ def _batch(
     return "FAILED", "INTERNAL_INVARIANT_FAILED"
 
 
-def _catalog(evidence: Json, citations: list[Json]) -> tuple[Json, dict[str, Json]]:
+def _world_inventory(path: Path | None, privacy_class: str) -> tuple[Json, str]:
+    if path is None:
+        raise Invalid
+    try:
+        payload = path.read_bytes()
+        value = strict_json(payload)
+    except (OSError, Invalid) as error:
+        raise Invalid from error
+    keys = {
+        "artifact_kind",
+        "schema_version",
+        "protocol_version",
+        "data_class",
+        "captured_at",
+        "source_lineage",
+        "inventory",
+    }
+    inventory = value.get("inventory") if isinstance(value, dict) else None
+    if (
+        not isinstance(value, dict)
+        or set(value) != keys
+        or value["artifact_kind"] != "labs046_world_inventory"
+        or value["schema_version"] != 1
+        or value["protocol_version"] != "LABS046_WORLD_INVENTORY_V1"
+        or value["data_class"] not in {"SYNTHETIC", "OWNER_AUTHORIZED_REAL_DATA_CANARY"}
+        or not isinstance(value["captured_at"], str)
+        or not isinstance(value["source_lineage"], dict)
+        or set(value["source_lineage"]) != {"source_kind", "source_id"}
+        or not isinstance(inventory, dict)
+        or not 1 <= len(inventory) <= 8
+    ):
+        raise Invalid
+    if value["data_class"] != privacy_class:
+        raise Invalid("PRIVACY_CLASS_MISMATCH")
+    if privacy_class != "SYNTHETIC":
+        _private_existing_path(path)
+    for name, identifiers in inventory.items():
+        if (
+            not isinstance(name, str)
+            or not _WORLD_ID.fullmatch(name)
+            or not isinstance(identifiers, list)
+            or not 1 <= len(identifiers) <= 10_000
+            or identifiers != sorted(set(identifiers))
+            or any(
+                not isinstance(item, str) or not _WORLD_ID.fullmatch(item)
+                for item in identifiers
+            )
+        ):
+            raise Invalid
+    if canonical(value, lf=True) != payload:
+        raise Invalid
+    return cast(Json, value), artifact_hash(payload)
+
+
+def _catalog(
+    evidence: Json, citations: list[Json], inventory: Json | None = None
+) -> tuple[Json, dict[str, Json]]:
     citation_map = {
         (item["trace_id"], item["event_sequences"][0]): item for item in citations
     }
@@ -594,12 +708,28 @@ def _catalog(evidence: Json, citations: list[Json]) -> tuple[Json, dict[str, Jso
     evidence_index = 1
     for trace_index, trace in enumerate(evidence["selected_traces"], start=1):
         events = []
+        assistant_seen = False
         for event in trace["events"]:
             handle = f"E{evidence_index:06d}"
             evidence_index += 1
             projected = {"evidence_handle": handle, **event}
             events.append(projected)
-            handles[handle] = citation_map[(trace["trace_id"], event["sequence"])]
+            citation = citation_map[(trace["trace_id"], event["sequence"])]
+            handles[handle] = (
+                {
+                    **citation,
+                    "opening_workflow_stratum": (
+                        "RECOVERY" if assistant_seen else "ORDINARY"
+                    )
+                    if event["event_kind"] == "USER_MESSAGE"
+                    else None,
+                }
+                if inventory is not None
+                else citation
+            )
+            assistant_seen = (
+                assistant_seen or event["event_kind"] == "ASSISTANT_MESSAGE"
+            )
         traces.append(
             {
                 "trace_handle": f"T{trace_index:03d}",
@@ -607,19 +737,27 @@ def _catalog(evidence: Json, citations: list[Json]) -> tuple[Json, dict[str, Jso
                 "events": events,
             }
         )
-    return (
-        {
-            "artifact_kind": "case_factory_evidence_catalog",
-            "schema_version": 1,
-            "traces": traces,
-            "gaps": evidence["gaps"],
-        },
-        handles,
-    )
+    catalog: Json = {
+        "artifact_kind": "case_factory_evidence_catalog",
+        "schema_version": 1,
+        "traces": traces,
+        "gaps": evidence["gaps"],
+    }
+    if "privacy_class" in evidence:
+        catalog.update(
+            privacy_class=evidence["privacy_class"],
+            authorization_projection=evidence["authorization_projection"],
+        )
+    if inventory is not None:
+        catalog["world_inventory"] = inventory
+    return catalog, handles
 
 
 def _normalize(
-    submission: Json, slots: tuple[str, ...], handles: dict[str, Json]
+    submission: Json,
+    slots: tuple[str, ...],
+    handles: dict[str, Json],
+    inventory: Json | None = None,
 ) -> tuple[Json | None, list[Json]]:
     defects: list[Json] = []
     cases = submission.get("cases")
@@ -634,8 +772,34 @@ def _normalize(
             defects.append(_defect("BROKEN_LOCAL_REFERENCE", f"/{group}"))
             continue
         for index, value in enumerate(values):
+            slot = slots[index] if index < len(slots) else "case_0"
+            observed_slot = _slot_number(slot) <= 6
+            if inventory is not None and observed_slot and _has_generated_text(value):
+                defects.append(_defect("INVALID_CASE", f"/{group}/{index}/basis"))
             defects.extend(_generated_claim_key_defects(value, f"/{group}/{index}"))
             if group == "cases":
+                if inventory is not None:
+                    if "case_origin" in value or "source_trace_ids" in value:
+                        defects.append(
+                            _defect("INVALID_CASE", f"/cases/{index}/provenance")
+                        )
+                    defects.extend(
+                        _world_key_defects(
+                            value.get("required_world_keys"),
+                            cast(Json, inventory["inventory"]),
+                            f"/cases/{index}/required_world_keys",
+                        )
+                    )
+                    for anchor in ("goal", "done_when"):
+                        item = value.get(anchor)
+                        if (
+                            not isinstance(item, dict)
+                            or item.get("basis") != "OBSERVED"
+                            or not bounded_text(item.get("text"), 16_384)
+                        ):
+                            defects.append(
+                                _defect("INVALID_CASE", f"/cases/{index}/{anchor}")
+                            )
                 scenario = value.get("scenario")
                 stressors = (
                     scenario.get("stressor_codes")
@@ -668,6 +832,8 @@ def _normalize(
                 )
                 continue
             referenced_claims = _local_claim_keys(value)
+            claim_traces: dict[str, set[str]] = {}
+            claim_strata: dict[str, set[Any]] = {}
             for claim_index, claim in enumerate(claims):
                 claim_key = claim.get("claim_key")
                 if isinstance(claim_key, str) and claim_key not in referenced_claims:
@@ -691,6 +857,12 @@ def _normalize(
                     continue
                 citations = sorted({handles[item]["citation_id"] for item in selected})
                 traces = {handles[item]["trace_id"] for item in selected}
+                if isinstance(claim_key, str):
+                    claim_traces[claim_key] = traces
+                    claim_strata[claim_key] = {
+                        handles[item].get("opening_workflow_stratum")
+                        for item in selected
+                    }
                 kind = claim.pop("support_kind", None)
                 claim.pop("evidence_handles", None)
                 claim["support_state"] = (
@@ -701,9 +873,89 @@ def _normalize(
                     else "SUPPORTED"
                 )
                 claim["citation_ids"] = citations
+            if group == "cases" and inventory is not None:
+                scenario = value.get("scenario")
+                anchors = (
+                    scenario.get("opening_user_turn", {})
+                    if isinstance(scenario, dict)
+                    else {}
+                )
+                opening_keys = _local_claim_keys(anchors)
+                opening_strata = set().union(
+                    *(claim_strata.get(key, set()) for key in opening_keys)
+                )
+                opening_strata.discard(None)
+                if (
+                    not opening_keys
+                    or not opening_strata
+                    or not opening_strata <= {"ORDINARY", "RECOVERY"}
+                ):
+                    defects.append(
+                        _defect("INVALID_CASE", f"/cases/{index}/workflow_stratum")
+                    )
+                else:
+                    value["workflow_stratum"] = (
+                        "RECOVERY" if "RECOVERY" in opening_strata else "ORDINARY"
+                    )
+                anchor_keys = _local_claim_keys(
+                    [anchors, value.get("goal"), value.get("done_when")]
+                )
+                anchor_traces = set().union(
+                    *(claim_traces.get(key, set()) for key in anchor_keys)
+                )
+                valid_origin = (
+                    len(anchor_traces) == 1
+                    if observed_slot
+                    else len(anchor_traces) >= 2
+                )
+                if not valid_origin:
+                    defects.append(_defect("INVALID_CASE", f"/cases/{index}/origin"))
     return (None if defects else cast(Json, normalized)), sorted(
         defects, key=lambda item: (item["code"], item["path"], item["related_ids"])
     )
+
+
+def _has_generated_text(value: Any) -> bool:
+    if isinstance(value, dict):
+        if set(value) >= {"text", "basis", "claim_keys"}:
+            return value.get("basis") != "OBSERVED"
+        return any(_has_generated_text(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_generated_text(item) for item in value)
+    return False
+
+
+def _slot_number(slot: str) -> int:
+    try:
+        return int(slot.removeprefix("case_"))
+    except ValueError:
+        return 0
+
+
+def _world_key_defects(value: Any, inventory: Json, path: str) -> list[Json]:
+    if (
+        not isinstance(value, dict)
+        or not 1 <= len(value) <= 8
+        or any(
+            not isinstance(name, str) or not _WORLD_ID.fullmatch(name) for name in value
+        )
+    ):
+        return [_defect("INVALID_CASE", path)]
+    for name, identifiers in value.items():
+        available = inventory.get(name)
+        if (
+            not isinstance(identifiers, list)
+            or not 1 <= len(identifiers) <= 16
+            or identifiers != sorted(set(identifiers))
+            or any(
+                not isinstance(item, str) or not _WORLD_ID.fullmatch(item)
+                for item in identifiers
+            )
+            or not isinstance(available, list)
+            or not set(identifiers) <= set(available)
+        ):
+            return [_defect("INVALID_CASE", f"{path}/{name}")]
+    return []
 
 
 def _local_claim_keys(value: Any) -> set[str]:
@@ -938,12 +1190,35 @@ def _portable(
             "selection_algorithm": state.evidence["selection_algorithm"],
             "selected_trace_count": len(state.evidence["selected_traces"]),
             "excluded_trace_count": excluded,
+            **(
+                {
+                    "total_eligible_trace_count": state.evidence[
+                        "total_eligible_trace_count"
+                    ],
+                    "world_inventory_hash": state.world_inventory_hash,
+                }
+                if state.world_inventory is not None
+                else {}
+            ),
             "projected_byte_count": len(canonical(state.evidence)),
             "citations": state.citations,
             "gaps": state.evidence["gaps"],
+            **(
+                {"privacy_class": state.evidence["privacy_class"]}
+                if "privacy_class" in state.evidence
+                else {}
+            ),
         },
         lf=True,
     )
+    if state.world_inventory is not None:
+        tiered = render_tiered_cases(lane.cases)
+        if "privacy_class" in state.evidence:
+            tiered = (
+                f"**Privacy class:** `{state.evidence['privacy_class']}`\n\n".encode()
+                + tiered
+            )
+        artifacts["LABS04_TIERED_CASES.md"] = tiered
     evaluation = {
         "artifact_kind": "case_factory_evaluation",
         "schema_version": 1,
@@ -984,7 +1259,7 @@ def _portable(
         "schema_version": 1,
         "input_manifest_hash": state.evidence["input_manifest_hash"],
         "intelligence_manifest_hash": state.evidence["intelligence_manifest_hash"],
-        "privacy_class": "SYNTHETIC",
+        "privacy_class": state.evidence.get("privacy_class", "SYNTHETIC"),
         "producing_component": "triana-labs-case-factory",
         "producing_component_version": __version__,
         "provider_kind": PROVIDER,
@@ -1001,6 +1276,11 @@ def _portable(
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
         "human_review_state": "PENDING",
+        **(
+            {"world_inventory_hash": state.world_inventory_hash}
+            if state.world_inventory is not None
+            else {}
+        ),
         "artifacts": {
             name: artifact_hash(payload) for name, payload in artifacts.items()
         },
@@ -1036,6 +1316,11 @@ def _pause(
         "provider_http_exchange_count": state.http_exchanges,
         "reserved_cost_usd": _money(state.reserved),
         "actual_cost_usd": _money(state.actual) if state.actual_known else None,
+        **(
+            {"privacy_class": state.evidence["privacy_class"]}
+            if "privacy_class" in state.evidence
+            else {}
+        ),
     }
     private = _snapshot(state, excluded)
     _private_write(
@@ -1054,6 +1339,11 @@ def _pause(
                 "intelligence_manifest_hash": state.evidence[
                     "intelligence_manifest_hash"
                 ],
+                **(
+                    {"privacy_class": state.evidence["privacy_class"]}
+                    if "privacy_class" in state.evidence
+                    else {}
+                ),
             },
             lf=True,
         ),
@@ -1076,6 +1366,11 @@ def _pause(
             "outcome": "NEEDS_INPUT",
             "reason_code": "MATERIAL_INPUT_REQUIRED",
             "provider_http_exchange_count": state.http_exchanges,
+            **(
+                {"privacy_class": state.evidence["privacy_class"]}
+                if "privacy_class" in state.evidence
+                else {}
+            ),
             "artifacts": {
                 name: artifact_hash(payload) for name, payload in artifacts.items()
             },
@@ -1115,6 +1410,8 @@ def _snapshot(state: _State, excluded: int) -> Json:
         "calls": state.calls,
         "http_exchanges": state.http_exchanges,
         "config_hash": state.config_hash,
+        "world_inventory": state.world_inventory,
+        "world_inventory_hash": state.world_inventory_hash,
         "excluded": excluded,
     }
 
@@ -1141,6 +1438,8 @@ def _restore(value: Json, cache: Path, clock: Clock) -> _State:
         [],
         value["config_hash"],
         clock,
+        value.get("world_inventory"),
+        value.get("world_inventory_hash"),
     )
 
 
@@ -1272,6 +1571,35 @@ def _cache(path: Path, output: Path) -> None:
     os.chmod(path, 0o700)
 
 
+def _private_custody(output: Path, cache: Path) -> None:
+    private_root = Path("/private/tmp").resolve(strict=True)
+    resolved_output = output.parent.resolve(strict=True) / output.name
+    resolved_cache = cache.resolve(strict=False)
+    package_root = Path(__file__).resolve().parents[3]
+    if (
+        private_root not in resolved_output.parents
+        or private_root not in resolved_cache.parents
+        or resolved_output == package_root
+        or package_root in resolved_output.parents
+        or resolved_cache == package_root
+        or package_root in resolved_cache.parents
+    ):
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS")
+
+
+def _private_existing_path(path: Path) -> None:
+    try:
+        private_root = Path("/private/tmp").resolve(strict=True)
+        resolved = path.resolve(strict=True)
+    except OSError as error:
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS") from error
+    package_root = Path(__file__).resolve().parents[3]
+    if private_root not in resolved.parents or (
+        resolved == package_root or package_root in resolved.parents
+    ):
+        raise Invalid("UNSUPPORTED_PRIVACY_CLASS")
+
+
 def _money(value: Decimal) -> str:
     return format(value.quantize(Decimal("0.000001")), "f")
 
@@ -1307,7 +1635,12 @@ class FoundryGLMRestrictedTransport:
     """Pinned Foundry model executed only through a restricted LangChain agent."""
 
     def __init__(
-        self, endpoint: str, api_key: str, *, timeout_seconds: int = 180
+        self,
+        endpoint: str,
+        api_key: str,
+        *,
+        timeout_seconds: int = 180,
+        model_context_limit_tokens: int = DEFAULT_MODEL_CONTEXT_LIMIT_TOKENS,
     ) -> None:
         if (
             isinstance(timeout_seconds, bool)
@@ -1315,9 +1648,16 @@ class FoundryGLMRestrictedTransport:
             or not 1 <= timeout_seconds <= 600
         ):
             raise Invalid("PROVIDER_TIMEOUT_INVALID")
+        if (
+            isinstance(model_context_limit_tokens, bool)
+            or not isinstance(model_context_limit_tokens, int)
+            or model_context_limit_tokens < 1
+        ):
+            raise Invalid("PROVIDER_CONTEXT_LIMIT_INVALID")
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
+        self.model_context_limit_tokens = model_context_limit_tokens
 
     def run(self, request: AgentBatchRequest, tools: RestrictedTools) -> Any:
         import httpx
@@ -1325,6 +1665,11 @@ class FoundryGLMRestrictedTransport:
         from langchain_core.exceptions import LangChainException
         from langgraph.errors import GraphRecursionError
 
+        authoritative = isinstance(
+            request.evidence_catalog.get("world_inventory"), dict
+        )
+        if authoritative:
+            return self._run_authoritative(request, tools)
         capture = _HTTPExchangeCapture()
         model, http_client = _foundry_model(
             self.endpoint, self.api_key, self.timeout_seconds, capture
@@ -1429,6 +1774,119 @@ class FoundryGLMRestrictedTransport:
             len(capture.requests),
         )
 
+    def _run_authoritative(
+        self, request: AgentBatchRequest, tools: RestrictedTools
+    ) -> Json:
+        """Make one strict structured-output exchange with no model-callable tools."""
+
+        import httpx
+        import openai
+        from langchain_core.exceptions import LangChainException
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        instruction = _authoritative_instruction(request)
+        schema = _authoritative_wire_schema(request)
+        prompt = canonical(request.__dict__).decode()
+        allocation = _context_allocation(self.model_context_limit_tokens)
+        _preflight_context(instruction, schema, prompt, request, allocation)
+        capture = _HTTPExchangeCapture()
+        model, http_client = _foundry_model(
+            self.endpoint,
+            self.api_key,
+            self.timeout_seconds,
+            capture,
+        )
+        bound = model.bind(
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "labs046_case_bundle",
+                    "strict": True,
+                    "schema": schema,
+                },
+            },
+            max_tokens=allocation["output_tokens"],
+        )
+        started = time.monotonic_ns()
+        response: Any = None
+        try:
+            response = bound.invoke(
+                [SystemMessage(content=instruction), HumanMessage(content=prompt)]
+            )
+            finish_reason = getattr(response, "response_metadata", {}).get(
+                "finish_reason"
+            )
+            if finish_reason in {"length", "max_tokens"}:
+                return _live_response(
+                    "FAILED",
+                    capture.requests_bytes(prompt),
+                    capture.responses_bytes(),
+                    _latency(started),
+                    "PROVIDER_STRUCTURED_OUTPUT_LENGTH",
+                    len(capture.requests),
+                )
+            content = getattr(response, "content", None)
+            if not isinstance(content, str):
+                raise Invalid("PROVIDER_STRUCTURED_OUTPUT_MALFORMED")
+            wire = strict_json(content.encode())
+            if not _wire_valid(wire, schema):
+                raise Invalid("PROVIDER_STRUCTURED_OUTPUT_MALFORMED")
+            submission = _authoritative_submission(wire, request.case_slots[0])
+        except Invalid:
+            return _live_response(
+                "FAILED",
+                capture.requests_bytes(prompt),
+                capture.responses_bytes(),
+                _latency(started),
+                "PROVIDER_STRUCTURED_OUTPUT_MALFORMED",
+                len(capture.requests),
+            )
+        except (AttributeError, KeyError, TypeError, ValueError):
+            return _live_response(
+                "FAILED",
+                capture.requests_bytes(prompt),
+                capture.responses_bytes(),
+                _latency(started),
+                "PROVIDER_STRUCTURED_OUTPUT_MALFORMED",
+                len(capture.requests),
+            )
+        except openai.APIStatusError as error:
+            if error.status_code in {400, 404, 422}:
+                return _live_response(
+                    "FAILED",
+                    capture.requests_bytes(prompt),
+                    capture.responses_bytes(),
+                    _latency(started),
+                    "PROVIDER_STRUCTURED_OUTPUT_UNSUPPORTED",
+                    len(capture.requests),
+                )
+            return _provider_failure(error, capture, prompt, started)
+        except (
+            openai.APIError,
+            httpx.HTTPError,
+            LangChainException,
+        ) as error:
+            return _provider_failure(error, capture, prompt, started)
+        finally:
+            http_client.close()
+        usage = getattr(response, "usage_metadata", None) or {}
+        common = {
+            "request_bytes": capture.requests_bytes(prompt),
+            "response_bytes": capture.responses_bytes(),
+            "input_tokens": usage.get("input_tokens"),
+            "output_tokens": usage.get("output_tokens"),
+            "actual_cost_usd": None,
+            "latency_ms": _latency(started),
+            "provider_http_exchange_count": len(capture.requests),
+        }
+        return {
+            "status": "SUBMITTED",
+            "submission": submission,
+            "questions": [],
+            "failure_reason_code": None,
+            **common,
+        }
+
 
 _MODEL_FAILURE_REASONS = frozenset({"MATERIAL_INPUT_REQUIRED"})
 
@@ -1491,6 +1949,336 @@ def _foundry_model(
         ),
         client,
     )
+
+
+def _context_allocation(model_limit: int) -> Json:
+    working = min(100_000, model_limit)
+    instructions = working * 20 // 100
+    evidence = working * 55 // 100
+    return {
+        "working_tokens": working,
+        "instruction_tokens": instructions,
+        "evidence_tokens": evidence,
+        "output_tokens": working - instructions - evidence,
+    }
+
+
+def _estimated_tokens(payload: bytes) -> int:
+    """Conservatively estimate English/JSON tokens at no more than 3 UTF-8 bytes."""
+
+    return (len(payload) + 2) // 3
+
+
+def _preflight_context(
+    instruction: str,
+    schema: Json,
+    prompt: str,
+    request: AgentBatchRequest,
+    allocation: Json,
+) -> None:
+    evidence = canonical(request.evidence_catalog)
+    envelope = len(prompt.encode()) - len(evidence)
+    instruction_bytes = (
+        instruction.encode() + canonical(schema) + b" " * max(0, envelope)
+    )
+    if (
+        _estimated_tokens(instruction_bytes) > allocation["instruction_tokens"]
+        or _estimated_tokens(evidence) > allocation["evidence_tokens"]
+        or allocation["output_tokens"] < 1
+    ):
+        raise Invalid("PROVIDER_CONTEXT_PREFLIGHT_REFUSED")
+
+
+def _authoritative_instruction(request: AgentBatchRequest) -> str:
+    observed = [slot for slot in request.case_slots if int(slot.split("_")[1]) <= 6]
+    expanded = [slot for slot in request.case_slots if slot not in observed]
+    selected = [
+        trace["trace_handle"] for trace in _authoritative_source_traces(request)
+    ]
+    return (
+        "Return exactly one complete grounded case bundle matching the strict JSON "
+        "schema. No questions, prose, tools, retries, repair, search, trace-read, or "
+        "fallback are available. The supplied catalog already contains complete "
+        "trace packets and the authoritative world inventory; use only its handles "
+        "and normalize every required_world_key to a supplied inventory value. "
+        f"Ground these slots as observed cases with only OBSERVED+cited text: {observed}. "
+        f"Ground these slots as expansions: {expanded}. Expanded opening_user_turn, "
+        "goal, and done_when must jointly cite at least two supplied source traces. "
+        f"Use evidence only from these deterministically selected traces: {selected}. "
+        "Every content field must contain the actual concise human-readable behavior "
+        "or fact and carry only evidence_handles that directly support that content. "
+        "Choose one primary_world_binding from the supplied inventory that makes the "
+        "workflow executable; add only other necessary inventory bindings. "
+        "Never invent identifiers, world values, lineage, rulings, or acceptance."
+    )
+
+
+def _authoritative_wire_schema(request: AgentBatchRequest) -> Json:
+    handles = [
+        event["evidence_handle"]
+        for trace in _authoritative_source_traces(request)
+        for event in trace["events"]
+    ]
+    text = _wire_object(
+        {
+            "content": {"type": "string"},
+            "support_kind": {
+                "type": "string",
+                "enum": ["CORROBORATING", "CONFLICTING"],
+            },
+            "evidence_handles": _wire_array_enum(handles),
+        }
+    )
+    texts = {"type": "array", "items": text}
+    inventory = request.evidence_catalog["world_inventory"]["inventory"]
+    bindings = [
+        f"{namespace}={identifier}"
+        for namespace, identifiers in inventory.items()
+        for identifier in identifiers
+    ]
+    persona = _wire_object(
+        {
+            "label": {"type": "string"},
+            "behavioral_traits": texts,
+            "communication_tendencies": texts,
+            "constraints": texts,
+        }
+    )
+    intent = _wire_object(
+        {
+            "goal": text,
+            "known_constraints": texts,
+            "observed_success_signals": texts,
+            "observed_failure_or_abandonment_signals": texts,
+        }
+    )
+    turn_policy = _wire_object(
+        {
+            "information_reveal_policy": texts,
+            "primary_reaction_rule": text,
+            "additional_reaction_rules": texts,
+            "clarification_behavior": texts,
+            "escalation_tendencies": texts,
+            "stop_conditions": texts,
+            "forbidden_inventions": texts,
+        }
+    )
+    case = _wire_object(
+        {
+            "opening_user_turn": text,
+            "known_facts": texts,
+            "private_user_facts": texts,
+            "unknowns": texts,
+            "allowed_user_actions": texts,
+            "tool_world_constraints": texts,
+            "termination_conditions": texts,
+            "expected_tool_names": {"type": "array", "items": {"type": "string"}},
+            "stressor_codes": {"type": "array", "items": {"type": "string"}},
+            "goal": text,
+            "done_when": text,
+            "primary_world_binding": {"type": "string", "enum": bindings},
+            "additional_world_bindings": _wire_array_enum(bindings),
+            "primary_evaluation_criterion": text,
+            "additional_evaluation_criteria": texts,
+            "primary_abstain_condition": text,
+            "additional_abstain_conditions": texts,
+            "gaps": _wire_array_enum(
+                [
+                    "MODEL_DECLARED_AMBIGUITY",
+                    "WORLD_CONTRACT_UNCLEAR",
+                    "EVALUATION_SEMANTICS_UNCERTAIN",
+                ]
+            ),
+        }
+    )
+    return _wire_object(
+        {
+            "persona": persona,
+            "intent": intent,
+            "turn_policy": turn_policy,
+            "case": case,
+        }
+    )
+
+
+def _authoritative_source_traces(request: AgentBatchRequest) -> list[Json]:
+    traces = request.evidence_catalog["traces"]
+    slot = _slot_number(request.case_slots[0])
+    if slot <= 6:
+        return [traces[(slot - 1) % len(traces)]]
+    pairs = ((0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3))
+    left, right = pairs[slot - 7]
+    return [traces[left], traces[right]]
+
+
+def _wire_object(properties: Json) -> Json:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": properties,
+        "required": list(properties),
+    }
+
+
+def _wire_array_enum(values: list[str]) -> Json:
+    return {"type": "array", "items": {"type": "string", "enum": values}}
+
+
+def _wire_valid(value: Any, schema: Json) -> bool:
+    kind = schema["type"]
+    if kind == "object":
+        properties = schema["properties"]
+        return (
+            isinstance(value, dict)
+            and set(value) == set(schema["required"]) == set(properties)
+            and all(_wire_valid(value[name], item) for name, item in properties.items())
+        )
+    if kind == "array":
+        return isinstance(value, list) and all(
+            _wire_valid(item, schema["items"]) for item in value
+        )
+    return isinstance(value, str) and ("enum" not in schema or value in schema["enum"])
+
+
+def _authoritative_submission(value: Any, case_slot: str) -> Json:
+    keys = {"persona", "intent", "turn_policy", "case"}
+    if (
+        not isinstance(value, dict)
+        or set(value) != keys
+        or not all(isinstance(value[key], dict) for key in keys)
+    ):
+        raise Invalid("PROVIDER_STRUCTURED_OUTPUT_MALFORMED")
+    persona, intent = value["persona"], value["intent"]
+    policy, case = value["turn_policy"], value["case"]
+    persona_claims: list[Json] = []
+    intent_claims: list[Json] = []
+    policy_claims: list[Json] = []
+    return {
+        "personas": [
+            {
+                "persona_key": "persona_1",
+                "label": persona["label"],
+                "behavioral_traits": _wire_texts(
+                    persona["behavioral_traits"], persona_claims
+                ),
+                "communication_tendencies": _wire_texts(
+                    persona["communication_tendencies"], persona_claims
+                ),
+                "constraints": _wire_texts(persona["constraints"], persona_claims),
+                "grounding_claims": persona_claims,
+            }
+        ],
+        "intents": [
+            {
+                "intent_key": "intent_1",
+                "goal": _wire_text(intent["goal"], intent_claims),
+                "known_constraints": _wire_texts(
+                    intent["known_constraints"], intent_claims
+                ),
+                "observed_success_signals": _wire_texts(
+                    intent["observed_success_signals"], intent_claims
+                ),
+                "observed_failure_or_abandonment_signals": _wire_texts(
+                    intent["observed_failure_or_abandonment_signals"], intent_claims
+                ),
+                "grounding_claims": intent_claims,
+            }
+        ],
+        "turn_policies": [
+            {
+                "turn_policy_key": "turn_policy_1",
+                "reaction_rules": [
+                    _wire_text(policy["primary_reaction_rule"], policy_claims),
+                    *_wire_texts(policy["additional_reaction_rules"], policy_claims),
+                ],
+                **{
+                    name: _wire_texts(policy[name], policy_claims)
+                    for name in (
+                        "information_reveal_policy",
+                        "clarification_behavior",
+                        "escalation_tendencies",
+                        "stop_conditions",
+                        "forbidden_inventions",
+                    )
+                },
+                "grounding_claims": policy_claims,
+            }
+        ],
+        "cases": [_wire_case(case, case_slot)],
+    }
+
+
+def _wire_text(value: Json, claims: list[Json]) -> Json:
+    claim_key = f"claim_{len(claims) + 1}"
+    claims.append(
+        {
+            "claim_key": claim_key,
+            "claim": value["content"],
+            "support_kind": value["support_kind"],
+            "evidence_handles": value["evidence_handles"],
+        }
+    )
+    return {"text": value["content"], "basis": "OBSERVED", "claim_keys": [claim_key]}
+
+
+def _wire_texts(values: list[Json], claims: list[Json]) -> list[Json]:
+    return [_wire_text(value, claims) for value in values]
+
+
+def _wire_case(value: Json, case_slot: str) -> Json:
+    claims: list[Json] = []
+    world: dict[str, list[str]] = {}
+    bindings = [value["primary_world_binding"], *value["additional_world_bindings"]]
+    for binding in bindings:
+        namespace, identifier = binding.split("=", 1)
+        world.setdefault(namespace, []).append(identifier)
+    return {
+        "case_key": case_slot,
+        "persona_key": "persona_1",
+        "intent_key": "intent_1",
+        "turn_policy_key": "turn_policy_1",
+        "scenario": {
+            "opening_user_turn": _wire_text(value["opening_user_turn"], claims),
+            **{
+                name: _wire_texts(value[name], claims)
+                for name in (
+                    "known_facts",
+                    "private_user_facts",
+                    "unknowns",
+                    "allowed_user_actions",
+                    "tool_world_constraints",
+                    "termination_conditions",
+                )
+            },
+            "expected_tool_names": value["expected_tool_names"],
+            "stressor_codes": _wire_codes(value["stressor_codes"]),
+        },
+        "goal": _wire_text(value["goal"], claims),
+        "done_when": _wire_text(value["done_when"], claims),
+        "required_world_keys": {
+            namespace: sorted(set(identifiers))
+            for namespace, identifiers in sorted(world.items())
+        },
+        "grounding_claims": claims,
+        "proposed_evaluation": {
+            "criteria": [
+                _wire_text(value["primary_evaluation_criterion"], claims),
+                *_wire_texts(value["additional_evaluation_criteria"], claims),
+            ],
+            "abstain_conditions": [
+                _wire_text(value["primary_abstain_condition"], claims),
+                *_wire_texts(value["additional_abstain_conditions"], claims),
+            ],
+        },
+        "gaps": sorted(set(value["gaps"])),
+    }
+
+
+def _wire_codes(values: list[str]) -> list[str]:
+    codes = {
+        re.sub(r"[^A-Z0-9]+", "_", value.upper()).strip("_")[:64] for value in values
+    }
+    return sorted(code for code in codes if code and code[0].isalpha())
 
 
 def _model_tool_name(value: Any) -> str:
@@ -1648,6 +2436,29 @@ def _submission_schema(request: AgentBatchRequest) -> Json:
         "type": "string",
         "enum": list(request.case_slots),
     }
+    inventory = request.evidence_catalog.get("world_inventory")
+    if isinstance(inventory, dict):
+        world = inventory["inventory"]
+        case_draft = schema["$defs"]["caseDraft"]
+        case_draft["required"].extend(["goal", "done_when", "required_world_keys"])
+        case_draft["properties"]["goal"] = {"$ref": "#/$defs/supportedTextDraft"}
+        case_draft["properties"]["done_when"] = {"$ref": "#/$defs/supportedTextDraft"}
+        case_draft["properties"]["required_world_keys"] = {
+            "type": "object",
+            "additionalProperties": False,
+            "minProperties": 1,
+            "maxProperties": 8,
+            "properties": {
+                name: {
+                    "type": "array",
+                    "items": {"type": "string", "enum": identifiers},
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "uniqueItems": True,
+                }
+                for name, identifiers in world.items()
+            },
+        }
     stressors = schema["$defs"]["scenarioDraft"]["properties"]["stressor_codes"]
     stressors["items"] = {"type": "string", "pattern": SAFE_CODE.pattern}
     stressors["maxItems"] = 20

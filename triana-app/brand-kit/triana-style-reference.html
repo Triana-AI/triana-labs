@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Triana — Visual Style Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root {
+    --canvas: #f2f4e9;
+    --paper: #fdfdfb;
+    --panel: #f6f7f0;
+    --dark: #080a05;
+    --ink: #0b0c08;
+    --ink-2: #3a3b37;
+    --ink-3: #686965;
+    --ink-4: #92938f;
+    --dark-text: #cdcec9;
+    --accent: #d7f144;
+    --accent-strong: #c3de00;
+    --accent-ink: #354b00;
+    --pass: #008039;
+    --pass-soft: #cbf4d5;
+    --block: #c90f1a;
+    --block-soft: #ffdfd9;
+    --review: #a66d00;
+    --review-soft: #ffecc9;
+    --hairline: #e1e2dc;
+    --hairline-2: #cfd0c9;
+    --hairline-3: #b7b8b0;
+    --logo-blue: #2867e4;
+    --display: "Manrope", sans-serif;
+    --body: "Hanken Grotesk", sans-serif;
+    --mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background-color: var(--canvas);
+    background-image: radial-gradient(circle, rgba(164, 167, 147, 0.6) 1px, transparent 1px);
+    background-size: 26px 26px;
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: 48px clamp(20px, 4vw, 72px) 96px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+
+  .brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .t-mark {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--ink);
+    color: var(--paper); font-family: var(--display); font-weight: 800;
+    font-size: 22px; display: grid; place-items: center;
+  }
+  .wordmark { font-family: var(--display); font-weight: 700; font-size: 24px; letter-spacing: -0.01em; }
+  .tagline { color: var(--ink-3); margin: 0 0 40px; }
+
+  h2 {
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2);
+    margin: 48px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline-2);
+  }
+
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .swatch {
+    border: 1px solid var(--hairline-2); border-radius: 8px; overflow: hidden; background: var(--paper);
+  }
+  .swatch .chip { height: 56px; border-bottom: 1px solid var(--hairline); }
+  .swatch .meta { padding: 8px 10px; }
+  .swatch .name { font-size: 12px; font-weight: 600; }
+  .swatch .hex { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .type-specimen { background: var(--paper); border: 1px solid var(--hairline-2); border-radius: 12px; padding: 24px 28px; }
+  .spec-display { font-family: var(--display); font-weight: 800; font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .spec-label { font-family: var(--mono); font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; }
+  .spec-body { margin: 14px 0 0; color: var(--ink-2); max-width: 60ch; }
+  .spec-mono { font-family: var(--mono); font-size: 13px; margin-top: 14px; color: var(--ink-2); }
+
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pill {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    padding: 4px 12px; border-radius: 999px; border: 1px solid transparent;
+  }
+  .pill.pass { background: var(--pass-soft); color: var(--pass); border-color: #9adfae; }
+  .pill.block { background: var(--block-soft); color: var(--block); border-color: #f3b1a8; }
+  .pill.review { background: var(--review-soft); color: var(--review); border-color: #eccf8f; }
+  .pill.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent-strong); }
+
+  .window {
+    background: var(--paper); border: 1px solid var(--ink); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 12px 40px rgba(16, 20, 8, 0.14);
+  }
+  .window-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 18px; border-bottom: 1px solid var(--hairline-2);
+  }
+  .window-title { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left; font-family: var(--mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-4);
+    padding: 10px 18px; border-bottom: 1px solid var(--hairline-2); background: var(--panel);
+  }
+  td { padding: 12px 18px; border-bottom: 1px solid var(--hairline); }
+  tr:last-child td { border-bottom: none; }
+  .mono { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+
+  .dark-panel {
+    background: var(--dark); color: var(--dark-text); border-radius: 12px;
+    padding: 18px 22px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+  }
+  .dark-panel .ok { color: var(--accent); }
+  .dark-panel .bad { color: #ff7a6e; }
+
+  .btn-row { display: flex; gap: 14px; align-items: center; margin-top: 4px; }
+  .btn {
+    font-family: var(--body); font-weight: 600; font-size: 14px;
+    background: var(--ink); color: var(--paper); border: none;
+    padding: 9px 20px; border-radius: 999px; cursor: pointer;
+  }
+  .link { font-weight: 600; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ink); padding-bottom: 1px; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand-row">
+    <div class="t-mark">T</div>
+    <div class="wordmark">Triana</div>
+  </div>
+  <p class="tagline">Release intelligence for production AI systems. Warm paper, dark ink, one acid-green signal.</p>
+
+  <h2>Surfaces &amp; ink</h2>
+  <div class="swatches">
+    <div class="swatch"><div class="chip" style="background:#f2f4e9"></div><div class="meta"><div class="name">Canvas</div><div class="hex">#F2F4E9</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#fdfdfb"></div><div class="meta"><div class="name">Paper</div><div class="hex">#FDFDFB</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f6f7f0"></div><div class="meta"><div class="name">Panel</div><div class="hex">#F6F7F0</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#080a05"></div><div class="meta"><div class="name">Dark surface</div><div class="hex">#080A05</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0b0c08"></div><div class="meta"><div class="name">Ink</div><div class="hex">#0B0C08</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#686965"></div><div class="meta"><div class="name">Ink muted</div><div class="hex">#686965</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#cfd0c9"></div><div class="meta"><div class="name">Hairline</div><div class="hex">#CFD0C9</div></div></div>
+  </div>
+
+  <h2>Signal &amp; status</h2>
+  <div class="swatches">
+    <div class="swatch"><div class="chip" style="background:#d7f144"></div><div class="meta"><div class="name">Accent (acid green)</div><div class="hex">#D7F144</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#354b00"></div><div class="meta"><div class="name">Accent ink</div><div class="hex">#354B00</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#008039"></div><div class="meta"><div class="name">Pass</div><div class="hex">#008039</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#c90f1a"></div><div class="meta"><div class="name">Block</div><div class="hex">#C90F1A</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#a66d00"></div><div class="meta"><div class="name">Review</div><div class="hex">#A66D00</div></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="type-specimen">
+    <div class="spec-label">Manrope · display</div>
+    <p class="spec-display">Release without discovering regressions from customers.</p>
+    <div class="spec-label">Hanken Grotesk · body</div>
+    <p class="spec-body">Triana reruns your production evidence on every merge and returns a decision your team can inspect: what changed, what regressed, and why it passed or blocked.</p>
+    <div class="spec-label" style="margin-top:14px">JetBrains Mono · metadata</div>
+    <p class="spec-mono">PR #181 · run 4189 · v2.3.1 → v2.4.0 · 128 evals · 2 regressions</p>
+  </div>
+
+  <h2>Status pills</h2>
+  <div class="chips">
+    <span class="pill pass">PASS</span>
+    <span class="pill block">BLOCK</span>
+    <span class="pill review">REVIEW</span>
+    <span class="pill active">ACTIVE</span>
+  </div>
+
+  <h2>Product window (evidence table)</h2>
+  <div class="window">
+    <div class="window-head">
+      <span class="window-title">Release Decisions</span>
+      <span class="pill block">BLOCK</span>
+    </div>
+    <table>
+      <thead><tr><th>Merge</th><th>Evidence</th><th>Regressions</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">PR #181</td><td>128 evals rerun</td><td class="mono" style="color:#c90f1a">2</td><td><span class="pill block">BLOCK</span></td></tr>
+        <tr><td class="mono">PR #179</td><td>94 evals rerun</td><td class="mono">0</td><td><span class="pill pass">PASS</span></td></tr>
+        <tr><td class="mono">PR #176</td><td>101 evals rerun</td><td class="mono" style="color:#a66d00">1 pending approval</td><td><span class="pill review">REVIEW</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Dark surface (CI log)</h2>
+  <div class="dark-panel">
+    <div>triana release-gate · pr-181</div>
+    <div><span class="ok">✓</span> release memory loaded · 128 cases</div>
+    <div><span class="ok">✓</span> policy applied · 3 absolute requirements</div>
+    <div><span class="bad">✗</span> BLOCK · 2 regressions · report linked</div>
+  </div>
+
+  <h2>CTA voice</h2>
+  <div class="btn-row">
+    <button class="btn">Gate your next release</button>
+    <a class="link" href="#">Read a sample report</a>
+  </div>
+</main>
+</body>
+</html>

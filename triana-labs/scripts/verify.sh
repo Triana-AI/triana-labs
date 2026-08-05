@@ -27,7 +27,7 @@ triana_frozen_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_hash="7789cc86b961df55841c79b3b2a92baef80b4a982e0dd12dccd6f3a7be3d1312"
+triana_expected_hash="59ab9cddbbb298e166576b80eb4db90522426a659d32a285549a58cdbb1c3362"
 if [[ "${triana_frozen_hash}" != "${triana_expected_hash}" ]]; then
   echo "frozen acceptance hash mismatch" >&2
   exit 1
@@ -59,41 +59,109 @@ triana_intelligence_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_intelligence_hash="2f929a849362f471bf504b741ff2413016c1d3d6132f1a9c0e7073c4c81a77ae"
+triana_expected_intelligence_hash="f49bad1775cfcc5758953aaf81ecbe41389fae9ac6e5148cd1279d8a2c1f15aa"
 if [[ "${triana_intelligence_hash}" != "${triana_expected_intelligence_hash}" ]]; then
   echo "frozen intelligence acceptance hash mismatch" >&2
   exit 1
 fi
 
 triana_case_factory_content_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/case_factory_acceptance \
-    triana-labs/tests/case_factory_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/case_factory_acceptance \
+    tests/case_factory_fixtures \
+    -type f \( -name '*.py' -o -name '*.json' -o -name '*.jsonl' \) \
     | LC_ALL=C sort \
     | xargs cat \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_content_hash="e6cd654b1d980086bd8b492469f50fcda0f2c5bb331428502e6552ee6d819189"
+triana_expected_case_factory_content_hash="e19eb315c235e233927ec71c82e7cfd7d8db73c3d2b7facec254c524b2c83c77"
 if [[ "${triana_case_factory_content_hash}" != "${triana_expected_case_factory_content_hash}" ]]; then
   echo "frozen case factory acceptance content hash mismatch" >&2
   exit 1
 fi
 
 triana_case_factory_file_hash="$(
-  cd "${triana_repository_root}"
-  git ls-files \
-    triana-labs/tests/case_factory_acceptance \
-    triana-labs/tests/case_factory_fixtures \
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/case_factory_acceptance \
+    tests/case_factory_fixtures \
+    -type f \( -name '*.py' -o -name '*.json' -o -name '*.jsonl' \) \
     | LC_ALL=C sort \
     | xargs shasum -a 256 \
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_case_factory_file_hash="63df0ebae10e1c490f5e3a9fc43dbf8cba5cf12056584661ba0942b1fdb98a74"
+triana_expected_case_factory_file_hash="d0fae2c721b750ad189b59d5a826e8c30c9d006e27847205f5834d857f96b096"
 if [[ "${triana_case_factory_file_hash}" != "${triana_expected_case_factory_file_hash}" ]]; then
   echo "frozen case factory acceptance file hash mismatch" >&2
+  exit 1
+fi
+
+triana_adaptive_runner_content_hash="$(
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/adaptive_runner_acceptance \
+    tests/adaptive_runner_fixtures \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs cat \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_adaptive_runner_content_hash="e94374e01922a9fd79c0e5b88321c80c69595e1531d97cb636d4fa43e77186af"
+if [[ "${triana_adaptive_runner_content_hash}" != "${triana_expected_adaptive_runner_content_hash}" ]]; then
+  echo "frozen adaptive runner acceptance content hash mismatch" >&2
+  exit 1
+fi
+
+triana_adaptive_runner_file_hash="$(
+  cd "${triana_repository_root}/triana-labs"
+  find \
+    tests/adaptive_runner_acceptance \
+    tests/adaptive_runner_fixtures \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_adaptive_runner_file_hash="1aef99c059073f23af19b75e0381d1fb14c08340e28644c2ac491d3dba6fe3f5"
+if [[ "${triana_adaptive_runner_file_hash}" != "${triana_expected_adaptive_runner_file_hash}" ]]; then
+  echo "frozen adaptive runner acceptance file hash mismatch" >&2
+  exit 1
+fi
+
+triana_simulator_fidelity_content_hash="$(
+  cd "${triana_repository_root}"
+  find \
+    triana-labs/tests/simulator_fidelity_acceptance \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs cat \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_simulator_fidelity_content_hash="6d60074699477ce426d1c2654c87a7d5f7bb37a0cd00571411934d75dd7bc306"
+if [[ "${triana_simulator_fidelity_content_hash}" != "${triana_expected_simulator_fidelity_content_hash}" ]]; then
+  echo "frozen simulator fidelity acceptance content hash mismatch" >&2
+  exit 1
+fi
+
+triana_simulator_fidelity_file_hash="$(
+  cd "${triana_repository_root}"
+  find \
+    triana-labs/tests/simulator_fidelity_acceptance \
+    -type f -name '*.py' \
+    | LC_ALL=C sort \
+    | xargs shasum -a 256 \
+    | shasum -a 256 \
+    | awk '{print $1}'
+)"
+triana_expected_simulator_fidelity_file_hash="febbf30ce0a9d2b2fd4d2c330dc7fd4c8083ad599b0a6427054d55f5e154985c"
+if [[ "${triana_simulator_fidelity_file_hash}" != "${triana_expected_simulator_fidelity_file_hash}" ]]; then
+  echo "frozen simulator fidelity acceptance file hash mismatch" >&2
   exit 1
 fi
 
@@ -213,6 +281,13 @@ uv run --locked triana cases generate \
 diff \
   "${triana_evidence_root}/source-case-help.txt" \
   "${triana_evidence_root}/installed-case-help.txt"
+uv run --locked triana episodes run \
+  --help >"${triana_evidence_root}/source-episode-help.txt"
+"${triana_evidence_root}/clean-venv/bin/triana" episodes run \
+  --help >"${triana_evidence_root}/installed-episode-help.txt"
+diff \
+  "${triana_evidence_root}/source-episode-help.txt" \
+  "${triana_evidence_root}/installed-episode-help.txt"
 set +e
 "${triana_evidence_root}/clean-venv/bin/triana" \
   traces observe \

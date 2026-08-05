@@ -39,7 +39,11 @@ def _gap_key(item: Json) -> tuple[str, str, int]:
 
 
 def build(
-    observer_path: Path, intelligence_path: Path
+    observer_path: Path,
+    intelligence_path: Path,
+    *,
+    trace_limit: int | None = 25,
+    byte_limit: int = 90_000,
 ) -> tuple[Json, list[Json], Json, int]:
     try:
         observer_bytes, observer, traces = read_bundle(observer_path)
@@ -108,7 +112,7 @@ def build(
     gaps: list[Json] = []
     eligible = [trace_id for trace_id in candidates if _eligible(trace_by_id[trace_id])]
     for trace_id in eligible:
-        if len(selected) == 25:
+        if trace_limit is not None and len(selected) == trace_limit:
             gaps.append({"reason_code": "EVIDENCE_TRACE_LIMIT_REACHED"})
             break
         projected, event_gaps = _project(
@@ -122,15 +126,31 @@ def build(
                 {"reason_code": "NO_USABLE_USER_EVIDENCE", "trace_id": trace_id}
             )
             continue
-        trial = _root(observer_bytes, intelligence_bytes, [*selected, projected], gaps)
-        if len(canonical(trial)) > 90_000:
+        trial = _root(
+            observer_bytes,
+            intelligence_bytes,
+            [*selected, projected],
+            gaps,
+            cast(str, observer["privacy_class"]),
+        )
+        if trace_limit is None:
+            trial["total_eligible_trace_count"] = len(eligible)
+        if len(canonical(trial)) > byte_limit:
             gaps.append(
                 {"reason_code": "EVIDENCE_BYTE_LIMIT_REACHED", "trace_id": trace_id}
             )
             continue
         selected.append(projected)
     gaps.sort(key=_gap_key)
-    root = _root(observer_bytes, intelligence_bytes, selected, gaps)
+    root = _root(
+        observer_bytes,
+        intelligence_bytes,
+        selected,
+        gaps,
+        cast(str, observer["privacy_class"]),
+    )
+    if trace_limit is None:
+        root["total_eligible_trace_count"] = len(eligible)
     if not selected:
         raise Invalid("NO_USABLE_SEMANTIC_EVIDENCE")
     citations = _citations(selected)
@@ -139,9 +159,13 @@ def build(
 
 
 def _root(
-    observer: bytes, intelligence: bytes, selected: list[Json], gaps: list[Json]
+    observer: bytes,
+    intelligence: bytes,
+    selected: list[Json],
+    gaps: list[Json],
+    privacy_class: str,
 ) -> Json:
-    return {
+    result = {
         "artifact_kind": "case_factory_provider_evidence",
         "schema_version": 1,
         "input_manifest_hash": artifact_hash(observer),
@@ -150,6 +174,14 @@ def _root(
         "selected_traces": selected,
         "gaps": sorted(gaps, key=_gap_key),
     }
+    if privacy_class != "SYNTHETIC":
+        result.update(
+            privacy_class=privacy_class,
+            authorization_projection=(
+                "LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1"
+            ),
+        )
+    return result
 
 
 def _round_robin(clusters: list[list[str]]) -> list[str]:

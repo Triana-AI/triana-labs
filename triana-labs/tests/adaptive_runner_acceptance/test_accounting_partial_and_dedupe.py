@@ -1,0 +1,276 @@
+"""Budget reservations, provider accounting, partial custody, and effective N."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+from conftest import Clock, TargetFactory, invoke, jsonl
+
+
+def test_provider_ledger_separates_logical_turns_from_http_counts(
+    tmp_path: Path,
+) -> None:
+    run = invoke(tmp_path)
+    ledger = jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
+    assert len(ledger) == 15
+    simulator_rows = [row for row in ledger if row["lane"] == "SIMULATOR"]
+    target_rows = [row for row in ledger if row["lane"] == "TARGET"]
+    assert len(simulator_rows) == 6
+    assert len(target_rows) == 9
+    assert sum(row["provider_http_exchange_count"] for row in simulator_rows) == 6
+    assert sum(row["provider_http_exchange_count"] for row in target_rows) == 9
+    assert sum(row["input_tokens"] for row in simulator_rows) == 66
+    assert sum(row["output_tokens"] for row in simulator_rows) == 42
+    assert sum(row["input_tokens"] for row in target_rows) == 90
+    assert sum(row["output_tokens"] for row in target_rows) == 45
+    assert all(row["actual_cost_usd"] is None for row in ledger)
+    assert (
+        sum(
+            1
+            for session in run.target.sessions
+            for item in session.exchanges
+            if item["kind"] == "turn"
+        )
+        == 9
+    )
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_reason"),
+    [
+        ("http_overrun", "BUDGET_EXHAUSTED"),
+        ("token_overrun", "BUDGET_EXHAUSTED"),
+        ("too_many_tools", "BUDGET_EXHAUSTED"),
+    ],
+)
+def test_target_budget_overrun_is_typed_and_never_funded_further(
+    tmp_path: Path, mode: str, expected_reason: str
+) -> None:
+    run = invoke(tmp_path, target_modes=(mode, "success", "success"))
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
+    assert attempts[0]["status"] != "VALID"
+    assert expected_reason in attempts[0]["gap_codes"]
+    assert expected_reason in {item["reason_code"] for item in gaps}
+    assert len(run.target.sessions[0].exchanges) <= 3
+    assert run.result.attempted_episode_count == 3
+    assert run.target.sessions[1].exchanges[-1]["kind"] == "close"
+    assert run.target.sessions[2].exchanges[-1]["kind"] == "close"
+
+
+def test_simulator_token_overrun_stops_episode_before_next_target_turn(
+    tmp_path: Path,
+) -> None:
+    run = invoke(tmp_path, simulator_token_scale=20_000)
+    gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
+    assert "BUDGET_EXHAUSTED" in {item["reason_code"] for item in gaps}
+    for session in run.target.sessions:
+        assert [item["kind"] for item in session.exchanges].count("turn") == 1
+        assert session.terminate_count == 1
+
+
+def test_episode_deadline_after_a1_preserves_custody_without_new_egress(
+    tmp_path: Path,
+) -> None:
+    clock = Clock(
+        [
+            0,
+            0,
+            0,
+            0,
+            180_000_000_001,
+            *([181_000_000_000] * 50),
+        ]
+    )
+    run = invoke(tmp_path, clock=clock)
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    first_episode = run.target.launches[0].episode_id
+    first_session = run.target.sessions[0]
+    first_transcript = [
+        item
+        for item in jsonl(run.publisher.artifacts["transcripts.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+    first_ledger = [
+        item
+        for item in jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+
+    assert attempts[0]["status"] == "PARTIAL"
+    assert attempts[0]["termination_reason"] == "EPISODE_TIMEOUT"
+    assert attempts[0]["gap_codes"] == ["EPISODE_TIMEOUT"]
+    assert [item["role"] for item in first_transcript] == ["USER", "ASSISTANT"]
+    assert first_transcript[-1]["content"].startswith("bounded ")
+    assert len(first_ledger) == 1
+    assert first_ledger[0]["lane"] == "TARGET"
+    assert first_ledger[0]["response_hash"] is not None
+    assert (
+        first_ledger[0]["provider_http_exchange_count"],
+        first_ledger[0]["input_tokens"],
+        first_ledger[0]["output_tokens"],
+    ) == (1, 10, 5)
+    assert attempts[0]["target_http_exchange_count"] == 1
+    assert attempts[0]["simulator_http_exchange_count"] == 0
+    assert [item["kind"] for item in first_session.exchanges] == [
+        "hello",
+        "turn",
+        "close",
+    ]
+    assert first_session.exchanges[1]["remaining_budget"]["timeout_ms"] == 180_000
+    assert first_session.exchanges[-1]["last_turn_index"] == 1
+    assert first_session.terminate_count == 1
+    assert all(
+        request["episode_id"] != first_episode for request in run.simulator.requests
+    )
+    assert [item["status"] for item in attempts[1:]] == ["VALID", "VALID"]
+    assert all(
+        [item["kind"] for item in session.exchanges].count("turn") == 3
+        and session.exchanges[-1]["kind"] == "close"
+        and session.terminate_count == 1
+        for session in run.target.sessions[1:]
+    )
+
+
+def test_episode_deadline_after_a2_preserves_two_turns_without_u3_egress(
+    tmp_path: Path,
+) -> None:
+    clock = Clock(
+        [
+            0,
+            0,
+            0,
+            0,
+            100,
+            100,
+            180_000_000_001,
+            *([181_000_000_000] * 50),
+        ]
+    )
+    run = invoke(tmp_path, clock=clock)
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    first_episode = run.target.launches[0].episode_id
+    first_session = run.target.sessions[0]
+    first_transcript = [
+        item
+        for item in jsonl(run.publisher.artifacts["transcripts.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+    first_ledger = [
+        item
+        for item in jsonl(run.publisher.artifacts["provider_ledger.jsonl"])
+        if item["episode_id"] == first_episode
+    ]
+    first_simulator_requests = [
+        request
+        for request in run.simulator.requests
+        if request["episode_id"] == first_episode
+    ]
+
+    assert attempts[0]["status"] == "PARTIAL"
+    assert attempts[0]["termination_reason"] == "EPISODE_TIMEOUT"
+    assert attempts[0]["gap_codes"] == ["EPISODE_TIMEOUT"]
+    assert [item["role"] for item in first_transcript] == [
+        "USER",
+        "ASSISTANT",
+        "USER",
+        "ASSISTANT",
+    ]
+    assert [item["source"] for item in first_transcript] == [
+        "CASE_OPENING",
+        "TARGET",
+        "SIMULATOR",
+        "TARGET",
+    ]
+    assert [item["lane"] for item in first_ledger] == [
+        "TARGET",
+        "SIMULATOR",
+        "TARGET",
+    ]
+    assert all(item["response_hash"] is not None for item in first_ledger)
+    assert attempts[0]["target_http_exchange_count"] == 2
+    assert attempts[0]["simulator_http_exchange_count"] == 1
+    assert attempts[0]["target_input_tokens"] == 20
+    assert attempts[0]["target_output_tokens"] == 10
+    assert attempts[0]["simulator_input_tokens"] == 11
+    assert attempts[0]["simulator_output_tokens"] == 7
+    assert attempts[0]["reserved_cost_usd"] == "4.777776"
+    assert len(first_simulator_requests) == 1
+    assert first_simulator_requests[0]["turn_index"] == 2
+    assert [item["kind"] for item in first_session.exchanges] == [
+        "hello",
+        "turn",
+        "turn",
+        "close",
+    ]
+    assert first_session.exchanges[-1]["last_turn_index"] == 2
+    assert first_session.terminate_count == 1
+    assert [item["status"] for item in attempts[1:]] == ["VALID", "VALID"]
+    assert all(
+        [item["kind"] for item in session.exchanges].count("turn") == 3
+        and session.exchanges[-1]["kind"] == "close"
+        and session.terminate_count == 1
+        for session in run.target.sessions[1:]
+    )
+
+
+def test_middle_slot_failure_is_preserved_and_later_funded_slot_continues(
+    tmp_path: Path,
+) -> None:
+    run = invoke(
+        tmp_path,
+        target_modes=("success", "provider_failed", "success"),
+    )
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    assert len(attempts) == 3
+    assert attempts[0]["status"] == "VALID"
+    assert attempts[1]["status"] != "VALID"
+    assert attempts[1]["termination_reason"] == "TARGET_PROVIDER_ERROR"
+    assert attempts[2]["status"] == "VALID"
+    assert run.target.sessions[2].exchanges[-1]["kind"] == "close"
+    assert run.result.outcome == "COMPLETED_WITH_GAPS"
+    assert run.result.valid_episode_count == 2
+    transcripts = jsonl(run.publisher.artifacts["transcripts.jsonl"])
+    by_episode: dict[str, list[dict[str, object]]] = {}
+    for record in transcripts:
+        by_episode.setdefault(record["episode_id"], []).append(record)
+    counts = [len(records) for records in by_episode.values()]
+    assert counts == [6, 1, 6]
+
+
+def test_binding_mismatch_is_partial_not_a_default_turn(tmp_path: Path) -> None:
+    run = invoke(tmp_path, simulator_mode="binding_mismatch")
+    gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
+    assert "ADAPTATION_BINDING_MISMATCH" in {item["reason_code"] for item in gaps}
+    transcripts = jsonl(run.publisher.artifacts["transcripts.jsonl"])
+    assert all(record["source"] != "SIMULATOR" for record in transcripts)
+    assert run.result.effective_trajectory_count == 0
+
+
+def test_exact_and_near_duplicates_remain_visible_but_do_not_inflate_effective_n(
+    tmp_path: Path,
+) -> None:
+    target = TargetFactory(include_case_id=False)
+    run = invoke(
+        tmp_path,
+        simulator_mode="same",
+        include_case_id=False,
+        target=target,
+    )
+    attempts = jsonl(run.publisher.artifacts["episode_attempts.jsonl"])
+    clusters = json.loads(run.publisher.artifacts["trajectory_clusters.json"])
+    assert len(attempts) == 3
+    assert clusters["raw_n"] == 3
+    assert clusters["valid_n"] == 3
+    assert clusters["effective_n"] == 1
+    assert len(clusters["components"]) == 1
+    assert len(clusters["components"][0]) == 3
+    assert [item["effective"] for item in attempts] == [True, False, False]
+    assert all(item["trajectory_fingerprint"] for item in attempts)
+    gaps = jsonl(run.publisher.artifacts["gaps.jsonl"])
+    assert sum(item["reason_code"] == "DUPLICATE_TRAJECTORY" for item in gaps) == 2
+    assert "INSUFFICIENT_DISTINCT_TRAJECTORIES" in {
+        item["reason_code"] for item in gaps
+    }

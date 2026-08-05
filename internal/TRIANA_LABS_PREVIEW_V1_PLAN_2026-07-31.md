@@ -37,9 +37,10 @@ slice packets only after owner discussion. All unchanged privacy, authority,
 provenance, test-first, change-budget, and typed-gap rules in this plan remain
 binding.
 
-### Frozen Checkpoint 1 — LABS-04 Grounded Case Factory
+### Closed Checkpoint 1 — LABS-04 Grounded Case Factory
 
-The first launch checkpoint is now frozen in `internal/SLICE_PACKET.md`. It
+The first launch checkpoint's historical wire is
+`internal/LABS04_WIRE_CONTRACT.md`. It
 proves or falsifies the trace-to-simulation-design step only:
 
 ```text
@@ -69,26 +70,234 @@ or duplicate clusters and therefore clears the deterministic machinery gate.
 The supported closure routes `triana cases generate` to this runtime only from
 an explicit restricted config and adds immutable `triana cases resume`; legacy
 config dispatch remains explicit and there is no fallback.
-The owner must still clear the frozen blind usefulness rubric. Until then the
-checkpoint is `AWAITING_HUMAN_REVIEW`, and target-agent execution, multi-turn
-runtime, judges, memory, UI, real-data support, DeepEval, and generic agent
-frameworks remain unauthorized.
+On 2026-08-02, the owner answered yes to all six frozen usefulness questions
+for all five cases and confirmed that no accepted case depends on a hidden or
+fabricated fact. LABS-04 therefore passed `LABS04_USEFULNESS_V1`. This clears
+the gate to discuss and freeze LABS-05; it does not itself authorize target-
+agent execution by itself. Judges, memory, UI, real-data support, DeepEval,
+and generic agent frameworks remain unauthorized.
 
-### Proposed Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
+### Frozen Checkpoint 2 — LABS-05 Adaptive Multi-Turn Runner
 
-LABS-05 is not frozen or authorized. Its canonical restart context is
-`internal/LABS05_HANDOFF_2026-08-02.md`. Subject to the owner clearing
-`LABS04_USEFULNESS_V1`, the recommended minimum experiment runs an
-owner-reviewed subset of grounded cases as genuinely adaptive multi-turn
-episodes against one explicitly named existing conversational/tool agent. A
-new slice packet must freeze the target protocol, reset/tool/world boundary,
-episode/termination shape, simulator harness, hard budgets, typed partials,
-trajectory dedupe, transcript artifacts, and minimum human-inspection proof
-before tests or implementation.
+LABS-05 is frozen in `internal/SLICE_PACKET.md` and
+`internal/LABS05_TARGET_CONNECTOR_V1.md`. It runs exactly three owner-reviewed
+cases as U1/A1/U2/A2/U3/A3 episodes. U2 and U3 are proposed by pinned Foundry
+Fireworks `FW-GLM-5.2` only after consuming the immediately preceding opaque
+target response and normalized reported tool observations. The first named
+target is the existing HRAI Recruiter Chat ReAct HTTP protocol at commit
+`728f6c5`, invoked through restricted `HTTP_JSON_V1`; strict
+`EXECUTABLE_JSONL_V1` is the customer bridge for other endpoints. The target
+owns its prompt, model, tools, orchestration, and target-side state.
+
+The deterministic controller owns identity, sequencing, latest-observation
+binding, termination, budgets, logical versus HTTP accounting, atomic evidence
+custody, trajectory fingerprints, dedupe, and typed gaps. The exact ceiling is
+six simulator and thirty-six target HTTP exchanges, forty-two total, USD
+`23.000000`, 180 seconds per episode, and 600 seconds total. Automated
+verification uses fakes only; a live run is separately owner-authorized.
+Passage requires three valid inspectable nonduplicate trajectories and the
+owner's `LABS05_ADAPTATION_V1` turn-level ruling.
 
 Persistent/global memory, model judges, UI, real-data support,
 baseline/candidate comparison, hosted execution, generic SDKs, and broad eval
-expansion remain outside that proposed checkpoint.
+expansion remain outside this checkpoint.
+
+The superseding local implementation completed on 2026-08-03 with 131 focused
+connector acceptance tests and 539 repository-wide tests plus the complete
+versioned verification gate GREEN. The supported surface remains
+synthetic-only. HRAI is the first localhost HTTP mapping, not a Triana-owned
+four-tool reconstruction.
+
+Target-internal model calls, retries, token/cost usage, tool traces, and global
+state remain target-owned and become typed unavailable evidence when the
+endpoint does not report or isolate them. A2A and generic SDK/framework
+adoption remain deferred. The owner-authorized one-turn localhost smoke did not
+reach chat: HRAI startup could not reach its configured Postgres endpoint and
+session creation returned HTTP 500 when its Redis hostname failed DNS. No
+session, chat turn, or tool call occurred. The smoke therefore does not clear
+the three-trajectory or `LABS05_ADAPTATION_V1` gates; no rerun is authorized by
+this record.
+
+On 2026-08-03 Akarsh subsequently authorized the single private real-data
+canary frozen in `internal/LABS05_REAL_DATA_CANARY_2026-08-03.md`. That bounded
+exception is execution evidence for LABS-05 only. General real-data support,
+public artifacts, and repeat execution remain deferred.
+
+The canary attempted three episodes and produced two valid distinct
+trajectories plus one partial trajectory. Akarsh's four available adaptation
+rulings were Y, N, Y, Y; two required items were unavailable. LABS-05 is
+therefore closed as completed-with-gaps and unpassed. The rejected item exactly
+echoed the target and inverted user/assistant roles because the simulator did
+not receive the verified persona, intent, or turn-policy projection and had no
+semantic anti-echo/role gate. The proposed successor eval and smallest repair
+are recorded in
+`internal/LABS05_SIMULATOR_FIDELITY_REVIEW_2026-08-03.md`; they require a new
+frozen slice before implementation or live execution.
+
+### 2026-08-03 public-rollout amendment
+
+Akarsh directed the next roadmap toward a public, usable Preview and added the
+allowlisted Triana demo UI as an explicit priority. The superseding checkpoint
+order for the immediate generated-multi-turn launch cut is LABS-06 simulator
+fidelity, combined LABS-07/08 report-and-Labs-UI vertical slice, LABS-09
+one-command public packaging, and LABS-10 local-sensitive stranger
+installation. Detailed scope, release blockers, deferred work, and owner gates
+are in `internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`.
+
+This amendment accelerates the existing M3A/M3B UI and demo outcomes; it does
+not authorize the historical M2 baseline/candidate path, persistent memory,
+real-data support, or hosted execution. A static synthetic read-only demo may
+be publicly hosted because it accepts no data, credentials, or execution.
+
+### Frozen Checkpoint 3 — LABS-06 Regular-User Simulator Fidelity
+
+Akarsh accepted the planning-first LABS-06 recommendation on 2026-08-03. The
+normative contract is `internal/LABS06_SIMULATOR_FIDELITY_V1.md` plus the
+replacement `internal/SLICE_PACKET.md`. It corrects only the simulated-user
+boundary: immutable LABS-04 persona/intent/policy lineage is migrated into a
+versioned user-owned context; known facts, a bounded six-field episode state,
+the transcript, and the exact latest observation enter each one-attempt
+request; deterministic declared matchers reject role inversion, exact/near
+assistant echo, hidden-fact leakage, fixed-fact conflict, unauthorized
+reaction/action, and invalid stop before a later target call.
+
+LABS-06 freezes 30 newly authored synthetic teacher-forced items: 24 ordinary
+operational uses plus one each angry, impatient, skeptical, informal, mistaken,
+and adversarial. `REGULAR_USER_SIMULATION_FIDELITY_V1` requires at least 24
+human-accepted items and zero critical semantic violations. Automated
+acceptance uses fakes only; provider or target execution requires a separate
+one-run owner authorization.
+Public sample generation waits for the combined LABS-07/08 report-and-UI
+contract. Persistent/global memory, judges, baseline/candidate comparison,
+generic SDKs, and broad eval expansion remain deferred.
+
+Local implementation completed on 2026-08-03 with 18/18 frozen LABS-06 cases,
+143/143 historical adaptive-runner cases, and 569/569 complete repository tests
+plus every versioned verifier lane. A separately authorized private live smoke
+then exercised three HRAI openings and three first Foundry continuations. Every
+simulator continuation was rejected as `SIMULATOR_INVALID_RESPONSE`; the run
+closed with 0 valid/effective trajectories, 13 typed gaps, 12 total HTTP
+exchanges, no retry/rerun, and no generated user transcript turn. The local
+mechanics remain GREEN, but live compatibility and the human fidelity
+checkpoint are unpassed until new evidence and Akarsh's required rulings exist.
+
+Akarsh then authorized the bounded intent-first continuation repair: reduce the
+provider-authored proposal to `disposition`, `user_utterance`, and
+`stop_reason_code`; make intent primary and persona secondary; keep accepted
+episode state unchanged; and retain deterministic binding, role, semantic,
+privacy, accounting, custody, and no-retry authority. The repair is locally
+GREEN with 15/15 frozen cases, 143/143 historical adaptive cases, and 566/566
+complete repository tests plus build/install verification at
+`/private/tmp/triana-labs-verify.HqCiRi`.
+
+The one separately authorized repaired live run was consumed without rerun.
+All three HRAI openings again received a response, but each first three-field
+Foundry continuation was rejected as `SIMULATOR_INVALID_RESPONSE`. It recorded
+9 target and 3 simulator HTTP exchanges, 13 typed gaps, USD 8.666664 reserved,
+0 valid/effective trajectories, and no generated user turn. It therefore fails
+the all-three-reach-A2 and structural-yield gates before human Accepted
+Continuation Rate can be scored. Live provider compatibility and LABS-06 remain
+unpassed.
+
+The final bounded local conformance repair then retained that exact three-field
+authority while aligning its EMIT/STOP descriptions with deterministic rules,
+adding closed stage-specific structural details and a privacy-safe text-free
+diagnostic, preserving normalized usage on later invalid content, and blocking
+a third slot only after two distinct first-continuation episodes prove the same
+structural detail. It passed 43/43 focused cases, 143/143 inherited adaptive
+cases, and the complete 594-test/build/install verifier at
+`/private/tmp/triana-labs-verify.qLDTKk`. No provider, HRAI, target, or real
+data ran. This closes the local implementation defect but does not close the
+dogfood incident or establish live compatibility: a separately authorized
+three-case simulator-only check must first achieve Structural Continuation
+Yield `3/3`, with zero privacy leakage and zero retry/repair/fallback, before
+another end-to-end HRAI run is considered.
+
+The subsequent bounded grounded-workflow closure is locally complete. Its
+separate `LABS046_WORKFLOW_CLOSURE_V1` route requires twelve ordered cases,
+deterministically splits six observed from six multi-trace grounded expansions,
+preflights exact world keys before egress, advances the declared goal through
+the LABS-06 three-field user boundary, and publishes readable tiered LABS-04
+and LABS-06 Markdown. Independent acceptance is 9/9, preserved LABS-06
+acceptance is 43/43, and the complete verifier is 603/603 at
+`/private/tmp/triana-labs-verify.eLaFCb`. No external system ran. Because the
+current trace and world-inventory contracts accept only `SYNTHETIC`, the
+planned production-RDS execution remains blocked on a new bounded real-data
+contract rather than being mislabeled or silently widened.
+
+That bounded contract was accepted on 2026-08-04. The implementation may admit
+only `OWNER_AUTHORIZED_REAL_DATA_CANARY`, propagate it without conversion, and
+enforce private custody plus trace/intelligence/inventory/config/target
+agreement before egress. Synthetic behavior remains immutable. Local plumbing
+does not itself authorize an RDS export, provider call, HRAI session, target
+side effect, or paid run; the exact live bundle remains a later owner gate.
+
+The bounded local implementation is complete with independent stage-to-stage
+acceptance and the complete 613-test/build/install verifier GREEN at
+`/private/tmp/triana-labs-verify.ccgGCu`. The exact canary authorization
+projection is `LABS04_OWNER_AUTHORIZED_REAL_DATA_SEMANTIC_EVIDENCE_V1`; all
+unknown, mixed, custody-invalid, or cross-stage privacy states fail before
+transport or target creation. This changes no live gate: RDS export and any
+provider/HRAI/target execution still require an exact separately approved run.
+
+The final live closure then exercised twelve selected cases against the
+authorized HRAI/Azure boundaries. It retained three valid/effective machine
+trajectories, including two six-role-turn conversations, with 31 target plus
+eight simulator HTTP exchanges and 111 target tool calls. Four cases did not
+start before the 600-second aggregate deadline; other partial cases retained
+target protocol or tool-budget gaps. Akarsh accepted Conversation 3 and
+Conversation 4, with Conversation 4's unsupported uploaded-file claim kept as
+backlog.
+
+LABS-06 is therefore `CLOSED_WITH_ACCEPTED_BACKLOG` as of 2026-08-04. This
+supersedes the 30-item/24-accepted/zero-critical panel as a required checkpoint
+exit, while retaining that panel as optional future population-fidelity
+calibration. The bounded closure proves deterministic controls, exact live
+provider compatibility, and genuine adaptive multi-turn mechanics. It does
+not claim twelve-of-twelve success, universal realism, or production-grade
+fidelity. The accepted backlog is: generic authority for claimed world
+mutations, enforcement of explicit intent preconditions, a recommended
+1,800-second future aggregate run deadline with unchanged per-call/no-retry
+behavior, and separate target protocol/tool-budget readiness work. Combined
+LABS-07/08 full-journey report-and-UI planning is next.
+
+### 2026-08-04 report-and-UI consolidation amendment
+
+Akarsh consolidated LABS-07 and LABS-08 into one vertical slice. The internal
+authority boundary remains strict: a versioned canonical report is the sole
+machine-readable evidence source, and Markdown/static UI surfaces are
+deterministic projections that own no new arithmetic, classification,
+fidelity, or ruling. The report boundary and UI should be designed together so
+the minimum schema is driven by the actual experience rather than a separate
+generic reporting project.
+
+The accepted wireframe journey begins with authorized trace setup and follows
+corpus understanding, grounded persona/intent/case generation, execution
+preflight and progress, adaptive conversations, coverage/cost/gaps/lineage,
+human review, and carried backlog. The allowlisted Triana demo supplies only
+file-level provenance-cleared visual/layout/navigation behavior. LABS-09 keeps
+its historical number and remains responsible for one-command packaging,
+public synthetic fixtures, documentation, licensing, CI parity, and static
+publication. No UI implementation begins before wireframes, exact reusable
+source files, dependencies, and a replacement slice packet are accepted.
+
+The owner accepted the full-journey design on 2026-08-04. The normative design
+input is `internal/LABS07_08_FULL_JOURNEY_WIREFRAMES_2026-08-04.md`, and the
+fresh-session prompt/decision memory is
+`internal/LABS07_08_BUILD_HANDOFF_2026-08-04.md`. The accepted UI begins with
+one local trace file, makes trace understanding transparent through counts and
+rejection reasons, separates deterministic behavior-group membership from
+model-proposed summaries, explains directly observed and grounded-expanded
+cases in plain language, retains `World availability` with `Case data items`
+as its current subsection, follows one independent conversation per case, and
+asks four independent human-review questions without creating an aggregate
+verdict or automatic memory update. The deferred LABS-06 behavior and
+evaluation obligations are consolidated in
+`internal/LABS06_BACKLOG_2026-08-04.md` and must remain visible limitations.
+
+These design decisions do not freeze the report schema, web dependencies,
+source-file reuse, or implementation change budget. Those remain the next
+bounded entry gate.
 
 ## 1. The commitment
 
@@ -1034,14 +1243,62 @@ Owner gate before tests: generation model(s), realism rubric/pass threshold,
 trajectory representation, similarity threshold, duplicate budget, and
 deduplicate-versus-down-weight policy.
 
-### M3A — report schema and static projection
+#### Future simulator-fidelity hardening after the current launch checkpoint
+
+The current LABS-06 semantic and structural gate proves bounded simulator-turn
+validity; it does not by itself prove that a population of simulated users
+behaves like real users. After the current launch checkpoint, simulator work
+must keep three evidence lanes distinct:
+
+1. **simulator validity** — the proposed turn obeys the declared role, facts,
+   policy, world, and stopping contract;
+2. **simulator fidelity** — the distribution of user behavior matches a frozen
+   held-out human or authorized real-user comparator on separately reported
+   dimensions; and
+3. **agent outcome** — the target agent completes the task and obeys the
+   applicable policy under that interaction.
+
+The first hardening slice should add deterministic, inspectable telemetry for
+fact front-loading, information released per turn, clarification behavior,
+repetition, pushback and recovery after agent error, abandonment, and turn and
+conversation length. Scenario contracts should distinguish essential facts,
+facts revealed only when requested, flexible preferences, and non-negotiable
+constraints. A small trace-grounded factorial panel may cross information
+precision, assertiveness, and ordinary/stress behavior, but deterministic code
+must own panel identity and the report must not present panel weights as
+production prevalence.
+
+Later calibration requires the same tasks and same target agent for held-out
+human/real-user and simulated interactions; a measured human-human ceiling;
+separate communication-style, information-pattern, clarification,
+error-reaction, and outcome-calibration results; and human adjudication of a
+frozen calibration subset. Prompt changes must report regressions as well as
+improvements across those dimensions. Simulator model selection is based on
+measured fidelity rather than general model capability.
+
+Policy/tool coverage graphs and coherent symbolic world-state fixtures are
+permitted future mechanisms. Graph nodes, edges, frequencies, and difficulty
+weights must come from authoritative policy, observed traces, or explicit
+human rulings; an LLM may propose missing structure but its estimates remain
+proposals. Any model judge is optional, dimension-specific, identity-recorded,
+human-calibrated, and unable to replace deterministic checks or human fidelity
+authority. One model family must not silently generate scenarios, simulate the
+user, and issue the authoritative verdict.
+
+Research basis: IntellAgent (`arXiv:2501.11067`), *Mind the Sim2Real Gap in
+User Simulation for Agentic Tasks* (`arXiv:2603.11245`), and the EMNLP 2025
+Industry sales-bot simulation study (`2025.emnlp-industry.16`). These sources
+motivate the mechanisms and risks; they do not establish Triana product
+passage or authorize external execution.
+
+### M3A — report and Labs UI vertical slice
 
 Inputs: deterministic M2 report model and selected paired transcripts.
 
 Outputs:
 
 - versioned machine-readable report;
-- static HTML report;
+- deterministic Markdown and read-only static UI projections;
 - divergence tiers, weak evidence, gaps, lineage, fidelity, denominators,
   cost, variation, and trajectory diversity;
 - paired-transcript overlay;
@@ -1057,8 +1314,11 @@ Acceptance:
 - renderer failure cannot destroy the machine-readable report;
 - adapted UI provenance is recorded per file and commit.
 
-Owner gate before UI edit: exact allowlisted source files after ancestry and
-license inspection, plus final web stack/package manager.
+The active generated-multi-turn launch cut specializes this broader M3A model
+into the LABS-07/08 full journey: setup, trace understanding, derived grounded
+cases, execution, adaptive transcripts, evidence/gaps, and human review. Owner
+gate before UI edit: accepted wireframes, exact allowlisted source files after
+ancestry and license inspection, plus final web stack/package manager.
 
 ### M3B — one-command public demo and documentation
 

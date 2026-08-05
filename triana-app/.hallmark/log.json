@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-08-05",
+    "macrostructure": "Workbench",
+    "theme": "warm technical instrument panel",
+    "enrichment": "none",
+    "brief": "Triana site-aligned Labs UI with solid canvas and compact white rail"
+  },
+  {
+    "date": "2026-08-05",
+    "macrostructure": "Workbench",
+    "theme": "cool graphite observability devtool",
+    "enrichment": "none",
+    "brief": "LABS-09 report inspection and private-custody disclosure"
+  },
+  {
+    "date": "2026-08-05",
+    "macrostructure": "Workbench",
+    "theme": "inherited engineering notebook",
+    "enrichment": "none",
+    "brief": "Triana Labs read-only canonical report journey"
+  },
+  {
+    "date": "2026-07-27",
+    "macrostructure": "Workbench",
+    "theme": "inherited engineering notebook",
+    "enrichment": "none",
+    "brief": "Triana connect-agent onboarding and release-intelligence overview"
+  }
+]

@@ -52,6 +52,12 @@ code from Akarsh's Kairos repositories only through the provenance process in
     — readable denominator, distinctness, case, and human-review companion.
 13. [`internal/LABS05_HANDOFF_2026-08-02.md`](internal/LABS05_HANDOFF_2026-08-02.md)
     — current restart context, LABS-05 decisions, backlog, and copyable prompt.
+14. [`internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md`](internal/TRIANA_LABS_PUBLIC_PREVIEW_ROLLOUT_PLAN_2026-08-03.md)
+    — post-LABS-05 public rollout, Labs demo UI sequence, blockers, and deferred
+    register.
+15. [`internal/LABS06_HANDOFF_2026-08-03.md`](internal/LABS06_HANDOFF_2026-08-03.md)
+    — copyable planning-first LABS-06 prompt, LLD seed, edge cases, owner
+    questions, and minimum-test boundary.
 
 Working product instruments:
 
@@ -93,21 +99,27 @@ The immediate first value moment is:
 ## Repository status
 
 The shared Slice 0A deterministic kernel is implemented in `triana-core/`.
-Triana Labs now has a synthetic-only local path through a reference transform,
-the Trace Observer, structural Corpus Intelligence, and a supported Grounded
-Case Factory CLI. LABS-04's restricted Foundry GLM-5.2 experiment produced five
-valid distinct grounded cases with no gaps, and the supported generate/resume
-closure passed the complete 408-test gate. Human usefulness review remains
-pending. Labs still does not accept
-real/local-sensitive traces, execute a target agent, compare releases, create
-persistent memory, or render HTML.
+Triana Labs has a synthetic-only local path through reference transformation,
+Trace Observer, structural Corpus Intelligence, Grounded Case Factory, and the
+Adaptive Multi-Turn Runner. LABS-04 produced five valid distinct grounded cases
+and passed owner usefulness review. LABS-05's one private real-target canary
+produced two valid distinct trajectories and one partial trajectory; owner
+adaptation rulings were Y/N/Y/Y, so the checkpoint closed honestly as unpassed.
+The local implementation and target connectors remain supported. LABS-06 is
+closed with accepted backlog after proving deterministic simulator controls,
+live provider compatibility, and genuine adaptive multi-turn execution; its
+bounded closure is not a universal fidelity claim. Labs still does not
+generally accept real/local-sensitive traces, compare releases, create
+persistent memory, or render a public Labs UI.
 
 `triana cases generate` now dispatches explicitly from the config artifact
 kind: the secret-free restricted example selects the pinned GLM-5.2 path while
 existing legacy configs retain the older path. `triana cases resume` continues
 an immutable restricted pause from exact config bytes and owner answers. This
-is synthetic-only CLI productization, not real-data support or LABS-05; target
-execution still waits for owner review and a new slice packet.
+remains synthetic-only CLI productization, not general real-data support. The
+next public checkpoint combines the report contract and full-journey Labs demo
+UI as one LABS-07/08 vertical slice, followed by the LABS-09 one-command public
+demo and LABS-10 stranger installation.
 
 Labs is intended for open-source distribution only after provenance, privacy,
 egress, and license gates pass. No open-source license is granted yet.

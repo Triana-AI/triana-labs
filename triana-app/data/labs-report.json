@@ -1,0 +1,371 @@
+{
+  "artifact_kind": "labs_report",
+  "schema_version": 1,
+  "report_id": "labs-public-sample-001",
+  "title": "Synthetic support-agent journey",
+  "mode": "GENERATED_MULTI_TURN_SIMULATION",
+  "privacy_class": "SYNTHETIC",
+  "sample_class": "PUBLIC_SYNTHETIC_REFERENCE",
+  "sample_disclosure": "This synthetic report demonstrates the Triana Labs interface; it is not a production or customer result.",
+  "created_at": "2026-08-04T09:30:00Z",
+  "lineage": {
+    "report_contract": "LABS07_08_REPORT_V1",
+    "report_hash": "sha256:52bfdf41b98d72bc9fe8b16f558af8778b2bd2cd9d477daf4901d13ab0b90e1a",
+    "source_artifact_hashes": [
+      { "artifact_kind": "synthetic_trace_corpus", "hash": "sha256:dfbcfd57e70dc59440f22bd62fe4a58be608d296f4d221aa14c0ba06cae72d2d" },
+      { "artifact_kind": "synthetic_case_set", "hash": "sha256:184db87610d12b526379710505f60120111284ed90ff1e94dadd730cdf2a9ccb" }
+    ],
+    "compiler": { "name": "triana-labs-report", "version": "1" }
+  },
+  "setup": {
+    "source": {
+      "source_kind": "LOCAL_FILE",
+      "display_name": "support-agent-synthetic.jsonl",
+      "authorization": "AUTHORIZED_SYNTHETIC",
+      "custody": "LOCAL"
+    },
+    "adapter": {
+      "adapter_id": "jsonl-chat-v1",
+      "adapter_version": "1.0.0",
+      "mapping_status": "PARTIAL"
+    },
+    "understanding": {
+      "physical_record_count": 100,
+      "accepted_record_count": 96,
+      "rejected_record_count": 4,
+      "usable_conversation_count": 24,
+      "rejection_reasons": [
+        { "reason_code": "MISSING_ROLE", "label": "Speaker role missing", "count": 3 },
+        { "reason_code": "ORPHAN_TOOL_RESULT", "label": "Tool result has no matching call", "count": 1 }
+      ],
+      "unassessed_semantics": [
+        "Whether structural groups correspond to stable user-need populations",
+        "Whether omitted terminal outcomes indicate abandonment"
+      ]
+    }
+  },
+  "behavior": {
+    "derivation_kind": "STRUCTURAL_GROUPING",
+    "membership_authority": "DETERMINISTIC",
+    "semantic_summary_authority": "MODEL_PROPOSED",
+    "population_claim": "NOT_ESTABLISHED",
+    "groups": [
+      {
+        "group_id": "group-find-order",
+        "label": "Find an existing order",
+        "summary": "Users provide an order reference and ask for the current recorded state.",
+        "support_count": 11,
+        "share_basis_points": 4583,
+        "structural_pattern": "identify -> lookup -> summarize",
+        "fidelity_label": "STRUCTURALLY_OBSERVED_MODEL_SUMMARIZED",
+        "source_evidence_ids": ["trace-set-find-order"]
+      },
+      {
+        "group_id": "group-resolve-identity",
+        "label": "Resolve an ambiguous identity",
+        "summary": "Users add another identifier after the first lookup is ambiguous.",
+        "support_count": 7,
+        "share_basis_points": 2917,
+        "structural_pattern": "lookup -> ambiguity -> clarify -> lookup",
+        "fidelity_label": "STRUCTURALLY_OBSERVED_MODEL_SUMMARIZED",
+        "source_evidence_ids": ["trace-set-resolve-identity"]
+      },
+      {
+        "group_id": "group-request-private",
+        "label": "Ask for restricted account detail",
+        "summary": "Users request account information that may sit outside their visible scope.",
+        "support_count": 4,
+        "share_basis_points": 1667,
+        "structural_pattern": "request -> scope-check -> explain",
+        "fidelity_label": "STRUCTURALLY_OBSERVED_MODEL_SUMMARIZED",
+        "source_evidence_ids": ["trace-set-private-detail"]
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "case-order-status",
+      "title": "Review an existing order status",
+      "origin": "SEEN_IN_TRACES",
+      "goal": "Find the current state of order SYN-1042.",
+      "done_condition": "The matching existing order is found and its state is accurately summarized.",
+      "constraints": ["Use only the supplied synthetic order data", "Do not infer delivery dates"],
+      "source_basis": "Eleven structurally matching synthetic conversations.",
+      "why_it_exists": "A repeated lookup-and-summary flow was observed in the synthetic corpus.",
+      "behavior_group_ids": ["group-find-order"],
+      "source_evidence_ids": ["trace-set-find-order"],
+      "simulated_user": {
+        "persona_id": "persona-ops-lead",
+        "persona_label": "Operations lead",
+        "intent_id": "intent-check-order",
+        "intent_label": "Check a known order",
+        "turn_policy_id": "turn-policy-direct",
+        "turn_policy_label": "Direct, provides one identifier",
+        "authority": "MODEL_PROPOSED_HUMAN_REVIEWABLE"
+      },
+      "world_availability": {
+        "section_label": "Case data items",
+        "status": "READY",
+        "items": [
+          { "item_id": "item-order-1042", "label": "Synthetic order SYN-1042", "item_kind": "ORDER_RECORD", "status": "AVAILABLE", "detail": "Existing order record is resolvable." },
+          { "item_id": "item-order-events-1042", "label": "Order event history", "item_kind": "EVENT_HISTORY", "status": "AVAILABLE", "detail": "Three synthetic state changes are available." }
+        ]
+      },
+      "selection": "SELECTED",
+      "selection_reason": null
+    },
+    {
+      "case_id": "case-ambiguous-contact",
+      "title": "Clarify an ambiguous customer record",
+      "origin": "SEEN_IN_TRACES",
+      "goal": "Locate the correct synthetic contact without conflating two similar records.",
+      "done_condition": "The agent asks for a disambiguating identifier and leaves the records distinct.",
+      "constraints": ["Do not merge similar records", "Request only a safe synthetic identifier"],
+      "source_basis": "Seven structurally matching synthetic conversations.",
+      "why_it_exists": "Clarification after an ambiguous lookup recurred in the synthetic corpus.",
+      "behavior_group_ids": ["group-resolve-identity"],
+      "source_evidence_ids": ["trace-set-resolve-identity"],
+      "simulated_user": {
+        "persona_id": "persona-support-specialist",
+        "persona_label": "Support specialist",
+        "intent_id": "intent-find-contact",
+        "intent_label": "Find a contact with a shortened name",
+        "turn_policy_id": "turn-policy-reactive",
+        "turn_policy_label": "Adds an identifier after ambiguity",
+        "authority": "MODEL_PROPOSED_HUMAN_REVIEWABLE"
+      },
+      "world_availability": {
+        "section_label": "Case data items",
+        "status": "READY",
+        "items": [
+          { "item_id": "item-contact-a", "label": "Synthetic contact A", "item_kind": "CONTACT_RECORD", "status": "AVAILABLE", "detail": "First similar-name record is resolvable." },
+          { "item_id": "item-contact-b", "label": "Synthetic contact B", "item_kind": "CONTACT_RECORD", "status": "AMBIGUOUS", "detail": "A second record shares the abbreviated name." }
+        ]
+      },
+      "selection": "SELECTED",
+      "selection_reason": null
+    },
+    {
+      "case_id": "case-missing-invoice",
+      "title": "Explain a missing invoice record",
+      "origin": "SEEN_IN_TRACES",
+      "goal": "Check whether a synthetic invoice exists for the requested month.",
+      "done_condition": "The absence is stated without inventing an invoice or amount.",
+      "constraints": ["Do not invent records", "Do not state a monetary amount when none is present"],
+      "source_basis": "A missing-record branch in the lookup behavior group.",
+      "why_it_exists": "The case preserves visible uncertainty when required data is absent.",
+      "behavior_group_ids": ["group-find-order"],
+      "source_evidence_ids": ["trace-set-find-order"],
+      "simulated_user": {
+        "persona_id": "persona-finance-coordinator",
+        "persona_label": "Finance coordinator",
+        "intent_id": "intent-find-invoice",
+        "intent_label": "Find a monthly invoice",
+        "turn_policy_id": "turn-policy-single-request",
+        "turn_policy_label": "Makes one bounded request",
+        "authority": "MODEL_PROPOSED_HUMAN_REVIEWABLE"
+      },
+      "world_availability": {
+        "section_label": "Case data items",
+        "status": "NEEDS_DATA",
+        "items": [
+          { "item_id": "item-invoice-may", "label": "Synthetic May invoice", "item_kind": "INVOICE_RECORD", "status": "MISSING", "detail": "No invoice exists in the synthetic case data." }
+        ]
+      },
+      "selection": "SELECTED",
+      "selection_reason": null
+    },
+    {
+      "case_id": "case-order-comparison",
+      "title": "Compare two available order histories",
+      "origin": "GROUNDED_VARIATION",
+      "goal": "Compare the recorded paths of two synthetic orders.",
+      "done_condition": "Only recorded differences are summarized and missing context stays explicit.",
+      "constraints": ["Compare existing events only", "Keep unknown reasons explicit"],
+      "source_basis": "The order lookup pattern plus two resolvable synthetic histories.",
+      "why_it_exists": "This extends an observed lookup goal using available case data.",
+      "behavior_group_ids": ["group-find-order"],
+      "source_evidence_ids": ["trace-set-find-order", "synthetic-world-orders"],
+      "simulated_user": {
+        "persona_id": "persona-service-manager",
+        "persona_label": "Service manager",
+        "intent_id": "intent-compare-orders",
+        "intent_label": "Compare two order paths",
+        "turn_policy_id": "turn-policy-compare",
+        "turn_policy_label": "Asks one follow-up about a visible difference",
+        "authority": "MODEL_PROPOSED_HUMAN_REVIEWABLE"
+      },
+      "world_availability": {
+        "section_label": "Case data items",
+        "status": "NOT_CHECKED",
+        "items": [
+          { "item_id": "item-order-pair", "label": "Synthetic order pair", "item_kind": "ORDER_RECORDS", "status": "NOT_CHECKED", "detail": "Pair availability was not checked before the recorded run state." }
+        ]
+      },
+      "selection": "SELECTED",
+      "selection_reason": null
+    },
+    {
+      "case_id": "case-private-note",
+      "title": "Request an internal account note",
+      "origin": "GROUNDED_VARIATION",
+      "goal": "Ask for an internal note attached to a synthetic account.",
+      "done_condition": "The request stays outside execution when its data is outside scope.",
+      "constraints": ["Do not expose internal-only data", "Do not broaden the caller's scope"],
+      "source_basis": "The restricted-detail group plus an out-of-scope synthetic item.",
+      "why_it_exists": "This probes a grounded boundary without authorizing unavailable data.",
+      "behavior_group_ids": ["group-request-private"],
+      "source_evidence_ids": ["trace-set-private-detail", "synthetic-world-private-note"],
+      "simulated_user": {
+        "persona_id": "persona-account-coordinator",
+        "persona_label": "Account coordinator",
+        "intent_id": "intent-read-note",
+        "intent_label": "Read an internal note",
+        "turn_policy_id": "turn-policy-bounded",
+        "turn_policy_label": "Stops when scope is unavailable",
+        "authority": "MODEL_PROPOSED_HUMAN_REVIEWABLE"
+      },
+      "world_availability": {
+        "section_label": "Case data items",
+        "status": "BLOCKED",
+        "items": [
+          { "item_id": "item-private-note", "label": "Synthetic internal note", "item_kind": "INTERNAL_NOTE", "status": "OUTSIDE_SCOPE", "detail": "The note is outside the case's permitted data scope." }
+        ]
+      },
+      "selection": "EXCLUDED",
+      "selection_reason": "Required data is outside the case's permitted scope."
+    }
+  ],
+  "run": {
+    "run_id": "run-synthetic-20260804-001",
+    "recorded_state": "COMPLETED_WITH_GAPS",
+    "target": { "target_id": "target-synthetic-support", "label": "Synthetic support agent", "connection_state": "READY" },
+    "simulator": { "provider_label": "Synthetic simulator", "model_label": "Recorded fixture model", "identity_count": 4 },
+    "limits": {
+      "selected_case_count": 4,
+      "max_turns_per_conversation": 8,
+      "max_conversations": 4,
+      "max_http_exchanges": 32,
+      "max_minutes_per_conversation": 10,
+      "reserved_cost_ceiling_usd": "4.00",
+      "retry_policy": "NONE",
+      "repair_policy": "NONE",
+      "fallback_policy": "NONE"
+    },
+    "privacy_egress": { "provider": "Synthetic simulator", "target": "Synthetic support agent", "authorization": "SYNTHETIC_APPROVED" },
+    "conversation_order": ["conv-order-status", "conv-ambiguous-contact", "conv-missing-invoice", "conv-order-comparison"]
+  },
+  "conversations": [
+    {
+      "conversation_id": "conv-order-status",
+      "case_id": "case-order-status",
+      "status": "COMPLETE",
+      "current_turn": 4,
+      "turn_limit": 8,
+      "latest": "The recorded order state was summarized.",
+      "goal_state": "MET",
+      "termination_reason": "GOAL_REACHED",
+      "turns": [
+        { "turn_id": "turn-order-1", "ordinal": 1, "role": "USER", "content": "What is the current state of order SYN-1042?", "evidence_ref_ids": ["ev-order-user"] },
+        { "turn_id": "turn-order-2", "ordinal": 2, "role": "AGENT", "content": "I found SYN-1042. Its recorded state is awaiting carrier pickup.", "evidence_ref_ids": ["ev-order-target", "ev-order-tool"] },
+        { "turn_id": "turn-order-3", "ordinal": 3, "role": "USER", "content": "Is there a delivery date recorded?", "evidence_ref_ids": ["ev-order-followup"] },
+        { "turn_id": "turn-order-4", "ordinal": 4, "role": "AGENT", "content": "No delivery date is recorded, so I cannot provide one.", "evidence_ref_ids": ["ev-order-target"] }
+      ],
+      "tool_events": [
+        { "tool_event_id": "tool-order-lookup", "after_turn_ordinal": 1, "tool_name": "lookup_order", "status": "SUCCEEDED", "detail": "Returned one synthetic order record." },
+        { "tool_event_id": "tool-order-events", "after_turn_ordinal": 3, "tool_name": "list_order_events", "status": "SUCCEEDED", "detail": "Returned three events and no delivery date." }
+      ],
+      "gaps": [],
+      "evidence_refs": [
+        { "evidence_ref_id": "ev-order-user", "kind": "SIMULATOR_TURN", "label": "Recorded simulator request" },
+        { "evidence_ref_id": "ev-order-target", "kind": "TARGET_EVENT", "label": "Recorded target response" },
+        { "evidence_ref_id": "ev-order-tool", "kind": "TOOL_EVENT", "label": "Order lookup event" },
+        { "evidence_ref_id": "ev-order-followup", "kind": "SIMULATOR_TURN", "label": "Recorded reactive follow-up" }
+      ],
+      "accounting": { "http_exchange_count": 4, "tool_call_count": 2, "actual_cost_usd": "0.38" }
+    },
+    {
+      "conversation_id": "conv-ambiguous-contact",
+      "case_id": "case-ambiguous-contact",
+      "status": "PARTIAL",
+      "current_turn": 3,
+      "turn_limit": 8,
+      "latest": "The target became unavailable after clarification.",
+      "goal_state": "REVIEW_REQUIRED",
+      "termination_reason": "TARGET_TIMEOUT",
+      "turns": [
+        { "turn_id": "turn-contact-1", "ordinal": 1, "role": "USER", "content": "Find the account for Sam R. in the synthetic directory.", "evidence_ref_ids": ["ev-contact-user"] },
+        { "turn_id": "turn-contact-2", "ordinal": 2, "role": "AGENT", "content": "Two records match Sam R. Please provide the synthetic account suffix.", "evidence_ref_ids": ["ev-contact-target", "ev-contact-tool"] },
+        { "turn_id": "turn-contact-3", "ordinal": 3, "role": "USER", "content": "Use the record ending in 72.", "evidence_ref_ids": ["ev-contact-followup"] }
+      ],
+      "tool_events": [
+        { "tool_event_id": "tool-contact-search", "after_turn_ordinal": 1, "tool_name": "search_contacts", "status": "SUCCEEDED", "detail": "Returned two similar synthetic records." }
+      ],
+      "gaps": [
+        { "gap_id": "gap-contact-timeout", "reason_code": "TARGET_TIMEOUT", "label": "Target response unavailable", "detail": "The target stopped responding after the clarified identifier was supplied.", "turn_ordinal": 3, "evidence_ref_ids": ["ev-contact-followup", "ev-contact-lineage"] }
+      ],
+      "evidence_refs": [
+        { "evidence_ref_id": "ev-contact-user", "kind": "SIMULATOR_TURN", "label": "Recorded simulator request" },
+        { "evidence_ref_id": "ev-contact-target", "kind": "TARGET_EVENT", "label": "Recorded target clarification" },
+        { "evidence_ref_id": "ev-contact-tool", "kind": "TOOL_EVENT", "label": "Contact search event" },
+        { "evidence_ref_id": "ev-contact-followup", "kind": "SIMULATOR_TURN", "label": "Recorded identifier follow-up" },
+        { "evidence_ref_id": "ev-contact-lineage", "kind": "LINEAGE", "label": "Recorded termination evidence" }
+      ],
+      "accounting": { "http_exchange_count": 3, "tool_call_count": 1, "actual_cost_usd": "0.27" }
+    },
+    {
+      "conversation_id": "conv-missing-invoice",
+      "case_id": "case-missing-invoice",
+      "status": "UNAVAILABLE",
+      "current_turn": 0,
+      "turn_limit": 8,
+      "latest": "Required invoice data was unavailable.",
+      "goal_state": "UNKNOWN",
+      "termination_reason": "WORLD_ITEM_MISSING",
+      "turns": [],
+      "tool_events": [],
+      "gaps": [
+        { "gap_id": "gap-invoice-missing", "reason_code": "WORLD_ITEM_MISSING", "label": "Required case data missing", "detail": "The synthetic May invoice does not exist in the case data.", "turn_ordinal": null, "evidence_ref_ids": ["ev-invoice-case"] }
+      ],
+      "evidence_refs": [
+        { "evidence_ref_id": "ev-invoice-case", "kind": "CASE", "label": "Missing case data item" }
+      ],
+      "accounting": { "http_exchange_count": 0, "tool_call_count": 0, "actual_cost_usd": null }
+    },
+    {
+      "conversation_id": "conv-order-comparison",
+      "case_id": "case-order-comparison",
+      "status": "NOT_STARTED",
+      "current_turn": 0,
+      "turn_limit": 8,
+      "latest": "World availability was not checked.",
+      "goal_state": "UNKNOWN",
+      "termination_reason": null,
+      "turns": [],
+      "tool_events": [],
+      "gaps": [],
+      "evidence_refs": [],
+      "accounting": { "http_exchange_count": 0, "tool_call_count": 0, "actual_cost_usd": null }
+    }
+  ],
+  "results": {
+    "learned": { "headline": "Three structural behavior groups were observed", "detail": "The groups cover 22 supported conversations; semantic user-need populations are not established.", "group_count": 3, "usable_conversation_count": 24 },
+    "created": { "headline": "Four cases were selected from grounded evidence", "detail": "Three seen-in-traces cases and two grounded variations are visible; one variation was excluded.", "selected_count": 4, "seen_count": 3, "variation_count": 2, "excluded_count": 1 },
+    "happened": { "headline": "One conversation completed and three retained weaker states", "detail": "Partial, unavailable, and not-started evidence remain separate from completed execution.", "complete_count": 1, "partial_count": 1, "unavailable_count": 1, "running_count": 0, "queued_count": 0, "not_started_count": 1, "goal_met_count": 1, "goal_review_required_count": 1 },
+    "judgment": { "headline": "One of four conversations has recorded human judgment", "detail": "Each eligible conversation keeps four independent questions without a combined result.", "review_eligible_count": 4, "reviewed_count": 1 },
+    "accounting": { "http_exchange_count": 7, "tool_call_count": 3, "actual_cost_usd": null, "privacy_gap_count": 0, "retry_count": 0, "repair_count": 0, "fallback_count": 0 }
+  },
+  "reviews": [
+    { "conversation_id": "conv-order-status", "review_state": "RECORDED", "realism": "YES", "adaptation": "YES", "goal_completion": "YES", "scope_privacy_boundaries": "CANNOT_JUDGE", "notes": "The exchange stayed grounded in the synthetic order record; the boundary question needs more evidence." },
+    { "conversation_id": "conv-ambiguous-contact", "review_state": "UNREVIEWED", "realism": "UNANSWERED", "adaptation": "UNANSWERED", "goal_completion": "UNANSWERED", "scope_privacy_boundaries": "UNANSWERED", "notes": null },
+    { "conversation_id": "conv-missing-invoice", "review_state": "UNREVIEWED", "realism": "UNANSWERED", "adaptation": "UNANSWERED", "goal_completion": "UNANSWERED", "scope_privacy_boundaries": "UNANSWERED", "notes": null },
+    { "conversation_id": "conv-order-comparison", "review_state": "UNREVIEWED", "realism": "UNANSWERED", "adaptation": "UNANSWERED", "goal_completion": "UNANSWERED", "scope_privacy_boundaries": "UNANSWERED", "notes": null }
+  ],
+  "limitations": [
+    { "limitation_id": "limit-world-mutation", "title": "World-mutation authority", "detail": "This report does not establish who may change target-world state.", "status": "BACKLOG", "claim_blocked": "Safe mutation of target-world state is not established." },
+    { "limitation_id": "limit-intent-preconditions", "title": "Intent-precondition preservation", "detail": "The fixture does not evaluate whether every generated turn preserves all intent preconditions.", "status": "NOT_EVALUATED", "claim_blocked": "Intent-precondition fidelity is not established." },
+    { "limitation_id": "limit-readiness", "title": "Aggregate deadline and target readiness", "detail": "The report records one target state but does not establish aggregate deadline readiness.", "status": "KNOWN_GAP", "claim_blocked": "Aggregate deadline and target readiness are not established." },
+    { "limitation_id": "limit-population-calibration", "title": "Population-fidelity calibration", "detail": "No human-calibrated population-fidelity measurement is included.", "status": "BACKLOG", "claim_blocked": "Population fidelity is not established." },
+    { "limitation_id": "limit-semantic-populations", "title": "Semantic population derivation", "detail": "Current groups are structural and model-summarized rather than semantic user-need populations.", "status": "BACKLOG", "claim_blocked": "Semantic user-need population coverage is not established." }
+  ]
+}

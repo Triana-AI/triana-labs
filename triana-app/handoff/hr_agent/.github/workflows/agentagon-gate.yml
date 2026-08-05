@@ -1,0 +1,155 @@
+# agentagon release gate.
+#
+# HONEST SHORTCUT (read before removing this comment): the gate computation itself is
+# real -- FrozenLabelModel replays committed judge labels through the same
+# agentagon.behavioral_evals.gate.run_release_gate() a live run uses, zero shortcuts
+# there. The shortcut is the INPUT: this workflow diffs pre-committed trace exports
+# under traces/{baseline,candidate}/, not a live pull from this agent's own traffic. A
+# real integration would fetch the latest N traces per side at run time instead of
+# reading a committed JSONL file. See handoff/hr_agent/README.md for what to wire up
+# next once you're ready to point this at live traffic.
+#
+# Deterministic by construction: run_gate.py only ever replays frozen/frozen_labels.json
+# (see FrozenLabelModel in vendor/agentagon/behavioral_evals/frozen_labels.py) -- it
+# never calls Bedrock, OpenRouter, or any other model API. No secrets, no API keys, no
+# repository secrets to configure.
+name: agentagon release gate
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  gate:
+    # Cheap event-shape filter only -- the exact `/agentagon run` command match (which
+    # needs a trim the Actions expression language has no builtin for) happens in the
+    # "Check trigger" step below, gating every later step.
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check trigger
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.eventName === "pull_request") {
+              core.setOutput("proceed", "true");
+              core.setOutput("ref", context.payload.pull_request.head.sha);
+              core.setOutput("number", context.payload.pull_request.number);
+              return;
+            }
+            const command = (context.payload.comment.body || "").trim();
+            const proceed = command === "/agentagon run";
+            core.setOutput("proceed", String(proceed));
+            if (!proceed) return;
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.issue.number,
+            });
+            core.setOutput("ref", pr.data.head.sha);
+            core.setOutput("number", context.payload.issue.number);
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.proceed == 'true'
+        with:
+          ref: ${{ steps.check.outputs.ref }}
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.proceed == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install gate dependencies
+        if: steps.check.outputs.proceed == 'true'
+        working-directory: handoff/hr_agent
+        run: pip install -r requirements.txt
+
+      - name: Run agentagon release gate
+        id: gate
+        if: steps.check.outputs.proceed == 'true'
+        working-directory: handoff/hr_agent
+        continue-on-error: true
+        run: python3 run_gate.py
+
+      - name: Read ASCII report + verdict
+        id: report
+        if: steps.check.outputs.proceed == 'true'
+        working-directory: handoff/hr_agent
+        run: |
+          {
+            echo "ascii<<GATE_ASCII_EOF"
+            cat ascii.txt
+            echo "GATE_ASCII_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "verdict=$(cat verdict.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: steps.check.outputs.proceed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const verdict = `${{ steps.report.outputs.verdict }}`.trim();
+            const ascii = `${{ steps.report.outputs.ascii }}`;
+            const blocked = verdict === "BLOCK";
+            const review = verdict === "REVIEW";
+            const marker = "<!-- agentagon-gate -->";
+            // Local dev default -- the agentagon-demo release-diff UI running on
+            // `npm run dev`. Swap for the hosted URL (e.g. your deployed Vercel app's
+            // `/release/<pair>` page) once this is running against a real deployment;
+            // see README.md "Placeholders you must fill in".
+            const releaseDiffUrl = "http://localhost:3000/release/fix";
+            const status = blocked ? "🚫 BLOCK" : review ? "⚠️ REVIEW" : "✅ SHIP";
+            const body = [
+              marker,
+              `### agentagon release gate: ${status}`,
+              "",
+              "```",
+              ascii,
+              "```",
+              "",
+              `[View full release diff →](${releaseDiffUrl})`,
+            ].join("\n");
+
+            const prNumber = ${{ steps.check.outputs.number }};
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.data.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+      - name: Fail check on BLOCK verdict
+        if: steps.check.outputs.proceed == 'true' && steps.report.outputs.verdict == 'BLOCK'
+        run: |
+          echo "agentagon release gate verdict: BLOCK"
+          exit 1
+
+      - name: Flag REVIEW verdict (non-blocking)
+        if: steps.check.outputs.proceed == 'true' && steps.report.outputs.verdict == 'REVIEW'
+        run: |
+          echo "::warning::agentagon release gate verdict: REVIEW (see PR comment) -- not a clean pass, does not block merge"
