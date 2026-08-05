@@ -88,8 +88,10 @@ def test_module_level_asgi_app_uses_injected_composition_without_external_io(
     monkeypatch.setattr(
         composition,
         "compose_backend",
-        lambda settings: calls.append(settings)
-        or SimpleNamespace(app=FastAPI(), close=lambda: closes.append(True)),
+        lambda settings: (
+            calls.append(settings)
+            or SimpleNamespace(app=FastAPI(), close=lambda: closes.append(True))
+        ),
     )
     sys.modules.pop("triana_backend.main", None)
     module = importlib.import_module("triana_backend.main")
