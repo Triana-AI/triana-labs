@@ -2,7 +2,7 @@
 
 Date reconciled: 2026-08-05
 
-Status: **ACTIVE — ENTRY GATE MISSED; DEPLOYMENT BLOCKED PENDING RECONCILIATION**
+Status: **COMPLETE — ENTRY-GATE MISS DISCLOSED; RECONCILIATION AND LIVE EXIT GATES GREEN**
 
 Slice ID: `LABS08-HRAI-RDS-S3-REPORT-V1`
 
@@ -193,3 +193,26 @@ The slice exits only when all are true:
 
 Any failed item remains RED or typed partial evidence. No check may be reported
 as passing unless it ran against the integrated commit.
+
+## Exit reconciliation
+
+The owner-authorized private AWS launch completed on 2026-08-05 without
+opening public ingress. The exact hash-pinned 200-record HRAI source was stored
+in the private SSE-KMS bucket, imported through the DBOS-backed workflow into
+the new `triana` logical database on the existing RDS instance, and rendered
+by Triana App exclusively through the backend API over an SSM tunnel.
+
+- Import: `imp_0bf658de16aed56774fbb1bea8412989`
+- Run: `run_f574721d8995265acf6c6b1e6b899696`
+- Report: `rpt_183d311b5111fb8bb4b7100d13131148`
+- Stored accounting: 200 physical, 186 completed/usable, 14 harness errors
+- Report artifact hash:
+  `017baeea69046d2e582a9ec47590f5d7a0058e7b45a27320bc939134a69d1ec2`
+
+Offline governance, deployment-asset, secret, decision-memory, backend P0/P1,
+App no-fallback, TypeScript, container-build, and live S3-to-RDS-to-DBOS-to-API-
+to-UI checks passed. CI was then made Linux-portable without changing product
+semantics: current `uv` installs the exact frozen Python, `/private/tmp` is
+created explicitly for Labs' private-custody contract, and the App job runs
+the active LABS-08 backend/no-fallback acceptance rather than superseded
+fixture/static-export suites. No LLM call was made in the retained import.
