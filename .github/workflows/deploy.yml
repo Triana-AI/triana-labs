@@ -76,7 +76,7 @@ jobs:
           backend_tag="$registry/$ECR_BACKEND_REPOSITORY:$DEPLOY_SHA"
           app_tag="$registry/$ECR_APP_REPOSITORY:$DEPLOY_SHA"
           docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
-            --file triana-backend/Dockerfile --tag "$backend_tag" --push triana-backend
+            --file triana-backend/Dockerfile --tag "$backend_tag" --push .
           docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
             --file triana-app/Dockerfile --tag "$app_tag" --push triana-app
           backend_digest=$(aws ecr describe-images \

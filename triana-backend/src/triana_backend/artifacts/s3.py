@@ -69,7 +69,7 @@ class S3ArtifactStore:
             spool.close()
             raise ArtifactIntegrityError("staging S3 size changed while reading")
 
-        canonical_key = f"{self._object_prefix}/{expected_sha256[:2]}/{expected_sha256}"
+        canonical_key = self._canonical_key(kind, expected_sha256)
         spool.seek(0)
         try:
             self._client.put_object(
@@ -102,6 +102,7 @@ class S3ArtifactStore:
             expected_checksum=expected_checksum,
             expected_size=byte_count,
             expected_kind=kind,
+            expected_kms_key=None,
         )
         return ArtifactRef(
             id=deterministic_id("art", {"kind": kind.value, "sha256": expected_sha256}),
@@ -115,6 +116,51 @@ class S3ArtifactStore:
             checksum_sha256_b64=expected_checksum,
         )
 
+    def publish_bytes(
+        self, *, payload: bytes, kind: ArtifactKind, media_type: str
+    ) -> ArtifactRef:
+        digest = hashlib.sha256(payload).hexdigest()
+        checksum = _checksum_b64(digest)
+        key = self._canonical_key(kind, digest)
+        try:
+            self._client.put_object(
+                Bucket=self._artifact_bucket,
+                Key=key,
+                Body=payload,
+                ContentLength=len(payload),
+                ContentType=media_type,
+                ChecksumSHA256=checksum,
+                ServerSideEncryption="aws:kms",
+                SSEKMSKeyId=self._kms_key_id,
+                Metadata={"sha256": digest, "artifact-kind": kind.value},
+                IfNoneMatch="*",
+            )
+        except ClientError as error:
+            code = str(error.response.get("Error", {}).get("Code", ""))
+            status = error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if code not in {"PreconditionFailed", "412"} and status != 412:
+                raise
+        head = self._head_object(self._artifact_bucket, key)
+        self._verify_published_head(
+            head,
+            expected_sha256=digest,
+            expected_checksum=checksum,
+            expected_size=len(payload),
+            expected_kind=kind,
+            expected_kms_key=None,
+        )
+        return ArtifactRef(
+            id=deterministic_id("art", {"kind": kind.value, "sha256": digest}),
+            kind=kind,
+            content_sha256=digest,
+            byte_count=len(payload),
+            media_type=media_type,
+            storage_bucket=self._artifact_bucket,
+            storage_key=key,
+            kms_key_id=str(head["SSEKMSKeyId"]),
+            checksum_sha256_b64=checksum,
+        )
+
     def open_verified(self, ref: ArtifactRef) -> BinaryIO:
         self._verify_published_head(
             self._head_object(ref.storage_bucket, ref.storage_key),
@@ -122,6 +168,7 @@ class S3ArtifactStore:
             expected_checksum=ref.checksum_sha256_b64,
             expected_size=ref.byte_count,
             expected_kind=ref.kind,
+            expected_kms_key=ref.kms_key_id,
         )
         output = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
         digest = hashlib.sha256()
@@ -149,6 +196,7 @@ class S3ArtifactStore:
                 expected_checksum=ref.checksum_sha256_b64,
                 expected_size=ref.byte_count,
                 expected_kind=ref.kind,
+                expected_kms_key=ref.kms_key_id,
             )
         except ArtifactIntegrityError as error:
             if str(error) == "S3 object is missing":
@@ -178,8 +226,9 @@ class S3ArtifactStore:
         expected_checksum: str,
         expected_size: int,
         expected_kind: ArtifactKind,
+        expected_kms_key: str | None,
     ) -> None:
-        self._verify_encryption(head, expected_kms_key=self._kms_key_id)
+        self._verify_encryption(head, expected_kms_key=expected_kms_key)
         if _require_checksum(head) != expected_checksum:
             raise ArtifactIntegrityError("published S3 checksum mismatch")
         if head.get("ContentLength") != expected_size:
@@ -189,6 +238,10 @@ class S3ArtifactStore:
             raise ArtifactIntegrityError("published S3 digest metadata mismatch")
         if metadata.get("artifact-kind") != expected_kind.value:
             raise ArtifactIntegrityError("published S3 artifact kind mismatch")
+
+    def _canonical_key(self, kind: ArtifactKind, digest: str) -> str:
+        segment = kind.value.lower()
+        return f"{self._object_prefix}/{segment}/{digest[:2]}/{digest}"
 
     @staticmethod
     def _verify_encryption(

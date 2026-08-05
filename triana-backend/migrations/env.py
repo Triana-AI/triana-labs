@@ -29,6 +29,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         version_table_schema="app",
     )
+    context.execute("CREATE SCHEMA IF NOT EXISTS app")
     with context.begin_transaction():
         context.run_migrations()
 
@@ -42,6 +43,8 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
+        connection.exec_driver_sql("CREATE SCHEMA IF NOT EXISTS app")
+        connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

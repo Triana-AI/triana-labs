@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from collections.abc import Callable
+
+from fastapi import FastAPI, HTTPException
 
 from .contracts import (
     AnalysisNotReady,
@@ -27,6 +29,7 @@ def create_app(
     reads: BackendReadPort,
     imports: ImportCommandPort,
     runs: RunCommandPort,
+    readiness: Callable[[], bool],
 ) -> FastAPI:
     app = FastAPI(title="Triana Backend", version="0.1.0")
     app.add_exception_handler(ResourceUnavailable, unavailable_handler)  # type: ignore[arg-type]
@@ -38,8 +41,17 @@ def create_app(
     )
     app.include_router(create_v1_router(reads=reads, imports=imports, runs=runs))
 
+    @app.get("/health/live")
+    def live() -> dict[str, str]:
+        return {"status": "live"}
+
+    @app.get("/health/ready")
     @app.get("/healthz")
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
+    def ready() -> dict[str, str]:
+        if not readiness():
+            raise HTTPException(
+                status_code=503, detail="backend dependencies unavailable"
+            )
+        return {"status": "ready"}
 
     return app

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "triana-backend"
 version = "0.1.0"
 description = "Private backend for the bounded Triana Labs HRAI demo"
-requires-python = ">=3.12"
+requires-python = "==3.13.14"
 dependencies = [
   "alembic>=1.16,<2",
   "boto3>=1.40,<2",
@@ -15,6 +15,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4",
   "pydantic==2.13.4",
   "sqlalchemy>=2.0,<3",
+  "triana-labs",
   "uvicorn==0.51.0",
 ]
 
@@ -33,6 +34,9 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/triana_backend"]
 
+[tool.uv.sources]
+triana-labs = { path = "../triana-labs", editable = true }
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
@@ -44,6 +48,6 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "S"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 packages = ["triana_backend"]

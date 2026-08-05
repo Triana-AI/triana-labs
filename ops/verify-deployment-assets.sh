@@ -12,12 +12,13 @@ for required in \
   triana-app/Dockerfile \
   triana-app/.dockerignore \
   ops/.env.example \
+  ops/backend.env.example \
   ops/deploy.sh \
   ops/rollback.sh; do
   [ -f "$required" ] || { echo "missing deployment asset: $required" >&2; exit 1; }
 done
 
-if grep -Ev '^[A-Z][A-Z0-9_]*=$|^$' ops/.env.example | grep -q .; then
+if grep -Ev '^[A-Z][A-Z0-9_]*=$|^$' ops/.env.example ops/backend.env.example | grep -q .; then
   echo "ops/.env.example may contain names only" >&2
   exit 1
 fi
@@ -32,6 +33,8 @@ grep -Fq '127.0.0.1:3000:3000' compose.production.yaml
 grep -Fq '127.0.0.1:8000:8000' compose.production.yaml
 grep -Fq 'no-new-privileges:true' compose.production.yaml
 grep -Fq '@sha256:' ops/deploy.sh
+grep -Fq 'TRIANA_BACKEND_ENV_FILE' compose.production.yaml
+grep -Fq 'TRIANA_LABS_REPORT_ID' compose.production.yaml
 
 for ignore in triana-backend/.dockerignore triana-app/.dockerignore; do
   [ "$(sed -n '1p' "$ignore")" = '**' ] \

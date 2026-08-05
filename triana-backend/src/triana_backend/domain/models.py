@@ -14,6 +14,7 @@ class EvidenceClass(StrEnum):
 
 class ArtifactKind(StrEnum):
     SOURCE_TRACE_JSONL = "SOURCE_TRACE_JSONL"
+    LABS_ANALYSIS_FACTS = "LABS_ANALYSIS_FACTS"
     LABS_REPORT = "LABS_REPORT"
 
 

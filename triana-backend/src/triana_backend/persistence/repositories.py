@@ -122,8 +122,14 @@ class SqlAlchemyImportRepository:
                     physical_record_count=parsed.physical_record_count,
                     usable_conversation_count=parsed.usable_conversation_count,
                     source_status_counts=dict(parsed.source_status_counts),
-                    rejected_record_count=0,
-                    rejection_summary={},
+                    rejected_record_count=parsed.source_status_counts.get(
+                        "HARNESS_ERROR", 0
+                    ),
+                    rejection_summary={
+                        "SOURCE_EXECUTION_INCOMPLETE": parsed.source_status_counts.get(
+                            "HARNESS_ERROR", 0
+                        )
+                    },
                     status="COMPLETED",
                     identity_hash=identity_hash,
                     idempotency_key=request.idempotency_key,

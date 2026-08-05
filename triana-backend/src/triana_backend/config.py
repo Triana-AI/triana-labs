@@ -39,6 +39,8 @@ class BackendSettings:
         _require_postgresql(
             settings.dbos_system_database_url, "DBOS_SYSTEM_DATABASE_URL"
         )
+        if not settings.kms_key_id.startswith("arn:aws:kms:"):
+            raise ValueError("TRIANA_KMS_KEY_ID must be a full KMS key ARN")
         if settings.host != "127.0.0.1":
             raise ValueError("TRIANA_BACKEND_HOST must be 127.0.0.1 for LABS-08")
         return settings

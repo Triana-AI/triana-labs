@@ -30,7 +30,7 @@ docker compose \
   --env-file "$release_file" \
   --file "$compose_file" \
   up --detach --remove-orphans --wait --wait-timeout 180
-curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8000/healthz >/dev/null
+curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8000/health/ready >/dev/null
 curl --fail --silent --show-error --max-time 10 http://127.0.0.1:3000/setup >/dev/null
 ln -sfn "releases/$git_sha.env" "$deploy_root/current.env"
 ln -sfn "releases/$git_sha.compose.yaml" "$deploy_root/compose.yaml"

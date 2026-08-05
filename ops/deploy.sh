@@ -12,7 +12,8 @@ app_image=$2
 git_sha=$3
 compose_source=$4
 deploy_root=${TRIANA_DEPLOY_ROOT:-/opt/triana}
-runtime_env="$deploy_root/.env"
+backend_env="$deploy_root/backend.env"
+app_env="$deploy_root/app.env"
 releases_dir="$deploy_root/releases"
 release_file="$releases_dir/$git_sha.env"
 release_compose="$releases_dir/$git_sha.compose.yaml"
@@ -45,7 +46,8 @@ case "$git_sha" in
   *[!0-9a-f]*) echo "git SHA must be lowercase hexadecimal" >&2; exit 65 ;;
 esac
 
-[ -f "$runtime_env" ] || { echo "missing $runtime_env" >&2; exit 66; }
+[ -f "$backend_env" ] || { echo "missing $backend_env" >&2; exit 66; }
+[ -f "$app_env" ] || { echo "missing $app_env" >&2; exit 66; }
 [ -f "$compose_source" ] || { echo "missing compose source" >&2; exit 66; }
 command -v aws >/dev/null
 command -v docker >/dev/null
@@ -54,15 +56,17 @@ command -v curl >/dev/null
 
 mkdir -p "$releases_dir"
 chmod 700 "$deploy_root" "$releases_dir"
-chmod 600 "$runtime_env"
+chmod 600 "$backend_env" "$app_env"
 exec 9>"$lock_file"
 flock -n 9 || { echo "another deployment is active" >&2; exit 75; }
 
 registry=${backend_image%%/*}
 app_registry=${app_image%%/*}
 [ "$registry" = "$app_registry" ] || { echo "images must use one ECR registry" >&2; exit 65; }
-region=$(sed -n 's/^AWS_REGION=//p' "$runtime_env" | tail -1)
+region=$(sed -n 's/^AWS_REGION=//p' "$backend_env" | tail -1)
 [ -n "$region" ] || { echo "AWS_REGION is missing from runtime env" >&2; exit 66; }
+report_id=$(sed -n 's/^TRIANA_LABS_REPORT_ID=//p' "$app_env" | tail -1)
+[ -n "$report_id" ] || { echo "TRIANA_LABS_REPORT_ID is missing from app env" >&2; exit 66; }
 aws ecr get-login-password --region "$region" \
   | docker login --username AWS --password-stdin "$registry" >/dev/null
 
@@ -80,7 +84,8 @@ trap 'rm -f "$candidate"' EXIT HUP INT TERM
   printf 'TRIANA_BACKEND_IMAGE=%s\n' "$backend_image"
   printf 'TRIANA_APP_IMAGE=%s\n' "$app_image"
   printf 'TRIANA_GIT_SHA=%s\n' "$git_sha"
-  printf 'TRIANA_RUNTIME_ENV_FILE=%s\n' "$runtime_env"
+  printf 'TRIANA_BACKEND_ENV_FILE=%s\n' "$backend_env"
+  printf 'TRIANA_LABS_REPORT_ID=%s\n' "$report_id"
   printf 'TRIANA_COMPOSE_FILE=%s\n' "$release_compose"
   printf 'TRIANA_PREVIOUS_RELEASE=%s\n' "$previous_release"
 } >"$candidate"
@@ -89,12 +94,21 @@ chmod 600 "$candidate"
 docker network inspect triana_default >/dev/null 2>&1 \
   || docker network create triana_default >/dev/null
 
-# Migrations happen once, before either long-running service is replaced.
+# DBOS 2.27 also performs compatibility migrations during launch. Pre-create
+# its schema here and keep the runtime role limited to the DBOS schema plus app
+# DML; this version cannot yet promise a completely DDL-free runtime role.
 docker run --rm \
   --network triana_default \
-  --env-file "$runtime_env" \
+  --env-file "$backend_env" \
   "$backend_image" \
-  alembic -c /app/alembic.ini upgrade head
+  sh -c 'dbos migrate --db-url "$TRIANA_DATABASE_URL" --sys-db-url "$DBOS_SYSTEM_DATABASE_URL"'
+
+# Application migrations happen once before long-running services are replaced.
+docker run --rm \
+  --network triana_default \
+  --env-file "$backend_env" \
+  "$backend_image" \
+  alembic -c /workspace/triana-backend/alembic.ini upgrade head
 
 install -m 0644 "$compose_source" "$release_compose"
 cp "$candidate" "$release_file"
@@ -109,7 +123,7 @@ docker compose \
   || deployment_ok=false
 if [ "$deployment_ok" = true ]; then
   curl --fail --silent --show-error --max-time 10 \
-    http://127.0.0.1:8000/healthz >/dev/null \
+    http://127.0.0.1:8000/health/ready >/dev/null \
     || deployment_ok=false
 fi
 if [ "$deployment_ok" = true ]; then

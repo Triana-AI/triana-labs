@@ -40,7 +40,7 @@ class RunStart:
     rerun: bool = False
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ResourceUnavailable(Exception):
     """A resource exists, but its required artifact cannot be verified."""
 
@@ -50,20 +50,20 @@ class ResourceUnavailable(Exception):
     code: str = "ARTIFACT_MISSING"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ResourceNotFound(Exception):
     resource_kind: str
     resource_id: str
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class IntegrityConflict(Exception):
     resource_kind: str
     resource_id: str
     code: str = "INTEGRITY_CONFLICT"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class AnalysisNotReady(Exception):
     """The canonical Labs compiler required to create a report is absent."""
 

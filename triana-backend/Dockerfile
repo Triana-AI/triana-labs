@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM python:3.12.11-slim-bookworm AS build
+FROM python:3.13.14-slim-bookworm AS build
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -7,30 +7,34 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 
 RUN python -m pip install --no-cache-dir uv==0.8.14
 
-WORKDIR /app
-COPY pyproject.toml uv.lock ./
+WORKDIR /workspace/triana-backend
+COPY triana-backend/pyproject.toml triana-backend/uv.lock ./
+COPY triana-labs/pyproject.toml /workspace/triana-labs/pyproject.toml
+COPY triana-labs/src /workspace/triana-labs/src
 RUN uv sync --frozen --no-dev --no-install-project
 
-COPY src ./src
-COPY alembic.ini ./
-COPY migrations ./migrations
+COPY triana-backend/src ./src
+COPY triana-backend/alembic.ini ./
+COPY triana-backend/migrations ./migrations
 RUN uv sync --frozen --no-dev
 RUN .venv/bin/python -c "import dbos, fastapi, uvicorn; import triana_backend.main"
 
-FROM python:3.12.11-slim-bookworm AS runtime
+FROM python:3.13.14-slim-bookworm AS runtime
 
-ENV PATH="/app/.venv/bin:$PATH" \
+ENV PATH="/workspace/triana-backend/.venv/bin:$PATH" \
+    PYTHONPATH="/workspace/triana-labs/src" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 RUN groupadd --gid 10001 triana \
     && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/triana triana
 
-WORKDIR /app
-COPY --from=build --chown=triana:triana /app/.venv /app/.venv
-COPY --from=build --chown=triana:triana /app/src /app/src
-COPY --from=build --chown=triana:triana /app/alembic.ini /app/alembic.ini
-COPY --from=build --chown=triana:triana /app/migrations /app/migrations
+WORKDIR /workspace/triana-backend
+COPY --from=build --chown=triana:triana /workspace/triana-backend/.venv ./.venv
+COPY --from=build --chown=triana:triana /workspace/triana-backend/src ./src
+COPY --from=build --chown=triana:triana /workspace/triana-backend/alembic.ini ./alembic.ini
+COPY --from=build --chown=triana:triana /workspace/triana-backend/migrations ./migrations
+COPY --from=build --chown=triana:triana /workspace/triana-labs /workspace/triana-labs
 
 USER 10001:10001
 EXPOSE 8000
