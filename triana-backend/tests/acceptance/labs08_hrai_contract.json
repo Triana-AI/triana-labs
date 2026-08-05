@@ -1,7 +1,7 @@
 {
   "contract_id": "LABS08_HRAI_BACKEND_ACCEPTANCE_V1",
   "source": {
-    "repository": "/Users/akarshgajbhiye/Documents/hr_ai",
+    "repository_name": "hr_ai",
     "repository_commit": "728f6c5058efe40a16e2aecc9b528b3353f4df4f",
     "relative_path": "experiments/historical_traffic_v0/out/run_200/normalized_traces.jsonl",
     "sha256": "76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b",
@@ -12,9 +12,14 @@
   },
   "environment": {
     "api_origin": "TRIANA_ACCEPTANCE_API_ORIGIN",
+    "artifact_bucket": "TRIANA_ACCEPTANCE_ARTIFACT_BUCKET",
     "database_url": "TRIANA_ACCEPTANCE_DATABASE_URL",
+    "source_file": "TRIANA_ACCEPTANCE_HRAI_SOURCE_FILE",
     "source_s3_uri": "TRIANA_ACCEPTANCE_SOURCE_S3_URI",
     "workspace_slug": "TRIANA_ACCEPTANCE_WORKSPACE_SLUG"
+  },
+  "artifact_storage": {
+    "canonical_key_template": "objects/sha256/{sha256_prefix}/{sha256}"
   },
   "defaults": {
     "api_origin": "http://127.0.0.1:8000",
@@ -46,6 +51,8 @@
     ]
   },
   "api": {
+    "import_path": "/api/v1/imports",
+    "run_path": "/api/v1/runs",
     "report_path": "/api/v1/reports/{report_id}",
     "source_record_path": "/api/v1/imports/{import_id}/records/{record_id}",
     "conversation_path": "/api/v1/conversations/{conversation_id}"

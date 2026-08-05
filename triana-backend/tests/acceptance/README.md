@@ -13,11 +13,19 @@ edit the test to fit their implementation.
 
 ## Required environment
 
+- `TRIANA_ACCEPTANCE_HRAI_SOURCE_FILE`: the explicit path to the authorized
+  `normalized_traces.jsonl` file in an operator-selected HRAI checkout. The
+  repository records the source commit and checkout-relative path, but never
+  commits a developer-specific absolute checkout path.
 - `TRIANA_ACCEPTANCE_DATABASE_URL`: a disposable PostgreSQL database with the
   production migrations applied.
 - `TRIANA_ACCEPTANCE_SOURCE_S3_URI`: a private object containing the exact
-  source bytes, uploaded before the test with SSE-KMS and SHA-256 object
-  metadata.
+  source bytes in the staging namespace, uploaded before the test with
+  SSE-KMS, an S3 SHA-256 checksum, and SHA-256 object metadata. This URI is
+  input provenance; it is not the persisted artifact location.
+- `TRIANA_ACCEPTANCE_ARTIFACT_BUCKET`: the dedicated private bucket in which
+  the backend publishes and persists the canonical object at
+  `objects/sha256/76/76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b`.
 - `TRIANA_ACCEPTANCE_API_ORIGIN`: optional; defaults to
   `http://127.0.0.1:8000` and must address the running FastAPI service.
 - `TRIANA_ACCEPTANCE_WORKSPACE_SLUG`: optional; defaults to `local`.
@@ -26,6 +34,10 @@ The backend test environment must include its locked `boto3`, `psycopg`, and
 test dependencies. The test neither provisions nor destroys AWS or RDS
 resources. The infrastructure lane owns creation and teardown of disposable
 acceptance resources.
+
+When a required value or source file is absent, the live gate stops with one
+`LABS08_ACCEPTANCE_PRECONDITION` message listing every missing prerequisite.
+That outcome is neither RED nor GREEN production evidence.
 
 Run from `triana-backend`:
 
@@ -43,7 +55,8 @@ does not start a browser or duplicate report arithmetic.
 1. The source bytes still have the frozen hash, 200 physical records, 186
    `COMPLETED`, 14 `HARNESS_ERROR`, and 186 usable conversations.
 2. S3 contains exactly those bytes under SSE-KMS rather than a reconstructed
-   UI fixture.
+   UI fixture, and the RDS artifact row points to the canonical
+   content-addressed object rather than the operator's staging URI.
 3. A normal repeated import and run reuse their immutable identities;
    `--rerun` creates a distinct DBOS workflow/run attempt without changing the
    source import.

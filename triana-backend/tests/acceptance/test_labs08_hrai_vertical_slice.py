@@ -6,16 +6,16 @@ and HTTP surfaces as separate deployed consumers would.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlopen
-
 
 BACKEND = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = Path(__file__).with_name("labs08_hrai_contract.json")
@@ -31,14 +31,29 @@ def _required_environment(contract: dict[str, Any]) -> dict[str, str]:
     defaults = contract["defaults"]
     values = {
         "api_origin": os.environ.get(environment["api_origin"], defaults["api_origin"]),
+        "artifact_bucket": os.environ.get(environment["artifact_bucket"], ""),
         "database_url": os.environ.get(environment["database_url"], ""),
+        "source_file": os.environ.get(environment["source_file"], ""),
         "source_s3_uri": os.environ.get(environment["source_s3_uri"], ""),
         "workspace_slug": os.environ.get(
             environment["workspace_slug"], defaults["workspace_slug"]
         ),
     }
-    assert values["database_url"], f"set {environment['database_url']}"
-    assert values["source_s3_uri"], f"set {environment['source_s3_uri']}"
+    missing = [
+        environment[key]
+        for key in ("artifact_bucket", "database_url", "source_file", "source_s3_uri")
+        if not values[key]
+    ]
+    if missing:
+        raise AssertionError(
+            "LABS08_ACCEPTANCE_PRECONDITION: set " + ", ".join(sorted(missing))
+        )
+    source_file = Path(values["source_file"])
+    if not source_file.is_file():
+        raise AssertionError(
+            "LABS08_ACCEPTANCE_PRECONDITION: "
+            f"{environment['source_file']} must name the authorized run_200 JSONL file"
+        )
     return values
 
 
@@ -105,7 +120,7 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     contract = _load_contract()
     source = contract["source"]
     values = _required_environment(contract)
-    source_path = Path(source["repository"]) / source["relative_path"]
+    source_path = Path(values["source_file"])
     source_bytes, records, status_counts = _source_facts(source_path)
 
     assert hashlib.sha256(source_bytes).hexdigest() == source["sha256"]
@@ -121,10 +136,13 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     source_bucket = parsed.netloc
     source_key = parsed.path.lstrip("/")
     s3 = boto3.client("s3")
-    head = s3.head_object(Bucket=source_bucket, Key=source_key)
+    head = s3.head_object(Bucket=source_bucket, Key=source_key, ChecksumMode="ENABLED")
     assert head["ServerSideEncryption"] == "aws:kms"
     assert head["ContentLength"] == len(source_bytes)
     assert head["Metadata"]["sha256"] == source["sha256"]
+    assert head["ChecksumSHA256"] == base64.b64encode(
+        bytes.fromhex(source["sha256"])
+    ).decode("ascii")
     stored_source = s3.get_object(Bucket=source_bucket, Key=source_key)["Body"].read()
     assert stored_source == source_bytes
 
@@ -214,8 +232,22 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     assert source_artifact["content_sha256"] == source["sha256"]
     assert source_artifact["byte_count"] == len(source_bytes)
     assert source_artifact["storage_backend"] == "S3"
-    assert source_artifact["storage_bucket"] == source_bucket
-    assert source_artifact["storage_key"] == source_key
+    assert source_artifact["storage_bucket"] == values["artifact_bucket"]
+    canonical_key = contract["artifact_storage"]["canonical_key_template"].format(
+        sha256_prefix=source["sha256"][:2], sha256=source["sha256"]
+    )
+    assert source_artifact["storage_key"] == canonical_key
+    canonical_head = s3.head_object(
+        Bucket=values["artifact_bucket"],
+        Key=canonical_key,
+        ChecksumMode="ENABLED",
+    )
+    assert canonical_head["ServerSideEncryption"] == "aws:kms"
+    assert canonical_head["ChecksumSHA256"] == head["ChecksumSHA256"]
+    canonical_source = s3.get_object(
+        Bucket=values["artifact_bucket"], Key=canonical_key
+    )["Body"].read()
+    assert canonical_source == source_bytes
     assert import_row is not None
     assert import_row["source_artifact_id"] == source_artifact["id"]
     assert import_row["evidence_class"] == source["evidence_class"]
