@@ -1,0 +1,122 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_sha:
+        description: Full commit SHA from main to deploy
+        required: true
+        type: string
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EXPECTED_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      DEPLOY_SHA: ${{ inputs.git_sha }}
+      ECR_BACKEND_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
+      ECR_APP_REPOSITORY: ${{ vars.ECR_APP_REPOSITORY }}
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.git_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate guarded inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$AWS_REGION" =~ ^[a-z]{2}-[a-z]+-[0-9]$ ]]
+          [[ "$EXPECTED_AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]
+          [[ "$ECR_BACKEND_REPOSITORY" =~ ^[a-z0-9._/-]+$ ]]
+          [[ "$ECR_APP_REPOSITORY" =~ ^[a-z0-9._/-]+$ ]]
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
+          [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: triana-${{ github.run_id }}
+          mask-aws-account-id: true
+
+      - name: Verify AWS target
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(aws sts get-caller-identity --query Account --output text)
+          test "$actual" = "$EXPECTED_AWS_ACCOUNT_ID"
+
+      - name: Build and push immutable ARM64 images
+        id: images
+        shell: bash
+        run: |
+          set -euo pipefail
+          registry="$EXPECTED_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "$registry"
+          backend_tag="$registry/$ECR_BACKEND_REPOSITORY:$DEPLOY_SHA"
+          app_tag="$registry/$ECR_APP_REPOSITORY:$DEPLOY_SHA"
+          docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
+            --file triana-backend/Dockerfile --tag "$backend_tag" --push triana-backend
+          docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
+            --file triana-app/Dockerfile --tag "$app_tag" --push triana-app
+          backend_digest=$(aws ecr describe-images \
+            --repository-name "$ECR_BACKEND_REPOSITORY" \
+            --image-ids imageTag="$DEPLOY_SHA" \
+            --query 'imageDetails[0].imageDigest' --output text)
+          app_digest=$(aws ecr describe-images \
+            --repository-name "$ECR_APP_REPOSITORY" \
+            --image-ids imageTag="$DEPLOY_SHA" \
+            --query 'imageDetails[0].imageDigest' --output text)
+          [[ "$backend_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$app_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "backend_image=$registry/$ECR_BACKEND_REPOSITORY@$backend_digest" >>"$GITHUB_OUTPUT"
+          echo "app_image=$registry/$ECR_APP_REPOSITORY@$app_digest" >>"$GITHUB_OUTPUT"
+
+      - name: Configure strict SSH identity
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" >~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/id_deploy >/dev/null
+          test -s ~/.ssh/known_hosts
+
+      - name: Deploy migrations then digest-pinned services
+        shell: bash
+        env:
+          BACKEND_IMAGE: ${{ steps.images.outputs.backend_image }}
+          APP_IMAGE: ${{ steps.images.outputs.app_image }}
+        run: |
+          set -euo pipefail
+          ssh_opts=(-i ~/.ssh/id_deploy -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
+          remote="$DEPLOY_USER@$DEPLOY_HOST"
+          release_dir="/tmp/triana-release-$DEPLOY_SHA"
+          ssh "${ssh_opts[@]}" "$remote" "install -d -m 0700 '$release_dir'"
+          scp "${ssh_opts[@]}" compose.production.yaml ops/deploy.sh "$remote:$release_dir/"
+          ssh "${ssh_opts[@]}" "$remote" \
+            "chmod 0700 '$release_dir/deploy.sh' && '$release_dir/deploy.sh' '$BACKEND_IMAGE' '$APP_IMAGE' '$DEPLOY_SHA' '$release_dir/compose.production.yaml'"

@@ -1,0 +1,88 @@
+name: triana
+
+services:
+  backend:
+    image: ${TRIANA_BACKEND_IMAGE:?set a digest-pinned backend image}
+    command:
+      - uvicorn
+      - triana_backend.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --no-access-log
+    env_file:
+      - path: ${TRIANA_RUNTIME_ENV_FILE:-/opt/triana/.env}
+        required: true
+    environment:
+      TRIANA_GIT_SHA: ${TRIANA_GIT_SHA:?set the deployed git SHA}
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    mem_limit: 768m
+    cpus: 0.80
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).read()
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  app:
+    image: ${TRIANA_APP_IMAGE:?set a digest-pinned app image}
+    env_file:
+      - path: ${TRIANA_RUNTIME_ENV_FILE:-/opt/triana/.env}
+        required: true
+    environment:
+      TRIANA_BACKEND_API_ORIGIN: http://backend:8000
+      TRIANA_GIT_SHA: ${TRIANA_GIT_SHA:?set the deployed git SHA}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/.next/cache:size=64m,uid=1000,gid=1000,mode=0755
+    mem_limit: 640m
+    cpus: 0.70
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/setup').then(r => {
+            if (!r.ok) process.exit(1)
+          }).catch(() => process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
