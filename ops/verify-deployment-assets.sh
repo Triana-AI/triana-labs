@@ -36,6 +36,18 @@ grep -Fq '@sha256:' ops/deploy.sh
 grep -Fq 'TRIANA_BACKEND_ENV_FILE' compose.production.yaml
 grep -Fq 'TRIANA_LABS_REPORT_ID' compose.production.yaml
 
+if ! awk '
+  /^networks:$/ { in_networks = 1; next }
+  in_networks && /^  default:$/ { in_default = 1; next }
+  in_default && /^    external: true$/ { external = 1; next }
+  in_default && /^    name: triana_default$/ { exact_name = 1; next }
+  in_default && /^(  [^ ]|[^ ])/ { in_default = 0 }
+  END { exit !(external && exact_name) }
+' compose.production.yaml; then
+  echo "compose default network must be external and named triana_default" >&2
+  exit 1
+fi
+
 for ignore in triana-backend/.dockerignore triana-app/.dockerignore; do
   [ "$(sed -n '1p' "$ignore")" = '**' ] \
     || { echo "$ignore must start from a deny-all context" >&2; exit 1; }
