@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from .contracts import (
+    AnalysisNotReady,
     BackendReadPort,
     ImportCommandPort,
     IntegrityConflict,
@@ -13,6 +14,7 @@ from .contracts import (
     RunCommandPort,
 )
 from .errors import (
+    analysis_not_ready_handler,
     integrity_conflict_handler,
     not_found_handler,
     unavailable_handler,
@@ -28,9 +30,11 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="Triana Backend", version="0.1.0")
     app.add_exception_handler(ResourceUnavailable, unavailable_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(AnalysisNotReady, analysis_not_ready_handler)  # type: ignore[arg-type]
     app.add_exception_handler(ResourceNotFound, not_found_handler)  # type: ignore[arg-type]
     app.add_exception_handler(
-        IntegrityConflict, integrity_conflict_handler  # type: ignore[arg-type]
+        IntegrityConflict,
+        integrity_conflict_handler,  # type: ignore[arg-type]
     )
     app.include_router(create_v1_router(reads=reads, imports=imports, runs=runs))
 

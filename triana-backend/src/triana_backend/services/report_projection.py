@@ -6,8 +6,9 @@ facts and preserves typed gaps. Missing required facts refuse publication.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,9 +64,7 @@ def project_labs_report(source: ReportProjectionInput) -> dict[str, Any]:
     if invalid_authority:
         raise ReportProjectionUnavailable(invalid_authority)
 
-    understanding = {
-        kind: facts[kind].value for kind in _REQUIRED_UNDERSTANDING_FACTS
-    }
+    understanding = {kind: facts[kind].value for kind in _REQUIRED_UNDERSTANDING_FACTS}
     actual_cost = facts.get("actual_cost_usd")
     return {
         "artifact_kind": "labs_report",

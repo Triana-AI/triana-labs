@@ -6,9 +6,10 @@ Infrastructure adapters retain ownership of SQL sessions and S3 streams.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Protocol
 
 JsonObject = Mapping[str, Any]
 
@@ -60,6 +61,14 @@ class IntegrityConflict(Exception):
     resource_kind: str
     resource_id: str
     code: str = "INTEGRITY_CONFLICT"
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisNotReady(Exception):
+    """The canonical Labs compiler required to create a report is absent."""
+
+    code: str = "LABS_ANALYSIS_NOT_READY"
+    availability: Availability = Availability.UNAVAILABLE
 
 
 class BackendReadPort(Protocol):

@@ -11,7 +11,12 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from .contracts import IntegrityConflict, ResourceNotFound, ResourceUnavailable
+from .contracts import (
+    AnalysisNotReady,
+    IntegrityConflict,
+    ResourceNotFound,
+    ResourceUnavailable,
+)
 
 
 def _correlation_id(request: Request) -> str | None:
@@ -57,3 +62,16 @@ async def integrity_conflict_handler(
     if correlation_id is not None:
         body["correlation_id"] = correlation_id
     return JSONResponse(status_code=409, content=body)
+
+
+async def analysis_not_ready_handler(
+    request: Request, error: AnalysisNotReady
+) -> JSONResponse:
+    body: dict[str, Any] = {
+        "code": error.code,
+        "availability": error.availability.value,
+    }
+    correlation_id = _correlation_id(request)
+    if correlation_id is not None:
+        body["correlation_id"] = correlation_id
+    return JSONResponse(status_code=503, content=body)

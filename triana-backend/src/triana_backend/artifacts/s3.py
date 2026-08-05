@@ -70,13 +70,8 @@ class S3ArtifactStore:
             raise ArtifactIntegrityError("staging S3 size changed while reading")
 
         canonical_key = f"{self._object_prefix}/{expected_sha256[:2]}/{expected_sha256}"
+        spool.seek(0)
         try:
-            existing = self._head_object(self._artifact_bucket, canonical_key)
-        except ArtifactIntegrityError as error:
-            if str(error) != "S3 object is missing":
-                spool.close()
-                raise
-            spool.seek(0)
             self._client.put_object(
                 Bucket=self._artifact_bucket,
                 Key=canonical_key,
@@ -87,10 +82,19 @@ class S3ArtifactStore:
                 ServerSideEncryption="aws:kms",
                 SSEKMSKeyId=self._kms_key_id,
                 Metadata={"sha256": expected_sha256, "artifact-kind": kind.value},
+                IfNoneMatch="*",
             )
-            existing = self._head_object(self._artifact_bucket, canonical_key)
+        except ClientError as error:
+            # Concurrent identical publishers converge on one immutable object.
+            # A precondition failure is safe only after verifying the winner.
+            code = str(error.response.get("Error", {}).get("Code", ""))
+            status = error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if code not in {"PreconditionFailed", "412"} and status != 412:
+                raise
         finally:
             spool.close()
+
+        existing = self._head_object(self._artifact_bucket, canonical_key)
 
         self._verify_published_head(
             existing,

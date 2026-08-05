@@ -7,14 +7,14 @@ not enqueue work or claim a separate worker fleet.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from threading import Lock
-from typing import Any, Mapping
+from typing import Any
 
 from dbos import DBOS, SetWorkflowID
 
 from .contracts import ImportRunRequest, WorkflowReceipt, WorkflowServices
 from .identity import workflow_id_for
-
 
 _services: WorkflowServices | None = None
 _services_lock = Lock()

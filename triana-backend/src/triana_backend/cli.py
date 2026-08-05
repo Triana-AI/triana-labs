@@ -38,24 +38,27 @@ def main(argv: list[str] | None = None) -> int:
     if args.action == "import-s3":
         path = "/api/v1/imports"
         payload = {
-            "source": {"storage_backend": "S3", "bucket": args.bucket, "key": args.key},
-            "expected_sha256": args.sha256,
             "workspace_slug": args.workspace,
             "agent_key": args.agent,
             "version_key": args.version,
+            "source": {
+                "bucket": args.bucket,
+                "key": args.key,
+                "sha256": args.sha256,
+            },
             "evidence_class": args.evidence_class,
-            "idempotency_key": args.idempotency_key,
         }
     else:
         path = "/api/v1/runs"
         payload = {
             "import_id": args.import_id,
-            "idempotency_key": args.idempotency_key,
-            "new_attempt": args.rerun,
+            "rerun": args.rerun,
         }
 
     try:
-        response = _post_json(origin, path, payload)
+        response = _post_json(
+            origin, path, payload, idempotency_key=args.idempotency_key
+        )
     except (HTTPError, URLError, ValueError) as error:
         print(_safe_error(error), file=sys.stderr)
         return 2
@@ -63,11 +66,21 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _post_json(origin: str, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+def _post_json(
+    origin: str,
+    path: str,
+    payload: dict[str, Any],
+    *,
+    idempotency_key: str,
+) -> dict[str, Any]:
     request = Request(  # noqa: S310 - operator-selected loopback endpoint
         f"{origin.rstrip('/')}{path}",
         data=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Idempotency-Key": idempotency_key,
+        },
         method="POST",
     )
     with urlopen(request, timeout=300) as response:  # noqa: S310

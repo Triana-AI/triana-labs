@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +31,7 @@ class WorkflowReceipt:
     status: str
 
     @classmethod
-    def from_mapping(cls, value: Mapping[str, Any]) -> "WorkflowReceipt":
+    def from_mapping(cls, value: Mapping[str, Any]) -> WorkflowReceipt:
         receipt = cls(
             workflow_id=str(value["workflow_id"]),
             run_id=str(value["run_id"]),
@@ -54,7 +55,9 @@ class WorkflowServices(Protocol):
     never source bytes, conversation bodies, provider responses, or secrets.
     """
 
-    def mark_running(self, workflow_id: str, request: Mapping[str, Any]) -> Mapping[str, Any]: ...
+    def mark_running(
+        self, workflow_id: str, request: Mapping[str, Any]
+    ) -> Mapping[str, Any]: ...
 
     def execute_labs_analysis(self, run_id: str) -> Mapping[str, Any]: ...
 
