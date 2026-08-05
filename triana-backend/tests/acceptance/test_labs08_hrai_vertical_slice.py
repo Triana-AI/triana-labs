@@ -234,7 +234,9 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     assert source_artifact["storage_backend"] == "S3"
     assert source_artifact["storage_bucket"] == values["artifact_bucket"]
     canonical_key = contract["artifact_storage"]["canonical_key_template"].format(
-        sha256_prefix=source["sha256"][:2], sha256=source["sha256"]
+        artifact_kind="source_trace_jsonl",
+        sha256_prefix=source["sha256"][:2],
+        sha256=source["sha256"],
     )
     assert source_artifact["storage_key"] == canonical_key
     canonical_head = s3.head_object(
@@ -252,6 +254,8 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     assert import_row["source_artifact_id"] == source_artifact["id"]
     assert import_row["evidence_class"] == source["evidence_class"]
     assert import_row["source_sha256"] == source["sha256"]
+    assert import_row["rejected_record_count"] == 14
+    assert import_row["rejection_summary"] == {"SOURCE_EXECUTION_INCOMPLETE": 14}
     assert run_row is not None
     assert run_row["import_id"] == import_row["id"]
     assert run_row["workflow_id"] == first_run["workflow_id"]
@@ -260,6 +264,10 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
     assert facts["physical_record_count"]["value_json"] == 200
     assert facts["source_status_counts"]["value_json"] == source["status_counts"]
     assert facts["usable_conversation_count"]["value_json"] == 186
+    assert facts["rejected_record_count"]["value_json"] == 14
+    assert facts["rejection_summary"]["value_json"] == {
+        "SOURCE_EXECUTION_INCOMPLETE": 14
+    }
     assert all(fact["authority"] == "DETERMINISTIC" for fact in facts.values())
     assert report_row["run_id"] == run_row["id"]
     assert report_artifact is not None
@@ -339,6 +347,8 @@ def test_hrai_run_200_flows_from_s3_and_rds_to_api_without_value_invention() -> 
         put_options["SSEKMSKeyId"] = report_head["SSEKMSKeyId"]
     if report_head.get("ContentType"):
         put_options["ContentType"] = report_head["ContentType"]
+    if report_head.get("ChecksumSHA256"):
+        put_options["ChecksumSHA256"] = report_head["ChecksumSHA256"]
     s3.delete_object(Bucket=report_bucket, Key=report_key)
     try:
         status, missing = _get_error_json(values["api_origin"], report_path)

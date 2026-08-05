@@ -6,7 +6,14 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const LOADER = join(ROOT, "lib", "labs-report.ts");
-const PUBLIC_FIXTURE = join(ROOT, "data", "labs-report.json");
+const CANONICAL_REPORT = resolve(
+  ROOT,
+  "..",
+  "triana-backend",
+  "tests",
+  "acceptance",
+  "labs08_canonical_accounting_report.json",
+);
 
 const read = (path) => readFileSync(path, "utf8");
 
@@ -26,24 +33,7 @@ test("Labs UI loads the exact backend report and never falls back to a fixture",
   assert.match(productionSources, /TRIANA_LABS_REPORT_ID/);
   assert.match(productionSources, /BACKEND_(?:REPORT_)?UNAVAILABLE/);
 
-  const report = JSON.parse(read(PUBLIC_FIXTURE));
-  report.report_id = "labs08-hrai-run-200";
-  report.title = "HRAI run_200 retained trace analysis";
-  report.evidence_class = "SYNTHETIC_EXISTING_TRACE_CORPUS";
-  report.setup.source.display_name = "normalized_traces.jsonl";
-  report.setup.understanding.physical_record_count = 200;
-  report.setup.understanding.accepted_record_count = 186;
-  report.setup.understanding.rejected_record_count = 14;
-  report.setup.understanding.usable_conversation_count = 186;
-  report.setup.understanding.source_status_counts = {
-    COMPLETED: 186,
-    HARNESS_ERROR: 14,
-  };
-  report.setup.understanding.rejection_reasons = [{
-    reason_code: "HARNESS_ERROR",
-    label: "Harness error",
-    count: 14,
-  }];
+  const report = JSON.parse(read(CANONICAL_REPORT));
 
   const { loadLabsReport } = await import(`${pathToFileURL(LOADER).href}?labs08`);
   const calls = [];
@@ -59,7 +49,7 @@ test("Labs UI loads the exact backend report and never falls back to a fixture",
     },
   });
   assert.deepEqual(calls, [
-    "http://127.0.0.1:8000/api/v1/reports/labs08-hrai-run-200",
+    `http://127.0.0.1:8000/api/v1/reports/${report.report_id}`,
   ]);
   assert.equal(loaded.availability, "AVAILABLE");
   assert.deepEqual(loaded.report, report);
@@ -81,5 +71,5 @@ test("Labs UI loads the exact backend report and never falls back to a fixture",
     code: "BACKEND_REPORT_UNAVAILABLE",
     report: null,
   });
-  assert.notDeepEqual(unavailable.report, JSON.parse(read(PUBLIC_FIXTURE)));
+  assert.notDeepEqual(unavailable.report, report);
 });

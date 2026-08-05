@@ -94,9 +94,11 @@ def test_contract_is_portable_and_freezes_canonical_artifact_identity() -> None:
     )
     assert (
         contract["artifact_storage"]["canonical_key_template"].format(
-            sha256_prefix=DIGEST[:2], sha256=DIGEST
+            artifact_kind="source_trace_jsonl",
+            sha256_prefix=DIGEST[:2],
+            sha256=DIGEST,
         )
-        == f"objects/sha256/76/{DIGEST}"
+        == f"objects/sha256/source_trace_jsonl/76/{DIGEST}"
     )
     assert all(path.startswith("/api/v1/") for path in contract["api"].values())
 

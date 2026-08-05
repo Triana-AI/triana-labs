@@ -19,7 +19,7 @@
     "workspace_slug": "TRIANA_ACCEPTANCE_WORKSPACE_SLUG"
   },
   "artifact_storage": {
-    "canonical_key_template": "objects/sha256/{sha256_prefix}/{sha256}"
+    "canonical_key_template": "objects/sha256/{artifact_kind}/{sha256_prefix}/{sha256}"
   },
   "defaults": {
     "api_origin": "http://127.0.0.1:8000",
