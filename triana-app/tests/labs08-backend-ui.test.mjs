@@ -73,3 +73,40 @@ test("Labs UI loads the exact backend report and never falls back to a fixture",
   });
   assert.notDeepEqual(unavailable.report, report);
 });
+
+test("Labs UI explicitly accepts both report modes and rejects invented modes", async () => {
+  const retained = JSON.parse(read(CANONICAL_REPORT));
+  const generated = structuredClone(retained);
+  generated.report_id = "rpt_generated_mode_control";
+  generated.mode = "GENERATED_MULTI_TURN_SIMULATION";
+  const { loadLabsReport } = await import(`${pathToFileURL(LOADER).href}?labs08-modes`);
+
+  for (const report of [retained, generated]) {
+    const loaded = await loadLabsReport({
+      apiOrigin: "http://127.0.0.1:8000",
+      reportId: report.report_id,
+      fetchImpl: async () => new Response(JSON.stringify(report), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    });
+    assert.equal(loaded.availability, "AVAILABLE", `mode ${report.mode} must be supported`);
+    assert.equal(loaded.report.mode, report.mode);
+  }
+
+  const invented = structuredClone(retained);
+  invented.mode = "OWNER_AUTHORIZED_REAL_DATA_CANARY";
+  const refused = await loadLabsReport({
+    apiOrigin: "http://127.0.0.1:8000",
+    reportId: invented.report_id,
+    fetchImpl: async () => new Response(JSON.stringify(invented), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  });
+  assert.deepEqual(refused, {
+    availability: "UNAVAILABLE",
+    code: "BACKEND_REPORT_UNAVAILABLE",
+    report: null,
+  });
+});
