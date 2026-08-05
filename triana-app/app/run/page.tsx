@@ -1,7 +1,10 @@
-import { labsReport, getCase } from "@/lib/labs-report";
-import { Fact, LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
+import { getCase, loadConfiguredLabsReport } from "@/lib/labs-report";
+import { BackendReportUnavailable, Fact, LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
 
-export default function RunPage() {
+export default async function RunPage() {
+  const loaded = await loadConfiguredLabsReport();
+  if (loaded.availability === "UNAVAILABLE") return <BackendReportUnavailable />;
+  const labsReport = loaded.report;
   const { run } = labsReport;
   return (
     <LabsPage
@@ -31,7 +34,7 @@ export default function RunPage() {
           {run.conversation_order.map((conversationId, index) => {
             const conversation = labsReport.conversations.find((item) => item.conversation_id === conversationId);
             if (!conversation) throw new Error(`Broken conversation order: ${conversationId}`);
-            const item = getCase(conversation.case_id);
+            const item = getCase(labsReport, conversation.case_id);
             return <article className="operational-row run-row" key={conversationId}>
               <span className="run-index num">{String(index + 1).padStart(2, "0")}</span>
               <div className="row-main"><code>{conversation.conversation_id}</code><h3>{item.title}</h3><p>{conversation.latest}</p></div>

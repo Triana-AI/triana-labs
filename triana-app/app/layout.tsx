@@ -25,10 +25,14 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Triana Labs — Synthetic report",
+  title: "Triana Labs — Backend report",
   description:
-    "A read-only projection of one publication-safe synthetic Triana Labs report.",
+    "A read-only projection of one configured Triana Labs backend report.",
 };
+
+// The report is a live backend projection; never bake an unavailable response
+// or a particular report into a production build.
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,

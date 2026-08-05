@@ -1,7 +1,10 @@
-import { displayRuling, getCase, labsReport } from "@/lib/labs-report";
-import { LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
+import { displayRuling, getCase, loadConfiguredLabsReport } from "@/lib/labs-report";
+import { BackendReportUnavailable, LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
 
-export default function ReviewPage() {
+export default async function ReviewPage() {
+  const loaded = await loadConfiguredLabsReport();
+  if (loaded.availability === "UNAVAILABLE") return <BackendReportUnavailable />;
+  const labsReport = loaded.report;
   return (
     <LabsPage
       eyebrow="Human judgment"
@@ -29,7 +32,7 @@ export default function ReviewPage() {
           {labsReport.conversations.map((conversation) => {
             const review = labsReport.reviews.find(({ conversation_id }) => conversation_id === conversation.conversation_id);
             if (!review) throw new Error(`Broken review conversation: ${conversation.conversation_id}`);
-            const item = getCase(conversation.case_id);
+            const item = getCase(labsReport, conversation.case_id);
             return <article className="review-record" key={conversation.conversation_id}>
               <header><div><code>{conversation.conversation_id}</code><h3>{item.title}</h3></div><Status value={review.review_state} /></header>
               <ol className="ruling-list">{questions.map(([question, field]) => <li key={field}><span>{question}</span><strong>{displayRuling(review[field])}</strong></li>)}</ol>

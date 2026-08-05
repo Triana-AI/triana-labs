@@ -73,3 +73,25 @@ export function RouteLink({ href, children }: { href: string; children: ReactNod
 export function Unavailable() {
   return <span className="labs-unavailable">Unavailable</span>;
 }
+
+export function BackendReportUnavailable() {
+  return (
+    <LabsPage
+      eyebrow="Backend report"
+      title="Report unavailable"
+      summary="Triana could not load the configured report from the backend. No fixture or simulated replacement is being shown."
+      meta={<Status value="UNAVAILABLE" />}
+    >
+      <Section title="What this means" description="The report remains unavailable until the configured backend can serve the requested report identity.">
+        <div className="limitation-callout">
+          <Status value="UNAVAILABLE" />
+          <div>
+            <h3>Backend report unavailable</h3>
+            <p>Check the private tunnel, backend service, and configured report ID.</p>
+            <code>BACKEND_REPORT_UNAVAILABLE</code>
+          </div>
+        </div>
+      </Section>
+    </LabsPage>
+  );
+}

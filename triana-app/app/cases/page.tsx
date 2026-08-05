@@ -1,7 +1,10 @@
-import { labsReport } from "@/lib/labs-report";
-import { Fact, LabsPage, Section, Status } from "@/components/labs/LabsPage";
+import { loadConfiguredLabsReport } from "@/lib/labs-report";
+import { BackendReportUnavailable, Fact, LabsPage, Section, Status } from "@/components/labs/LabsPage";
 
-export default function CasesPage() {
+export default async function CasesPage() {
+  const loaded = await loadConfiguredLabsReport();
+  if (loaded.availability === "UNAVAILABLE") return <BackendReportUnavailable />;
+  const labsReport = loaded.report;
   return (
     <LabsPage
       eyebrow="Grounded situations"

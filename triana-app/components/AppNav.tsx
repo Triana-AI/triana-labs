@@ -36,7 +36,7 @@ export function AppNav({
           <strong>Triana</strong>
           <span>{section}</span>
         </div>
-        <small>Labs · Read only</small>
+        <small>Labs · Backend report · Read only</small>
       </header>
       <button
         type="button"
@@ -75,7 +75,7 @@ export function AppNav({
           <span className="app-agent-pulse" aria-hidden="true" />
           <span className="app-nav-copy">
             <span className="mono-label">Connected agent</span>
-            <strong>Synthetic report</strong>
+            <strong>Configured backend</strong>
           </span>
         </div>
 
@@ -97,8 +97,8 @@ export function AppNav({
 
         <div className="app-connections app-nav-copy">
           <div><span>Mode</span><strong>Read only</strong></div>
-          <div><span>Privacy</span><strong>Synthetic</strong></div>
-          <div><span>Custody</span><strong>Local</strong></div>
+          <div><span>Source</span><strong>Backend report</strong></div>
+          <div><span>Access</span><strong>Private tunnel</strong></div>
         </div>
 
         <Link href="/setup" className="app-switch-link app-nav-copy">

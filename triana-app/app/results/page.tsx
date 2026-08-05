@@ -1,7 +1,10 @@
-import { labsReport } from "@/lib/labs-report";
-import { Fact, LabsPage, RouteLink, Section, Status, Unavailable } from "@/components/labs/LabsPage";
+import { loadConfiguredLabsReport } from "@/lib/labs-report";
+import { BackendReportUnavailable, Fact, LabsPage, RouteLink, Section, Status, Unavailable } from "@/components/labs/LabsPage";
 
-export default function ResultsPage() {
+export default async function ResultsPage() {
+  const loaded = await loadConfiguredLabsReport();
+  if (loaded.availability === "UNAVAILABLE") return <BackendReportUnavailable />;
+  const labsReport = loaded.report;
   const { results, limitations, lineage } = labsReport;
   const sections = [
     ["What Triana learned from the traces", results.learned, "/behavior", "Explore behavior"],
@@ -16,10 +19,10 @@ export default function ResultsPage() {
       summary="What Triana read, constructed, observed, could not establish, and asks a human to judge."
       meta={<><Status value={labsReport.privacy_class} /><code>{labsReport.report_id}</code></>}
     >
-      <aside className="bundle-disclosure" aria-label="Bundled demo report disclosure">
-        <span>Bundled demo report</span>
-        <strong>This public build ships one synthetic artifact.</strong>
-        <p>The UI is report-driven: every visible result below is rendered from that validated report.</p>
+      <aside className="bundle-disclosure" aria-label="Backend report disclosure">
+        <span>Backend report</span>
+        <strong>{labsReport.evidence_class}</strong>
+        <p>Every visible result below is rendered from the validated backend report.</p>
       </aside>
       <div className="result-stage">
         <div className="result-questions">
