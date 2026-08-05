@@ -241,6 +241,11 @@ def test_backend_projection_preserves_accounting_contract_consumed_by_real_ui() 
             run_id=expected["run"]["run_id"],
             evidence_class=expected["evidence_class"],
             source_sha256=SOURCE_SHA256,
+            created_at=expected["created_at"],
+            compiler_version="labs08-hrai-accounting-v1",
+            compiler_result_hash=(
+                "13c4f659a65a78feeee248414c309d3df2c18c52f8cfa1e03b40c3b2db299aab"
+            ),
             facts=facts,
             conversations=(),
             gaps=({"reason_code": "SEMANTIC_ANALYSIS_NOT_RUN"},),
