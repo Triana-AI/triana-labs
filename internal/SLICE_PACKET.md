@@ -380,3 +380,23 @@ Extended acceptance:
 7. Authenticated local smoke, schema migration/render, artifact/DB inspection,
    frontend build, container/config checks, and deployment preflight pass or
    expose one exact external configuration gate.
+
+### Independent self-serve RED freeze — 2026-08-07
+
+The independent test author owns exactly
+`triana-backend/tests/acceptance/test_trace_to_eval_self_serve.py`, SHA-256
+`bcd09e97ddc4804d265d1abb7c1cfbfeb2f548f78801f7341bbaa1975f69e720`.
+Its ten cases freeze the authenticated upload `analysis` envelope, AVAILABLE
+auto-run versus LOCKED/REQUESTED abstention, owner+agent idempotency and
+cross-agent isolation, agent-scoped history, canonical report identity,
+immutable report plus append-only review, stale-hash refusal, report evidence,
+and cross-owner non-disclosure.
+
+Observed RED is eight failures and two valid controls. The failures identify
+only the missing authenticated upload-to-analysis bridge, history route, and
+owned report/evidence routes. Existing self-serve/auth controls remain 7/7
+GREEN; Ruff and diff checks pass. The frozen response is
+`analysis: {feature_state, run}`, with `run: null` when analysis is not
+AVAILABLE. Production may return a typed nonterminal state for a real
+asynchronous run, but it may not omit the envelope, auto-run while locked, or
+claim completion before a canonical report exists.
