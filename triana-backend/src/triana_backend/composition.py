@@ -780,7 +780,7 @@ def _persist_artifact(session: Session, ref: ArtifactRef) -> None:
             checksum_sha256_b64=ref.checksum_sha256_b64,
             availability="AVAILABLE",
         )
-        .on_conflict_do_nothing(index_elements=["artifact_kind", "content_sha256"])
+        .on_conflict_do_nothing()
     )
 
 
