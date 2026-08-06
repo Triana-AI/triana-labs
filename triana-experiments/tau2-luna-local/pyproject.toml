@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tau2-luna-local"
+version = "0.1.0"
+description = "Local, integrity-linked tracing for one pinned tau-squared Luna experiment"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = {text = "Proprietary"}
+dependencies = [
+  "azure-identity==1.25.1",
+  "azure-keyvault-secrets==4.10.0",
+  "azure-storage-blob==12.27.1",
+  "opentelemetry-api==1.38.0",
+  "opentelemetry-sdk==1.38.0",
+  "tau2 @ git+https://github.com/sierra-research/tau2-bench.git@f8de30c298689cbe0117d76a378e7315a17e5bd8",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy==1.18.2",
+  "pytest==8.4.2",
+  "ruff==0.14.3",
+]
+
+[project.scripts]
+tau2-luna-local = "tau2_luna_local.cli:entrypoint"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tau2_luna_local"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+exclude = ["tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["tau2_luna_local"]
+mypy_path = "src"
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["azure.*", "opentelemetry.*", "tau2.*", "litellm.*"]
+ignore_missing_imports = true
