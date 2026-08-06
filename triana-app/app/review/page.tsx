@@ -7,6 +7,7 @@ export default async function ReviewPage() {
   const labsReport = loaded.report;
   return (
     <LabsPage
+      surface="review"
       eyebrow="Human judgment"
       title="Review"
       summary="Human reviewers decide what each recorded conversation demonstrates across four independent questions."
@@ -14,7 +15,6 @@ export default async function ReviewPage() {
     >
       <section className="review-guide" aria-labelledby="review-guide-title">
         <div className="review-guide-intro">
-          <p className="labs-eyebrow">Why human judgment matters</p>
           <h2 id="review-guide-title">Decide what the recorded evidence can support</h2>
           <p>Human judgment asks a reviewer to decide whether each recorded conversation, simulated user, and agent response behaved credibly for its case.</p>
           <p>The four dimensions do not combine into a score. Each answer stays independent because one kind of evidence cannot stand in for another.</p>
@@ -27,7 +27,7 @@ export default async function ReviewPage() {
           <div><dt>Scope, privacy, and boundaries</dt><dd>Did the agent stay within scope, protect privacy, and respect boundaries?</dd></div>
         </dl>
       </section>
-      <Section title="Recorded rulings" description="Each answer comes directly from the synthetic report.">
+      <Section tone="dark" title="Recorded rulings" description="Each answer comes directly from the synthetic report.">
         <div className="review-list">
           {labsReport.conversations.map((conversation) => {
             const review = labsReport.reviews.find(({ conversation_id }) => conversation_id === conversation.conversation_id);

@@ -8,6 +8,7 @@ export function ConversationDetail({ report, conversation }: { report: LabsRepor
 
   return (
     <LabsPage
+      surface="conversation"
       eyebrow={`Conversation ${conversation.conversation_id}`}
       title={item.title}
       summary="The complete recorded transcript stays primary; case context and evidence qualify it nearby."

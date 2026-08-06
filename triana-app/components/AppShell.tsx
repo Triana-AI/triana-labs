@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AppNav } from "@/components/AppNav";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [navCollapsed, setNavCollapsed] = useState(true);
+  const [navCollapsed, setNavCollapsed] = useState(false);
 
   return (
     <div

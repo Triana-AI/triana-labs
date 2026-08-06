@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 export function LabsPage({
+  surface,
   eyebrow,
   title,
   summary,
   meta,
   children,
 }: {
+  surface: "overview" | "source" | "behavior" | "cases" | "runs" | "review" | "conversation";
   eyebrow: string;
   title: string;
   summary: string;
@@ -15,14 +17,16 @@ export function LabsPage({
   children: ReactNode;
 }) {
   return (
-    <div className="labs-page">
+    <div className="labs-page" data-surface={surface}>
       <header className="labs-header">
-        <div>
-          <p className="labs-eyebrow">{eyebrow}</p>
+        <div className="labs-header-main">
           <h1>{title}</h1>
           <p className="labs-lede">{summary}</p>
         </div>
-        {meta ? <div className="labs-header-meta">{meta}</div> : null}
+        <div className="labs-header-side">
+          <span className="labs-surface-label">{eyebrow}</span>
+          {meta ? <div className="labs-header-meta">{meta}</div> : null}
+        </div>
       </header>
       {children}
     </div>
@@ -34,14 +38,16 @@ export function Section({
   description,
   children,
   className = "",
+  tone = "dark",
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   className?: string;
+  tone?: "light" | "dark" | "raised";
 }) {
   return (
-    <section className={`labs-section ${className}`.trim()}>
+    <section className={`labs-section is-${tone} ${className}`.trim()}>
       <header className="labs-section-heading">
         <h2>{title}</h2>
         {description ? <p>{description}</p> : null}
@@ -54,7 +60,7 @@ export function Section({
 export function Status({ value }: { value: string }) {
   const tone = ["COMPLETE", "COMPLETED", "READY", "AVAILABLE", "RECORDED", "MET", "UNDERSTOOD", "SELECTED", "SUCCEEDED"].includes(value)
     ? "positive"
-    : ["PARTIAL", "UNKNOWN", "NOT_CHECKED", "UNREVIEWED", "REVIEW_REQUIRED", "AMBIGUOUS", "NEEDS_DATA", "RUNNING", "QUEUED"].includes(value)
+    : ["PARTIAL", "UNKNOWN", "NOT_CHECKED", "UNREVIEWED", "REVIEW_REQUIRED", "AMBIGUOUS", "NEEDS_DATA", "RUNNING", "QUEUED", "BACKLOG", "NOT_EVALUATED", "KNOWN_GAP"].includes(value)
       ? "warning"
       : ["UNAVAILABLE", "NOT_STARTED", "MISSING", "OUTSIDE_SCOPE", "ERROR", "NOT_UNDERSTOOD", "EXCLUDED"].includes(value)
         ? "negative"
@@ -77,6 +83,7 @@ export function Unavailable() {
 export function BackendReportUnavailable() {
   return (
     <LabsPage
+      surface="source"
       eyebrow="Backend report"
       title="Report unavailable"
       summary="Triana could not load the configured report from the backend. No fixture or simulated replacement is being shown."

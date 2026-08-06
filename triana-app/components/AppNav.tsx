@@ -5,12 +5,50 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const NAV_ITEMS = [
-  { href: "/results", label: "Overview", glyph: "O" },
-  { href: "/behavior", label: "User behavior", glyph: "U" },
-  { href: "/cases", label: "Cases", glyph: "C" },
-  { href: "/run", label: "Runs", glyph: "R" },
-  { href: "/review", label: "Review", glyph: "V" },
+  { href: "/results", label: "Overview" },
+  { href: "/behavior", label: "User behavior" },
+  { href: "/cases", label: "Cases" },
+  { href: "/run", label: "Runs" },
+  { href: "/review", label: "Review" },
 ];
+
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className="app-control-icon"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="square"
+      aria-hidden="true"
+    >
+      {open ? (
+        <path d="M5 5l10 10M15 5 5 15" />
+      ) : (
+        <path d="M4 5.5h12M4 10h12M4 14.5h12" />
+      )}
+    </svg>
+  );
+}
+function SidebarIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg
+      className="app-control-icon"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+    >
+      <rect x="2.75" y="3" width="14.5" height="14" rx="1.5" />
+      <path d="M7.5 3v14" />
+      {collapsed ? <path d="M11 7l3 3-3 3" /> : <path d="M14 7l-3 3 3 3" />}
+    </svg>
+  );
+}
 
 export function AppNav({
   collapsed,
@@ -32,9 +70,15 @@ export function AppNav({
     <>
       <header className="app-product-header">
         <div>
-          <img src="/brand/triana-lazo-favicon-master.svg" alt="" aria-hidden="true" />
-          <strong>Triana</strong>
-          <span>{section}</span>
+          <button
+            type="button"
+            className="app-expand-button"
+            onClick={onToggleCollapsed}
+            aria-label="Expand navigation"
+          >
+            <SidebarIcon collapsed />
+          </button>
+          <strong>{section}</strong>
         </div>
         <small>Labs · Backend report · Read only</small>
       </header>
@@ -49,7 +93,7 @@ export function AppNav({
           <img src="/brand/triana-lazo-favicon-master.svg" alt="" />
         </span>
         <span>Triana Labs</span>
-        <span aria-hidden="true">{open ? "×" : "≡"}</span>
+        <MenuIcon open={open} />
       </button>
 
       <aside className={`app-sidebar${open ? " is-open" : ""}${collapsed ? " is-collapsed" : ""}`}>
@@ -64,17 +108,15 @@ export function AppNav({
             type="button"
             className="app-collapse-button"
             onClick={onToggleCollapsed}
-            aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-            title={collapsed ? "Expand navigation" : "Collapse navigation"}
+            aria-label="Collapse navigation"
           >
-            <span aria-hidden="true">{collapsed ? "›" : "‹"}</span>
+            <SidebarIcon collapsed={false} />
           </button>
         </div>
 
         <div className="app-agent">
-          <span className="app-agent-pulse" aria-hidden="true" />
           <span className="app-nav-copy">
-            <span className="mono-label">Connected agent</span>
+            <span className="mono-label">Report artifact</span>
             <strong>Configured backend</strong>
           </span>
         </div>
@@ -87,9 +129,7 @@ export function AppNav({
               className="app-nav-link"
               aria-current={activeHref === item.href ? "page" : undefined}
               onClick={() => setOpen(false)}
-              title={collapsed ? item.label : undefined}
             >
-              <span className="app-nav-glyph" aria-hidden="true">{item.glyph}</span>
               <span className="app-nav-copy">{item.label}</span>
             </Link>
           ))}
