@@ -10,6 +10,26 @@ No Pydantic model, generated JSON Schema, fixture, CLI behavior, or UI type may
 disagree with this document. A semantic change requires an append-only decision
 and a schema-version decision before tests or implementation change.
 
+## Active Labs self-serve service boundary
+
+The Slice 0A document registry below remains unchanged. Active Labs adds a
+service contract, not another Slice 0A public document kind: an authenticated
+PreviewTrace upload response always includes
+`analysis: {feature_state, run}`. `run` is null while `ANALYSIS` is `LOCKED` or
+`REQUESTED`; only `AVAILABLE` may start a run. A completed run binds one
+`agent_id`, `import_id`, `run_id`, and `report_id` and is retrievable only by
+the owning workspace.
+
+The same owner scope applies to agent analysis history, report, review state,
+append-only ruling, and report-bound conversation evidence. A ruling requires
+the current review `item_hash`; stale or foreign identities fail without
+mutating the ledger. A report may contain zero populations, eval proposals,
+outcomes, or review items, but it must expose the corresponding typed gap or
+unavailable state and may not infer a pass or reward. Exact endpoint and model
+representations live in `triana-backend/src/triana_backend/api/` and the frozen
+black-box acceptance contract is
+`triana-backend/tests/acceptance/test_trace_to_eval_self_serve.py`.
+
 ## Normative language
 
 `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `SHALL NOT`, `SHOULD`, and `MAY` are

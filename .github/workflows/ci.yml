@@ -82,4 +82,8 @@ jobs:
         with:
           persist-credentials: false
       - run: docker build --file triana-backend/Dockerfile --tag triana-backend:verify .
-      - run: docker build --file triana-app/Dockerfile --tag triana-app:verify triana-app
+      - run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=ci-public-key
+          --file triana-app/Dockerfile --tag triana-app:verify triana-app

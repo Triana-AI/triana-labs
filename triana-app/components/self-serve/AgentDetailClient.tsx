@@ -4,21 +4,22 @@ import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { selfServeApi } from "@/lib/self-serve/api";
-import type { AgentSummary, ImportSummary } from "@/lib/self-serve/types";
+import type { AgentSummary, AnalysisRunSummary, ImportSummary } from "@/lib/self-serve/types";
 import { Breadcrumbs, ErrorNotice, LoadingNotice, SelfServePage } from "@/components/self-serve/SelfServePage";
 
 export function AgentDetailClient({ agentId }: { agentId: string }) {
   const router = useRouter();
   const [agent, setAgent] = useState<AgentSummary | null>(null);
   const [imports, setImports] = useState<ImportSummary[] | null>(null);
+  const [runs, setRuns] = useState<AnalysisRunSummary[] | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [attested, setAttested] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([selfServeApi.getAgent(agentId), selfServeApi.listImports(agentId)])
-      .then(([nextAgent, nextImports]) => { setAgent(nextAgent); setImports(nextImports); })
+    Promise.all([selfServeApi.getAgent(agentId), selfServeApi.listImports(agentId), selfServeApi.listAnalysisRuns(agentId)])
+      .then(([nextAgent, nextImports, nextRuns]) => { setAgent(nextAgent); setImports(nextImports); setRuns(nextRuns); })
       .catch((value: Error) => setError(value.message));
   }, [agentId]);
 
@@ -34,7 +35,10 @@ export function AgentDetailClient({ agentId }: { agentId: string }) {
     setBusy(true); setError(null);
     try {
       const result = await selfServeApi.uploadImport(agentId, file);
-      router.push(`/agents/${agentId}/imports/${result.import_id}`);
+      const reportId = result.analysis?.run?.report_id;
+      router.push(reportId
+        ? `/agents/${agentId}/reports/${encodeURIComponent(reportId)}`
+        : `/agents/${agentId}/imports/${result.import_id}`);
     } catch (value) { setError(value instanceof Error ? value.message : "Upload failed."); }
     finally { setBusy(false); }
   }
@@ -54,6 +58,10 @@ export function AgentDetailClient({ agentId }: { agentId: string }) {
         <div className="card-heading"><h2>Import history</h2><span>{imports?.length ?? "—"}</span></div>
         {imports === null && !error ? <LoadingNotice /> : imports?.length === 0 ? <div className="self-serve-empty"><strong>No imports</strong><p>Your validated uploads will appear here.</p></div> : <ul className="import-list">{imports?.map((item) => <li key={item.import_id}><Link href={`/agents/${agentId}/imports/${item.import_id}`}><span><strong>{item.status}</strong><small>{item.import_id}</small></span><span className="import-counts"><b>{item.accepted_conversation_count ?? item.accepted_record_count ?? 0}</b> accepted · <b>{item.rejected_record_count}</b> rejected</span></Link></li>)}</ul>}
       </div>
+    </section>
+    <section className="self-serve-card import-list-card">
+      <div className="card-heading"><h2>Analysis history</h2><span>{runs?.length ?? "—"}</span></div>
+      {runs === null && !error ? <LoadingNotice label="Loading analysis history…" /> : runs?.length === 0 ? <div className="self-serve-empty"><strong>No analysis runs</strong><p>Analysis starts automatically after an eligible upload when this workspace has access.</p></div> : <ul className="import-list">{runs?.map((run) => <li key={run.run_id}>{run.report_id ? <Link href={`/agents/${agentId}/reports/${encodeURIComponent(run.report_id)}`}><span><strong>{run.state}</strong><small>{run.run_id}</small></span><span className="import-counts">{run.judgment_state}</span></Link> : <span className="feature-access-row"><span><strong>{run.state}</strong><small>{run.run_id}</small></span><span className="labs-status">{run.judgment_state}</span></span>}</li>)}</ul>}
     </section>
   </SelfServePage>;
 }

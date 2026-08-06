@@ -32,6 +32,8 @@ from triana_backend.api.contracts import (
     ResourceUnavailable,
     RunCommandPort,
     RunStart,
+    SelfServeAnalysisPort,
+    TraceToEvalPort,
 )
 from triana_backend.application.entitlements import FeatureEntitlementService
 from triana_backend.application.imports import (
@@ -72,6 +74,9 @@ from triana_backend.services.report_projection import (
     ReportProjectionInput,
     canonical_report_bytes,
     project_labs_report,
+)
+from triana_backend.services.self_serve_trace_to_eval import (
+    PersistentSelfServeTraceToEvalService,
 )
 from triana_backend.services.trace_to_eval import LocalTraceToEvalService
 from triana_backend.workflows import DBOSForegroundExecutor, configure_workflow_services
@@ -739,8 +744,12 @@ def compose_backend(
             audience=settings.oidc_audience,
             jwks_url=settings.oidc_jwks_url,
         )
-    trace_to_eval = None
-    if (
+    trace_to_eval: TraceToEvalPort | SelfServeAnalysisPort | None = (
+        PersistentSelfServeTraceToEvalService(sessions=sessions, artifacts=artifacts)
+        if settings.oidc_issuer is not None
+        else None
+    )
+    if trace_to_eval is None and (
         os.environ.get("TRIANA_TRACE_TO_EVAL_LOCAL") == "1"
         and settings.host == "127.0.0.1"
     ):

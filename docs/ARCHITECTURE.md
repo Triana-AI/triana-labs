@@ -37,6 +37,36 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
+The later Trace-to-Eval Review V0 and authenticated self-serve bridge add a
+separate active Labs path without changing the suspended Release Review V1
+contracts:
+
+```text
+magic-link owner -> workspace -> agent -> authorized PreviewTrace upload
+  -> deterministic import/rejection accounting
+  -> ANALYSIS entitlement gate
+  -> canonical Trace-to-Eval engine (semantic provider absent by default)
+  -> immutable report/review/conversation artifacts in workspace S3
+  -> run/report/artifact indexes in RDS
+  -> owner-scoped UI + backend CLI
+  -> append-only human rulings
+```
+
+Authentication establishes subject identity; workspace ownership scopes every
+agent, import, run, report, conversation, and ruling lookup; entitlements own
+feature rollout. These authorities are not interchangeable. Upload is bound to
+the exact owner, agent version, import, source hash, and engine version, so an
+identical request is idempotent while another agent receives a distinct run.
+The report is the common backend/UI/CLI evidence object. TypeScript projects
+it but does not recalculate evidence.
+
+Deterministic code owns identity, accepted/rejected accounting, split/group
+integrity, report lineage, idempotency, owner scope, and ruling custody. An LLM
+may propose populations and evals only after separately authorized provider
+egress; the default self-serve bridge uses `semantic_model=None`. A human owns
+reward mapping when no authoritative outcome exists, proposal acceptance or
+editing, and review rulings. Absence of any lane is a typed gap, never a pass.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text

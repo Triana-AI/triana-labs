@@ -60,11 +60,13 @@ workflow, stores facts/report artifacts in RDS/S3, and serves one configured
 report. Its shipped HRAI compiler performs accounting only.
 
 Self-serve added Supabase/OIDC authentication, personal workspaces, direct
-PreviewTrace uploads, conversation browsing, and feature entitlements. In the
-current composition, enabling OIDC selects self-serve mode and disables the
-operator DBOS routes. The immediate TAU57 dry run deliberately proves the
-non-auth analysis core first; joining authenticated uploads to workspace-safe
-DBOS execution remains a separate security-sensitive slice.
+PreviewTrace uploads, conversation browsing, feature entitlements, and the
+workspace-safe canonical Trace-to-Eval bridge. In the current composition,
+enabling OIDC selects self-serve mode and disables the operator DBOS routes.
+When `ANALYSIS` is `AVAILABLE`, upload starts one content-bound analysis run,
+stores canonical report/review/conversation artifacts under `workspaces/`, and
+indexes their identities in RDS. This path does not use DBOS or a semantic
+provider; missing meaning and outcomes remain typed gaps.
 
 ## Safety
 
@@ -258,6 +260,38 @@ EC2 host, temporarily add the operator policy's `PushAndInspectTrianaImages`
 actions to `triana-demo-ec2-role`. Remove that temporary statement after a CI
 builder or working operator Docker daemon owns image builds. Do not grant the
 runtime role general ECR or S3 administration.
+
+### Additive workspace artifact permission
+
+The self-serve bridge uses an owner-isolated prefix that the older operator
+runtime policy did not need. Add this statement pair to
+`triana-demo-ec2-role`; no delete permission is required:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListTrianaWorkspaceArtifacts",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::triana-artifacts-854847082059-ap-south-1",
+      "Condition": {"StringLike": {"s3:prefix": ["workspaces/*"]}}
+    },
+    {
+      "Sid": "ReadWriteTrianaWorkspaceArtifacts",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:GetObjectAttributes"],
+      "Resource": "arn:aws:s3:::triana-artifacts-854847082059-ap-south-1/workspaces/*"
+    }
+  ]
+}
+```
+
+The 2026-08-07 private smoke reached the production self-serve service and
+failed exactly at the first workspace `PutObject`; no source, import, run, or
+report artifact was persisted. This is an IAM launch gate, not evidence that
+the bridge passed or that a different prefix should be used.
 
 No Terraform provisioning permissions are required for this launch because
 EC2, RDS, networking, S3, KMS, ECR, and SSM already exist. If replacement

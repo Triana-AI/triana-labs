@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+import hashlib
+from datetime import UTC, datetime
+from typing import Annotated, Any, cast
 
 from fastapi import (
     APIRouter,
@@ -24,6 +26,7 @@ from .contracts import (
     ImportRegistration,
     RunCommandPort,
     RunStart,
+    SelfServeAnalysisPort,
     SelfServePort,
     TraceToEvalPort,
 )
@@ -55,12 +58,13 @@ def create_v1_router(
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
     feature_entitlements: FeatureEntitlementPort | None = None,
-    trace_to_eval: TraceToEvalPort | None = None,
+    trace_to_eval: TraceToEvalPort | SelfServeAnalysisPort | None = None,
     local_trace_to_eval_only: bool = False,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1")
 
-    if trace_to_eval is not None:
+    if trace_to_eval is not None and self_serve is None:
+        local_analysis = cast(TraceToEvalPort, trace_to_eval)
 
         @router.post("/trace-to-eval/runs", status_code=201)
         def start_trace_to_eval(
@@ -82,7 +86,7 @@ def create_v1_router(
                 raise HTTPException(status_code=422, detail="select exactly one source")
             try:
                 return dict(
-                    trace_to_eval.run(
+                    local_analysis.run(
                         manifest_path if manifest_valid else None,
                         source_path=source_path if source_valid else None,
                         source_kind=source_kind if source_valid else None,
@@ -96,7 +100,7 @@ def create_v1_router(
         @router.get("/trace-to-eval/reports/{report_id}")
         def get_trace_to_eval_report(report_id: str) -> dict[str, Any]:
             try:
-                return dict(trace_to_eval.get_report(report_id))
+                return dict(local_analysis.get_report(report_id))
             except KeyError as error:
                 raise HTTPException(
                     status_code=404, detail="report not found"
@@ -112,7 +116,7 @@ def create_v1_router(
             payload: Annotated[dict[str, Any], Body()],
         ) -> dict[str, Any]:
             try:
-                return dict(trace_to_eval.append_ruling(report_id, payload))
+                return dict(local_analysis.append_ruling(report_id, payload))
             except KeyError as error:
                 raise HTTPException(
                     status_code=404, detail="report not found"
@@ -125,7 +129,7 @@ def create_v1_router(
         @router.get("/trace-to-eval/reports/{report_id}/review")
         def get_trace_to_eval_review(report_id: str) -> dict[str, Any]:
             try:
-                return dict(trace_to_eval.get_review_state(report_id))
+                return dict(local_analysis.get_review_state(report_id))
             except KeyError as error:
                 raise HTTPException(
                     status_code=404, detail="report not found"
@@ -140,7 +144,7 @@ def create_v1_router(
             report_id: str, trace_id: str
         ) -> dict[str, Any]:
             try:
-                return dict(trace_to_eval.get_conversation(report_id, trace_id))
+                return dict(local_analysis.get_conversation(report_id, trace_id))
             except KeyError as error:
                 raise HTTPException(
                     status_code=404, detail="conversation not found"
@@ -232,7 +236,7 @@ def create_v1_router(
             file: Annotated[UploadFile, File()],
             subject: str = Depends(authenticated_subject),
         ) -> dict[str, Any]:
-            return dict(
+            imported = dict(
                 self_serve.create_import(
                     subject,
                     agent_id,
@@ -243,6 +247,32 @@ def create_v1_router(
                     idempotency_key=idempotency_key,
                 )
             )
+            if trace_to_eval is None or feature_entitlements is None:
+                return imported
+            analysis_state = next(
+                (
+                    str(item.get("state"))
+                    for item in feature_entitlements.list_features(subject)
+                    if item.get("feature_key") == "ANALYSIS"
+                ),
+                "LOCKED",
+            )
+            analysis_run = (
+                dict(
+                    cast(
+                        SelfServeAnalysisPort, trace_to_eval
+                    ).start_analysis_for_import(
+                        subject, agent_id, str(imported["import_id"])
+                    )
+                )
+                if analysis_state == "AVAILABLE"
+                else None
+            )
+            imported["analysis"] = {
+                "feature_state": analysis_state,
+                "run": analysis_run,
+            }
+            return imported
 
         @router.get("/agents/{agent_id}/imports")
         def list_self_serve_imports(
@@ -292,6 +322,72 @@ def create_v1_router(
             subject: str = Depends(authenticated_subject),
         ) -> dict[str, Any]:
             return dict(self_serve.get_conversation(subject, conversation_id))
+
+        if trace_to_eval is not None:
+            owned_analysis = cast(SelfServeAnalysisPort, trace_to_eval)
+
+            @router.get("/agents/{agent_id}/analysis-runs")
+            def list_agent_analysis_runs(
+                agent_id: str,
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                return {
+                    "schema_version": 1,
+                    "analysis_runs": [
+                        dict(item)
+                        for item in owned_analysis.list_agent_analysis_runs(
+                            subject, agent_id
+                        )
+                    ],
+                }
+
+            @router.get("/trace-to-eval/reports/{report_id}")
+            def get_owned_trace_to_eval_report(
+                report_id: str,
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                return dict(owned_analysis.get_owned_report(subject, report_id))
+
+            @router.get("/trace-to-eval/reports/{report_id}/review")
+            def get_owned_trace_to_eval_review(
+                report_id: str,
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                return dict(owned_analysis.get_owned_review_state(subject, report_id))
+
+            @router.post("/trace-to-eval/reports/{report_id}/rulings", status_code=201)
+            def append_owned_trace_to_eval_ruling(
+                report_id: str,
+                payload: Annotated[dict[str, Any], Body()],
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                server_ruling = {
+                    **payload,
+                    "report_id": report_id,
+                    "reviewer_id": "owner:"
+                    + hashlib.sha256(subject.encode("utf-8")).hexdigest()[:24],
+                    "ruled_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                }
+                try:
+                    return dict(
+                        owned_analysis.append_owned_ruling(
+                            subject, report_id, server_ruling
+                        )
+                    )
+                except ValueError as error:
+                    raise HTTPException(
+                        status_code=422, detail="ruling rejected"
+                    ) from error
+
+            @router.get("/trace-to-eval/reports/{report_id}/conversations/{trace_id}")
+            def get_owned_trace_to_eval_conversation(
+                report_id: str,
+                trace_id: str,
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                return dict(
+                    owned_analysis.get_owned_conversation(subject, report_id, trace_id)
+                )
 
         return router
 

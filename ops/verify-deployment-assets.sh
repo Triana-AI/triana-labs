@@ -35,6 +35,9 @@ grep -Fq 'no-new-privileges:true' compose.production.yaml
 grep -Fq '@sha256:' ops/deploy.sh
 grep -Fq 'TRIANA_BACKEND_ENV_FILE' compose.production.yaml
 grep -Fq 'TRIANA_LABS_REPORT_ID' compose.production.yaml
+grep -Fq 'NEXT_PUBLIC_SUPABASE_URL' triana-app/Dockerfile
+grep -Fq 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY' triana-app/Dockerfile
+grep -Fq 'TRIANA_SELF_SERVE_REQUIRED' compose.production.yaml
 
 if ! awk '
   /^networks:$/ { in_networks = 1; next }

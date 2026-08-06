@@ -18,6 +18,7 @@ from .contracts import (
     ResourceNotFound,
     ResourceUnavailable,
     RunCommandPort,
+    SelfServeAnalysisPort,
     SelfServePort,
     TraceToEvalPort,
 )
@@ -40,7 +41,7 @@ def create_app(
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
     feature_entitlements: FeatureEntitlementPort | None = None,
-    trace_to_eval: TraceToEvalPort | None = None,
+    trace_to_eval: TraceToEvalPort | SelfServeAnalysisPort | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Triana Backend", version="0.1.0")
     app.add_exception_handler(ResourceUnavailable, unavailable_handler)  # type: ignore[arg-type]

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/self-serve/LogoutButton";
+import { selfServeApi } from "@/lib/self-serve/api";
+import type { AgentSummary } from "@/lib/self-serve/types";
 
 const NAV_ITEMS = [
   { href: "/agents", label: "Agents" },
@@ -61,7 +63,15 @@ export function AppNav({
   onToggleCollapsed: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [agents, setAgents] = useState<AgentSummary[]>([]);
+  const selectedAgentId = pathname.match(/^\/agents\/([^/]+)/)?.[1] ?? "";
+  useEffect(() => {
+    if (pathname.startsWith("/agents")) {
+      selfServeApi.listAgents().then(setAgents).catch(() => setAgents([]));
+    }
+  }, [pathname]);
   const activeHref = pathname.startsWith("/agents/") ? "/agents" : pathname.startsWith("/conversations/") ? "/run" : pathname;
   const section = pathname === "/setup"
     ? "Report source"
@@ -122,7 +132,10 @@ export function AppNav({
         <div className="app-agent">
           <span className="app-nav-copy">
             <span className="mono-label">Workspace</span>
-            <strong>Self-serve preview</strong>
+            {pathname.startsWith("/agents") && agents.length ? <select aria-label="Switch agent" value={selectedAgentId} onChange={(event) => {
+              if (event.target.value === "__add__") router.push("/agents");
+              else router.push(`/agents/${event.target.value}`);
+            }}><option value="">All agents</option>{agents.map((agent) => <option value={agent.agent_id} key={agent.agent_id}>{agent.display_name}</option>)}<option value="__add__">+ Add agent</option></select> : <strong>Self-serve preview</strong>}
           </span>
         </div>
 

@@ -199,6 +199,53 @@ class S3ArtifactStore:
             "media_type": content_type,
         }
 
+    def publish_workspace_bytes(
+        self,
+        *,
+        workspace_id: str,
+        payload: bytes,
+        kind: ArtifactKind,
+        media_type: str,
+    ) -> ArtifactRef:
+        """Publish an immutable derived artifact inside one workspace namespace."""
+        digest = hashlib.sha256(payload).hexdigest()
+        checksum = _checksum_b64(digest)
+        key = (
+            f"workspaces/{workspace_id}/derived/sha256/"
+            f"{kind.value.lower()}/{digest[:2]}/{digest}"
+        )
+        self._put_immutable(
+            key=key,
+            payload=payload,
+            content_type=media_type,
+            checksum=checksum,
+            digest=digest,
+            kind=kind,
+        )
+        head = self._head_object(self._artifact_bucket, key)
+        self._verify_published_head(
+            head,
+            expected_sha256=digest,
+            expected_checksum=checksum,
+            expected_size=len(payload),
+            expected_kind=kind,
+            expected_kms_key=self._kms_key_id,
+        )
+        return ArtifactRef(
+            id=deterministic_id(
+                "art",
+                {"workspace_id": workspace_id, "kind": kind.value, "sha256": digest},
+            ),
+            kind=kind,
+            content_sha256=digest,
+            byte_count=len(payload),
+            media_type=media_type,
+            storage_bucket=self._artifact_bucket,
+            storage_key=key,
+            kms_key_id=str(head["SSEKMSKeyId"]),
+            checksum_sha256_b64=checksum,
+        )
+
     def _put_immutable(
         self,
         *,

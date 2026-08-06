@@ -30,6 +30,87 @@ export interface ImportSummary {
   rejected_record_count: number;
   source_sha256?: string;
   created_at?: string;
+  analysis?: {
+    feature_state: FeatureState;
+    run: AnalysisRunSummary | null;
+  };
+}
+
+export interface AnalysisRunSummary {
+  workspace_id: string;
+  agent_id: string;
+  import_id: string;
+  run_id: string;
+  report_id: string | null;
+  state: "QUEUED" | "RUNNING" | "COMPLETED" | "COMPLETED_WITH_GAPS" | "FAILED";
+  judgment_state: "NOT_AVAILABLE" | "JUDGMENT_REQUIRED" | "JUDGMENT_COMPLETE";
+  created_at?: string;
+}
+
+export interface TraceToEvalReviewItem {
+  item_id: string;
+  item_hash: string;
+  item_kind: "POPULATION_PAIR" | "EVAL_PROPOSAL";
+  allowed_decisions: string[];
+  trace_ids?: string[];
+  evidence_trace_ids?: string[];
+  name?: string;
+  criterion?: string;
+}
+
+export interface TraceToEvalReviewState {
+  report_id: string;
+  judgment_state: "NOT_AVAILABLE" | "JUDGMENT_REQUIRED" | "JUDGMENT_COMPLETE";
+  review_queue: { items: TraceToEvalReviewItem[] };
+  current_rulings: Array<{
+    item_id: string;
+    ruling_id: string;
+    decision: string;
+    edited_text?: string | null;
+  }>;
+}
+
+export interface TraceToEvalReport {
+  report_id: string;
+  run_id: string;
+  agent_id: string;
+  import_id: string;
+  accounting: {
+    physical_record_count: number;
+    accepted_conversation_count: number;
+    rejected_record_count: number;
+  };
+  behavior_analytics: {
+    conversation_count: number;
+    tool_observed_conversation_count: number;
+    event_kind_counts: Record<string, number>;
+    turn_count: { minimum: number; maximum: number; total: number };
+  };
+  populations: Array<{
+    population_id: string;
+    label: string;
+    description: string;
+    support: number;
+    evidence_trace_ids: string[];
+    proposal_state: string;
+  }>;
+  eval_proposals: Array<{
+    proposal_id: string;
+    name: string;
+    criterion: string;
+    evidence_trace_ids: string[];
+    proposal_state: string;
+  }>;
+  qualified_eval_inventory: Array<Record<string, unknown>>;
+  gaps: Array<{ code: string; capability: string; state: string }>;
+  stability: { state: string; semantic_run_count: number; disagreements: unknown[] };
+  method: Record<string, unknown>;
+  outcome_analytics?: Record<string, unknown>;
+  judgment: {
+    state: string;
+    required_review_item_count: number;
+    verdict: "NOT_ESTABLISHED";
+  };
 }
 
 export interface ConversationSummary {

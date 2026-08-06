@@ -16,6 +16,7 @@ services:
         required: true
     environment:
       TRIANA_GIT_SHA: ${TRIANA_GIT_SHA:?set the deployed git SHA}
+      TRIANA_SELF_SERVE_REQUIRED: "1"
     ports:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped
@@ -49,7 +50,7 @@ services:
     image: ${TRIANA_APP_IMAGE:?set a digest-pinned app image}
     environment:
       TRIANA_BACKEND_API_ORIGIN: http://backend:8000
-      TRIANA_LABS_REPORT_ID: ${TRIANA_LABS_REPORT_ID:?set the report ID}
+      TRIANA_LABS_REPORT_ID: ${TRIANA_LABS_REPORT_ID:-}
       TRIANA_GIT_SHA: ${TRIANA_GIT_SHA:?set the deployed git SHA}
     ports:
       - "127.0.0.1:3000:3000"
@@ -72,7 +73,7 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:3000/setup').then(r => {
+          fetch('http://127.0.0.1:3000/login').then(r => {
             if (!r.ok) process.exit(1)
           }).catch(() => process.exit(1))
       interval: 15s

@@ -994,3 +994,27 @@ do not claim semantic populations or eval proposals. Optional next work is
 provider compatibility, customer outcome/eval mapping, embeddings challenger,
 remote persistence, Kairos L4 attribution, and matched coding-agent ROI proof;
 none is silently converted into current product truth.
+
+Authenticated Trace-to-Eval self-serve state (2026-08-07): the independent
+ten-case bridge contract is GREEN. A successful upload always returns the
+analysis entitlement envelope; `AVAILABLE` starts one idempotent agent-bound
+canonical run, while `LOCKED` and `REQUESTED` do not run. Owner-scoped history,
+report, review, report-bound ConversationViewer evidence, append-only rulings,
+agent switching, and authenticated backend CLI reads now share the same IDs.
+The UI projects Overview, User behavior, Eval proposals, Review, and Lineage &
+gaps from the stored report. The default self-serve run makes no provider call,
+so semantic populations/evals and absent rewards remain typed gaps rather than
+invented value.
+
+Local and deployment-readiness gates are GREEN: 17 focused auth/self-serve
+tests, 16 canonical Labs tests, backend Ruff and strict mypy, 38 non-live
+backend tests with the environment-specific HRAI live test deselected, five
+focused app tests, TypeScript, production Next build, deployment-asset check,
+secret scan, shell syntax, and Compose render with explicit fixture variables.
+The real private RDS/S3 replay reached production code but stopped at the first
+workspace S3 write because `triana-demo-ec2-role` lacks the additive
+`workspaces/*` list/read/write policy recorded in the runbook. Live email
+magic-link verification also remains externally blocked because no Supabase
+project URL, publishable key, issuer, audience, JWKS URL, and public TLS origin
+are configured. Neither gap authorizes a workaround, deployment, or invented
+pass.

@@ -27,6 +27,7 @@ export function ImportDetailClient({ agentId, importId }: { agentId: string; imp
         <div><span>Accepted</span><strong>{item.accepted_conversation_count ?? item.accepted_record_count ?? 0}</strong></div>
         <div><span>Rejected</span><strong>{item.rejected_record_count}</strong></div>
       </section>
+      {item.analysis ? <div className="self-serve-notice"><strong>Analysis · {item.analysis.feature_state}</strong>{item.analysis.run?.report_id ? <p><Link href={`/agents/${agentId}/reports/${encodeURIComponent(item.analysis.run.report_id)}`}>Open canonical report</Link></p> : <p>{item.analysis.run ? `Run ${item.analysis.run.state}` : "No analysis run started."}</p>}</div> : null}
       {item.status === "FAILED" ? <div className="self-serve-notice is-error" role="alert"><strong>Import failed</strong><p>No conversation was accepted. Correct the file and upload a new immutable import.</p></div> : null}
       <section className="self-serve-grid">
         <div className="self-serve-card">

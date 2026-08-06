@@ -400,3 +400,44 @@ GREEN; Ruff and diff checks pass. The frozen response is
 AVAILABLE. Production may return a typed nonterminal state for a real
 asynchronous run, but it may not omit the envelope, auto-run while locked, or
 claim completion before a canonical report exists.
+
+### Authenticated self-serve orchestrator exit — 2026-08-07
+
+The test-author file remains byte-identical at
+`bcd09e97ddc4804d265d1abb7c1cfbfeb2f548f78801f7341bbaa1975f69e720`.
+The implementation author changed only the bounded backend persistence/API,
+CLI, app report/navigation, and deployment-readiness surfaces; no migration or
+new dependency was required. The orchestrator reconciled the production diff
+against the extension budget and retained Release Review V1, `triana-core/**`,
+provider fallback, holdouts, infrastructure creation, and unrelated UI/design
+outside it.
+
+Verified locally:
+
+- 17/17 frozen auth/self-serve and bridge cases;
+- 16/16 canonical Trace-to-Eval Labs cases;
+- 38/38 non-live backend tests, with the exact environment-dependent HRAI live
+  test deselected rather than reported as passing;
+- backend Ruff and strict mypy over 34 source files;
+- 5/5 focused app acceptance cases, TypeScript, and production Next build;
+- deployment asset, content-secret, shell-syntax, and explicit-variable
+  Compose configuration gates.
+
+The implemented path is real rather than a placeholder: import responses carry
+the entitlement-aware run, RDS indexes agent/import/run/report/artifact
+identity, workspace SSE-KMS S3 stores source/report/review/conversation/ruling
+bytes, the report route renders all five tabs using `ConversationViewer`, and
+the authenticated CLI reads and rules the same backend objects. The default
+self-serve execution deliberately supplies no semantic model, so a fresh trace
+can truthfully produce structural behavior and empty semantic/review lanes with
+typed gaps.
+
+External exit evidence is incomplete. A private real-RDS/S3 smoke reached the
+production service, then failed at the first `workspaces/*` `s3:PutObject`
+because the existing EC2 runtime role covers only legacy prefixes. No source,
+import, run, or report artifact was persisted in that attempt. The exact
+non-delete additive policy is in `docs/SELF_SERVE_V0_RUNBOOK.md`. A real emailed
+magic link and authenticated browser smoke also cannot run until an external
+Supabase tenant supplies project/build/JWKS/public-origin configuration. These
+are typed launch gates; they do not weaken the local product-loop evidence or
+permit a less isolated storage path.

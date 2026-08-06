@@ -10,6 +10,11 @@ export function getSupabasePublicConfig(): SupabasePublicConfig {
   if (!url || !publishableKey) {
     throw new Error("Authentication is unavailable because Supabase public configuration is missing.");
   }
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { throw new Error("Authentication is unavailable because the Supabase URL is invalid."); }
+  if (parsed.protocol !== "https:" && parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") {
+    throw new Error("Authentication is unavailable because the Supabase URL must use HTTPS.");
+  }
   return { url, publishableKey };
 }
 

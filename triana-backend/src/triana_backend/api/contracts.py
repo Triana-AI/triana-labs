@@ -119,6 +119,32 @@ class TraceToEvalPort(Protocol):
     def get_conversation(self, report_id: str, trace_id: str) -> JsonObject: ...
 
 
+class SelfServeAnalysisPort(Protocol):
+    """Authenticated owner-scoped analysis commands and projections."""
+
+    def start_analysis_for_import(
+        self, owner_subject: str, agent_id: str, import_id: str
+    ) -> JsonObject: ...
+
+    def list_agent_analysis_runs(
+        self, owner_subject: str, agent_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_owned_report(self, owner_subject: str, report_id: str) -> JsonObject: ...
+
+    def get_owned_review_state(
+        self, owner_subject: str, report_id: str
+    ) -> JsonObject: ...
+
+    def append_owned_ruling(
+        self, owner_subject: str, report_id: str, ruling: Mapping[str, Any]
+    ) -> JsonObject: ...
+
+    def get_owned_conversation(
+        self, owner_subject: str, report_id: str, trace_id: str
+    ) -> JsonObject: ...
+
+
 Authenticator = Callable[[str | None], str | None]
 
 

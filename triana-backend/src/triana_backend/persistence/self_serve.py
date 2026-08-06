@@ -142,6 +142,11 @@ class SqlAlchemySelfServeRepository:
         request_hash = hashlib.sha256(
             canonical_json({"agent_id": agent_id, "source_sha256": source_sha256})
         ).hexdigest()
+        scoped_idempotency_key = hashlib.sha256(
+            canonical_json(
+                {"agent_id": agent_id, "client_idempotency_key": idempotency_key}
+            )
+        ).hexdigest()
         import_id = deterministic_id(
             "imp",
             {
@@ -161,7 +166,7 @@ class SqlAlchemySelfServeRepository:
             keyed = session.scalar(
                 select(Import).where(
                     Import.workspace_id == workspace_id,
-                    Import.idempotency_key == idempotency_key,
+                    Import.idempotency_key == scoped_idempotency_key,
                 )
             )
             if keyed is not None:
@@ -208,7 +213,7 @@ class SqlAlchemySelfServeRepository:
                 identity_hash=hashlib.sha256(
                     canonical_json({"import_id": import_id})
                 ).hexdigest(),
-                idempotency_key=idempotency_key,
+                idempotency_key=scoped_idempotency_key,
                 idempotency_request_hash=request_hash,
             )
             session.add(row)

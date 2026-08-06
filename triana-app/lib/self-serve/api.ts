@@ -1,11 +1,14 @@
 import type {
   AgentSummary,
+  AnalysisRunSummary,
   ConversationSummary,
   ImportSummary,
   FeatureAccess,
   FeatureKey,
   Owner,
   RejectionSummary,
+  TraceToEvalReport,
+  TraceToEvalReviewState,
 } from "@/lib/self-serve/types";
 import type { ConversationEvent, ConversationViewModel } from "@/components/conversation/ConversationViewer";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -105,6 +108,11 @@ export const selfServeApi = {
     body: JSON.stringify({ display_name: displayName }),
   }),
   getAgent: (agentId: string) => request<AgentSummary>(`/api/v1/agents/${encodeURIComponent(agentId)}`),
+  async listAnalysisRuns(agentId: string): Promise<AnalysisRunSummary[]> {
+    return listFrom<AnalysisRunSummary>(await request<Record<string, unknown>>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/analysis-runs`,
+    ), "analysis_runs");
+  },
   async listImports(agentId: string): Promise<ImportSummary[]> {
     return listFrom(await request<ImportSummary[] | Record<string, unknown>>(
       `/api/v1/agents/${encodeURIComponent(agentId)}/imports`,
@@ -138,5 +146,24 @@ export const selfServeApi = {
   },
   async getConversation(conversationId: string): Promise<ConversationViewModel> {
     return normalizedConversation(await request<unknown>(`/api/v1/conversations/${encodeURIComponent(conversationId)}`));
+  },
+  getAnalysisReport: (reportId: string) => request<TraceToEvalReport>(
+    `/api/v1/trace-to-eval/reports/${encodeURIComponent(reportId)}`,
+  ),
+  getAnalysisReview: (reportId: string) => request<TraceToEvalReviewState>(
+    `/api/v1/trace-to-eval/reports/${encodeURIComponent(reportId)}/review`,
+  ),
+  appendAnalysisRuling: (
+    reportId: string,
+    ruling: { item_id: string; item_hash: string; decision: string; edited_text: string | null; supersedes_ruling_id: string | null },
+  ) => request<Record<string, unknown>>(
+    `/api/v1/trace-to-eval/reports/${encodeURIComponent(reportId)}/rulings`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ruling) },
+  ),
+  async getAnalysisConversation(reportId: string, traceId: string): Promise<ConversationViewModel> {
+    const value = await request<unknown>(
+      `/api/v1/trace-to-eval/reports/${encodeURIComponent(reportId)}/conversations/${encodeURIComponent(traceId)}`,
+    );
+    return normalizedConversation(value);
   },
 };

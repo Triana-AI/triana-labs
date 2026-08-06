@@ -21,6 +21,8 @@ class BackendSettings:
     oidc_issuer: str | None = None
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None
+    public_app_origin: str | None = None
+    self_serve_required: bool = False
 
     @classmethod
     def from_environment(cls) -> BackendSettings:
@@ -40,9 +42,17 @@ class BackendSettings:
             oidc_issuer=os.environ.get("TRIANA_OIDC_ISSUER"),
             oidc_audience=os.environ.get("TRIANA_OIDC_AUDIENCE"),
             oidc_jwks_url=os.environ.get("TRIANA_OIDC_JWKS_URL"),
+            public_app_origin=os.environ.get("TRIANA_PUBLIC_APP_ORIGIN"),
+            self_serve_required=_flag(
+                os.environ.get("TRIANA_SELF_SERVE_REQUIRED", "0")
+            ),
         )
         _require_postgresql(settings.database_url, "TRIANA_DATABASE_URL")
         if settings.oidc_issuer is None:
+            if settings.self_serve_required:
+                raise ValueError(
+                    "self-serve deployment requires all TRIANA_OIDC_* settings"
+                )
             if settings.dbos_system_database_url is None:
                 raise ValueError("DBOS_SYSTEM_DATABASE_URL is required")
             _require_postgresql(
@@ -59,6 +69,21 @@ class BackendSettings:
         )
         if any(oidc_values) and not all(oidc_values):
             raise ValueError("all TRIANA_OIDC_* settings are required together")
+        if settings.self_serve_required:
+            if not all(oidc_values):
+                raise ValueError(
+                    "self-serve deployment requires all TRIANA_OIDC_* settings"
+                )
+            if settings.public_app_origin is None:
+                raise ValueError("TRIANA_PUBLIC_APP_ORIGIN is required for self-serve")
+            if urlsplit(settings.public_app_origin).scheme.lower() != "https":
+                raise ValueError("TRIANA_PUBLIC_APP_ORIGIN must use HTTPS")
+            for value, name in (
+                (settings.oidc_issuer, "TRIANA_OIDC_ISSUER"),
+                (settings.oidc_jwks_url, "TRIANA_OIDC_JWKS_URL"),
+            ):
+                if value is None or urlsplit(value).scheme.lower() != "https":
+                    raise ValueError(f"{name} must use HTTPS")
         return settings
 
 
@@ -83,3 +108,12 @@ def _port(value: str) -> int:
     if not 1 <= port <= 65535:
         raise ValueError("TRIANA_BACKEND_PORT must be between 1 and 65535")
     return port
+
+
+def _flag(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no"}:
+        return False
+    raise ValueError("TRIANA_SELF_SERVE_REQUIRED must be a boolean flag")

@@ -66,7 +66,6 @@ app_registry=${app_image%%/*}
 region=$(sed -n 's/^AWS_REGION=//p' "$backend_env" | tail -1)
 [ -n "$region" ] || { echo "AWS_REGION is missing from runtime env" >&2; exit 66; }
 report_id=$(sed -n 's/^TRIANA_LABS_REPORT_ID=//p' "$app_env" | tail -1)
-[ -n "$report_id" ] || { echo "TRIANA_LABS_REPORT_ID is missing from app env" >&2; exit 66; }
 aws ecr get-login-password --region "$region" \
   | docker login --username AWS --password-stdin "$registry" >/dev/null
 
@@ -97,11 +96,13 @@ docker network inspect triana_default >/dev/null 2>&1 \
 # DBOS 2.27 also performs compatibility migrations during launch. Pre-create
 # its schema here and keep the runtime role limited to the DBOS schema plus app
 # DML; this version cannot yet promise a completely DDL-free runtime role.
-docker run --rm \
-  --network triana_default \
-  --env-file "$backend_env" \
-  "$backend_image" \
-  sh -c 'dbos migrate --db-url "$TRIANA_DATABASE_URL" --sys-db-url "$DBOS_SYSTEM_DATABASE_URL"'
+if grep -Eq '^DBOS_SYSTEM_DATABASE_URL=.+$' "$backend_env"; then
+  docker run --rm \
+    --network triana_default \
+    --env-file "$backend_env" \
+    "$backend_image" \
+    sh -c 'dbos migrate --db-url "$TRIANA_DATABASE_URL" --sys-db-url "$DBOS_SYSTEM_DATABASE_URL"'
+fi
 
 # Application migrations happen once before long-running services are replaced.
 docker run --rm \
@@ -128,7 +129,7 @@ if [ "$deployment_ok" = true ]; then
 fi
 if [ "$deployment_ok" = true ]; then
   curl --fail --silent --show-error --max-time 10 \
-    http://127.0.0.1:3000/setup >/dev/null \
+    http://127.0.0.1:3000/login >/dev/null \
     || deployment_ok=false
 fi
 
