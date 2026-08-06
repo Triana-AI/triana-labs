@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-06
 
-Status: **ACTIVE — CONTRACT FROZEN; WORKER EDITS AUTHORIZED**
+Status: **LOCAL GREEN — PUBLIC LAUNCH WAITS FOR OIDC AND LIVE INFRASTRUCTURE**
 
 Slice ID: `SELF-SERVE-V0-TRACE-INGESTION`
 
@@ -191,3 +191,33 @@ cd triana-app && npm run build
 The orchestrator additionally inspects the integrated diff, one real
 57-conversation prescribed-format upload if supplied locally, logs for payload
 leakage, and the visible browser path. Unrun checks remain unverified.
+
+## Exit reconciliation — 2026-08-06
+
+Integrated on `codex/selfserve-v0`:
+
+- contract/governance: `19676cd`;
+- frontend acceptance and implementation: `63ad4e8`, `675e25c`;
+- backend acceptance and implementation: `583392b`, `9a87e59`;
+- deployable same-origin routing test and fix: `57fa434`, `4499d9b`.
+
+Observed GREEN on the integrated branch:
+
+- backend self-serve acceptance: 3/3;
+- backend Ruff and strict mypy;
+- PostgreSQL offline Alembic render through revision 0002;
+- production parser spot check: one accepted plus one safely rejected line;
+- frontend self-serve acceptance: 1/1;
+- existing LABS-08 no-fallback UI acceptance: 2/2;
+- TypeScript typecheck and Next production build;
+- repository governance and diff checks.
+
+The first sandboxed Python dependency resolution and one Next build attempt
+failed only because outbound DNS was unavailable; authorized reruns completed.
+No live PostgreSQL migration, S3/KMS write, JWKS verification, authenticated
+browser round trip, 57-conversation customer upload, image build, public TLS
+deployment, or rollback was run. Public launch remains blocked until a managed
+OIDC tenant is configured and those live infrastructure gates pass. The current
+login intentionally accepts a provider-issued JWT in session storage as a
+visible developer/invite-beta scaffold; it is not presented as the final
+magic-link login experience.

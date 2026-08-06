@@ -851,3 +851,15 @@ simulation, HRAI ingestion, model egress, teams, billing, adapters, queues, and
 cloud deployment remain outside the active change budget. The managed OIDC
 vendor, production region/DNS, and final retention automation remain deployment
 configuration to resolve after the local integrated gate.
+
+Self-serve V0 local exit update (2026-08-06): the parallel backend and
+frontend/viewer slices plus the same-origin routing correction are integrated
+on `codex/selfserve-v0`. Focused backend acceptance, Ruff, strict mypy, offline
+Alembic render, production parser spot check, frontend acceptance, TypeScript,
+existing LABS-08 no-fallback acceptance, Next production build, governance, and
+diff checks are GREEN. The browser now calls same-origin `/api/v1`, Next proxies
+through server-only `TRIANA_BACKEND_API_ORIGIN`, and `/` enters `/login`.
+Public launch is not yet claimed: choose/configure the managed OIDC tenant,
+apply migration 0002 to a live database, verify S3/KMS and JWKS, run an
+authenticated browser upload, and put the app behind TLS. The current
+provider-JWT login is an explicit developer/invite-beta scaffold.
