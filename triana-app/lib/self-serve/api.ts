@@ -7,7 +7,6 @@ import type {
 } from "@/lib/self-serve/types";
 import type { ConversationEvent, ConversationViewModel } from "@/components/conversation/ConversationViewer";
 
-const API_URL = (process.env.NEXT_PUBLIC_TRIANA_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 const TOKEN_KEY = "triana_owner_bearer_token";
 
 export class ApiError extends Error {
@@ -33,7 +32,7 @@ export function clearSessionToken(): void {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getSessionToken();
   if (!token) throw new ApiError(401, "Sign in is required.");
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(path, {
     ...init,
     headers: {
       Accept: "application/json",
