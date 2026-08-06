@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const NAV_ITEMS = [
+  { href: "/agents", label: "Agents" },
   { href: "/results", label: "Overview" },
   { href: "/behavior", label: "User behavior" },
   { href: "/cases", label: "Cases" },
@@ -59,10 +60,12 @@ export function AppNav({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const activeHref = pathname.startsWith("/conversations/") ? "/run" : pathname;
+  const activeHref = pathname.startsWith("/agents/") ? "/agents" : pathname.startsWith("/conversations/") ? "/run" : pathname;
   const section = pathname === "/setup"
     ? "Report source"
-    : pathname.startsWith("/conversations/")
+      : pathname.startsWith("/agents")
+        ? "Self-serve"
+      : pathname.startsWith("/conversations/")
       ? "Conversation"
       : NAV_ITEMS.find(({ href }) => href === activeHref)?.label ?? "Labs";
 
@@ -80,7 +83,7 @@ export function AppNav({
           </button>
           <strong>{section}</strong>
         </div>
-        <small>Labs · Backend report · Read only</small>
+        <small>Labs · Trace workspace</small>
       </header>
       <button
         type="button"
@@ -98,7 +101,7 @@ export function AppNav({
 
       <aside className={`app-sidebar${open ? " is-open" : ""}${collapsed ? " is-collapsed" : ""}`}>
         <div className="app-brand">
-          <Link href="/results" className="app-brand-link" aria-label="Triana Labs">
+          <Link href="/agents" className="app-brand-link" aria-label="Triana Labs">
             <span className="app-brand-mark" aria-hidden="true">
               <img src="/brand/triana-lazo-favicon-master.svg" alt="" />
             </span>
@@ -116,8 +119,8 @@ export function AppNav({
 
         <div className="app-agent">
           <span className="app-nav-copy">
-            <span className="mono-label">Report artifact</span>
-            <strong>Configured backend</strong>
+            <span className="mono-label">Workspace</span>
+            <strong>Self-serve preview</strong>
           </span>
         </div>
 
@@ -136,9 +139,9 @@ export function AppNav({
         </nav>
 
         <div className="app-connections app-nav-copy">
-          <div><span>Mode</span><strong>Read only</strong></div>
-          <div><span>Source</span><strong>Backend report</strong></div>
-          <div><span>Access</span><strong>Private tunnel</strong></div>
+          <div><span>Imports</span><strong>Owner scoped</strong></div>
+          <div><span>Egress</span><strong>None</strong></div>
+          <div><span>Format</span><strong>PreviewTrace</strong></div>
         </div>
 
         <Link href="/setup" className="app-switch-link app-nav-copy">
