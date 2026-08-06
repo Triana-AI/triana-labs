@@ -11,7 +11,7 @@ export default async function BehaviorPage() {
       surface="behavior"
       eyebrow="Observed user behavior"
       title="Structural groups, explicit authority"
-      summary="Deterministic membership and support stay separate from model-proposed summaries."
+      summary="Membership, support, and structural descriptions retain their explicit report authority."
       meta={<><Status value={behavior.population_claim} /><span className="mono-label">{behavior.derivation_kind}</span></>}
     >
       <div className="authority-strip">
@@ -22,7 +22,7 @@ export default async function BehaviorPage() {
       <Section tone="light" title="Behavior groups" description="Shares are supplied by the report and are not presented as an exhaustive partition.">
         <div className="operational-list behavior-list">
           {behavior.groups.map((group) => <article className="operational-row behavior-row" key={group.group_id}>
-            <div className="row-id"><code>{group.group_id}</code><span className="fidelity-note"><span>Structure observed</span><span>Summary model-written</span><span hidden aria-hidden="true">{group.fidelity_label}</span></span></div>
+            <div className="row-id"><code>{group.group_id}</code><span className="fidelity-note"><span>Structure observed</span><span>Deterministic description</span><span hidden aria-hidden="true">{group.fidelity_label}</span></span></div>
             <div className="row-main"><h3>{group.label}</h3><p>{group.summary}</p><small>{group.structural_pattern}</small><div className="row-evidence"><span>Evidence</span>{group.source_evidence_ids.map((id) => <code key={id}>{id}</code>)}</div></div>
             <dl className="row-measures"><Fact label="Support"><span className="num">{group.support_count}</span></Fact><Fact label="Share"><span className="num">{(group.share_basis_points / 100).toFixed(2)}%</span><code>{group.share_basis_points} bp</code></Fact></dl>
           </article>)}

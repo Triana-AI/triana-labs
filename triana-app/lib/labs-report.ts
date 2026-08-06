@@ -130,9 +130,9 @@ export interface LabsReport {
     };
   };
   behavior: {
-    derivation_kind: "STRUCTURAL_GROUPING";
+    derivation_kind: "STRUCTURAL_GROUPING" | "NOT_PERFORMED";
     membership_authority: "DETERMINISTIC";
-    semantic_summary_authority: "MODEL_PROPOSED";
+    semantic_summary_authority: "DETERMINISTIC" | "MODEL_PROPOSED" | "NOT_PERFORMED";
     population_claim: "NOT_ESTABLISHED";
     groups: Array<{
       group_id: string;
@@ -141,7 +141,7 @@ export interface LabsReport {
       support_count: number;
       share_basis_points: number;
       structural_pattern: string;
-      fidelity_label: "STRUCTURALLY_OBSERVED_MODEL_SUMMARIZED";
+      fidelity_label: "STRUCTURALLY_OBSERVED_DETERMINISTIC_DESCRIPTION" | "STRUCTURALLY_OBSERVED_MODEL_SUMMARIZED";
       source_evidence_ids: string[];
     }>;
   };

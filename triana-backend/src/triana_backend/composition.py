@@ -31,7 +31,11 @@ from triana_backend.api.contracts import (
     RunStart,
 )
 from triana_backend.application.entitlements import FeatureEntitlementService
-from triana_backend.application.imports import ImportService, RegisterS3Import
+from triana_backend.application.imports import (
+    ImportService,
+    RegisterS3Import,
+    compile_registered_source,
+)
 from triana_backend.application.self_serve import SelfServeService
 from triana_backend.artifacts.s3 import S3ArtifactStore
 from triana_backend.auth import OidcJwtAuthenticator
@@ -378,11 +382,19 @@ class PostgresWorkflowServices(WorkflowServices):
             source_bytes = source.read()
         finally:
             source.close()
-        compiled = compile_hrai_normalized_trace_v2(
-            source_bytes,
-            evidence_class=evidence_class,
-            expected_sha256=expected_sha256,
-        )
+        if imported.parser_version == HRAI_NORMALIZED_TRACE_V2:
+            compiled = compile_hrai_normalized_trace_v2(
+                source_bytes,
+                evidence_class=evidence_class,
+                expected_sha256=expected_sha256,
+            )
+        else:
+            compiled, _ = compile_registered_source(
+                source_bytes,
+                evidence_class=evidence_class,
+                expected_sha256=expected_sha256,
+                parser_version=imported.parser_version,
+            )
         payload = canonical_json(cast(dict[str, Any], compiled.to_mapping()))
         ref = self._artifacts.publish_bytes(
             payload=payload,
