@@ -1,218 +1,193 @@
-# LABS-08 backend-backed HRAI vertical slice
+# SELF-SERVE-V0 launch slice packet
 
-Date reconciled: 2026-08-05
+Date frozen: 2026-08-06
 
-Status: **COMPLETE — ENTRY-GATE MISS DISCLOSED; RECONCILIATION AND LIVE EXIT GATES GREEN**
+Status: **ACTIVE — CONTRACT FROZEN; WORKER EDITS AUTHORIZED**
 
-Slice ID: `LABS08-HRAI-RDS-S3-REPORT-V1`
+Slice ID: `SELF-SERVE-V0-TRACE-INGESTION`
 
-Canonical base: `08a8338` on `codex/labs-07-08-app-boundary`.
+Canonical base: `ba44e8e8aa9c253601ae3938ab1021a4f9b54978` on `main`.
 
-Integration branch: `codex/labs08-integration`.
-
-## Process disclosure
-
-The LABS-08 architecture, independent acceptance contract, and initial
-production lanes began while this file still contained the closed LABS-06
-packet. That violated the required entry-gate order. This packet records the
-actual accepted owner decisions, completed parallel lanes, observed diff, and
-remaining blockers. It does not retroactively claim that implementation was
-properly authorized by the stale packet. No image deployment or HRAI upload may
-proceed until the exit gate below is green.
+Integration branch: `codex/selfserve-v0`.
 
 ## Product outcome
 
-Store the authorized HRAI `run_200` corpus in private SSE-KMS S3, register its
-identity and deterministic Labs-owned facts in a new `triana` PostgreSQL
-database on the existing RDS instance, serve the report and retained records
-through the private backend, and render only backend-served values in Triana
-App.
+Ship the smallest hosted self-serve loop:
 
-The source contract is fixed:
+```text
+authenticated owner
+  -> create an agent
+  -> upload one prescribed PreviewTrace JSONL file
+  -> inspect deterministic accepted/rejected accounting
+  -> browse every accepted conversation in a reusable viewer
+```
 
-- evidence class: `SYNTHETIC_EXISTING_TRACE_CORPUS`;
-- SHA-256: `76e0c2c2c2e777845f6fcda9907d7e386f8f3510ce4834126fc39d16889bf01b`;
-- 200 physical records;
-- 186 `COMPLETED` usable conversations;
-- 14 `HARNESS_ERROR` typed incomplete records.
+Analysis, simulation, reports, model/provider calls, teams, billing, adapters,
+and HRAI-specific ingestion are not part of this launch.
 
-## Input and output contracts
+## Frozen contract
 
-Input:
+- Managed OIDC authentication; the backend independently verifies bearer JWTs.
+- First login creates one personal workspace. Clients never choose a workspace.
+- One agent has a display name and one immutable default version.
+- One multipart `.jsonl` upload, maximum 16 MiB, 1,000 physical lines, and
+  1 MiB per line. One physical line is one PreviewTrace conversation.
+- Hosted uploads use the truthful `CUSTOMER_AUTHORIZED_TRACE_DATA` privacy
+  class, require explicit owner attestation, remain private, and have no LLM or
+  other provider egress.
+- The server streams bytes, computes SHA-256, stores the source privately under
+  a workspace-scoped immutable key, validates deterministically, and persists
+  accepted conversation indices plus safe rejection metadata.
+- Terminal import states are `COMPLETED`, `COMPLETED_WITH_REJECTIONS`, and
+  `FAILED`. Zero accepted records cannot be `COMPLETED`.
+- The generic conversation viewer renders normalized messages, tool calls,
+  tool results, terminal events, and typed gaps. The existing report UI uses a
+  legacy adapter; uploaded traces do not pretend to be generated reports.
 
-1. exact hash-verified HRAI normalized JSONL staged in private S3;
-2. explicit workspace, agent, agent version, evidence class, and idempotency
-   identity;
-3. operator calls through `/api/v1` over a private tunnel.
+## Public behavior
 
-Output:
+| Request | Success | Refusal/failure |
+|---|---|---|
+| `GET /api/v1/me` | owner + personal workspace | 401 invalid authentication |
+| `POST /api/v1/agents` | creates agent + default version | 409 duplicate; 422 invalid |
+| `GET /api/v1/agents` | owner-scoped list | 401 |
+| `GET /api/v1/agents/{id}` | owned agent | non-disclosing 404 |
+| `POST /api/v1/agents/{id}/imports` | validated import summary | 413/415/422/typed 503 |
+| `GET /api/v1/agents/{id}/imports` | stable import history | non-disclosing 404 |
+| `GET /api/v1/imports/{id}` | status and exact counts | non-disclosing 404 |
+| `GET /api/v1/imports/{id}/conversations` | ordered accepted records | non-disclosing 404 |
+| `GET /api/v1/imports/{id}/rejections` | safe line errors | non-disclosing 404 |
+| `GET /api/v1/conversations/{id}` | imported conversation projection | non-disclosing 404 |
 
-1. content-addressed SSE-KMS S3 source, fact, and report artifacts;
-2. PostgreSQL import, version, run, fact, artifact, and report lineage;
-3. deterministic ordinary idempotency and distinct explicit rerun attempts;
-4. canonical report, raw retained record, and retained conversation APIs;
-5. Triana App pages that fail closed when the configured backend report is
-   unavailable and never substitute the bundled fixture.
+## Authority, privacy, and refusal
 
-## Authority and refusal behavior
+- Deterministic code owns hashing, identity, line accounting, validation,
+  ordering, tool linkage, status, pagination, and tenant scoping.
+- The authenticated human attests authorization to upload and owns the agent
+  name. No human ruling or accepted behavior is created.
+- No LLM participates in this slice.
+- Raw traces are private customer data. Logs and errors exclude payloads,
+  authorization headers, object keys, and parser exception text.
+- Invalid lines are typed rejections; invalid authentication, ownership,
+  configuration, unsafe storage, or broken integrity aborts the operation.
+- Exact hosting region, DNS, and managed OIDC vendor are deployment
+  configuration, not evidence semantics. Production launch requires them.
 
-- Triana Labs owns deterministic source accounting, fact identity, rejected
-  evidence, lineage, and any later semantic analysis.
-- The backend owns orchestration, persistence, artifact verification, workflow
-  state, versioned API projection, and typed availability. It may copy stored
-  Labs facts but may not invent labels, cases, outcomes, costs, human rulings,
-  or release truth.
-- DBOS owns durable workflow identity and replay history, not evidence meaning.
-- An LLM may propose only the fields allowed by the Labs charter after explicit
-  provider egress authorization. No provider call is required for the initial
-  retained HRAI accounting import.
-- A human owns persistent rulings. None are created by this slice.
-- Missing, corrupt, or KMS-inaccessible artifacts degrade only their dependent
-  import/report. Missing compiler capability is `LABS_ANALYSIS_NOT_READY`, not
-  a pass or fabricated report.
+## Provenance
 
-## Privacy and execution location
+Implementation is newly authored in Triana. The existing repository-local
+PreviewTrace validator, Observer limits, storage ports, UI tokens, and report
+conversation visuals may be refactored. No external repository or HRAI code,
+schema, fixture, trace, or prose may be copied.
 
-- App, FastAPI, and DBOS run on one EC2 host.
-- App and API bind to loopback and are reached only through an approved private
-  tunnel. Ports 3000, 8000, and 5432 are never public.
-- RDS remains private. S3 blocks public access and uses SSE-KMS.
-- AWS instance roles and GitHub OIDC replace committed/static AWS credentials.
-- No `.env`, private key, raw corpus, transcript, provider body, IDE file, or
-  internal experiment artifact may be committed or included in images.
+## Parallel slices and ownership
 
-## Frozen deployment boundary
+### Backend slice
 
-Initial launch uses one ARM64 EC2 host, Docker Compose, the existing RDS
-instance with a new logical `triana` database, private S3, KMS, ECR, Azure
-OpenAI as the primary provider adapter, and explicit OpenRouter selection only.
+Test-owned:
 
-Initial non-goals: ECS, ALB, Lambda, SQS, Redis, Temporal, Terraform,
-application authentication, public HTTP, multi-tenancy behavior, automatic
-provider fallback, autoscaling, and high availability.
+- `triana-backend/tests/self_serve/**`
 
-## Change budget and ownership
+Production-owned:
 
-Architecture/orchestration ownership:
+- `triana-backend/migrations/versions/0002_*.py`
+- `triana-backend/src/triana_backend/auth/**`
+- `triana-backend/src/triana_backend/api/**`
+- `triana-backend/src/triana_backend/application/**`
+- `triana-backend/src/triana_backend/artifacts/**`
+- `triana-backend/src/triana_backend/domain/**`
+- `triana-backend/src/triana_backend/persistence/**`
+- `triana-backend/src/triana_backend/{composition,config}.py`
+- backend package and lock files only for JWT and multipart support
+- `triana-labs/src/triana_labs/contracts/traces.py`
 
-- `docs/BACKEND_ARCHITECTURE.md`
-- `docs/AWS_SINGLE_EC2_RUNBOOK.md`
-- `internal/DECISION_LOG.md`
-- `internal/SLICE_PACKET.md`
+RED command:
 
-Independent test ownership:
+```text
+uv run pytest -q tests/self_serve
+```
 
-- `triana-backend/tests/acceptance/**`
-- `triana-app/tests/labs08-backend-ui.test.mjs`
+### Frontend and reusable-viewer slice
 
-Storage implementation ownership:
+Test-owned:
 
-- `triana-backend/migrations/**`
-- `triana-backend/src/triana_backend/{application,artifacts,domain,persistence}/**`
-- backend package/lock files and operator CLI only as required by those ports
+- `triana-app/tests/self-serve-ui.test.mjs`
 
-Workflow/API/composition implementation ownership:
+Production-owned:
 
-- `triana-backend/src/triana_backend/{api,services,workflows}/**`
-- `triana-backend/src/triana_backend/{composition,config,main}.py`
+- `triana-app/app/(self-serve)/**`
+- `triana-app/app/login/**`
+- `triana-app/app/agents/**`
+- `triana-app/components/self-serve/**`
+- `triana-app/components/conversation/**`
+- `triana-app/lib/self-serve/**`
+- exact existing conversation route/component changes required for the legacy
+  adapter
+- `triana-app/components/AppNav.tsx`
+- `triana-app/app/globals.css`
 
-Labs compiler ownership:
+RED command:
 
-- `triana-labs/src/triana_labs/report/**`
+```text
+npm test -- --test-name-pattern self-serve
+```
 
-UI implementation ownership:
+The test author runs before the implementation author in each isolated
+worktree. The two slices may proceed in parallel after this packet. Workers
+stop before touching another lane or shared canonical documentation.
 
-- `triana-app/lib/labs-report.ts`
-- directly dependent Labs route/page/component files
-- `triana-app/next.config.ts`
+## Minimal acceptance gate
 
-Deployment implementation ownership:
+1. Backend black-box test: authenticated owner creates an agent, uploads a
+   two-conversation valid JSONL file, and reads both conversations.
+2. Backend boundary test: a mixed-validity upload reports exact accepted and
+   rejected counts without exposing raw rejected content.
+3. Backend isolation test: another authenticated owner cannot list or read the
+   first owner's agent, import, or conversation.
+4. Frontend contract test: login, agent creation, upload, import accounting,
+   and a conversation timeline are reachable and render typed failure states.
+5. Existing report conversation rendering remains available through its
+   adapter.
+6. Typecheck/build and repository governance pass on the integrated commit.
 
-- `.github/workflows/{ci,deploy}.yml`
-- `compose.production.yaml`
-- `ops/**`
-- `triana-{app,backend}/{Dockerfile,.dockerignore}`
+No coverage target, broad historical suite expansion, provider test, queue,
+load test, visual-regression suite, or analysis test is required.
 
-Maximum allowed scope expansion is one separately reviewed reconciliation
-commit limited to closing verifier P0/P1 defects inside these paths. New
-dependencies require lock updates and direct justification. Provider adapters,
-auth, billing, multi-tenancy, unrelated UI redesign, historical experiment
-cleanup, and data copies are outside this budget.
+## Required adversarial spot checks
 
-## Completed independent checkpoints
+- empty and oversized upload;
+- all lines rejected;
+- invalid JWT and cross-workspace identifier;
+- duplicate idempotency key with changed bytes;
+- orphan tool result or missing terminal rendered as a typed gap;
+- large tool payload is collapsed and React-escaped.
 
-- CP0 monorepo App base: `08a8338`.
-- CP1 architecture author: `49d4fbf`, integrated as `b3ca03f`.
-- AWS/CI read-only audit: `3b56aa6`, integrated as `4b53e9e`.
-- CP2 independent tests: `ead2408`, reconciled by `62eef47`, integrated as
-  `29e9b3a`.
-- CP3 storage author: `88df881`, integrated as `acdc662`.
-- CP4/CP5 workflow/API author: `72486ef`, integrated as `cb2d1aa`.
-- CP6 UI author: `4685d0a`, integrated as `206f5d9`.
-- CP7 deployment author: `07f1485`, integrated as `dbe639b`.
-- Production composition author: `4e2f034`, integrated as `1aca5bb`.
-- Labs deterministic compiler author: `2eced25`, integrated as `c76cd9b`.
-- Independent integration verdict at `1aca5bb`: RED; deployment prohibited.
+## Explicit non-goals and untouched areas
 
-## Mandatory reconciliation before deployment
+- `triana-core/**`
+- Labs case factory, intelligence, adaptive runner, simulation, and report
+  generation
+- HRAI compiler and private retained-report workflow
+- analysis, cases, runs, review mutation, teams, billing, SSO, API keys,
+  deletion/retention automation, provider settings, queues, and adapters
+- cloud mutation or deployment before the integrated local gate is green
 
-1. expose a real module-level ASGI app and align runtime environment names;
-2. make the first Alembic migration bootstrap an empty database;
-3. integrate the Labs compiler and persist its facts/rejected evidence/lineage;
-4. publish a canonical report artifact whose schema is accepted by the real UI;
-5. record 14 rejected/incomplete records consistently, never zero;
-6. remove guaranteed CI failures and add package typing metadata;
-7. verify report body identity/hash before serving and localize conversation
-   artifact failures;
-8. separate App and Backend environment/secret surfaces;
-9. reconcile DBOS migration/runtime privileges and prove foreground recovery;
-10. reconcile S3 KMS identity, artifact-kind keying, and acceptance restoration;
-11. close or explicitly defer provider caching because no provider call is in
-    the initial retained-accounting path;
-12. choose and document a safe tunnel/deployment mechanism before EC2 launch.
+No scope expansion beyond one JWT/JWKS dependency and multipart parsing is
+permitted without orchestrator review. No worker edits canonical documents,
+deployment files, package-wide formatting, or unrelated tests.
 
-## Reproducible exit gate
+## Exit verification
 
-The slice exits only when all are true:
+```text
+./scripts/verify-governance.sh
+cd triana-backend && uv run pytest -q tests/self_serve
+cd triana-backend && uv run ruff check src tests/self_serve
+cd triana-backend && uv run mypy src
+cd triana-app && npm test -- --test-name-pattern self-serve
+cd triana-app && npm run typecheck
+cd triana-app && npm run build
+```
 
-1. governance, decision journal, diff, Ruff, formatting, strict mypy, Python
-   compilation, migration bootstrap, UI typecheck/build, and deployment asset
-   checks pass;
-2. independent offline operator and UI no-fallback acceptance are green;
-3. backend and App ARM64 images build from committed files;
-4. RDS/S3/KMS resources are exact, private, and migrated by an operator step;
-5. the exact HRAI source imports once, repeats idempotently, and explicit rerun
-   creates a distinct attempt;
-6. RDS stores exact 200/186/14 accounting and Labs fact lineage;
-7. source, report, and conversation APIs return the stored identities and
-   localize a missing report artifact without breaking another healthy read;
-8. the App visibly renders the backend report and does not import or fall back
-   to `data/labs-report.json`;
-9. no raw data, `.env`, key, secret, internal experiment, or IDE file is staged;
-10. an independent verifier returns GREEN with exact commands and artifacts.
-
-Any failed item remains RED or typed partial evidence. No check may be reported
-as passing unless it ran against the integrated commit.
-
-## Exit reconciliation
-
-The owner-authorized private AWS launch completed on 2026-08-05 without
-opening public ingress. The exact hash-pinned 200-record HRAI source was stored
-in the private SSE-KMS bucket, imported through the DBOS-backed workflow into
-the new `triana` logical database on the existing RDS instance, and rendered
-by Triana App exclusively through the backend API over an SSM tunnel.
-
-- Import: `imp_0bf658de16aed56774fbb1bea8412989`
-- Run: `run_f574721d8995265acf6c6b1e6b899696`
-- Report: `rpt_183d311b5111fb8bb4b7100d13131148`
-- Stored accounting: 200 physical, 186 completed/usable, 14 harness errors
-- Report artifact hash:
-  `017baeea69046d2e582a9ec47590f5d7a0058e7b45a27320bc939134a69d1ec2`
-
-Offline governance, deployment-asset, secret, decision-memory, backend P0/P1,
-App no-fallback, TypeScript, container-build, and live S3-to-RDS-to-DBOS-to-API-
-to-UI checks passed. CI was then made Linux-portable without changing product
-semantics: current `uv` installs the exact frozen Python, `/private/tmp` is
-created explicitly for Labs' private-custody contract, and the App job runs
-the active LABS-08 backend/no-fallback acceptance rather than superseded
-fixture/static-export suites. No LLM call was made in the retained import.
+The orchestrator additionally inspects the integrated diff, one real
+57-conversation prescribed-format upload if supplied locally, logs for payload
+leakage, and the visible browser path. Unrun checks remain unverified.

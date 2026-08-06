@@ -840,3 +840,14 @@ aggregate deadline, target protocol/tool-budget readiness, population-fidelity
 calibration, semantic population derivation, case/retrieval/duplicate quality,
 and accounting/custody hardening. This register is required debt, not an
 implicit LABS-06 reopening or live-run authorization.
+
+Self-serve V0 active state (2026-08-06): Akarsh authorized the narrow hosted
+trace-viewer checkpoint and directed fast parallel delivery with minimal tests.
+The frozen path is managed login, one personal workspace, add agent, upload one
+attested PreviewTrace JSONL file, inspect exact accepted/rejected accounting,
+and browse accepted conversations through a reusable viewer. Backend and
+frontend/viewer proceed as two isolated slices from `ba44e8e`; analysis,
+simulation, HRAI ingestion, model egress, teams, billing, adapters, queues, and
+cloud deployment remain outside the active change budget. The managed OIDC
+vendor, production region/DNS, and final retention automation remain deployment
+configuration to resolve after the local integrated gate.

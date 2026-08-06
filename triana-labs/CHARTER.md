@@ -24,6 +24,26 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
 
 ## Immediate launch cut (owner-frozen, 2026-08-01)
 
+### Self-serve trace-viewer checkpoint (owner-frozen, 2026-08-06)
+
+Akarsh superseded the prior immediate deferral of hosted ingestion and accounts
+for one deliberately narrow beta checkpoint. Its entire value loop is:
+authenticate, create one agent, upload one prescribed PreviewTrace JSONL file,
+inspect deterministic accepted/rejected accounting, and browse accepted
+conversations in a reusable transcript/tool viewer. It does not run analysis,
+simulation, reports, models, providers, targets, or HRAI ingestion and makes no
+behavioral, regression, release, or accepted-truth claim.
+
+The backend, not the browser, owns authentication verification and workspace
+authorization. One authenticated owner receives one personal workspace; teams,
+invites, roles, billing, SSO, API keys, and public sharing remain deferred.
+Uploaded traces use the explicit `CUSTOMER_AUTHORIZED_TRACE_DATA` privacy class,
+require human authorization attestation, remain private, and have no model or
+provider egress. Deterministic code owns source hashing, identity, line
+accounting, validation, status, ordering, linkage, pagination, and isolation.
+The exact implementation boundary and minimal acceptance gate are frozen in
+`internal/SLICE_PACKET.md`.
+
 For the first public developer preview, the value moment is narrower and
 supersedes the immediate baseline/candidate sequence above without erasing the
 longer-term comparison product:

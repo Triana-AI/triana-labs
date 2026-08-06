@@ -6,6 +6,25 @@ Canonical planning base: `b963b85`
 Owner: Akarsh
 Execution orchestrator: primary coding agent operating under `AGENTS.md`
 
+## 2026-08-06 self-serve trace-viewer amendment
+
+The immediate implementation sequence is superseded by the bounded
+`SELF-SERVE-V0-TRACE-INGESTION` checkpoint in `internal/SLICE_PACKET.md`:
+
+```text
+managed login -> personal workspace -> add agent -> upload PreviewTrace JSONL
+-> exact accepted/rejected accounting -> reusable conversation viewer
+```
+
+This checkpoint newly permits private hosted customer trace ingestion under
+the explicit `CUSTOMER_AUTHORIZED_TRACE_DATA` class and owner attestation. It
+does not authorize analysis, generated cases, simulation, model/provider
+egress, HRAI-specific ingestion, teams, billing, adapters, or broader SaaS
+claims. Backend authorization must scope every object operation. The minimal
+launch reuses the current 16 MiB / 1,000-line / 1 MiB-line Observer limits and
+uses synchronous multipart ingestion; queues and resumable uploads wait for
+observed need.
+
 ## 2026-08-01 launch-sequence amendment
 
 The owner accepted a narrower 36-hour first-launch sequence. This amendment
