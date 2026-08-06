@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-06
 
-Status: **ACTIVE — CONTRACT FROZEN; TEST AUTHOR AUTHORIZED**
+Status: **COMPLETE — LIVE PRIVATE CANARY VERIFIED**
 
 Slice ID: `TAU57-NONAUTH-DBOS-BEHAVIOR-DRYRUN`
 
@@ -125,3 +125,42 @@ cd triana-backend && uv run ruff check src tests && uv run mypy src
 cd triana-app && npm run typecheck && npm run build
 ./scripts/verify-governance.sh
 ```
+
+## Exit evidence — 2026-08-06
+
+- Exact archive export: 57 PreviewTrace records, 745,960 bytes, SHA-256
+  `f757851296f1770248623e274f20c18ea8bd0dff34a1a4910ae199c78db1447d`.
+- Private staging: bucket `triana-artifacts-854847082059-ap-south-1`, SSE-KMS,
+  checksum `91eFEpbxdwJIYj4nTyDBjqi9Df80oaSRCuGZx42xRH0=`.
+- Import: `imp_37e742f4d6947028cd167c4a52478c50`; artifact
+  `art_529a16c5b9da207979c0013294b98f4c`; 57 physical, 57 accepted,
+  zero rejected.
+- RDS was observed at Alembic `0001_labs08_storage` and was transactionally
+  upgraded through the already-reviewed migrations to
+  `0003_feature_entitlements (head)`.
+- Live failures were retained rather than hidden: attempt 1 exposed the stale
+  schema; attempt 2 exposed the removed artifact conflict target; attempt 3
+  exposed duplicate PreviewTrace rejection facts. Independent RED regressions
+  and bounded production corrections protect the latter two failures.
+- Successful DBOS attempt 4: run `run_6e99b23c29175715b5d1ba5a18761b4c`,
+  workflow `labs08-run-8e8b1b297b4e0fe3d21ca9186fa68df4dba103f75c9ff353e2dfb55de0ab7562`,
+  report `rpt_70718d7e6cfe538b5a99bc4a44bb536c`, state
+  `COMPLETED_WITH_GAPS`.
+- Canonical report: 57 physical, 57 accepted, zero rejected, 54 structural
+  groups, support total 57, share total 10,000 basis points, deterministic
+  membership and descriptions, `population_claim=NOT_ESTABLISHED`, provider
+  `NONE`.
+- Deployed digests: backend
+  `sha256:c24dc75b3359c39c0afe2e7ddf1ce80c2a423447bbfa566df3ff04060d753c38`;
+  app `sha256:8b54879a915764e2bc23966188c70bf4215f3c72433679a8ccccf3edf40f169c`;
+  release SHA `0d4407946d86ef0d9888de2fb961ded4b51b8156`.
+- Production containers, backend readiness, canonical report reads, and
+  `/behavior` passed on-host and through refreshed local SSM tunnels. The UI
+  visibly renders deterministic descriptions and nonzero observed groups.
+- Focused integrated acceptance passed 17/17; exporter, compiler, UI,
+  TypeScript, Next production build, Ruff, and mypy checks passed during the
+  independently owned implementation and reconciliation steps.
+
+No LLM/provider/target call, semantic population claim, auth bridge, new
+infrastructure, or public ingress was introduced. The temporary host ECR-push
+statement may now be removed; the runtime requires ECR pull only.

@@ -897,3 +897,17 @@ groups. The active bounded slice adapts the exact local 57-task TAU² archive to
 synthetic PreviewTrace and derives deterministic structural groups through real
 DBOS/RDS/S3 for `/behavior`; no LLM, semantic population claim, auth bridge, or
 new infrastructure is included.
+
+TAU57 live exit (2026-08-06): the exact 57-task archive is deployed through
+the private non-auth operator path. RDS is at Alembic 0003. Import
+`imp_37e742f4d6947028cd167c4a52478c50` accounts for 57/57 accepted traces;
+DBOS attempt 4 completed as run `run_6e99b23c29175715b5d1ba5a18761b4c`
+and report `rpt_70718d7e6cfe538b5a99bc4a44bb536c`. The report contains 54
+deterministic structural groups reconciling to 57 support and 10,000 basis
+points, with no provider egress and no population claim. Backend/app digest
+deployment and local SSM-tunneled `/behavior` verification are green. Two live
+migration-compatibility failures now have independent regression coverage:
+targetless deterministic artifact convergence after migration 0002, and
+conditional legacy rejection supplements that do not duplicate compiler-owned
+PreviewTrace facts. The authenticated workspace-safe analysis bridge remains
+deferred and must not reuse these unscoped operator routes.
