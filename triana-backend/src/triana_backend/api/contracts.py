@@ -6,7 +6,7 @@ Infrastructure adapters retain ownership of SQL sessions and S3 streams.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Protocol
@@ -95,3 +95,48 @@ class ImportCommandPort(Protocol):
 
 class RunCommandPort(Protocol):
     def start_or_get_run(self, request: RunStart) -> JsonObject: ...
+
+
+Authenticator = Callable[[str | None], str | None]
+
+
+class SelfServePort(Protocol):
+    """Owner-scoped commands and projections for the hosted trace viewer."""
+
+    def get_or_create_me(self, owner_subject: str) -> JsonObject: ...
+
+    def create_agent(self, owner_subject: str, display_name: str) -> JsonObject: ...
+
+    def list_agents(self, owner_subject: str) -> Sequence[JsonObject]: ...
+
+    def get_agent(self, owner_subject: str, agent_id: str) -> JsonObject: ...
+
+    def create_import(
+        self,
+        owner_subject: str,
+        agent_id: str,
+        *,
+        filename: str,
+        content_type: str,
+        payload: bytes,
+        owner_attested: bool,
+        idempotency_key: str,
+    ) -> JsonObject: ...
+
+    def list_agent_imports(
+        self, owner_subject: str, agent_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_import(self, owner_subject: str, import_id: str) -> JsonObject: ...
+
+    def list_import_conversations(
+        self, owner_subject: str, import_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def list_import_rejections(
+        self, owner_subject: str, import_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_conversation(
+        self, owner_subject: str, conversation_id: str
+    ) -> JsonObject: ...

@@ -5,6 +5,12 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class AgentCreateModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str = Field(min_length=1, max_length=128, pattern=r".*\S.*")
+
+
 class SourceLocatorModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

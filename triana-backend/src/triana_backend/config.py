@@ -1,4 +1,4 @@
-"""Strict environment configuration for the private RDS/S3 deployment."""
+"""Strict environment configuration for legacy and self-serve deployments."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 @dataclass(frozen=True, slots=True)
 class BackendSettings:
     database_url: str
-    dbos_system_database_url: str
+    dbos_system_database_url: str | None
     artifact_bucket: str
     kms_key_id: str
     aws_region: str | None
@@ -18,12 +18,15 @@ class BackendSettings:
     labs_config_identity: str
     host: str
     port: int
+    oidc_issuer: str | None = None
+    oidc_audience: str | None = None
+    oidc_jwks_url: str | None = None
 
     @classmethod
     def from_environment(cls) -> BackendSettings:
         settings = cls(
             database_url=_required("TRIANA_DATABASE_URL"),
-            dbos_system_database_url=_required("DBOS_SYSTEM_DATABASE_URL"),
+            dbos_system_database_url=os.environ.get("DBOS_SYSTEM_DATABASE_URL"),
             artifact_bucket=_required("TRIANA_ARTIFACT_BUCKET"),
             kms_key_id=_required("TRIANA_KMS_KEY_ID"),
             aws_region=os.environ.get("AWS_REGION")
@@ -34,15 +37,28 @@ class BackendSettings:
             ),
             host=os.environ.get("TRIANA_BACKEND_HOST", "127.0.0.1"),
             port=_port(os.environ.get("TRIANA_BACKEND_PORT", "8000")),
+            oidc_issuer=os.environ.get("TRIANA_OIDC_ISSUER"),
+            oidc_audience=os.environ.get("TRIANA_OIDC_AUDIENCE"),
+            oidc_jwks_url=os.environ.get("TRIANA_OIDC_JWKS_URL"),
         )
         _require_postgresql(settings.database_url, "TRIANA_DATABASE_URL")
-        _require_postgresql(
-            settings.dbos_system_database_url, "DBOS_SYSTEM_DATABASE_URL"
-        )
+        if settings.oidc_issuer is None:
+            if settings.dbos_system_database_url is None:
+                raise ValueError("DBOS_SYSTEM_DATABASE_URL is required")
+            _require_postgresql(
+                settings.dbos_system_database_url, "DBOS_SYSTEM_DATABASE_URL"
+            )
         if not settings.kms_key_id.startswith("arn:aws:kms:"):
             raise ValueError("TRIANA_KMS_KEY_ID must be a full KMS key ARN")
-        if settings.host != "127.0.0.1":
+        if settings.oidc_issuer is None and settings.host != "127.0.0.1":
             raise ValueError("TRIANA_BACKEND_HOST must be 127.0.0.1 for LABS-08")
+        oidc_values = (
+            settings.oidc_issuer,
+            settings.oidc_audience,
+            settings.oidc_jwks_url,
+        )
+        if any(oidc_values) and not all(oidc_values):
+            raise ValueError("all TRIANA_OIDC_* settings are required together")
         return settings
 
 

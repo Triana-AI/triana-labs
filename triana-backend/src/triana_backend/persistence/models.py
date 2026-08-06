@@ -34,6 +34,24 @@ class Workspace(TimestampMixin, Base):
     slug: Mapped[str] = mapped_column(String(128), nullable=False)
 
 
+class User(TimestampMixin, Base):
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("subject_hash"), {"schema": "app"})
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    subject_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class WorkspaceMembership(TimestampMixin, Base):
+    __tablename__ = "workspace_memberships"
+    __table_args__ = ({"schema": "app"},)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("app.users.id", ondelete="RESTRICT"), primary_key=True
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("app.workspaces.id", ondelete="RESTRICT"), primary_key=True
+    )
+
+
 class Agent(TimestampMixin, Base):
     __tablename__ = "agents"
     __table_args__ = (
@@ -45,6 +63,7 @@ class Agent(TimestampMixin, Base):
         ForeignKey("app.workspaces.id", ondelete="RESTRICT"), nullable=False
     )
     agent_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(128))
 
 
 class AgentVersion(TimestampMixin, Base):
@@ -65,10 +84,13 @@ class AgentVersion(TimestampMixin, Base):
 class Artifact(TimestampMixin, Base):
     __tablename__ = "artifacts"
     __table_args__ = (
-        UniqueConstraint("artifact_kind", "content_sha256"),
+        UniqueConstraint("workspace_id", "artifact_kind", "content_sha256"),
         {"schema": "app"},
     )
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    workspace_id: Mapped[str | None] = mapped_column(
+        ForeignKey("app.workspaces.id", ondelete="RESTRICT")
+    )
     artifact_kind: Mapped[str] = mapped_column(String(64), nullable=False)
     content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     byte_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
@@ -218,3 +240,36 @@ class ProviderCache(TimestampMixin, Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class ImportedConversation(TimestampMixin, Base):
+    __tablename__ = "imported_conversations"
+    __table_args__ = (
+        UniqueConstraint("import_id", "line_number"),
+        UniqueConstraint("import_id", "trace_id"),
+        {"schema": "app"},
+    )
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    import_id: Mapped[str] = mapped_column(
+        ForeignKey("app.imports.id", ondelete="RESTRICT"), nullable=False
+    )
+    line_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    source_trace_id: Mapped[str] = mapped_column(String(512), nullable=False)
+    events_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False)
+
+
+class ImportRejection(TimestampMixin, Base):
+    __tablename__ = "import_rejections"
+    __table_args__ = (
+        UniqueConstraint("import_id", "line_number"),
+        {"schema": "app"},
+    )
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    import_id: Mapped[str] = mapped_column(
+        ForeignKey("app.imports.id", ondelete="RESTRICT"), nullable=False
+    )
+    line_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    json_pointer: Mapped[str] = mapped_column(String(1024), nullable=False)
+    safe_message: Mapped[str] = mapped_column(String(255), nullable=False)

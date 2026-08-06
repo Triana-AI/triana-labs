@@ -1,4 +1,4 @@
-"""Production composition for the private RDS/S3 LABS-08 vertical slice."""
+"""Production PostgreSQL/S3 composition for legacy and self-serve surfaces."""
 
 from __future__ import annotations
 
@@ -31,7 +31,9 @@ from triana_backend.api.contracts import (
     RunStart,
 )
 from triana_backend.application.imports import ImportService, RegisterS3Import
+from triana_backend.application.self_serve import SelfServeService
 from triana_backend.artifacts.s3 import S3ArtifactStore
+from triana_backend.auth import OidcJwtAuthenticator
 from triana_backend.config import BackendSettings
 from triana_backend.domain.models import (
     ArtifactAvailability,
@@ -56,6 +58,7 @@ from triana_backend.persistence.models import (
     Workspace,
 )
 from triana_backend.persistence.repositories import SqlAlchemyImportRepository
+from triana_backend.persistence.self_serve import SqlAlchemySelfServeRepository
 from triana_backend.services.report_projection import (
     PersistedLabsFact,
     ReportProjectionInput,
@@ -697,18 +700,34 @@ def compose_backend(
         artifact_bucket=settings.artifact_bucket,
         kms_key_id=settings.kms_key_id,
     )
-    services = PostgresWorkflowServices(sessions=sessions, artifacts=artifacts)
-    configure_workflow_services(services)
-    dbos_config: DBOSConfig = {
-        "name": "triana-backend",
-        "system_database_url": settings.dbos_system_database_url,
-        "application_database_url": settings.database_url,
-        "application_version": settings.labs_version,
-    }
-    DBOS(config=dbos_config)
-    if launch_dbos:
-        DBOS.launch()
+    if settings.oidc_issuer is None:
+        if settings.dbos_system_database_url is None:
+            raise ValueError("DBOS system database is required for the legacy runtime")
+        services = PostgresWorkflowServices(sessions=sessions, artifacts=artifacts)
+        configure_workflow_services(services)
+        dbos_config: DBOSConfig = {
+            "name": "triana-backend",
+            "system_database_url": settings.dbos_system_database_url,
+            "application_database_url": settings.database_url,
+            "application_version": settings.labs_version,
+        }
+        DBOS(config=dbos_config)
+        if launch_dbos:
+            DBOS.launch()
     reads = PostgresS3Reads(sessions=sessions, artifacts=artifacts)
+    self_serve = None
+    authenticate = None
+    if settings.oidc_issuer is not None:
+        if settings.oidc_audience is None or settings.oidc_jwks_url is None:
+            raise ValueError("OIDC settings must be configured together")
+        self_serve = SelfServeService(
+            repository=SqlAlchemySelfServeRepository(sessions), storage=artifacts
+        )
+        authenticate = OidcJwtAuthenticator(
+            issuer=settings.oidc_issuer,
+            audience=settings.oidc_audience,
+            jwks_url=settings.oidc_jwks_url,
+        )
     return BackendRuntime(
         app=create_app(
             reads=reads,
@@ -720,6 +739,8 @@ def compose_backend(
                 config_identity=settings.labs_config_identity,
             ),
             readiness=reads.ready,
+            self_serve=self_serve,
+            authenticate=authenticate,
         ),
         engine=engine,
     )

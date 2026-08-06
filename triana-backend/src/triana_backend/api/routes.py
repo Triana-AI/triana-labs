@@ -4,16 +4,45 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Header, Query
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 
 from .contracts import (
+    Authenticator,
     BackendReadPort,
     ImportCommandPort,
     ImportRegistration,
     RunCommandPort,
     RunStart,
+    SelfServePort,
 )
-from .models import ImportRegistrationModel, RunStartModel
+from .models import AgentCreateModel, ImportRegistrationModel, RunStartModel
+
+_MAX_MULTIPART_UPLOAD_BYTES = 16 * 1024 * 1024
+
+
+async def _read_bounded_upload(file: UploadFile) -> bytes:
+    chunks: list[bytes] = []
+    byte_count = 0
+    while chunk := await file.read(1024 * 1024):
+        byte_count += len(chunk)
+        if byte_count > _MAX_MULTIPART_UPLOAD_BYTES:
+            from triana_backend.application.self_serve import SelfServeRefusal
+
+            raise SelfServeRefusal(
+                413, "UPLOAD_TOO_LARGE", "Upload exceeds the size limit."
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def create_v1_router(
@@ -21,8 +50,120 @@ def create_v1_router(
     reads: BackendReadPort,
     imports: ImportCommandPort,
     runs: RunCommandPort,
+    self_serve: SelfServePort | None = None,
+    authenticate: Authenticator | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1")
+
+    if self_serve is not None:
+        if authenticate is None:
+            raise ValueError("authenticate is required when self_serve is configured")
+
+        def authenticated_subject(
+            authorization: Annotated[str | None, Header()] = None,
+        ) -> str:
+            scheme, _, token = (authorization or "").partition(" ")
+            subject = authenticate(token if scheme.lower() == "bearer" else None)
+            if subject is None:
+                raise HTTPException(status_code=401, detail="invalid authentication")
+            return subject
+
+        @router.get("/me")
+        def get_me(subject: str = Depends(authenticated_subject)) -> dict[str, Any]:
+            return dict(self_serve.get_or_create_me(subject))
+
+        @router.post("/agents", status_code=201)
+        def create_agent(
+            payload: Annotated[AgentCreateModel, Body()],
+            subject: str = Depends(authenticated_subject),
+        ) -> dict[str, Any]:
+            return dict(self_serve.create_agent(subject, payload.display_name.strip()))
+
+        @router.get("/agents")
+        def list_self_serve_agents(
+            subject: str = Depends(authenticated_subject),
+        ) -> dict[str, Any]:
+            return {
+                "schema_version": 1,
+                "agents": [dict(row) for row in self_serve.list_agents(subject)],
+            }
+
+        @router.get("/agents/{agent_id}")
+        def get_self_serve_agent(
+            agent_id: str, subject: str = Depends(authenticated_subject)
+        ) -> dict[str, Any]:
+            return dict(self_serve.get_agent(subject, agent_id))
+
+        @router.post("/agents/{agent_id}/imports", status_code=201)
+        async def create_self_serve_import(
+            agent_id: str,
+            idempotency_key: Annotated[str, Header(alias="Idempotency-Key")],
+            owner_attested: Annotated[bool, Form()],
+            file: Annotated[UploadFile, File()],
+            subject: str = Depends(authenticated_subject),
+        ) -> dict[str, Any]:
+            return dict(
+                self_serve.create_import(
+                    subject,
+                    agent_id,
+                    filename=file.filename or "",
+                    content_type=file.content_type or "",
+                    payload=await _read_bounded_upload(file),
+                    owner_attested=owner_attested,
+                    idempotency_key=idempotency_key,
+                )
+            )
+
+        @router.get("/agents/{agent_id}/imports")
+        def list_self_serve_imports(
+            agent_id: str, subject: str = Depends(authenticated_subject)
+        ) -> dict[str, Any]:
+            return {
+                "schema_version": 1,
+                "imports": [
+                    dict(row)
+                    for row in self_serve.list_agent_imports(subject, agent_id)
+                ],
+            }
+
+        @router.get("/imports/{import_id}")
+        def get_self_serve_import(
+            import_id: str, subject: str = Depends(authenticated_subject)
+        ) -> dict[str, Any]:
+            return dict(self_serve.get_import(subject, import_id))
+
+        @router.get("/imports/{import_id}/conversations")
+        def list_self_serve_conversations(
+            import_id: str, subject: str = Depends(authenticated_subject)
+        ) -> dict[str, Any]:
+            return {
+                "schema_version": 1,
+                "conversations": [
+                    dict(row)
+                    for row in self_serve.list_import_conversations(subject, import_id)
+                ],
+            }
+
+        @router.get("/imports/{import_id}/rejections")
+        def list_self_serve_rejections(
+            import_id: str, subject: str = Depends(authenticated_subject)
+        ) -> dict[str, Any]:
+            return {
+                "schema_version": 1,
+                "rejections": [
+                    dict(row)
+                    for row in self_serve.list_import_rejections(subject, import_id)
+                ],
+            }
+
+        @router.get("/conversations/{conversation_id}")
+        def get_self_serve_conversation(
+            conversation_id: str,
+            subject: str = Depends(authenticated_subject),
+        ) -> dict[str, Any]:
+            return dict(self_serve.get_conversation(subject, conversation_id))
+
+        return router
 
     @router.post("/imports", status_code=200)
     def register_import(
