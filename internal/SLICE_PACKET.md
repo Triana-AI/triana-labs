@@ -1,206 +1,127 @@
-# SELF-SERVE-V0 magic-link and feature-entitlement slice
+# TAU57 non-auth DBOS behavior dry-run slice
 
 Date frozen: 2026-08-06
 
-Status: **LOCAL GREEN — LIVE SUPABASE AND DEPLOYMENT CONFIGURATION PENDING**
+Status: **ACTIVE — CONTRACT FROZEN; TEST AUTHOR AUTHORIZED**
 
-Slice ID: `SELF-SERVE-V0-MAGIC-LINK-ENTITLEMENTS`
+Slice ID: `TAU57-NONAUTH-DBOS-BEHAVIOR-DRYRUN`
 
-Canonical base: `902f0fd` on `codex/selfserve-v0`.
+Canonical base: `83d3e9e` on `codex/selfserve-v0`.
 
 ## Product outcome
 
-Replace the developer JWT-paste scaffold with open email magic-link login and
-add a backend-owned feature gate for gradual rollout:
+Prove the non-authenticated analysis core independently of signup:
 
 ```text
-email -> magic link -> authenticated personal workspace -> core features
-locked feature -> request access -> REQUESTED state
+verified local TAU² 57-task archive
+-> deterministic PreviewTrace JSONL adapter
+-> private S3 registration
+-> real foreground DBOS workflow
+-> deterministic structural behavior groups
+-> RDS/S3 canonical report
+-> /behavior through the private SSM tunnel
 ```
 
-There is no signup waitlist or manual approval before using trace ingestion and
-the conversation viewer.
+This is a private operator dry run. It does not grant the self-serve
+`ANALYSIS` entitlement or connect authenticated uploads to analysis.
 
-## Frozen authentication contract
+## Exact input
 
-- Supabase Auth supplies passwordless email magic links and JWT sessions.
-- The login form accepts an email and calls `signInWithOtp`; it never reveals
-  whether an account previously existed.
-- Supabase may create the user automatically. `shouldCreateUser` remains true.
-- The magic-link confirmation route exchanges the token/code for a session and
-  redirects through the feature gate to `/agents`.
-- The browser obtains the current Supabase access token and sends it through
-  the existing same-origin `/api/v1` proxy. The FastAPI backend continues to
-  verify issuer, audience, expiry, subject, and signature through JWKS.
-- No password, homegrown token, service-role key, auth admin API, invite, or
-  approval workflow is introduced.
-- Auth routes and responses are private/no-store. Logout clears the managed
-  session.
+- archive:
+  `triana-experiments/tau2-luna-local/runs/downloads/tau2-retail-discovery-v1/2788f37e3fa215548319be116dd1f5b47e70e04b188919e460441ed993a98169.tar.gz`;
+- archive SHA-256:
+  `2788f37e3fa215548319be116dd1f5b47e70e04b188919e460441ed993a98169`;
+- expected task bundles: 57;
+- evidence/privacy class: `SYNTHETIC`;
+- custody: raw archive stays gitignored; generated PreviewTrace JSONL may exist
+  only under `/private/tmp` and private SSE-KMS S3.
 
-## Frozen authorization contract
+## Frozen behavior contract
 
-RBAC and rollout entitlements are separate:
+- The adapter reads only each completed attempt's `tau2-results.json` from the
+  verified archive and emits one schema-version-1 `preview_trace` per task.
+- Message order is preserved. User/assistant messages and assistant tool calls
+  become the corresponding PreviewTrace events; tool results bind in FIFO
+  order to the preceding unresolved call because TAU² omits result call IDs.
+- Adapter identity, archive hash, task ID, attempt ID, and reward remain
+  lineage. Reward is not accepted behavior or a Triana ruling.
+- Deterministic grouping uses only observable event-kind and ordered tool-name
+  structure. It owns membership, support, group identity, denominator, and
+  basis points.
+- Group labels and summaries are structural descriptions authored by
+  deterministic code. `semantic_summary_authority` is not MODEL_PROPOSED and
+  `population_claim` remains `NOT_ESTABLISHED`.
+- No model/provider/target call, semantic user-need inference, case generation,
+  simulation, aggregate verdict, or human ruling occurs.
+- Malformed archives, missing/duplicate tasks, invalid PreviewTrace events,
+  hash mismatch, mixed privacy, incomplete denominators, S3/KMS failure, or
+  DBOS/compiler failure refuse visibly and cannot create an available report.
 
-- V0 membership role remains `OWNER`; teams and additional roles are deferred.
-- Deterministic backend code owns a closed feature catalog and workspace
-  entitlement state.
-- Public states are `AVAILABLE`, `LOCKED`, and `REQUESTED`.
-- Default available: `TRACE_INGESTION`, `CONVERSATION_VIEWER`.
-- Default locked: `ANALYSIS`, `SIMULATION`, `TEAM_COLLABORATION`, `API_ACCESS`.
-- A request for a locked feature is owner-scoped and idempotently creates one
-  `REQUESTED` record. It does not auto-grant the feature and does not block core
-  product access.
-- Grant/revoke administration is deliberately deferred; initial grants may be
-  applied by a controlled operator/database migration later.
-- UI gates improve clarity only. Every future protected backend endpoint must
-  call the backend entitlement boundary before work or data access.
+## Infrastructure boundary
 
-## Public API additions
+- AWS profile: `akarsh-deepprobe` / account `854847082059` / region
+  `ap-south-1`.
+- Reuse running EC2 `i-0f8250d908737b568`, available encrypted RDS `db-pg-1`,
+  existing private S3/KMS/ECR configuration, and SSM-only access.
+- No Terraform or new infrastructure is authorized because the required
+  runtime exists.
+- Mutations are limited to one private input object, content-addressed output
+  artifacts, application rows/DBOS history, new digest-addressed images, and a
+  reversible deployment on the existing Triana host.
 
-| Request | Success | Refusal |
-|---|---|---|
-| `GET /api/v1/me/features` | closed catalog with state per feature | 401 |
-| `POST /api/v1/me/access-requests` | requested feature becomes `REQUESTED` | 401/404 unknown feature/409 already available |
+## Change budget
 
-Existing authenticated self-serve APIs and tenant isolation remain unchanged.
+Independent test ownership:
 
-## Authority and privacy
+- `triana-experiments/tau2-luna-local/tests/test_preview_trace_export.py`
+- `triana-labs/tests/report/test_preview_trace_behavior.py`
+- `triana-backend/tests/acceptance/test_tau_behavior_pipeline.py`
+- `triana-app/tests/labs08-backend-ui.test.mjs` only by additive sibling test;
+  the frozen existing test itself remains unchanged.
 
-- Supabase Auth owns email delivery and session issuance.
-- The backend owns authorization and never trusts a client feature state.
-- Deterministic code owns feature keys, defaults, request identity, and state.
-- A human requests access; that request is not an entitlement grant.
-- Email addresses are not copied into Triana persistence in this slice; the
-  existing hashed OIDC subject remains the local user identity.
-- No trace-data or LLM/provider egress is added.
+Implementation ownership:
 
-## Parallel slices and change budget
+- `triana-experiments/tau2-luna-local/scripts/export_preview_trace.py`
+- `triana-labs/src/triana_labs/report/**`
+- `triana-backend/src/triana_backend/{domain,application,services,workflows}/**`
+- `triana-backend/src/triana_backend/composition.py`
+- `triana-app/app/behavior/page.tsx`
+- `triana-app/lib/labs-report.ts` only if required to represent deterministic
+  structural authority without widening the report contract.
 
-### Backend entitlements
-
-Test-owned:
-
-- `triana-backend/tests/self_serve/test_feature_entitlements.py`
-
-Production-owned:
-
-- `triana-backend/migrations/versions/0003_*.py`
-- `triana-backend/src/triana_backend/api/{contracts,routes}.py`
-- `triana-backend/src/triana_backend/application/**`
-- `triana-backend/src/triana_backend/persistence/{models,self_serve}.py`
-
-No dependency is permitted.
-
-RED command:
-
-```text
-uv run pytest -q tests/self_serve/test_feature_entitlements.py
-```
-
-### Frontend magic link and access gates
-
-Test-owned:
-
-- `triana-app/tests/magic-link-access.test.mjs`
-
-Production-owned:
-
-- `triana-app/app/{login,auth,agents}/**`
-- `triana-app/components/self-serve/**`
-- `triana-app/lib/{self-serve,supabase}/**`
-- `triana-app/components/AppNav.tsx`
-- `triana-app/package.json`
-- `triana-app/package-lock.json`
-- `triana-app/next.config.ts` only if no-store/auth routing requires it
-
-Permitted dependencies: current compatible `@supabase/supabase-js` and
-`@supabase/ssr`, with exact versions locked.
-
-RED command:
-
-```text
-node --test --test-name-pattern=magic-link tests/magic-link-access.test.mjs
-```
-
-Each slice runs independent test author then implementation author. Backend and
-frontend may proceed in parallel in isolated worktrees after this packet.
-
-## Integrated checkpoints
-
-- `d043020` — product and authorization contract freeze.
-- `cb81450` / `761fbf3` — independent backend acceptance then implementation.
-- `032c85f` / `ab574df` — independent frontend acceptance then implementation.
-- `3559fb8` — bounded production dependency advisory correction.
+No dependency or migration is permitted. Self-serve auth, membership,
+entitlements, upload/viewer routes, Supabase code, and cloud provisioning are
+explicitly untouched.
 
 ## Minimal acceptance
 
-1. New authenticated owner receives both core features as `AVAILABLE` and the
-   four staged features as `LOCKED` without an approval record.
-2. Requesting `ANALYSIS` twice yields one owner-scoped request and stable
-   `REQUESTED` state; another owner remains `LOCKED`.
-3. Unknown features refuse and available features cannot be requested.
-4. Login submits an email magic link with open signup, never accepts a pasted
-   bearer token, and provides neutral check-your-email feedback.
-5. Confirmation establishes the managed session; API requests use its access
-   token and logout clears it.
-6. The UI shows available/locked/requested states and a working request-access
-   control without hiding core trace ingestion.
-7. Existing self-serve ingestion/viewer focused tests, typecheck, and build
-   remain green.
+1. Exact archive exports 57 valid, ordered, unique synthetic PreviewTrace
+   records reproducibly; malformed/missing/duplicate task bundles refuse.
+2. Compiler accounting reconciles `physical = accepted + rejected` and emits
+   stable structural group IDs, ordered membership, support, and basis points.
+3. No report field claims semantic populations, model-written summaries,
+   accepted behavior, or a verdict.
+4. Existing HRAI accounting compilation remains unchanged and keeps zero
+   behavior groups.
+5. Real dry run persists the new import/run/report through S3, RDS, and DBOS;
+   ordinary repeat converges idempotently.
+6. `/behavior` renders the new report over SSM with visible nonzero groups and
+   deterministic-authority copy; no fixture fallback occurs.
 
-## Edge cases
+## Worker protocol and exit
 
-- invalid/expired/replayed magic link;
-- email enumeration through differing success text;
-- duplicate request clicks and concurrent request creation;
-- cross-workspace feature/request reads;
-- unknown/removed feature key;
-- stale UI entitlement after request;
-- missing Supabase public configuration;
-- refresh/logout followed by an API call;
-- redirect target injection; only local fixed destinations are allowed.
+Exactly one independent test author freezes RED acceptance first. Exactly one
+implementation author then works against those bytes. The orchestrator alone
+integrates, runs the real AWS canary, reconciles the change budget, and records
+the final verdict.
 
-## Non-goals
-
-- approval queue/admin UI;
-- invite-only signup or signup waitlist;
-- teams, member invites, additional roles, SSO, SCIM, billing, paid plans;
-- automatic entitlement grants, percentage rollout, experiments, or flags from
-  an external feature-flag vendor;
-- analysis or simulation implementation;
-- cloud/provider project creation or secrets in Git.
-
-## Exit commands
+Local gates:
 
 ```text
+cd triana-experiments/tau2-luna-local && uv run --frozen pytest -q tests/test_preview_trace_export.py
+cd triana-labs && uv run --locked pytest -q tests/report/test_preview_trace_behavior.py
+cd triana-backend && uv run pytest -q tests/acceptance/test_tau_behavior_pipeline.py
+cd triana-backend && uv run ruff check src tests && uv run mypy src
+cd triana-app && npm run typecheck && npm run build
 ./scripts/verify-governance.sh
-cd triana-backend && uv run pytest -q tests/self_serve
-cd triana-backend && uv run ruff check src tests/self_serve
-cd triana-backend && uv run mypy src
-cd triana-app && node --test tests/self-serve-ui.test.mjs tests/magic-link-access.test.mjs
-cd triana-app && npm run typecheck
-cd triana-app && npm run build
 ```
-
-## Exit evidence and remaining uncertainty
-
-Integrated local verification on 2026-08-06:
-
-- backend self-serve acceptance: 7 passed;
-- backend Ruff and strict mypy: passed;
-- Alembic head: `0003_feature_entitlements`; offline `0001` through `0003`
-  PostgreSQL SQL render: passed;
-- frontend frozen self-serve and magic-link acceptance: 2 passed;
-- existing LABS-08 backend/UI no-fallback acceptance: 2 passed;
-- frontend TypeScript and Next production build: passed;
-- production dependency audit at moderate threshold: zero vulnerabilities;
-- governance and final diff checks are run again by the orchestrator at the
-  reconciliation commit.
-
-Unverified external work remains: a Supabase project and email provider were
-not created or mutated; no live email, callback, refresh, logout, or backend
-JWT exchange was exercised; migration `0003` was not applied to a live
-database. The current app Docker/deploy path also does not inject the required
-`NEXT_PUBLIC_SUPABASE_*` values at image build time. Public launch is blocked
-until those items and the authenticated two-owner isolation smoke in the
-runbook pass.

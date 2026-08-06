@@ -886,3 +886,14 @@ authenticated two-owner smoke. The current Docker/deploy build does not yet
 inject `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; runtime-only Compose values cannot
 repair a browser bundle built without them.
+
+TAU57 non-auth DBOS behavior canary (2026-08-06): Akarsh authorized immediate
+use of the existing private AWS runtime through profile `akarsh-deepprobe`.
+Preflight corrected the stale-account assumption: account `854847082059` has a
+running SSM-only `triana-demo` host, available encrypted `db-pg-1`, existing
+KMS and healthy app/backend containers. The retained HRAI report remains
+accounting-only with 200 physical, 186 accepted, 14 rejected, and zero behavior
+groups. The active bounded slice adapts the exact local 57-task TAU² archive to
+synthetic PreviewTrace and derives deterministic structural groups through real
+DBOS/RDS/S3 for `/behavior`; no LLM, semantic population claim, auth bridge, or
+new infrastructure is included.

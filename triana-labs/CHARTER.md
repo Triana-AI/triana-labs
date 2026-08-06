@@ -54,6 +54,14 @@ collaboration, and API access are locked and expose an idempotent request-access
 action. A request is not a grant, and this checkpoint adds no analysis,
 simulation, team, billing, or admin-approval implementation.
 
+The owner then authorized one private non-auth dry run of the analysis core on
+the existing LABS-08 AWS runtime. The exact verified 57-task TAU² Discovery
+archive may be deterministically adapted to synthetic PreviewTrace records and
+grouped only by observable event/tool structure through real S3/RDS/DBOS. This
+proves neither semantic user populations nor the authenticated analysis bridge;
+no model/provider call, new infrastructure, entitlement grant, or persistent
+ruling is authorized by that canary.
+
 For the first public developer preview, the value moment is narrower and
 supersedes the immediate baseline/candidate sequence above without erasing the
 longer-term comparison product:
