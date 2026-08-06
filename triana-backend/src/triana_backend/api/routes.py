@@ -25,6 +25,7 @@ from .contracts import (
     RunCommandPort,
     RunStart,
     SelfServePort,
+    TraceToEvalPort,
 )
 from .models import AgentCreateModel, ImportRegistrationModel, RunStartModel
 
@@ -48,14 +49,111 @@ async def _read_bounded_upload(file: UploadFile) -> bytes:
 
 def create_v1_router(
     *,
-    reads: BackendReadPort,
-    imports: ImportCommandPort,
-    runs: RunCommandPort,
+    reads: BackendReadPort | None,
+    imports: ImportCommandPort | None,
+    runs: RunCommandPort | None,
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
     feature_entitlements: FeatureEntitlementPort | None = None,
+    trace_to_eval: TraceToEvalPort | None = None,
+    local_trace_to_eval_only: bool = False,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1")
+
+    if trace_to_eval is not None:
+
+        @router.post("/trace-to-eval/runs", status_code=201)
+        def start_trace_to_eval(
+            payload: Annotated[dict[str, Any], Body()],
+        ) -> dict[str, Any]:
+            manifest_path = payload.get("manifest_path")
+            source_path = payload.get("source_path")
+            source_kind = payload.get("source_kind")
+            manifest_valid = isinstance(manifest_path, str) and bool(
+                manifest_path.strip()
+            )
+            source_valid = (
+                isinstance(source_path, str)
+                and bool(source_path.strip())
+                and isinstance(source_kind, str)
+                and bool(source_kind.strip())
+            )
+            if manifest_valid == source_valid:
+                raise HTTPException(status_code=422, detail="select exactly one source")
+            try:
+                return dict(
+                    trace_to_eval.run(
+                        manifest_path if manifest_valid else None,
+                        source_path=source_path if source_valid else None,
+                        source_kind=source_kind if source_valid else None,
+                    )
+                )
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=422, detail="trace-to-eval run rejected"
+                ) from error
+
+        @router.get("/trace-to-eval/reports/{report_id}")
+        def get_trace_to_eval_report(report_id: str) -> dict[str, Any]:
+            try:
+                return dict(trace_to_eval.get_report(report_id))
+            except KeyError as error:
+                raise HTTPException(
+                    status_code=404, detail="report not found"
+                ) from error
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=409, detail="report integrity failure"
+                ) from error
+
+        @router.post("/trace-to-eval/reports/{report_id}/rulings", status_code=201)
+        def append_trace_to_eval_ruling(
+            report_id: str,
+            payload: Annotated[dict[str, Any], Body()],
+        ) -> dict[str, Any]:
+            try:
+                return dict(trace_to_eval.append_ruling(report_id, payload))
+            except KeyError as error:
+                raise HTTPException(
+                    status_code=404, detail="report not found"
+                ) from error
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=422, detail="ruling rejected"
+                ) from error
+
+        @router.get("/trace-to-eval/reports/{report_id}/review")
+        def get_trace_to_eval_review(report_id: str) -> dict[str, Any]:
+            try:
+                return dict(trace_to_eval.get_review_state(report_id))
+            except KeyError as error:
+                raise HTTPException(
+                    status_code=404, detail="report not found"
+                ) from error
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=409, detail="review integrity failure"
+                ) from error
+
+        @router.get("/trace-to-eval/reports/{report_id}/conversations/{trace_id}")
+        def get_trace_to_eval_conversation(
+            report_id: str, trace_id: str
+        ) -> dict[str, Any]:
+            try:
+                return dict(trace_to_eval.get_conversation(report_id, trace_id))
+            except KeyError as error:
+                raise HTTPException(
+                    status_code=404, detail="conversation not found"
+                ) from error
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=409, detail="conversation integrity failure"
+                ) from error
+
+    if local_trace_to_eval_only:
+        if trace_to_eval is None:
+            raise ValueError("trace_to_eval is required for local-only routing")
+        return router
 
     if self_serve is not None:
         if authenticate is None:
@@ -196,6 +294,9 @@ def create_v1_router(
             return dict(self_serve.get_conversation(subject, conversation_id))
 
         return router
+
+    if reads is None or imports is None or runs is None:
+        raise ValueError("legacy ports are required")
 
     @router.post("/imports", status_code=200)
     def register_import(

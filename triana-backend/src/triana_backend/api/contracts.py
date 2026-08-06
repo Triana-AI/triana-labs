@@ -97,6 +97,28 @@ class RunCommandPort(Protocol):
     def start_or_get_run(self, request: RunStart) -> JsonObject: ...
 
 
+class TraceToEvalPort(Protocol):
+    """Local operator projection over canonical engine artifacts."""
+
+    def run(
+        self,
+        manifest_path: str | None = None,
+        *,
+        source_path: str | None = None,
+        source_kind: str | None = None,
+    ) -> JsonObject: ...
+
+    def get_report(self, report_id: str) -> JsonObject: ...
+
+    def get_review_state(self, report_id: str) -> JsonObject: ...
+
+    def append_ruling(
+        self, report_id: str, ruling: Mapping[str, Any]
+    ) -> JsonObject: ...
+
+    def get_conversation(self, report_id: str, trace_id: str) -> JsonObject: ...
+
+
 Authenticator = Callable[[str | None], str | None]
 
 

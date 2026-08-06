@@ -147,6 +147,38 @@ def _build_parser() -> _SafeArgumentParser:
     run_parser.add_argument("--config", required=True)
     run_parser.add_argument("--out", required=True)
     run_parser.add_argument("--world-inventory")
+    analysis = commands.add_parser(
+        "analysis", help="Run and inspect local trace-to-eval analysis."
+    )
+    analysis_commands = analysis.add_subparsers(dest="analysis_command")
+    analysis_run = analysis_commands.add_parser(
+        "run", help="Analyze a manifest-declared local trace source."
+    )
+    analysis_run.add_argument("input")
+    analysis_run.add_argument("--out", required=True)
+    analysis_run.add_argument(
+        "--source-kind",
+        choices=(
+            "manifest",
+            "preview-trace-jsonl",
+            "blitz-normalized-jsonl",
+            "langsmith-normalized-jsonl",
+            "langsmith-grouped-jsonl",
+            "hrai-normalized-jsonl",
+            "tau-preview-jsonl",
+            "tau-archive",
+        ),
+        default="manifest",
+    )
+    analysis_report = analysis_commands.add_parser(
+        "report", help="Read a persisted trace-to-eval report."
+    )
+    analysis_report.add_argument("output")
+    analysis_review = analysis_commands.add_parser(
+        "review", help="Append one human ruling to a local analysis."
+    )
+    analysis_review.add_argument("output")
+    analysis_review.add_argument("--ruling", required=True)
     return parser
 
 
@@ -238,6 +270,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         _usage_command = "traces.observe"
     parser = _build_parser()
     arguments = parser.parse_args(raw_arguments)
+
+    if arguments.command == "analysis":
+        return _run_trace_to_eval_command(arguments)
 
     if arguments.command == "episodes" and arguments.episode_command == "run":
         return _run_episodes(arguments)
@@ -505,6 +540,79 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parser.print_help()
     return 0
+
+
+def _run_trace_to_eval_command(arguments: argparse.Namespace) -> int:
+    """Project the local engine without duplicating report or ruling behavior."""
+
+    from triana_labs.trace_to_eval import (
+        TraceToEvalError,
+        append_human_ruling,
+        run_trace_to_eval,
+    )
+    from triana_labs.trace_to_eval.adapters import prepare_evidence_manifest
+    from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel
+
+    try:
+        if arguments.analysis_command == "run":
+            semantic_model = FoundryStructuredSemanticModel.from_environment()
+            manifest = Path(arguments.input)
+            if arguments.source_kind != "manifest":
+                manifest = prepare_evidence_manifest(
+                    manifest,
+                    Path(arguments.out) / "prepared",
+                    source_kind=arguments.source_kind,
+                    semantic_model_id=(
+                        semantic_model.model_id if semantic_model is not None else None
+                    ),
+                )
+            report = run_trace_to_eval(
+                manifest,
+                Path(arguments.out),
+                semantic_model=semantic_model,
+            )
+            _write_json(
+                sys.stdout,
+                {
+                    "outcome": "COMPLETED_WITH_GAPS" if report["gaps"] else "COMPLETED",
+                    "report_id": report["report_id"],
+                    "report_path": f"{arguments.out}/trace_to_eval_report.json",
+                    "review_queue_path": f"{arguments.out}/review_queue.json",
+                },
+            )
+            return 10 if report["gaps"] else 0
+        if arguments.analysis_command == "report":
+            value = _read_config(Path(arguments.output) / "trace_to_eval_report.json")
+            if value.get("artifact_kind") != "trace_to_eval_report_v0":
+                raise TraceToEvalError("REPORT_INVALID")
+            _write_json(sys.stdout, value)
+            return 0
+        if arguments.analysis_command == "review":
+            ruling = _read_config(Path(arguments.ruling))
+            accepted = append_human_ruling(Path(arguments.output), ruling)
+            _write_json(sys.stdout, accepted)
+            return 0
+    except (TraceToEvalError, OSError, ValueError):
+        _write_json(
+            sys.stderr,
+            {
+                "command": f"analysis.{arguments.analysis_command or 'unknown'}",
+                "outcome": "REJECTED",
+                "reason_code": "TRACE_TO_EVAL_OPERATION_REJECTED",
+                "service": _SERVICE,
+            },
+        )
+        return 2
+    _write_json(
+        sys.stderr,
+        {
+            "command": "analysis",
+            "outcome": "REJECTED",
+            "reason_code": "CLI_USAGE_ERROR",
+            "service": _SERVICE,
+        },
+    )
+    return 2
 
 
 def _episode_terminal_log(

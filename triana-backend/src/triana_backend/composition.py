@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, BinaryIO, cast
 
 import boto3
@@ -16,6 +18,7 @@ from sqlalchemy import Engine, create_engine, func, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 from triana_labs.report import compile_hrai_normalized_trace_v2
+from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel
 
 from triana_backend.api import create_app
 from triana_backend.api.contracts import (
@@ -70,6 +73,7 @@ from triana_backend.services.report_projection import (
     canonical_report_bytes,
     project_labs_report,
 )
+from triana_backend.services.trace_to_eval import LocalTraceToEvalService
 from triana_backend.workflows import DBOSForegroundExecutor, configure_workflow_services
 from triana_backend.workflows.contracts import ImportRunRequest, WorkflowServices
 from triana_backend.workflows.identity import workflow_id_for
@@ -735,6 +739,15 @@ def compose_backend(
             audience=settings.oidc_audience,
             jwks_url=settings.oidc_jwks_url,
         )
+    trace_to_eval = None
+    if (
+        os.environ.get("TRIANA_TRACE_TO_EVAL_LOCAL") == "1"
+        and settings.host == "127.0.0.1"
+    ):
+        trace_to_eval = LocalTraceToEvalService(
+            Path(os.environ.get("TRIANA_TRACE_TO_EVAL_ROOT", ".triana-trace-to-eval")),
+            semantic_model=FoundryStructuredSemanticModel.from_environment(),
+        )
     return BackendRuntime(
         app=create_app(
             reads=reads,
@@ -749,6 +762,7 @@ def compose_backend(
             self_serve=self_serve,
             authenticate=authenticate,
             feature_entitlements=feature_entitlements,
+            trace_to_eval=trace_to_eval,
         ),
         engine=engine,
     )

@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/agents", label: "Agents" },
   { href: "/results", label: "Overview" },
   { href: "/behavior", label: "User behavior" },
+  { href: "/analysis", label: "Trace analysis" },
   { href: "/cases", label: "Cases" },
   { href: "/run", label: "Runs" },
   { href: "/review", label: "Review" },

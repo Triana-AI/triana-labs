@@ -981,3 +981,16 @@ targetless deterministic artifact convergence after migration 0002, and
 conditional legacy rejection supplements that do not duplicate compiler-owned
 PreviewTrace facts. The authenticated workspace-safe analysis bridge remains
 deferred and must not reuse these unscoped operator routes.
+
+Trace-to-Eval Review V0 local exit (2026-08-07): the canonical local engine,
+CLI, loopback backend, and `/analysis` UI now project the same content-addressed
+report, bounded blind review queue, append-only rulings, and DEVELOPMENT-only
+ConversationViewer evidence. Real dry runs produced 624 Blitz conversations,
+57 TAU² conversations with official 39/18 reward accounting, and 185 accepted
+HRAI conversations with 15 rejects. Blitz has no outcome source and HRAI
+completion is not reward; both remain explicit capability gaps. A single
+no-retry Azure canary failed before semantic completion, so current real reports
+do not claim semantic populations or eval proposals. Optional next work is
+provider compatibility, customer outcome/eval mapping, embeddings challenger,
+remote persistence, Kairos L4 attribution, and matched coding-agent ROI proof;
+none is silently converted into current product truth.

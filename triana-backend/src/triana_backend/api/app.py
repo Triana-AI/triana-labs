@@ -19,6 +19,7 @@ from .contracts import (
     ResourceUnavailable,
     RunCommandPort,
     SelfServePort,
+    TraceToEvalPort,
 )
 from .errors import (
     analysis_not_ready_handler,
@@ -39,6 +40,7 @@ def create_app(
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
     feature_entitlements: FeatureEntitlementPort | None = None,
+    trace_to_eval: TraceToEvalPort | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Triana Backend", version="0.1.0")
     app.add_exception_handler(ResourceUnavailable, unavailable_handler)  # type: ignore[arg-type]
@@ -57,6 +59,7 @@ def create_app(
             self_serve=self_serve,
             authenticate=authenticate,
             feature_entitlements=feature_entitlements,
+            trace_to_eval=trace_to_eval,
         )
     )
 
@@ -71,6 +74,29 @@ def create_app(
             raise HTTPException(
                 status_code=503, detail="backend dependencies unavailable"
             )
+        return {"status": "ready"}
+
+    return app
+
+
+def create_local_trace_to_eval_app(trace_to_eval: TraceToEvalPort) -> FastAPI:
+    """Create the loopback-only local analysis API without deployment adapters."""
+
+    app = FastAPI(title="Triana Local Trace-to-Eval", version="0.1.0")
+    app.include_router(
+        create_v1_router(
+            reads=None,
+            imports=None,
+            runs=None,
+            trace_to_eval=trace_to_eval,
+            local_trace_to_eval_only=True,
+        )
+    )
+
+    @app.get("/health/live")
+    @app.get("/health/ready")
+    @app.get("/healthz")
+    def healthy() -> dict[str, str]:
         return {"status": "ready"}
 
     return app

@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-07
 
-Status: **READY — WORKERS NOT STARTED**
+Status: **IMPLEMENTED — LOCAL EXIT VERIFIED WITH TYPED OPTIONAL GAPS**
 
 Slice ID: `TRACE-TO-EVAL-REVIEW-V0`
 
@@ -143,6 +143,40 @@ No new production dependency for the first green path. Optional embeddings
 cannot force one. Maximum scope expansion is one new file per owned layer and
 one additive migration after an orchestrator note. No unrelated cleanup.
 
+### Orchestrator clarification after first engine GREEN
+
+Inspection of the first implementation showed four already-frozen outcomes
+were still absent rather than optional: the permitted Agentagon staged semantic
+mechanism, an executable approved-Azure boundary, direct known-source adapters,
+and reloadable review state. The production budget is clarified to permit:
+
+- `triana-labs/src/triana_labs/trace_to_eval/semantic.py` for copied/adapted
+  facet extraction, bounded hierarchical consolidation, candidate inventory,
+  and the approved Azure structured-model boundary;
+- `triana-labs/src/triana_labs/trace_to_eval/adapters.py` for PreviewTrace,
+  Blitz, HRAI, and TAU source-to-manifest/canonicalization behavior;
+- bounded additions to the existing CLI, local backend service/routes, and
+  `/analysis` page for direct source-path selection, provider activation, queue
+  reload, and persisted ruling projection.
+
+No dependency, migration, infrastructure, deployment, raw-data commit, auth
+change, or additional UI page is allowed. This is completion of the frozen
+input/product contract; a manifest-only UI backed only by a test fake is not
+an acceptable substitute.
+
+### Orchestrator clarification for the local product loop
+
+The final integration check established that the existing backend entrypoint
+requires deployment-only PostgreSQL, S3, KMS, and DBOS settings before it can
+mount any route. The slice may therefore make one bounded addition to
+`triana-backend/src/triana_backend/main.py` (and the existing composition/API
+seams) so `TRIANA_TRACE_TO_EVAL_LOCAL=1` can boot the trace-to-eval routes on
+`127.0.0.1` with local content-addressed artifacts and without inventing cloud
+credentials. This mode must not weaken or replace the existing deployed
+composition, listen publicly, imply remote persistence, or hide the typed
+`REMOTE_PERSISTENCE_UNAVAILABLE` gap. No second application or dependency is
+permitted.
+
 ## Acceptance
 
 1. Trace-only and paired/outcome synthetic fixtures reconcile accounting,
@@ -210,3 +244,139 @@ Observed result: five failures, each at the first product boundary because
 `triana_labs.trace_to_eval` does not exist. There were no syntax, fixture,
 dependency, or collection failures. The test-owned file is now frozen; the
 implementation author may read but not edit it.
+
+The orchestrator's additional exit-only adversarial matrix is:
+
+- manifest/source hash mismatch refuses before semantic execution and leaves
+  no valid report;
+- duplicate trace identity produces content-free rejection/accounting without
+  raw-value leakage;
+- a stale or wrong review `item_hash` refuses without changing the ruling
+  ledger bytes;
+- trace text containing instructions to change schemas or reveal other rows is
+  treated only as evidence content and cannot alter output structure;
+- one dependency group uses deterministic largest-remainder allocation without
+  splitting or division errors;
+- a missing semantic row or non-object model response becomes an explicit gap,
+  never an invented population or pass.
+
+These checks do not alter frozen test semantics. The orchestrator runs them
+against public boundaries after GREEN and records exact artifacts/results.
+
+## Orchestrator exit — 2026-08-07
+
+The independent test-author contract remains byte-identical at
+`f2217bec08c2dd1eb07adca430215f789e0cddbd200373d192aa7818eb1f99a9`.
+An independent adapter/outcome regression set was subsequently frozen at
+`04ba2fee4c6b1bc88aa857d2deda67feb031c831aa129e0954a38fb8ba192407`.
+The implementation author changed only production-owned surfaces; the
+orchestrator added exit-only tests, real-source audits, documentation, and
+integration wiring inside the clarified budget.
+
+Focused Labs acceptance is 16/16 GREEN. The adversarial artifact at
+`/private/tmp/triana-trace-to-eval-adversarial-_v4vi4ut/results.json`
+(`sha256:7f72a826d08e80b2902d6a215788bc84696abbef63604cea4b2c7766c92e2735`)
+passes all seven refusal/integrity/leakage checks. CLI, backend, and `/analysis`
+use the same canonical engine and report identity; the existing
+`ConversationViewer` renders cited DEVELOPMENT evidence, and append-only
+rulings survive reload. Local backend and UI listen only on loopback.
+
+Real audited outputs:
+
+- Blitz: 1,519 upstream rows reconstruct to 624 conversations, 0 rejects,
+  3,339 user/assistant turns, and 622 tool calls/results; report
+  `sha256:bf7eaf78a6baad04d986569bb9494f23a0d16135b4109f663c51cc784c3eb331`.
+  Outcomes and semantic provider output are absent and remain typed gaps.
+- TAU²: 57 conversations, 0 rejects, 604 turns, and 399 tool calls/results;
+  official reward evidence yields 39 successes, 18 failures, and mean reward
+  `0.6842105263157895`; report
+  `sha256:aa1ec7f44f217614394bbef65bbdbc82649caaa299937105dc4b244706339c7e`.
+  This is outcome accounting, not L4 or first-broken-link judgment.
+- HRAI: 200 physical records produce 185 accepted conversations and 15 typed
+  rejects, 1,008 turns, and 1,430 tool calls/results; report
+  `sha256:088824172c09c240bb4cce5c5ca1cb19c8621918540dc69290e6a481945832b2`.
+  Completion state is not treated as reward.
+
+One authorized no-retry Azure canary failed before semantic completion and is
+retained as `SEMANTIC_ANALYSIS_FAILED`; no provider fallback ran. Conservative
+maximum reservation is USD 0.15 and actual charge is unknown. No deployment,
+provisioning, ingress, remote write, secret exposure, or holdout opening
+occurred. Remaining optional gaps are live semantic populations/eval proposals
+for customer data, embeddings, existing-eval import, remote persistence, Blitz
+outcomes, HRAI outcome mapping, and Kairos L4/first-broken-link analysis.
+
+## Owner extension: authenticated self-serve integration
+
+After the local engine exit was evidenced, Akarsh extended the same goal to a
+fresh-customer path. This addendum does not weaken or replace the engine exit;
+it adds a second serial integration gate before the overall task may close.
+
+Outcome: an authenticated owner can create or select an agent, upload a fresh
+authorized trace file, start the canonical trace-to-eval run without supplying
+an internal manifest/report ID, and revisit agent-scoped import/run history,
+overview, canonical report, cited conversations, typed gaps, and the bounded
+label/review queue. CLI/SDK and UI use the same backend identities. Every
+mechanical step is automatic; only reward-definition approval when no
+authoritative outcome exists, semantic proposal acceptance/editing, and human
+rulings remain judgment-bound.
+
+Additional contracts and refusal behavior:
+
+- authentication and workspace membership remain backend-enforced; URL IDs,
+  report IDs, import IDs, and conversation IDs never bypass owner scope;
+- analysis is bound to the exact agent, agent version, import/source hash, and
+  canonical report identity and is idempotent for the same request;
+- a user may switch agents without leaking cached state or results from another
+  agent; every list/detail endpoint rechecks workspace ownership;
+- accepted source formats are explicit, and unsupported or invalid files retain
+  content-free typed rejection facts rather than partial invented success;
+- upload/analysis progress, provider absence/failure, persistence absence, and
+  reward absence are typed states, never passes or infinite polling;
+- report/review/conversation retrieval validates stored identity and hashes;
+- review writes remain append-only and require the exact item hash;
+- deployment configuration must fail closed when auth, database, artifact,
+  public-origin/TLS, migration, or browser-bundle settings are absent. No secret
+  enters source, client bundles, logs, screenshots, or committed artifacts.
+
+Extended test-author ownership:
+
+- additive focused files under `triana-backend/tests/acceptance/**` and
+  `triana-app/tests/**` only.
+
+Extended implementation ownership:
+
+- bounded changes to existing self-serve application/persistence/API/composition
+  seams and one additive migration if durable analysis indexing requires it;
+- bounded additions to the existing self-serve API types/client/components and
+  agent/import routes; reuse `/analysis` report components and
+  `ConversationViewer` rather than creating an unrelated UI;
+- bounded CLI/SDK commands that call the same backend contract;
+- existing Docker/Compose/deployment/configuration files and runbook checks only
+  for deploy readiness. Actual external rollout is allowed only when the
+  existing authorized environment supplies all required tenant/domain/secret
+  choices and no new infrastructure, ingress, provider fallback, or spend above
+  the existing USD 25 ceiling is required.
+
+Still untouched: Release Review V1 and `triana-core/**`, provider retry/fallback,
+locked holdout contents, raw customer data in git, destructive infrastructure,
+new auth vendor/project creation, broad team/billing/admin features, and
+unrelated cleanup or redesign.
+
+Extended acceptance:
+
+1. One fresh synthetic/customer-authorized file goes from authenticated agent
+   upload through persisted canonical analysis and is reloadable after process
+   restart without an operator-provided filesystem path.
+2. Two agents and two owners prove list/detail/report/conversation/review
+   isolation, including guessed cross-scope IDs and stale cached UI state.
+3. Agent overview and run history reconcile import/source/report identities and
+   deterministic accounting; retrying the same run is idempotent.
+4. Overview, behavior/outcome, populations/evals, evidence, gaps/lineage, and
+   label/review states are usable from real report data. Empty/absent semantic
+   or outcome lanes remain explanatory typed states.
+5. A correct Track/Edit/Defer ruling persists and a stale item hash leaves the
+   ledger unchanged. No user is asked to label every trace.
+6. CLI/SDK and UI retrieve the same agent/run/report/ruling identities.
+7. Authenticated local smoke, schema migration/render, artifact/DB inspection,
+   frontend build, container/config checks, and deployment preflight pass or
+   expose one exact external configuration gate.
