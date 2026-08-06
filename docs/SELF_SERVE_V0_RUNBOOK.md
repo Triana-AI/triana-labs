@@ -1,18 +1,49 @@
 # Self-serve V0 launch runbook
 
-Status: local implementation complete; live infrastructure unverified.
+Status: local implementation complete; live Supabase and infrastructure
+unverified.
 
 ## Delivered path
 
 ```text
-/login -> /agents -> add agent -> upload PreviewTrace JSONL
+email -> magic link -> /auth/confirm -> /agents
+-> add agent -> upload PreviewTrace JSONL
 -> import accounting -> conversation list -> reusable conversation viewer
+
+locked feature -> request access -> REQUESTED
 ```
 
-The backend validates OIDC JWTs, scopes all new objects to the authenticated
-owner's personal workspace, stores source bytes under a private workspace S3
-key, and persists only accepted conversation projections plus safe rejection
-metadata. It does not run analysis, simulation, HRAI compilation, or LLM calls.
+Signup is open: a valid email can create a Supabase user without a Triana
+waitlist or approval. The authenticated personal workspace starts with trace
+ingestion and the conversation viewer available. Analysis, simulation, team
+collaboration, and API access remain locked but requestable; requesting access
+does not grant it.
+
+The backend validates the Supabase JWT, scopes all objects and feature state to
+the authenticated owner's workspace, stores source bytes under a private
+workspace S3 key, and persists only accepted conversation projections plus
+safe rejection metadata. It does not run analysis, simulation, HRAI
+compilation, or LLM calls.
+
+## Supabase project configuration
+
+1. Create or select a Supabase project and keep email signup enabled.
+2. Configure Site URL to the public Triana app origin and add the exact allowed
+   redirect `https://<app-origin>/auth/confirm` (plus the equivalent local URL
+   only for development).
+3. Configure the email provider and the magic-link email template for the PKCE
+   confirmation flow. Do not add a signup approval or invite-only gate.
+4. Use asymmetric JWT signing keys. The backend supports `RS256` and `ES256`;
+   a legacy symmetric project with no usable public JWKS is not launchable with
+   this verifier.
+5. Record the project URL and publishable key in the deployment secret/config
+   system. Never put a Supabase service-role key in the app.
+
+Relevant provider documentation:
+
+- <https://supabase.com/docs/reference/javascript/auth-signinwithotp>
+- <https://supabase.com/docs/guides/auth/server-side/advanced-guide>
+- <https://supabase.com/docs/guides/auth/jwts>
 
 ## Backend configuration
 
@@ -23,26 +54,42 @@ TRIANA_DATABASE_URL=postgresql+psycopg://...
 TRIANA_ARTIFACT_BUCKET=...
 TRIANA_KMS_KEY_ID=arn:aws:kms:...
 AWS_REGION=...
-TRIANA_OIDC_ISSUER=https://...
-TRIANA_OIDC_AUDIENCE=...
-TRIANA_OIDC_JWKS_URL=https://.../.well-known/jwks.json
+TRIANA_OIDC_ISSUER=https://<project-ref>.supabase.co/auth/v1
+TRIANA_OIDC_AUDIENCE=<the project's authenticated-user JWT audience>
+TRIANA_OIDC_JWKS_URL=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json
 TRIANA_BACKEND_HOST=0.0.0.0
 TRIANA_BACKEND_PORT=8000
 ```
 
-All three `TRIANA_OIDC_*` values are required together. When configured, the
-self-serve runtime does not launch DBOS.
+Confirm issuer and audience from an actual project-issued access token; do not
+copy placeholders blindly. All three `TRIANA_OIDC_*` values are required
+together. When configured, the self-serve runtime does not launch DBOS.
 
-Apply the schema before starting the new image:
+Back up the live database, then apply the schema before starting the new image:
 
 ```text
 cd triana-backend
 uv run alembic upgrade head
 ```
 
+The expected Alembic head is `0003_feature_entitlements`.
+
 ## App configuration
 
-Set only the server-side backend origin:
+The browser bundle requires these public values:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key>
+```
+
+They are public client configuration, not service credentials, but Next embeds
+them at build time. The current `triana-app/Dockerfile` and deploy workflow do
+not pass these values into the build stage. Do not launch that image until the
+deployment path supplies them during `npm run build` and verifies they are
+present in the resulting login flow.
+
+Set the backend origin only on the Next server/runtime:
 
 ```text
 TRIANA_BACKEND_API_ORIGIN=http://backend:8000
@@ -51,11 +98,21 @@ TRIANA_BACKEND_API_ORIGIN=http://backend:8000
 The browser calls same-origin `/api/v1`; Next proxies it internally. Do not
 publish the backend host in a `NEXT_PUBLIC_*` variable.
 
-The current login page accepts a real provider-issued JWT and keeps it only in
-the current tab's session storage. Before a public launch, replace this visible
-developer scaffold with the selected provider's hosted login/magic-link
-redirect. The backend JWT verification and authorization boundary stay the
-same.
+## Feature access contract
+
+| Feature | New workspace state | Requestable now |
+|---|---|---|
+| Trace ingestion | `AVAILABLE` | No need |
+| Conversation viewer | `AVAILABLE` | No need |
+| Analysis | `LOCKED` | Yes |
+| Simulation | `LOCKED` | Yes |
+| Team collaboration | `LOCKED` | Yes |
+| API access | `LOCKED` | Yes |
+
+Requests are idempotent and change `LOCKED` to `REQUESTED`; they never grant
+access. V0 has only the `OWNER` membership role. There is intentionally no
+admin grant UI, billing tier, team role, percentage rollout, or external flag
+service in this slice.
 
 ## Trace contract
 
@@ -69,14 +126,18 @@ same.
 
 ## Launch gate
 
-1. Configure the managed OIDC tenant and hosted login.
-2. Back up the database and apply Alembic revision 0002.
+1. Complete the Supabase project, redirect, email, asymmetric signing, and app
+   image build-time configuration above.
+2. Back up the database and apply Alembic revision `0003`.
 3. Verify private SSE-KMS upload and immutable workspace keying.
-4. Log in as owner A, add an agent, upload a mixed-validity JSONL file, and
-   inspect both accounting and an accepted conversation.
-5. Prove owner B receives an empty agent list and non-disclosing 404s for owner
-   A's identifiers.
-6. Upload the prescribed-format 57-conversation corpus and reconcile every
+4. Use a real emailed link as owner A, confirm `/auth/confirm` establishes a
+   session, add an agent, upload a mixed-validity JSONL file, request analysis,
+   and observe `REQUESTED` after refresh.
+5. Log out, prove the old session cannot call an API, and prove an expired or
+   replayed link fails without exposing raw provider errors.
+6. Log in as owner B and prove an empty agent list, default feature states, and
+   non-disclosing 404s for owner A's identifiers.
+7. Upload the prescribed-format 57-conversation corpus and reconcile every
    physical line.
-7. Verify TLS, server-only backend routing, logs without payloads/tokens, and a
+8. Verify TLS, server-only backend routing, logs without payloads/tokens, and a
    rollback to the preceding image and database backup.

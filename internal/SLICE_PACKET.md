@@ -2,7 +2,7 @@
 
 Date frozen: 2026-08-06
 
-Status: **ACTIVE — CONTRACT FROZEN; WORKER EDITS AUTHORIZED**
+Status: **LOCAL GREEN — LIVE SUPABASE AND DEPLOYMENT CONFIGURATION PENDING**
 
 Slice ID: `SELF-SERVE-V0-MAGIC-LINK-ENTITLEMENTS`
 
@@ -125,6 +125,13 @@ node --test --test-name-pattern=magic-link tests/magic-link-access.test.mjs
 Each slice runs independent test author then implementation author. Backend and
 frontend may proceed in parallel in isolated worktrees after this packet.
 
+## Integrated checkpoints
+
+- `d043020` — product and authorization contract freeze.
+- `cb81450` / `761fbf3` — independent backend acceptance then implementation.
+- `032c85f` / `ab574df` — independent frontend acceptance then implementation.
+- `3559fb8` — bounded production dependency advisory correction.
+
 ## Minimal acceptance
 
 1. New authenticated owner receives both core features as `AVAILABLE` and the
@@ -174,3 +181,26 @@ cd triana-app && node --test tests/self-serve-ui.test.mjs tests/magic-link-acces
 cd triana-app && npm run typecheck
 cd triana-app && npm run build
 ```
+
+## Exit evidence and remaining uncertainty
+
+Integrated local verification on 2026-08-06:
+
+- backend self-serve acceptance: 7 passed;
+- backend Ruff and strict mypy: passed;
+- Alembic head: `0003_feature_entitlements`; offline `0001` through `0003`
+  PostgreSQL SQL render: passed;
+- frontend frozen self-serve and magic-link acceptance: 2 passed;
+- existing LABS-08 backend/UI no-fallback acceptance: 2 passed;
+- frontend TypeScript and Next production build: passed;
+- production dependency audit at moderate threshold: zero vulnerabilities;
+- governance and final diff checks are run again by the orchestrator at the
+  reconciliation commit.
+
+Unverified external work remains: a Supabase project and email provider were
+not created or mutated; no live email, callback, refresh, logout, or backend
+JWT exchange was exercised; migration `0003` was not applied to a live
+database. The current app Docker/deploy path also does not inject the required
+`NEXT_PUBLIC_SUPABASE_*` values at image build time. Public launch is blocked
+until those items and the authenticated two-owner isolation smoke in the
+runbook pass.

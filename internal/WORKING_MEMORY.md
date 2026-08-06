@@ -873,3 +873,16 @@ uses separate workspace entitlements. `TRACE_INGESTION` and
 `TEAM_COLLABORATION`, and `API_ACCESS` default locked and may be requested.
 Request records do not grant access. Admin approvals, extra roles, teams,
 billing, and actual staged-feature implementations remain deferred.
+
+Magic-link/entitlement local exit update (2026-08-06): the independent
+backend and frontend contracts and implementations are integrated on
+`codex/selfserve-v0`. Focused self-serve tests, Ruff, strict mypy, offline
+Alembic `0001` through `0003` render, frontend TypeScript, existing LABS-08
+acceptance, Next production build, and the production dependency audit are
+GREEN; the audit reports zero vulnerabilities. Public launch remains
+unverified and blocked on Supabase project/email/redirect configuration,
+asymmetric JWT signing with a usable JWKS, live migration `0003`, and an
+authenticated two-owner smoke. The current Docker/deploy build does not yet
+inject `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; runtime-only Compose values cannot
+repair a browser bundle built without them.
