@@ -1,9 +1,13 @@
-import { displayRuling, getCase, labsReport } from "@/lib/labs-report";
-import { LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
+import { displayRuling, getCase, loadConfiguredLabsReport } from "@/lib/labs-report";
+import { BackendReportUnavailable, LabsPage, RouteLink, Section, Status } from "@/components/labs/LabsPage";
 
-export default function ReviewPage() {
+export default async function ReviewPage() {
+  const loaded = await loadConfiguredLabsReport();
+  if (loaded.availability === "UNAVAILABLE") return <BackendReportUnavailable />;
+  const labsReport = loaded.report;
   return (
     <LabsPage
+      surface="review"
       eyebrow="Human judgment"
       title="Review"
       summary="Human reviewers decide what each recorded conversation demonstrates across four independent questions."
@@ -11,7 +15,6 @@ export default function ReviewPage() {
     >
       <section className="review-guide" aria-labelledby="review-guide-title">
         <div className="review-guide-intro">
-          <p className="labs-eyebrow">Why human judgment matters</p>
           <h2 id="review-guide-title">Decide what the recorded evidence can support</h2>
           <p>Human judgment asks a reviewer to decide whether each recorded conversation, simulated user, and agent response behaved credibly for its case.</p>
           <p>The four dimensions do not combine into a score. Each answer stays independent because one kind of evidence cannot stand in for another.</p>
@@ -24,12 +27,12 @@ export default function ReviewPage() {
           <div><dt>Scope, privacy, and boundaries</dt><dd>Did the agent stay within scope, protect privacy, and respect boundaries?</dd></div>
         </dl>
       </section>
-      <Section title="Recorded rulings" description="Each answer comes directly from the synthetic report.">
+      <Section tone="dark" title="Recorded rulings" description="Each answer comes directly from the synthetic report.">
         <div className="review-list">
           {labsReport.conversations.map((conversation) => {
             const review = labsReport.reviews.find(({ conversation_id }) => conversation_id === conversation.conversation_id);
             if (!review) throw new Error(`Broken review conversation: ${conversation.conversation_id}`);
-            const item = getCase(conversation.case_id);
+            const item = getCase(labsReport, conversation.case_id);
             return <article className="review-record" key={conversation.conversation_id}>
               <header><div><code>{conversation.conversation_id}</code><h3>{item.title}</h3></div><Status value={review.review_state} /></header>
               <ol className="ruling-list">{questions.map(([question, field]) => <li key={field}><span>{question}</span><strong>{displayRuling(review[field])}</strong></li>)}</ol>

@@ -16,8 +16,9 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal, InvalidOperation
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Never
+from typing import Any, Never, Protocol, cast
 from urllib.parse import urlsplit
 
 from triana_labs import __version__
@@ -26,6 +27,12 @@ from triana_labs.observer import ObserveFailure, observe
 
 _SERVICE = "triana-labs-cli"
 _usage_command = "traces.observe"
+
+
+class _BackendMain(Protocol):
+    """Type the optional backend package without making it a Labs dependency."""
+
+    def __call__(self, arguments: list[str], /) -> int: ...
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -154,6 +161,27 @@ def _write_json(stream: Any, value: dict[str, Any]) -> None:
     )
 
 
+def _run_backend_command(arguments: list[str]) -> int:
+    """Delegate backend transport semantics to the installed backend package."""
+
+    try:
+        backend_module = import_module("triana_backend.cli")
+    except ModuleNotFoundError as error:
+        if error.name != "triana_backend":
+            raise
+        _write_json(
+            sys.stderr,
+            {
+                "code": "BACKEND_CLI_UNAVAILABLE",
+                "outcome": "REJECTED",
+                "service": _SERVICE,
+            },
+        )
+        return 69
+    backend_main = cast(_BackendMain, backend_module.main)
+    return backend_main(arguments)
+
+
 def _terminal_log(
     *,
     event_name: str,
@@ -198,6 +226,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     global _usage_command
     raw_arguments = list(sys.argv[1:] if argv is None else argv)
+    if raw_arguments[:1] == ["backend"]:
+        return _run_backend_command(raw_arguments)
     if raw_arguments[:2] in (["cases", "generate"], ["cases", "resume"]):
         _usage_command = f"cases.{raw_arguments[1]}"
     elif raw_arguments[:2] == ["episodes", "run"]:

@@ -1,13 +1,14 @@
-import { getCase, getReview, type Conversation } from "@/lib/labs-report";
+import { getCase, getReview, type Conversation, type LabsReport } from "@/lib/labs-report";
 import { Fact, LabsPage, RouteLink, Status, Unavailable } from "@/components/labs/LabsPage";
 
-export function ConversationDetail({ conversation }: { conversation: Conversation }) {
-  const item = getCase(conversation.case_id);
-  const review = getReview(conversation.conversation_id);
+export function ConversationDetail({ report, conversation }: { report: LabsReport; conversation: Conversation }) {
+  const item = getCase(report, conversation.case_id);
+  const review = getReview(report, conversation.conversation_id);
   const evidence = new Map(conversation.evidence_refs.map((ref) => [ref.evidence_ref_id, ref]));
 
   return (
     <LabsPage
+      surface="conversation"
       eyebrow={`Conversation ${conversation.conversation_id}`}
       title={item.title}
       summary="The complete recorded transcript stays primary; case context and evidence qualify it nearby."
