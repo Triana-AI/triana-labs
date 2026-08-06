@@ -2,12 +2,13 @@ import type {
   AgentSummary,
   ConversationSummary,
   ImportSummary,
+  FeatureAccess,
+  FeatureKey,
   Owner,
   RejectionSummary,
 } from "@/lib/self-serve/types";
 import type { ConversationEvent, ConversationViewModel } from "@/components/conversation/ConversationViewer";
-
-const TOKEN_KEY = "triana_owner_bearer_token";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string) {
@@ -16,22 +17,11 @@ export class ApiError extends Error {
   }
 }
 
-export function getSessionToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.sessionStorage.getItem(TOKEN_KEY);
-}
-
-export function setSessionToken(token: string): void {
-  window.sessionStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearSessionToken(): void {
-  window.sessionStorage.removeItem(TOKEN_KEY);
-}
-
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getSessionToken();
-  if (!token) throw new ApiError(401, "Sign in is required.");
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (error || !token) throw new ApiError(401, "Your session is unavailable. Sign in again.");
   const response = await fetch(path, {
     ...init,
     headers: {
@@ -98,6 +88,14 @@ function normalizedConversation(value: unknown): ConversationViewModel {
 
 export const selfServeApi = {
   me: () => request<Owner>("/api/v1/me"),
+  async listFeatures(): Promise<FeatureAccess[]> {
+    return listFrom<FeatureAccess>(await request<Record<string, unknown>>("/api/v1/me/features"), "features");
+  },
+  requestFeatureAccess: (featureKey: FeatureKey) => request<FeatureAccess>("/api/v1/me/access-requests", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feature_key: featureKey }),
+  }),
   async listAgents(): Promise<AgentSummary[]> {
     return listFrom(await request<AgentSummary[] | Record<string, unknown>>("/api/v1/agents"), "agents");
   },

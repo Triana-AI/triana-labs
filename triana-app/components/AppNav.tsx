@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { LogoutButton } from "@/components/self-serve/LogoutButton";
 
 const NAV_ITEMS = [
   { href: "/agents", label: "Agents" },
@@ -143,6 +144,8 @@ export function AppNav({
           <div><span>Egress</span><strong>None</strong></div>
           <div><span>Format</span><strong>PreviewTrace</strong></div>
         </div>
+
+        <div className="app-nav-copy"><LogoutButton /></div>
 
         <Link href="/setup" className="app-switch-link app-nav-copy">
           Report source

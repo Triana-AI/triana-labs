@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearSessionToken, selfServeApi } from "@/lib/self-serve/api";
+import { selfServeApi } from "@/lib/self-serve/api";
 import type { AgentSummary } from "@/lib/self-serve/types";
 import { ErrorNotice, LoadingNotice, SelfServePage } from "@/components/self-serve/SelfServePage";
+import { FeatureAccessPanel } from "@/components/self-serve/FeatureAccessPanel";
 
 export function AgentsClient() {
   const router = useRouter();
@@ -27,8 +28,7 @@ export function AgentsClient() {
     } finally { setCreating(false); }
   }
 
-  return <SelfServePage eyebrow="Workspace" title="Your agents" description="Each agent has its own immutable trace-import history."
-    actions={<button className="quiet-button" type="button" onClick={() => { clearSessionToken(); router.push("/login"); }}>Log out</button>}>
+  return <SelfServePage eyebrow="Workspace" title="Your agents" description="Each agent has its own immutable trace-import history.">
     <section className="self-serve-grid">
       <div className="self-serve-card create-agent-card">
         <span className="mono-label">One by one</span><h2>Add agent</h2>
@@ -39,5 +39,6 @@ export function AgentsClient() {
         {error ? <ErrorNotice message={error} /> : agents === null ? <LoadingNotice /> : agents.length === 0 ? <div className="self-serve-empty"><strong>No agents yet</strong><p>Create the first one to unlock trace upload.</p></div> : <ul className="agent-list">{agents.map((agent) => <li key={agent.agent_id}><Link href={`/agents/${agent.agent_id}`}><span><strong>{agent.display_name}</strong><small>{agent.agent_id}</small></span><b aria-hidden="true">→</b></Link></li>)}</ul>}
       </div>
     </section>
+    <div className="self-serve-grid" style={{ gridTemplateColumns: "1fr" }}><FeatureAccessPanel /></div>
   </SelfServePage>;
 }

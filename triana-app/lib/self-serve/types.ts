@@ -44,3 +44,18 @@ export interface RejectionSummary {
   reason_code: string;
   message?: string;
 }
+
+export type FeatureKey =
+  | "TRACE_INGESTION"
+  | "CONVERSATION_VIEWER"
+  | "ANALYSIS"
+  | "SIMULATION"
+  | "TEAM_COLLABORATION"
+  | "API_ACCESS";
+
+export type FeatureState = "AVAILABLE" | "LOCKED" | "REQUESTED";
+
+export interface FeatureAccess {
+  feature_key: FeatureKey;
+  state: FeatureState;
+}
