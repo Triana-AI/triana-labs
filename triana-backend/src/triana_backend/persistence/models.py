@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -43,12 +44,18 @@ class User(TimestampMixin, Base):
 
 class WorkspaceMembership(TimestampMixin, Base):
     __tablename__ = "workspace_memberships"
-    __table_args__ = ({"schema": "app"},)
+    __table_args__ = (
+        CheckConstraint("role = 'OWNER'"),
+        {"schema": "app"},
+    )
     user_id: Mapped[str] = mapped_column(
         ForeignKey("app.users.id", ondelete="RESTRICT"), primary_key=True
     )
     workspace_id: Mapped[str] = mapped_column(
         ForeignKey("app.workspaces.id", ondelete="RESTRICT"), primary_key=True
+    )
+    role: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="OWNER"
     )
 
 
@@ -273,3 +280,39 @@ class ImportRejection(TimestampMixin, Base):
     code: Mapped[str] = mapped_column(String(64), nullable=False)
     json_pointer: Mapped[str] = mapped_column(String(1024), nullable=False)
     safe_message: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
+class WorkspaceFeatureEntitlement(TimestampMixin, Base):
+    __tablename__ = "workspace_feature_entitlements"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "feature_key"),
+        CheckConstraint(
+            "feature_key IN ('TRACE_INGESTION', 'CONVERSATION_VIEWER', "
+            "'ANALYSIS', 'SIMULATION', 'TEAM_COLLABORATION', 'API_ACCESS')"
+        ),
+        CheckConstraint("state = 'AVAILABLE'"),
+        {"schema": "app"},
+    )
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("app.workspaces.id", ondelete="RESTRICT"), nullable=False
+    )
+    feature_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+class FeatureAccessRequest(TimestampMixin, Base):
+    __tablename__ = "feature_access_requests"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "feature_key"),
+        CheckConstraint(
+            "feature_key IN ('ANALYSIS', 'SIMULATION', "
+            "'TEAM_COLLABORATION', 'API_ACCESS')"
+        ),
+        {"schema": "app"},
+    )
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("app.workspaces.id", ondelete="RESTRICT"), nullable=False
+    )
+    feature_key: Mapped[str] = mapped_column(String(64), nullable=False)

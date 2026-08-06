@@ -20,11 +20,13 @@ from .models import (
     Agent,
     AgentVersion,
     Artifact,
+    FeatureAccessRequest,
     Import,
     ImportedConversation,
     ImportRejection,
     User,
     Workspace,
+    WorkspaceFeatureEntitlement,
     WorkspaceMembership,
 )
 
@@ -50,7 +52,7 @@ class SqlAlchemySelfServeRepository:
             )
             session.execute(
                 insert(cast(Any, WorkspaceMembership.__table__))
-                .values(user_id=user_id, workspace_id=workspace_id)
+                .values(user_id=user_id, workspace_id=workspace_id, role="OWNER")
                 .on_conflict_do_nothing()
             )
         return {
@@ -331,6 +333,46 @@ class SqlAlchemySelfServeRepository:
                 raise ResourceNotFound("import", import_id)
             session.expunge(row)
             return row
+
+    def list_feature_state(self, owner_subject: str) -> tuple[set[str], set[str]]:
+        workspace_id = _workspace_id(owner_subject)
+        self.get_or_create_me(owner_subject)
+        with self._sessions() as session:
+            entitled = set(
+                session.scalars(
+                    select(WorkspaceFeatureEntitlement.feature_key).where(
+                        WorkspaceFeatureEntitlement.workspace_id == workspace_id,
+                        WorkspaceFeatureEntitlement.state == "AVAILABLE",
+                    )
+                ).all()
+            )
+            requested = set(
+                session.scalars(
+                    select(FeatureAccessRequest.feature_key).where(
+                        FeatureAccessRequest.workspace_id == workspace_id
+                    )
+                ).all()
+            )
+            return entitled, requested
+
+    def create_feature_access_request(
+        self, owner_subject: str, feature_key: str
+    ) -> None:
+        workspace_id = _workspace_id(owner_subject)
+        self.get_or_create_me(owner_subject)
+        request_id = deterministic_id(
+            "far", {"workspace_id": workspace_id, "feature_key": feature_key}
+        )
+        with self._sessions() as session, session.begin():
+            session.execute(
+                insert(cast(Any, FeatureAccessRequest.__table__))
+                .values(
+                    id=request_id,
+                    workspace_id=workspace_id,
+                    feature_key=feature_key,
+                )
+                .on_conflict_do_nothing(index_elements=["workspace_id", "feature_key"])
+            )
 
 
 def _subject_hash(subject: str) -> str:

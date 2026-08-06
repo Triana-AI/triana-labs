@@ -12,6 +12,7 @@ from .contracts import (
     AnalysisNotReady,
     Authenticator,
     BackendReadPort,
+    FeatureEntitlementPort,
     ImportCommandPort,
     IntegrityConflict,
     ResourceNotFound,
@@ -37,6 +38,7 @@ def create_app(
     readiness: Callable[[], bool],
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
+    feature_entitlements: FeatureEntitlementPort | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Triana Backend", version="0.1.0")
     app.add_exception_handler(ResourceUnavailable, unavailable_handler)  # type: ignore[arg-type]
@@ -54,6 +56,7 @@ def create_app(
             runs=runs,
             self_serve=self_serve,
             authenticate=authenticate,
+            feature_entitlements=feature_entitlements,
         )
     )
 

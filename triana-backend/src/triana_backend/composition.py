@@ -30,6 +30,7 @@ from triana_backend.api.contracts import (
     RunCommandPort,
     RunStart,
 )
+from triana_backend.application.entitlements import FeatureEntitlementService
 from triana_backend.application.imports import ImportService, RegisterS3Import
 from triana_backend.application.self_serve import SelfServeService
 from triana_backend.artifacts.s3 import S3ArtifactStore
@@ -716,12 +717,16 @@ def compose_backend(
             DBOS.launch()
     reads = PostgresS3Reads(sessions=sessions, artifacts=artifacts)
     self_serve = None
+    feature_entitlements = None
     authenticate = None
     if settings.oidc_issuer is not None:
         if settings.oidc_audience is None or settings.oidc_jwks_url is None:
             raise ValueError("OIDC settings must be configured together")
         self_serve = SelfServeService(
             repository=SqlAlchemySelfServeRepository(sessions), storage=artifacts
+        )
+        feature_entitlements = FeatureEntitlementService(
+            SqlAlchemySelfServeRepository(sessions)
         )
         authenticate = OidcJwtAuthenticator(
             issuer=settings.oidc_issuer,
@@ -741,6 +746,7 @@ def compose_backend(
             readiness=reads.ready,
             self_serve=self_serve,
             authenticate=authenticate,
+            feature_entitlements=feature_entitlements,
         ),
         engine=engine,
     )

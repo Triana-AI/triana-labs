@@ -140,3 +140,13 @@ class SelfServePort(Protocol):
     def get_conversation(
         self, owner_subject: str, conversation_id: str
     ) -> JsonObject: ...
+
+
+class FeatureEntitlementPort(Protocol):
+    """Backend-owned feature catalog and access-request boundary."""
+
+    def list_features(self, owner_subject: str) -> Sequence[JsonObject]: ...
+
+    def request_feature_access(
+        self, owner_subject: str, feature_key: str
+    ) -> JsonObject: ...

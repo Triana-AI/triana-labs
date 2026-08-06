@@ -19,6 +19,7 @@ from fastapi import (
 from .contracts import (
     Authenticator,
     BackendReadPort,
+    FeatureEntitlementPort,
     ImportCommandPort,
     ImportRegistration,
     RunCommandPort,
@@ -52,6 +53,7 @@ def create_v1_router(
     runs: RunCommandPort,
     self_serve: SelfServePort | None = None,
     authenticate: Authenticator | None = None,
+    feature_entitlements: FeatureEntitlementPort | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1")
 
@@ -71,6 +73,36 @@ def create_v1_router(
         @router.get("/me")
         def get_me(subject: str = Depends(authenticated_subject)) -> dict[str, Any]:
             return dict(self_serve.get_or_create_me(subject))
+
+        if feature_entitlements is not None:
+
+            @router.get("/me/features")
+            def list_features(
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                return {
+                    "schema_version": 1,
+                    "features": [
+                        dict(feature)
+                        for feature in feature_entitlements.list_features(subject)
+                    ],
+                }
+
+            @router.post("/me/access-requests")
+            def request_feature_access(
+                payload: Annotated[dict[str, Any], Body()],
+                subject: str = Depends(authenticated_subject),
+            ) -> dict[str, Any]:
+                feature_key = payload.get("feature_key")
+                if not isinstance(feature_key, str):
+                    from triana_backend.application.self_serve import SelfServeRefusal
+
+                    raise SelfServeRefusal(
+                        422, "INVALID_FEATURE_KEY", "Feature key is required."
+                    )
+                return dict(
+                    feature_entitlements.request_feature_access(subject, feature_key)
+                )
 
         @router.post("/agents", status_code=201)
         def create_agent(
