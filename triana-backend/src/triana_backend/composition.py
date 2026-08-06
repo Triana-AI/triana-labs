@@ -434,17 +434,7 @@ class PostgresWorkflowServices(WorkflowServices):
             or not isinstance(result_hash, str)
         ):
             raise IntegrityConflict("analysis_result", artifact_id)
-        rejection_count = len(rejected)
-        rows = [
-            *facts,
-            _supplemental_fact("rejected_evidence", rejected, result_hash),
-            _supplemental_fact("rejected_record_count", rejection_count, result_hash),
-            _supplemental_fact(
-                "rejection_summary",
-                {"SOURCE_EXECUTION_INCOMPLETE": rejection_count},
-                result_hash,
-            ),
-        ]
+        rows = _facts_with_supplements(facts, rejected, result_hash)
         with self._sessions() as session, session.begin():
             for value in rows:
                 if not isinstance(value, dict):
@@ -842,6 +832,36 @@ def _supplemental_fact(kind: str, value: Any, result_hash: str) -> dict[str, Any
         "authority": "DETERMINISTIC",
         "schema_version": 1,
     }
+
+
+def _facts_with_supplements(
+    facts: list[Any], rejected: list[Any], result_hash: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    fact_kinds: set[str] = set()
+    for value in facts:
+        if not isinstance(value, dict):
+            raise IntegrityConflict("analysis_result", result_hash)
+        fact_kind = value.get("fact_kind")
+        if not isinstance(fact_kind, str) or not fact_kind or fact_kind in fact_kinds:
+            raise IntegrityConflict("analysis_result", result_hash)
+        fact_kinds.add(fact_kind)
+        rows.append(value)
+
+    rejection_count = len(rejected)
+    supplements = (
+        ("rejected_evidence", rejected),
+        ("rejected_record_count", rejection_count),
+        (
+            "rejection_summary",
+            {"SOURCE_EXECUTION_INCOMPLETE": rejection_count},
+        ),
+    )
+    for fact_kind, value in supplements:
+        if fact_kind not in fact_kinds:
+            rows.append(_supplemental_fact(fact_kind, value, result_hash))
+            fact_kinds.add(fact_kind)
+    return rows
 
 
 def _sqlalchemy_url(value: str) -> str:
