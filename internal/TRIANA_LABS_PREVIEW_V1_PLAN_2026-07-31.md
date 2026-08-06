@@ -25,6 +25,17 @@ launch reuses the current 16 MiB / 1,000-line / 1 MiB-line Observer limits and
 uses synchronous multipart ingestion; queues and resumable uploads wait for
 observed need.
 
+### Magic-link and staged-feature amendment
+
+The login implementation uses Supabase passwordless email magic links with
+open user creation and no approval waitlist. The existing backend OIDC/JWKS
+boundary remains authoritative. Workspace feature entitlements are distinct
+from the V0 `OWNER` membership role: trace ingestion and conversation viewing
+are available by default; analysis, simulation, team collaboration, and API
+access remain locked and may be requested. Requests are idempotent records, not
+automatic grants. Exact contracts and change budgets are in the active slice
+packet.
+
 ## 2026-08-01 launch-sequence amendment
 
 The owner accepted a narrower 36-hour first-launch sequence. This amendment

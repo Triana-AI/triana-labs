@@ -1,223 +1,176 @@
-# SELF-SERVE-V0 launch slice packet
+# SELF-SERVE-V0 magic-link and feature-entitlement slice
 
 Date frozen: 2026-08-06
 
-Status: **LOCAL GREEN — PUBLIC LAUNCH WAITS FOR OIDC AND LIVE INFRASTRUCTURE**
+Status: **ACTIVE — CONTRACT FROZEN; WORKER EDITS AUTHORIZED**
 
-Slice ID: `SELF-SERVE-V0-TRACE-INGESTION`
+Slice ID: `SELF-SERVE-V0-MAGIC-LINK-ENTITLEMENTS`
 
-Canonical base: `ba44e8e8aa9c253601ae3938ab1021a4f9b54978` on `main`.
-
-Integration branch: `codex/selfserve-v0`.
+Canonical base: `902f0fd` on `codex/selfserve-v0`.
 
 ## Product outcome
 
-Ship the smallest hosted self-serve loop:
+Replace the developer JWT-paste scaffold with open email magic-link login and
+add a backend-owned feature gate for gradual rollout:
 
 ```text
-authenticated owner
-  -> create an agent
-  -> upload one prescribed PreviewTrace JSONL file
-  -> inspect deterministic accepted/rejected accounting
-  -> browse every accepted conversation in a reusable viewer
+email -> magic link -> authenticated personal workspace -> core features
+locked feature -> request access -> REQUESTED state
 ```
 
-Analysis, simulation, reports, model/provider calls, teams, billing, adapters,
-and HRAI-specific ingestion are not part of this launch.
+There is no signup waitlist or manual approval before using trace ingestion and
+the conversation viewer.
 
-## Frozen contract
+## Frozen authentication contract
 
-- Managed OIDC authentication; the backend independently verifies bearer JWTs.
-- First login creates one personal workspace. Clients never choose a workspace.
-- One agent has a display name and one immutable default version.
-- One multipart `.jsonl` upload, maximum 16 MiB, 1,000 physical lines, and
-  1 MiB per line. One physical line is one PreviewTrace conversation.
-- Hosted uploads use the truthful `CUSTOMER_AUTHORIZED_TRACE_DATA` privacy
-  class, require explicit owner attestation, remain private, and have no LLM or
-  other provider egress.
-- The server streams bytes, computes SHA-256, stores the source privately under
-  a workspace-scoped immutable key, validates deterministically, and persists
-  accepted conversation indices plus safe rejection metadata.
-- Terminal import states are `COMPLETED`, `COMPLETED_WITH_REJECTIONS`, and
-  `FAILED`. Zero accepted records cannot be `COMPLETED`.
-- The generic conversation viewer renders normalized messages, tool calls,
-  tool results, terminal events, and typed gaps. The existing report UI uses a
-  legacy adapter; uploaded traces do not pretend to be generated reports.
+- Supabase Auth supplies passwordless email magic links and JWT sessions.
+- The login form accepts an email and calls `signInWithOtp`; it never reveals
+  whether an account previously existed.
+- Supabase may create the user automatically. `shouldCreateUser` remains true.
+- The magic-link confirmation route exchanges the token/code for a session and
+  redirects through the feature gate to `/agents`.
+- The browser obtains the current Supabase access token and sends it through
+  the existing same-origin `/api/v1` proxy. The FastAPI backend continues to
+  verify issuer, audience, expiry, subject, and signature through JWKS.
+- No password, homegrown token, service-role key, auth admin API, invite, or
+  approval workflow is introduced.
+- Auth routes and responses are private/no-store. Logout clears the managed
+  session.
 
-## Public behavior
+## Frozen authorization contract
 
-| Request | Success | Refusal/failure |
+RBAC and rollout entitlements are separate:
+
+- V0 membership role remains `OWNER`; teams and additional roles are deferred.
+- Deterministic backend code owns a closed feature catalog and workspace
+  entitlement state.
+- Public states are `AVAILABLE`, `LOCKED`, and `REQUESTED`.
+- Default available: `TRACE_INGESTION`, `CONVERSATION_VIEWER`.
+- Default locked: `ANALYSIS`, `SIMULATION`, `TEAM_COLLABORATION`, `API_ACCESS`.
+- A request for a locked feature is owner-scoped and idempotently creates one
+  `REQUESTED` record. It does not auto-grant the feature and does not block core
+  product access.
+- Grant/revoke administration is deliberately deferred; initial grants may be
+  applied by a controlled operator/database migration later.
+- UI gates improve clarity only. Every future protected backend endpoint must
+  call the backend entitlement boundary before work or data access.
+
+## Public API additions
+
+| Request | Success | Refusal |
 |---|---|---|
-| `GET /api/v1/me` | owner + personal workspace | 401 invalid authentication |
-| `POST /api/v1/agents` | creates agent + default version | 409 duplicate; 422 invalid |
-| `GET /api/v1/agents` | owner-scoped list | 401 |
-| `GET /api/v1/agents/{id}` | owned agent | non-disclosing 404 |
-| `POST /api/v1/agents/{id}/imports` | validated import summary | 413/415/422/typed 503 |
-| `GET /api/v1/agents/{id}/imports` | stable import history | non-disclosing 404 |
-| `GET /api/v1/imports/{id}` | status and exact counts | non-disclosing 404 |
-| `GET /api/v1/imports/{id}/conversations` | ordered accepted records | non-disclosing 404 |
-| `GET /api/v1/imports/{id}/rejections` | safe line errors | non-disclosing 404 |
-| `GET /api/v1/conversations/{id}` | imported conversation projection | non-disclosing 404 |
+| `GET /api/v1/me/features` | closed catalog with state per feature | 401 |
+| `POST /api/v1/me/access-requests` | requested feature becomes `REQUESTED` | 401/404 unknown feature/409 already available |
 
-## Authority, privacy, and refusal
+Existing authenticated self-serve APIs and tenant isolation remain unchanged.
 
-- Deterministic code owns hashing, identity, line accounting, validation,
-  ordering, tool linkage, status, pagination, and tenant scoping.
-- The authenticated human attests authorization to upload and owns the agent
-  name. No human ruling or accepted behavior is created.
-- No LLM participates in this slice.
-- Raw traces are private customer data. Logs and errors exclude payloads,
-  authorization headers, object keys, and parser exception text.
-- Invalid lines are typed rejections; invalid authentication, ownership,
-  configuration, unsafe storage, or broken integrity aborts the operation.
-- Exact hosting region, DNS, and managed OIDC vendor are deployment
-  configuration, not evidence semantics. Production launch requires them.
+## Authority and privacy
 
-## Provenance
+- Supabase Auth owns email delivery and session issuance.
+- The backend owns authorization and never trusts a client feature state.
+- Deterministic code owns feature keys, defaults, request identity, and state.
+- A human requests access; that request is not an entitlement grant.
+- Email addresses are not copied into Triana persistence in this slice; the
+  existing hashed OIDC subject remains the local user identity.
+- No trace-data or LLM/provider egress is added.
 
-Implementation is newly authored in Triana. The existing repository-local
-PreviewTrace validator, Observer limits, storage ports, UI tokens, and report
-conversation visuals may be refactored. No external repository or HRAI code,
-schema, fixture, trace, or prose may be copied.
+## Parallel slices and change budget
 
-## Parallel slices and ownership
-
-### Backend slice
+### Backend entitlements
 
 Test-owned:
 
-- `triana-backend/tests/self_serve/**`
+- `triana-backend/tests/self_serve/test_feature_entitlements.py`
 
 Production-owned:
 
-- `triana-backend/migrations/versions/0002_*.py`
-- `triana-backend/src/triana_backend/auth/**`
-- `triana-backend/src/triana_backend/api/**`
+- `triana-backend/migrations/versions/0003_*.py`
+- `triana-backend/src/triana_backend/api/{contracts,routes}.py`
 - `triana-backend/src/triana_backend/application/**`
-- `triana-backend/src/triana_backend/artifacts/**`
-- `triana-backend/src/triana_backend/domain/**`
-- `triana-backend/src/triana_backend/persistence/**`
-- `triana-backend/src/triana_backend/{composition,config}.py`
-- backend package and lock files only for JWT and multipart support
-- `triana-labs/src/triana_labs/contracts/traces.py`
+- `triana-backend/src/triana_backend/persistence/{models,self_serve}.py`
+
+No dependency is permitted.
 
 RED command:
 
 ```text
-uv run pytest -q tests/self_serve
+uv run pytest -q tests/self_serve/test_feature_entitlements.py
 ```
 
-### Frontend and reusable-viewer slice
+### Frontend magic link and access gates
 
 Test-owned:
 
-- `triana-app/tests/self-serve-ui.test.mjs`
+- `triana-app/tests/magic-link-access.test.mjs`
 
 Production-owned:
 
-- `triana-app/app/(self-serve)/**`
-- `triana-app/app/login/**`
-- `triana-app/app/agents/**`
+- `triana-app/app/{login,auth,agents}/**`
 - `triana-app/components/self-serve/**`
-- `triana-app/components/conversation/**`
-- `triana-app/lib/self-serve/**`
-- exact existing conversation route/component changes required for the legacy
-  adapter
+- `triana-app/lib/{self-serve,supabase}/**`
 - `triana-app/components/AppNav.tsx`
-- `triana-app/app/globals.css`
+- `triana-app/package.json`
+- `triana-app/package-lock.json`
+- `triana-app/next.config.ts` only if no-store/auth routing requires it
+
+Permitted dependencies: current compatible `@supabase/supabase-js` and
+`@supabase/ssr`, with exact versions locked.
 
 RED command:
 
 ```text
-npm test -- --test-name-pattern self-serve
+node --test --test-name-pattern=magic-link tests/magic-link-access.test.mjs
 ```
 
-The test author runs before the implementation author in each isolated
-worktree. The two slices may proceed in parallel after this packet. Workers
-stop before touching another lane or shared canonical documentation.
+Each slice runs independent test author then implementation author. Backend and
+frontend may proceed in parallel in isolated worktrees after this packet.
 
-## Minimal acceptance gate
+## Minimal acceptance
 
-1. Backend black-box test: authenticated owner creates an agent, uploads a
-   two-conversation valid JSONL file, and reads both conversations.
-2. Backend boundary test: a mixed-validity upload reports exact accepted and
-   rejected counts without exposing raw rejected content.
-3. Backend isolation test: another authenticated owner cannot list or read the
-   first owner's agent, import, or conversation.
-4. Frontend contract test: login, agent creation, upload, import accounting,
-   and a conversation timeline are reachable and render typed failure states.
-5. Existing report conversation rendering remains available through its
-   adapter.
-6. Typecheck/build and repository governance pass on the integrated commit.
+1. New authenticated owner receives both core features as `AVAILABLE` and the
+   four staged features as `LOCKED` without an approval record.
+2. Requesting `ANALYSIS` twice yields one owner-scoped request and stable
+   `REQUESTED` state; another owner remains `LOCKED`.
+3. Unknown features refuse and available features cannot be requested.
+4. Login submits an email magic link with open signup, never accepts a pasted
+   bearer token, and provides neutral check-your-email feedback.
+5. Confirmation establishes the managed session; API requests use its access
+   token and logout clears it.
+6. The UI shows available/locked/requested states and a working request-access
+   control without hiding core trace ingestion.
+7. Existing self-serve ingestion/viewer focused tests, typecheck, and build
+   remain green.
 
-No coverage target, broad historical suite expansion, provider test, queue,
-load test, visual-regression suite, or analysis test is required.
+## Edge cases
 
-## Required adversarial spot checks
+- invalid/expired/replayed magic link;
+- email enumeration through differing success text;
+- duplicate request clicks and concurrent request creation;
+- cross-workspace feature/request reads;
+- unknown/removed feature key;
+- stale UI entitlement after request;
+- missing Supabase public configuration;
+- refresh/logout followed by an API call;
+- redirect target injection; only local fixed destinations are allowed.
 
-- empty and oversized upload;
-- all lines rejected;
-- invalid JWT and cross-workspace identifier;
-- duplicate idempotency key with changed bytes;
-- orphan tool result or missing terminal rendered as a typed gap;
-- large tool payload is collapsed and React-escaped.
+## Non-goals
 
-## Explicit non-goals and untouched areas
+- approval queue/admin UI;
+- invite-only signup or signup waitlist;
+- teams, member invites, additional roles, SSO, SCIM, billing, paid plans;
+- automatic entitlement grants, percentage rollout, experiments, or flags from
+  an external feature-flag vendor;
+- analysis or simulation implementation;
+- cloud/provider project creation or secrets in Git.
 
-- `triana-core/**`
-- Labs case factory, intelligence, adaptive runner, simulation, and report
-  generation
-- HRAI compiler and private retained-report workflow
-- analysis, cases, runs, review mutation, teams, billing, SSO, API keys,
-  deletion/retention automation, provider settings, queues, and adapters
-- cloud mutation or deployment before the integrated local gate is green
-
-No scope expansion beyond one JWT/JWKS dependency and multipart parsing is
-permitted without orchestrator review. No worker edits canonical documents,
-deployment files, package-wide formatting, or unrelated tests.
-
-## Exit verification
+## Exit commands
 
 ```text
 ./scripts/verify-governance.sh
 cd triana-backend && uv run pytest -q tests/self_serve
 cd triana-backend && uv run ruff check src tests/self_serve
 cd triana-backend && uv run mypy src
-cd triana-app && npm test -- --test-name-pattern self-serve
+cd triana-app && node --test tests/self-serve-ui.test.mjs tests/magic-link-access.test.mjs
 cd triana-app && npm run typecheck
 cd triana-app && npm run build
 ```
-
-The orchestrator additionally inspects the integrated diff, one real
-57-conversation prescribed-format upload if supplied locally, logs for payload
-leakage, and the visible browser path. Unrun checks remain unverified.
-
-## Exit reconciliation — 2026-08-06
-
-Integrated on `codex/selfserve-v0`:
-
-- contract/governance: `19676cd`;
-- frontend acceptance and implementation: `63ad4e8`, `675e25c`;
-- backend acceptance and implementation: `583392b`, `9a87e59`;
-- deployable same-origin routing test and fix: `57fa434`, `4499d9b`.
-
-Observed GREEN on the integrated branch:
-
-- backend self-serve acceptance: 3/3;
-- backend Ruff and strict mypy;
-- PostgreSQL offline Alembic render through revision 0002;
-- production parser spot check: one accepted plus one safely rejected line;
-- frontend self-serve acceptance: 1/1;
-- existing LABS-08 no-fallback UI acceptance: 2/2;
-- TypeScript typecheck and Next production build;
-- repository governance and diff checks.
-
-The first sandboxed Python dependency resolution and one Next build attempt
-failed only because outbound DNS was unavailable; authorized reruns completed.
-No live PostgreSQL migration, S3/KMS write, JWKS verification, authenticated
-browser round trip, 57-conversation customer upload, image build, public TLS
-deployment, or rollback was run. Public launch remains blocked until a managed
-OIDC tenant is configured and those live infrastructure gates pass. The current
-login intentionally accepts a provider-issued JWT in session storage as a
-visible developer/invite-beta scaffold; it is not presented as the final
-magic-link login experience.

@@ -863,3 +863,13 @@ Public launch is not yet claimed: choose/configure the managed OIDC tenant,
 apply migration 0002 to a live database, verify S3/KMS and JWKS, run an
 authenticated browser upload, and put the app behind TLS. The current
 provider-JWT login is an explicit developer/invite-beta scaffold.
+
+Magic-link/entitlement active state (2026-08-06): Akarsh selected open email
+magic-link authentication with no signup waitlist and requested staged feature
+access. The active slice replaces the JWT-paste scaffold with Supabase Auth and
+keeps the FastAPI JWKS verifier. V0 remains one `OWNER` per workspace; rollout
+uses separate workspace entitlements. `TRACE_INGESTION` and
+`CONVERSATION_VIEWER` default available. `ANALYSIS`, `SIMULATION`,
+`TEAM_COLLABORATION`, and `API_ACCESS` default locked and may be requested.
+Request records do not grant access. Admin approvals, extra roles, teams,
+billing, and actual staged-feature implementations remain deferred.

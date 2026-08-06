@@ -44,6 +44,16 @@ accounting, validation, status, ordering, linkage, pagination, and isolation.
 The exact implementation boundary and minimal acceptance gate are frozen in
 `internal/SLICE_PACKET.md`.
 
+The owner subsequently selected open email magic-link signup for this
+checkpoint: authentication itself has no approval waitlist. Supabase Auth owns
+email delivery and session issuance while the Triana backend continues to
+verify JWTs and own authorization. Gradual feature rollout uses workspace
+entitlements rather than overloading membership roles. Trace ingestion and the
+conversation viewer are available by default; analysis, simulation, team
+collaboration, and API access are locked and expose an idempotent request-access
+action. A request is not a grant, and this checkpoint adds no analysis,
+simulation, team, billing, or admin-approval implementation.
+
 For the first public developer preview, the value moment is narrower and
 supersedes the immediate baseline/candidate sequence above without erasing the
 longer-term comparison product:
