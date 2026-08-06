@@ -1,6 +1,6 @@
 # Working memory
 
-Updated: 2026-08-04
+Updated: 2026-08-07
 
 ## Active strategic position
 
@@ -44,6 +44,76 @@ Historical research and suspended-product handoff:
 - `internal/BRAINTRUST_REPLACEMENT_VERDICT_2026-07-30.md`
 - `internal/TRIANA_RESEARCH_CONVERSATION_HANDOFF_2026-07-30.md`
 - `docs/PRODUCT.md`
+
+## Accepted four-slice planning frame — 2026-08-07
+
+Akarsh selected Trace-to-Eval Preview as the first complete customer value
+loop and authorized repository-wide Agentagon reuse under the provenance
+ledger. The immediate product target is:
+
+```text
+authorized traces
+  -> complete deterministic accounting and evidence coverage
+  -> proposed semantic populations and observed behavior
+  -> at most three grounded measurement candidates
+  -> conversation-level evidence
+  -> human Track / Edit / Defer
+  -> stable frozen evaluator definition
+  -> the same report through CLI, coding agent, backend, and UI
+```
+
+The existing frozen-measurement/release-gate machinery is an implementation
+asset. The new generalized corpus is the quality and correctness test bench for
+that machinery; it is not another customer eval platform and does not delay
+the engine behind a broad benchmark project.
+
+The corpus contract is capability-based rather than dataset-named. A case may
+declare traces only, official outcome, runnable harness, model/config control,
+paired execution, and/or human rulings. Missing truth remains typed missing.
+Blitz exercises traces-only discovery; HRAI exercises a controllable real
+agent/harness; TAU² exercises a controllable benchmark with official reward and
+database-state truth. Product code must not branch on those dataset names.
+
+The four slices are:
+
+0. **Authorization and generalized quality corpus:** update source policy;
+   freeze deterministic fixtures plus private/hash-addressed HRAI, TAU², and
+   Blitz manifests; establish existing-gate, deterministic-only,
+   embedding/clustering, and competent-coding-agent baselines; emit a bounded
+   quality report.
+1. **Canonical engine:** one Python-owned pipeline for normalization, evidence
+   coverage, semantic discovery, deterministic membership/accounting,
+   candidate qualification, Track/Edit/Defer, freeze, and capability-gated
+   execution/diff.
+2. **Backend and product projections:** DBOS invokes the same engine; S3 keeps
+   immutable large artifacts; RDS indexes runs/reviews/frozen measurements;
+   UI, CLI, and coding-agent workflows consume one canonical report and reuse
+   the conversation viewer for evidence.
+3. **Comparative proof and launch:** Blitz trace-only usefulness, HRAI A/A and
+   controlled A/B, TAU² outcome-grounded A/A and controlled A/B, bounded
+   repeated-run stability, and a matched coding-agent ROI comparison.
+
+The owner subsequently directed immediate local implementation with maximum
+reuse from the permitted Agentagon source. The quality/correctness defaults,
+bounded labeler, split policy, provider/spend limits, dependency-only AWS
+boundary, and abort-versus-gap behavior are now frozen in
+`internal/TRACE_TO_EVAL_OVERNIGHT_PACKET_2026-08-07.md`; the replacement
+`internal/SLICE_PACKET.md` is the active worker contract. Production and test
+workers have not started at this point in the record.
+
+The active tranche excludes deployment. App, backend, CLI, and analysis run
+locally; only the existing private RDS/S3/DBOS dependencies and the existing
+approved Azure configuration may be used. The labeler processes a bounded
+blind sample, never every trace. First-broken-link is capability-gated to
+outcome-aware corpora, while missing optional semantics, embeddings, auth, CI,
+or deployment remain typed gaps rather than blockers.
+
+The grand plan remains a gated progression from trace-to-eval into
+production-derived cases, shared-prefix baseline/candidate execution, bounded
+multi-turn simulation, comparable behavioral diff, selective L4 failure
+explanation, human-confirmed recurrence memory, customer-eval export, and
+post-deployment calibration. Slice 3 evidence—not roadmap enthusiasm—decides
+which later capability is authorized.
 
 ## Current objective
 

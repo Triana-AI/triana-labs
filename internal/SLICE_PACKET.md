@@ -1,166 +1,170 @@
-# TAU57 non-auth DBOS behavior dry-run slice
+# Trace-to-Eval Review V0 vertical slice
 
-Date frozen: 2026-08-06
+Date frozen: 2026-08-07
 
-Status: **COMPLETE — LIVE PRIVATE CANARY VERIFIED**
+Status: **READY — WORKERS NOT STARTED**
 
-Slice ID: `TAU57-NONAUTH-DBOS-BEHAVIOR-DRYRUN`
+Slice ID: `TRACE-TO-EVAL-REVIEW-V0`
 
-Canonical base: `83d3e9e` on `codex/selfserve-v0`.
+Canonical base: `40a27e208abf7e24b5c29b3d5e5978cf44d9bba5` on
+`codex/selfserve-v0`, plus the owner-authorized documentation changes in the
+current worktree. Commit the documentation freeze before freezing RED tests.
 
-## Product outcome
+Authority: `triana-labs/CHARTER.md`, the canonical Labs plan, the append-only
+decision log, and `internal/TRACE_TO_EVAL_OVERNIGHT_PACKET_2026-08-07.md`.
 
-Prove the non-authenticated analysis core independently of signup:
+## Outcome
 
-```text
-verified local TAU² 57-task archive
--> deterministic PreviewTrace JSONL adapter
--> private S3 registration
--> real foreground DBOS workflow
--> deterministic structural behavior groups
--> RDS/S3 canonical report
--> /behavior through the private SSM tunnel
-```
+One authorized trace path produces grounded proposed user populations,
+behavior measurements, at most three eval candidates, a bounded human review
+queue, one canonical persisted report, and identical CLI/backend/local-UI
+projections using the existing conversation viewer.
 
-This is a private operator dry run. It does not grant the self-serve
-`ANALYSIS` entitlement or connect authenticated uploads to analysis.
+This is not baseline/candidate execution, deployment simulation, a release
+verdict, exhaustive taxonomy, or autonomous golden eval suite.
 
-## Exact input
+## Contracts
 
-- archive:
-  `triana-experiments/tau2-luna-local/runs/downloads/tau2-retail-discovery-v1/2788f37e3fa215548319be116dd1f5b47e70e04b188919e460441ed993a98169.tar.gz`;
-- archive SHA-256:
-  `2788f37e3fa215548319be116dd1f5b47e70e04b188919e460441ed993a98169`;
-- expected task bundles: 57;
-- evidence/privacy class: `SYNTHETIC`;
-- custody: raw archive stays gitignored; generated PreviewTrace JSONL may exist
-  only under `/private/tmp` and private SSE-KMS S3.
+Input `EvidenceBundleManifestV0` declares source/adapter identity, hashes,
+agent/workspace, privacy/authorization/execution/egress, grouping keys,
+capability flags, optional outcomes, and optional existing eval metadata.
 
-## Frozen behavior contract
+Outputs:
 
-- The adapter reads only each completed attempt's `tau2-results.json` from the
-  verified archive and emits one schema-version-1 `preview_trace` per task.
-- Message order is preserved. User/assistant messages and assistant tool calls
-  become the corresponding PreviewTrace events; tool results bind in FIFO
-  order to the preceding unresolved call because TAU² omits result call IDs.
-- Adapter identity, archive hash, task ID, attempt ID, and reward remain
-  lineage. Reward is not accepted behavior or a Triana ruling.
-- Deterministic grouping uses only observable event-kind and ordered tool-name
-  structure. It owns membership, support, group identity, denominator, and
-  basis points.
-- Group labels and summaries are structural descriptions authored by
-  deterministic code. `semantic_summary_authority` is not MODEL_PROPOSED and
-  `population_claim` remains `NOT_ESTABLISHED`.
-- No model/provider/target call, semantic user-need inference, case generation,
-  simulation, aggregate verdict, or human ruling occurs.
-- Malformed archives, missing/duplicate tasks, invalid PreviewTrace events,
-  hash mismatch, mixed privacy, incomplete denominators, S3/KMS failure, or
-  DBOS/compiler failure refuse visibly and cannot create an available report.
+- `TraceToEvalReportV0`: accounting, capabilities, gaps, proposed populations,
+  behavior analytics, full qualified inventory, at most three eval proposals,
+  evidence handles, method/run lineage, stability/cost, and review state;
+- `ReviewQueueV0`: deterministic blind pairwise and proposal-review items;
+- `HumanRulingV0`: append-only ruling/edit/reviewer/time/item hash/supersession;
+- internal `BenchmarkCaseV0`: manifest plus split, hidden truth, rubric,
+  invariants, and allowed/forbidden claims.
 
-## Infrastructure boundary
+Strict parsing, canonical serialization, domain-separated hashes, and typed
+unknown/non-computable states are mandatory.
 
-- AWS profile: `akarsh-deepprobe` / account `854847082059` / region
-  `ap-south-1`.
-- Reuse running EC2 `i-0f8250d908737b568`, available encrypted RDS `db-pg-1`,
-  existing private S3/KMS/ECR configuration, and SSM-only access.
-- No Terraform or new infrastructure is authorized because the required
-  runtime exists.
-- Mutations are limited to one private input object, content-addressed output
-  artifacts, application rows/DBOS history, new digest-addressed images, and a
-  reversible deployment on the existing Triana host.
+## Public behavior
+
+| Condition | Behavior |
+|---|---|
+| valid authorized source | reconcile accounting and publish inspectable report |
+| mixed valid/invalid rows | retain accepted conversations plus content-free rejection facts |
+| no outcome/harness truth | omit outcome/L4 claims and emit capability gaps |
+| provider absent | publish deterministic report plus `SEMANTIC_ANALYSIS_UNAVAILABLE` |
+| provider authorized | call only named model with redacted projection and hard budget |
+| semantic runs disagree | show stability/disagreement; never rerun-to-green |
+| review pending | proposals remain `PROPOSED` |
+| human tracks/edits | append ruling linked to exact evidence/method identity |
+| tamper detected | refuse affected artifact |
+| AWS dependency unavailable | retain complete local artifact path plus typed persistence gap |
+
+## Authority and privacy
+
+Deterministic code owns parsing, redaction result, identity, splits, samples,
+evidence, denominators, support, qualification, budgets, hashes, persistence,
+lineage, and gaps. The LLM proposes semantic content. Humans own pairwise
+meaning, Track/Edit/Defer, final wording, and first-broken-link rulings.
+
+Raw data stays local/private; fixtures are synthetic. Redaction and exact
+provider authorization precede provider-bound hashing/calls. Tests use
+fakes/caches. One live Foundry `FW-GLM-5.2` canary is allowed only with existing
+configuration, explicit manifest permission, no fallback/retry, and USD 25
+maximum reservation. Reuse existing private RDS/S3/DBOS only. No deployment,
+new infrastructure, Supabase, GitHub configuration, or public ingress.
+
+## Split policy
+
+Group the highest dependency key, including paired arms and sibling trials,
+before split assignment. Sort canonical group IDs and assign by
+`sha256("triana-split-v0" || corpus_hash || group_id)` to 60/20/20 development,
+calibration, and locked holdout using deterministic largest remainder. Review
+sampling uses `sha256("triana-review-v0" || report_id || item_id)`. Locked
+holdout identities are never opened during implementation/debugging.
+
+## Provenance
+
+Permitted copying/adaptation:
+
+- Agentagon commit `063ad3ed54f4a9646e7040cc6a203615b0de8dcd`, especially
+  `agentagon/exploration_v1/{pipeline.py,llm.py,prompts.py,report_ui.py}` and
+  `experiments/blitz_seed/{adapter_v1.py,GENERIC_EXPLORATION_V1_VERIFICATION.md}`;
+- Kairos-AI first-broken-link/L4 only for the optional outcome-aware benchmark;
+- existing Triana backend/report/auth and
+  `triana-app/components/conversation/ConversationViewer.tsx`.
+
+Record exact source file/commit, destination, copy versus adaptation,
+dependency/license, and data boundary in `docs/PROVENANCE.md`. Do not add
+Agentagon as a runtime dependency or copy generated reports, caches, raw Blitz
+data, or embedded third-party material.
 
 ## Change budget
 
-Independent test ownership:
+Test-author ownership:
 
-- `triana-experiments/tau2-luna-local/tests/test_preview_trace_export.py`
-- `triana-labs/tests/report/test_preview_trace_behavior.py`
-- `triana-backend/tests/acceptance/test_tau_behavior_pipeline.py`
-- `triana-app/tests/labs08-backend-ui.test.mjs` only by additive sibling test;
-  the frozen existing test itself remains unchanged.
+- `triana-labs/tests/trace_to_eval/**`
+- `triana-backend/tests/acceptance/test_trace_to_eval*.py`
+- additive `triana-app/tests/trace-to-eval*.test.mjs`
+- purpose-built synthetic fixtures below those test areas.
 
-Implementation ownership:
+Implementation-author ownership:
 
-- `triana-experiments/tau2-luna-local/scripts/export_preview_trace.py`
-- `triana-labs/src/triana_labs/report/**`
-- `triana-backend/src/triana_backend/{domain,application,services,workflows}/**`
-- `triana-backend/src/triana_backend/composition.py`
-- `triana-app/app/behavior/page.tsx`
-- `triana-app/lib/labs-report.ts` only if required to represent deterministic
-  structural authority without widening the report contract.
+- `triana-labs/src/triana_labs/trace_to_eval/**`
+- bounded additions to `triana-labs/src/triana_labs/cli.py` and exports;
+- bounded additions under `triana-backend/src/triana_backend/{api,application,domain,persistence,services,workflows}/**`;
+- one additive Alembic revision only if append-only rulings require it;
+- one additive local report/review route under `triana-app/app/analysis/**`,
+  bounded API proxy/components, and existing ConversationViewer reuse;
+- required canonical docs, provenance, decision log, working memory, slice
+  packet, and local decision journal.
 
-No dependency or migration is permitted. Self-serve auth, membership,
-entitlements, upload/viewer routes, Supabase code, and cloud provisioning are
-explicitly untouched.
+Untouched: `triana-core/**`, Release Review V1, existing auth/JWT/membership
+semantics, LABS-04/05/06 artifacts, existing migrations, cloud provisioning,
+security groups, billing, teams, GitHub deployment, and raw corpus/provider data.
 
-## Minimal acceptance
+No new production dependency for the first green path. Optional embeddings
+cannot force one. Maximum scope expansion is one new file per owned layer and
+one additive migration after an orchestrator note. No unrelated cleanup.
 
-1. Exact archive exports 57 valid, ordered, unique synthetic PreviewTrace
-   records reproducibly; malformed/missing/duplicate task bundles refuse.
-2. Compiler accounting reconciles `physical = accepted + rejected` and emits
-   stable structural group IDs, ordered membership, support, and basis points.
-3. No report field claims semantic populations, model-written summaries,
-   accepted behavior, or a verdict.
-4. Existing HRAI accounting compilation remains unchanged and keeps zero
-   behavior groups.
-5. Real dry run persists the new import/run/report through S3, RDS, and DBOS;
-   ordinary repeat converges idempotently.
-6. `/behavior` renders the new report over SSM with visible nonzero groups and
-   deterministic-authority copy; no fixture fallback occurs.
+## Acceptance
 
-## Worker protocol and exit
+1. Trace-only and paired/outcome synthetic fixtures reconcile accounting,
+   preserve group splits, prevent leakage, and type missing capabilities.
+2. Fake semantic responses create grounded proposed populations; malformed,
+   overclaiming, or uncited output is rejected/gapped.
+3. Ten cached replays are byte-identical; varied semantic fakes produce an
+   explicit stability comparison.
+4. The bounded blind queue is deterministic; rulings append and survive refresh.
+5. CLI, backend, and UI project identical report/ruling IDs; cited evidence
+   opens in ConversationViewer.
+6. Optional provider, embeddings, outcomes, existing evals, auth, CI, and deploy
+   absence cannot create failure or false pass.
+7. Bounded Blitz/HRAI/TAU dry runs complete or preserve exact typed gaps without
+   data leakage or opening holdouts.
 
-Exactly one independent test author freezes RED acceptance first. Exactly one
-implementation author then works against those bytes. The orchestrator alone
-integrates, runs the real AWS canary, reconciles the change budget, and records
-the final verdict.
+## Verification
 
-Local gates:
+RED minimum:
 
 ```text
-cd triana-experiments/tau2-luna-local && uv run --frozen pytest -q tests/test_preview_trace_export.py
-cd triana-labs && uv run --locked pytest -q tests/report/test_preview_trace_behavior.py
-cd triana-backend && uv run pytest -q tests/acceptance/test_tau_behavior_pipeline.py
+cd triana-labs && uv run --locked pytest -q tests/trace_to_eval
+cd triana-backend && uv run pytest -q tests/acceptance/test_trace_to_eval*.py
+cd triana-app && node --test tests/trace-to-eval*.test.mjs
+```
+
+Final minimum:
+
+```text
+cd triana-labs && uv run --locked pytest -q tests/trace_to_eval
+cd triana-labs && uv run --locked ruff check src tests/trace_to_eval
+cd triana-labs && uv run --locked mypy src
+cd triana-backend && uv run pytest -q tests/acceptance/test_trace_to_eval*.py
 cd triana-backend && uv run ruff check src tests && uv run mypy src
 cd triana-app && npm run typecheck && npm run build
 ./scripts/verify-governance.sh
+git diff --check
 ```
 
-## Exit evidence — 2026-08-06
-
-- Exact archive export: 57 PreviewTrace records, 745,960 bytes, SHA-256
-  `f757851296f1770248623e274f20c18ea8bd0dff34a1a4910ae199c78db1447d`.
-- Private staging: bucket `triana-artifacts-854847082059-ap-south-1`, SSE-KMS,
-  checksum `91eFEpbxdwJIYj4nTyDBjqi9Df80oaSRCuGZx42xRH0=`.
-- Import: `imp_37e742f4d6947028cd167c4a52478c50`; artifact
-  `art_529a16c5b9da207979c0013294b98f4c`; 57 physical, 57 accepted,
-  zero rejected.
-- RDS was observed at Alembic `0001_labs08_storage` and was transactionally
-  upgraded through the already-reviewed migrations to
-  `0003_feature_entitlements (head)`.
-- Live failures were retained rather than hidden: attempt 1 exposed the stale
-  schema; attempt 2 exposed the removed artifact conflict target; attempt 3
-  exposed duplicate PreviewTrace rejection facts. Independent RED regressions
-  and bounded production corrections protect the latter two failures.
-- Successful DBOS attempt 4: run `run_6e99b23c29175715b5d1ba5a18761b4c`,
-  workflow `labs08-run-8e8b1b297b4e0fe3d21ca9186fa68df4dba103f75c9ff353e2dfb55de0ab7562`,
-  report `rpt_70718d7e6cfe538b5a99bc4a44bb536c`, state
-  `COMPLETED_WITH_GAPS`.
-- Canonical report: 57 physical, 57 accepted, zero rejected, 54 structural
-  groups, support total 57, share total 10,000 basis points, deterministic
-  membership and descriptions, `population_claim=NOT_ESTABLISHED`, provider
-  `NONE`.
-- Deployed digests: backend
-  `sha256:c24dc75b3359c39c0afe2e7ddf1ce80c2a423447bbfa566df3ff04060d753c38`;
-  app `sha256:8b54879a915764e2bc23966188c70bf4215f3c72433679a8ccccf3edf40f169c`;
-  release SHA `0d4407946d86ef0d9888de2fb961ded4b51b8156`.
-- Production containers, backend readiness, canonical report reads, and
-  `/behavior` passed on-host and through refreshed local SSM tunnels. The UI
-  visibly renders deterministic descriptions and nonzero observed groups.
-- Focused integrated acceptance passed 17/17; exporter, compiler, UI,
-  TypeScript, Next production build, Ruff, and mypy checks passed during the
-  independently owned implementation and reconciliation steps.
-
-No LLM/provider/target call, semantic population claim, auth bridge, new
-infrastructure, or public ingress was introduced. The temporary host ECR-push
-statement may now be removed; the runtime requires ECR pull only.
+The orchestrator commits this freeze, then one independent test author proves
+valid RED. After the test bytes are frozen, one independent implementation
+author works only in production-owned paths. The orchestrator alone verifies,
+inspects, reconciles, and declares completion. Optional gaps do not stop work;
+privacy/integrity/authority/budget violations do.

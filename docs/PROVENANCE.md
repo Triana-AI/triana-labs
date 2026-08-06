@@ -13,18 +13,20 @@ Akarsh during Triana product work. They are not a code port.
 
 | Source | Status | Allowed use |
 |---|---|---|
-| `/Users/akarshgajbhiye/agentagon` | Restricted | Do not copy code or artifacts. Rewrite Akarsh-owned facts and accepted decisions only. |
+| `/Users/akarshgajbhiye/agentagon` | Permitted with ledger (owner-authorized by Akarsh 2026-08-07) | Inspect, copy, adapt, or reimplement Agentagon code, prompts, schemas, tests, reports, and UI after recording the exact source path/commit, destination, method, and applicable third-party license or data restrictions. |
 | `/Users/akarshgajbhiye/kairos` | Permitted with ledger | Inspect, copy, or reimplement Akarsh-owned code after recording exact provenance and licenses. |
 | `/Users/akarshgajbhiye/Documents/hr_ai` | Permitted with ledger (authorized by Akarsh 2026-07-31) | Inspect, copy, or reimplement Akarsh-owned code after recording exact provenance and licenses per the reuse procedure. |
-| `/Users/akarshgajbhiye/agentagon/Triana demo` (package `triana-demo`, including `triana-demo-clean-video`) | Permitted with ledger (explicit Akarsh allowlist exception 2026-07-31; rest of Agentagon stays Restricted) | Inspect and adapt this UI for the Triana Labs Preview report after per-file authorship/ancestry checks and a reuse-ledger entry. |
+| `/Users/akarshgajbhiye/agentagon/Triana demo` (package `triana-demo`, including `triana-demo-clean-video`) | Permitted with ledger (historical narrow exception 2026-07-31; now covered by the repository-wide 2026-08-07 authorization) | Inspect and adapt this UI after recording exact source and destination provenance; Release Review claims and semantics do not cross merely because the implementation is permitted. |
 | `/Users/akarshgajbhiye/kairos-ai` | Permitted with ledger | Inspect, copy, or reimplement Akarsh-owned code after recording exact provenance and licenses. |
 | Blitz "Leo" production corpus (`~/Downloads/blitzlangsmith_*.jsonl`; `agentagon/experiments/blitz_seed/**`) | Design-partner data (letter of intent held by Akarsh, stated 2026-07-31) | Internal mining, miner validation, and persona/intent derivation permitted. No raw conversations, quotes, or PII in any public artifact or open-source repo without explicit Blitz sign-off; derived public assets must be synthetic regenerations labeled "generated, blitz-informed". |
 | Triana Notion database | Permitted context | Rewrite Akarsh-owned product decisions, interviews, and research; link canonical pages. |
 | Third-party repositories/packages | License-dependent | Record version, license, and usage before adoption. |
 
-The Agentagon repository's current Git authorship cannot establish file-level
-ownership because its history was reset. Do not infer eligibility from the
-current commit author.
+On 2026-08-07 Akarsh explicitly superseded the prior Agentagon clean-room
+restriction and authorized reuse across the repository. Current Git authorship
+is no longer the eligibility gate. Exact paths and commits are still recorded
+so Triana can explain what entered the product, preserve applicable licenses,
+and keep customer data or third-party material out of public artifacts.
 
 ## Reuse procedure
 
@@ -33,7 +35,9 @@ Before a port:
 1. Record source repository, path, and commit SHA.
 2. Check source authorship and any third-party origin.
 3. Check the source repository license and file headers.
-4. Confirm that the source was not previously copied from Agentagon.
+4. Check whether the source contains third-party or customer-derived material
+   whose license, privacy, or publication boundary is narrower than the
+   repository-wide owner authorization.
 5. Decide whether to copy, adapt, or cleanly reimplement.
 6. Record the destination and material changes below.
 7. Add focused tests that describe Triana's contract rather than preserving
@@ -61,6 +65,7 @@ Before a port:
 | 2026-08-05 | Local tau-squared Azure Luna trace POC | `https://github.com/sierra-research/tau2-bench` tag `v0.2.0`, commit `f8de30c298689cbe0117d76a378e7315a17e5bd8`; inspected `src/tau2/utils/llm_utils.py`, `src/tau2/run.py`, orchestration and result models from the exact archive | `triana-experiments/tau2-luna-local/` | Exact pinned package dependency plus newly authored interception, local OTel, journal, verification, tests, and documentation; no upstream source copied | Upstream tau-squared is MIT and its installed PEP 610 record proves the exact commit/repository. Direct dependencies are OpenTelemetry API/SDK/semantic conventions 1.38.0 (Apache-2.0) and Hatchling 1.27.0, pytest 8.4.2, Ruff 0.14.3, and mypy 1.18.2 (MIT). Tau-squared's locked transitive graph includes the Langfuse client, but `USE_LANGFUSE` remains false and the experiment configures no callback, credentials, service, collector, or network telemetry sink. No Agentagon, Kairos, Kairos-AI, HRAI, customer trace, provider response, prompt, task, fixture, or raw benchmark artifact is copied into the experiment. Runtime tau-squared domain/task assets remain third-party MIT package content. | Akarsh authorized the experiment; independent test and implementation authors built it; Codex verified and recorded completion |
 | 2026-08-06 | Self-serve V0 Supabase magic-link client/session integration | Official Supabase `signInWithOtp`, server-side PKCE/SSR, and JWT/JWKS documentation; locked npm packages `@supabase/supabase-js` 2.112.1 and `@supabase/ssr` 0.12.4 (MIT) | `triana-app/app/login/**`; `triana-app/app/auth/confirm/**`; `triana-app/lib/supabase/**`; managed-session use in self-serve API and logout UI | Newly authored integration against public package APIs; no external implementation copied | No Supabase service-role credential, provider source, Agentagon, Kairos, Kairos-AI, HRAI, customer trace, prompt, or fixture was copied. Supabase owns authentication/email/session issuance only; Triana's backend remains the authorization authority. | Independent test-author agent, implementation-author agent, and Codex orchestrator |
 | 2026-08-06 | TAU57 private PreviewTrace structural canary | Local gitignored archive produced by the pinned tau-squared v0.2.0 experiment: `2788f37e3fa215548319be116dd1f5b47e70e04b188919e460441ed993a98169.tar.gz`, SHA-256 equal to its filename, 57 task bundles | Runtime-only deterministic export to private `/private/tmp` and SSE-KMS S3; newly authored exporter, structural compiler, backend projection, and UI authority rendering in the active slice | Newly authored clean-room Triana transformation and deterministic analysis; no upstream implementation or raw archive copied into Git | The archive contains synthetic benchmark executions under the already recorded tau-squared MIT experiment boundary. Raw messages, tool arguments/results, provider payloads, and the archive remain gitignored/private. Only hashes, typed counts, deterministic structural descriptions, identifiers, and publication-safe evidence entered repository documentation. No LLM/provider/target call occurred during analysis. | Independent test and implementation authors; Codex orchestrated the real private S3/RDS/DBOS/UI canary |
+| 2026-08-07 | Repository-wide Agentagon reuse authorization and Trace-to-Eval source-mining boundary | Akarsh's explicit owner authorization for `/Users/akarshgajbhiye/agentagon`; current inspected repository head `063ad3ed54f4a9646e7040cc6a203615b0de8dcd` | `docs/PROVENANCE.md`; planning references in `internal/WORKING_MEMORY.md` and the research cookbook | Policy supersession only; no additional product code copied in this documentation change | Akarsh authorized reuse without the prior clean-room restriction. Exact source/destination ledgering, third-party license checks, and customer-data/privacy restrictions remain required. | Akarsh authorized; Codex recorded |
 
 ## Explicit documentation allowlist
 
@@ -78,7 +83,11 @@ cross into this repository on 2026-07-30:
 These files are preserved as historical research and rationale. They are not
 implementation sources and cannot supersede `docs/PRODUCT.md`.
 
-## Explicit exclusions at bootstrap
+## Historical Agentagon exclusions at bootstrap — superseded 2026-08-07
+
+The following list records the repository's original 2026-07-30 clean-room
+boundary. Akarsh's repository-wide authorization on 2026-08-07 supersedes it;
+the items are retained as history, not as current exclusions:
 
 - Agentagon Python packages and tests;
 - Agentagon trace, signal, eval, diff, and runner schemas;
@@ -88,6 +97,7 @@ implementation sources and cannot supersede `docs/PRODUCT.md`.
 - Agentagon configuration and infrastructure;
 - Agentagon Git history.
 
-If Akarsh later wants a specific Akarsh-authored Agentagon file to cross, add an
-explicit allowlist entry here before touching it. The entry must name the file
-and why its ownership is sufficiently established.
+Future Agentagon reuse does not require a new allowlist decision. It does
+require an exact reuse-ledger row before or with the implementing change,
+including source path/commit, destination, method, license, data boundary, and
+whether the source itself contains narrower third-party material.
