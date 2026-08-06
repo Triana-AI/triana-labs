@@ -8,6 +8,7 @@ export default async function RunPage() {
   const { run } = labsReport;
   return (
     <LabsPage
+      surface="runs"
       eyebrow="Recorded execution"
       title="Conversation runs"
       summary="Each selected case has one independent recorded conversation; weaker states stay visible."
@@ -18,7 +19,7 @@ export default async function RunPage() {
         <section><h2>Simulated users</h2><strong>{run.simulator.identity_count} fixed identities</strong><span>{run.simulator.provider_label}</span><code>{run.simulator.model_label}</code></section>
         <section><h2>Privacy and egress</h2><strong>Synthetic use recorded</strong><span>{run.privacy_egress.provider}</span><span>{run.privacy_egress.target}</span></section>
       </div>
-      <Section title="Execution limits" description="The recorded run used no retry, repair, or fallback.">
+      <Section tone="light" title="Execution limits" description="The recorded run used no retry, repair, or fallback.">
         <div className="summary-strip limits-strip">
           <Fact label="Selected cases"><span className="num">{run.limits.selected_case_count}</span></Fact>
           <Fact label="Turn limit"><span className="num">{run.limits.max_turns_per_conversation}</span></Fact>
@@ -29,7 +30,7 @@ export default async function RunPage() {
         </div>
         <p className="policy-line"><span>{run.limits.retry_policy} retry</span><span>{run.limits.repair_policy} repair</span><span>{run.limits.fallback_policy} fallback</span></p>
       </Section>
-      <Section title="Recorded conversations" description="Open a row for transcript, case context, gaps, and evidence.">
+      <Section tone="dark" title="Recorded conversations" description="Open a row for transcript, case context, gaps, and evidence.">
         <div className="operational-list run-list">
           {run.conversation_order.map((conversationId, index) => {
             const conversation = labsReport.conversations.find((item) => item.conversation_id === conversationId);
