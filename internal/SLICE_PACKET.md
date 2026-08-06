@@ -42,6 +42,25 @@ Outputs:
 Strict parsing, canonical serialization, domain-separated hashes, and typed
 unknown/non-computable states are mandatory.
 
+The frozen public Python seam is:
+
+```text
+run_trace_to_eval(manifest_path, output_dir, *, semantic_model=None) -> report
+append_human_ruling(output_dir, ruling) -> accepted_ruling
+```
+
+Both are exported from `triana_labs.trace_to_eval`. The first reads the
+manifest-declared source path, writes canonical report/review artifacts, and
+returns the same report object. The second validates against the exact report
+and review queue and appends without rewriting prior rulings. A semantic model
+is a duck-typed structured-JSON boundary so tests need no provider dependency.
+
+The local operator HTTP/UI seam is `POST /api/v1/trace-to-eval/runs`,
+`GET /api/v1/trace-to-eval/reports/{report_id}`,
+`POST /api/v1/trace-to-eval/reports/{report_id}/rulings`, and `/analysis`.
+These routes are local-only in this tranche and do not change authenticated
+self-serve authorization.
+
 ## Public behavior
 
 | Condition | Behavior |
@@ -168,3 +187,26 @@ valid RED. After the test bytes are frozen, one independent implementation
 author works only in production-owned paths. The orchestrator alone verifies,
 inspects, reconciles, and declares completion. Optional gaps do not stop work;
 privacy/integrity/authority/budget violations do.
+
+## Independent RED freeze — 2026-08-07
+
+The independent test author owns exactly
+`triana-labs/tests/trace_to_eval/test_trace_to_eval_v0.py`, SHA-256
+`f2217bec08c2dd1eb07adca430215f789e0cddbd200373d192aa7818eb1f99a9`.
+It freezes five black-box engine behaviors: grounded accounting and group-safe
+splits; optional typed gaps; ungrounded semantic rejection; cached replay plus
+fresh disagreement visibility; and deterministic review with append-only
+rulings. Backend/UI route tests remain an explicit orchestrator integration
+responsibility because no pre-existing route seam could produce behavior RED.
+
+Valid RED command:
+
+```text
+cd triana-labs && UV_CACHE_DIR=/private/tmp/triana-uv-cache \
+  uv run --locked pytest -q tests/trace_to_eval
+```
+
+Observed result: five failures, each at the first product boundary because
+`triana_labs.trace_to_eval` does not exist. There were no syntax, fixture,
+dependency, or collection failures. The test-owned file is now frozen; the
+implementation author may read but not edit it.
