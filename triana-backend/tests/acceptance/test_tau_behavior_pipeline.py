@@ -7,6 +7,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from sqlalchemy.dialects import postgresql
+
+from triana_backend.composition import _persist_artifact
+from triana_backend.domain.models import ArtifactKind, ArtifactRef
 from triana_backend.services.report_projection import (
     PersistedLabsFact,
     ReportProjectionInput,
@@ -104,3 +108,40 @@ def test_preview_trace_report_exposes_only_deterministic_structural_authority() 
     assert legacy["behavior"]["groups"] == []
     assert legacy["behavior"]["derivation_kind"] == "NOT_PERFORMED"
     assert legacy["behavior"]["semantic_summary_authority"] == "NOT_PERFORMED"
+
+
+def test_non_auth_dbos_artifact_persistence_converges_on_deterministic_id() -> None:
+    class CapturingSession:
+        def __init__(self) -> None:
+            self.statements: list[Any] = []
+
+        def execute(self, statement: Any) -> None:
+            self.statements.append(statement)
+
+    ref = ArtifactRef(
+        id="art_deterministic",
+        kind=ArtifactKind.LABS_ANALYSIS_FACTS,
+        content_sha256="a" * 64,
+        byte_count=123,
+        media_type="application/json",
+        storage_bucket="private-artifacts",
+        storage_key="artifacts/labs-analysis/a.json",
+        kms_key_id="kms-key",
+        checksum_sha256_b64="YQ==",
+    )
+    session = CapturingSession()
+    _persist_artifact(session, ref)  # type: ignore[arg-type]
+    _persist_artifact(session, ref)  # type: ignore[arg-type]
+
+    compiled = [
+        statement.compile(dialect=postgresql.dialect())
+        for statement in session.statements
+    ]
+    sql = " ".join(str(compiled[0]).split())
+    assert len(compiled) == 2
+    assert str(compiled[0]) == str(compiled[1])
+    assert compiled[0].params == compiled[1].params
+    assert compiled[0].params["id"] == ref.id
+    assert "workspace_id" not in compiled[0].params
+    assert "ON CONFLICT DO NOTHING" in sql
+    assert "ON CONFLICT (" not in sql
