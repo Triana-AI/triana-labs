@@ -1018,3 +1018,21 @@ magic-link verification also remains externally blocked because no Supabase
 project URL, publishable key, issuer, audience, JWKS URL, and public TLS origin
 are configured. Neither gap authorizes a workaround, deployment, or invented
 pass.
+
+Trace-to-Eval local morning replay (2026-08-07): the checked-in valid synthetic
+PreviewTrace produced the identical canonical report ID
+`sha256:328bc47d527fbf7c01d2c2546dd1c468710eb77decbe44f5ebc336db42f3191d`
+through direct CLI, loopback backend, and the visible `/analysis` flow. The
+retained controlled-semantic report
+`sha256:33d050ea6fffd32dbcf4a0fb2f50751c0f0d4da2488236bd75ca5babe79acc19`
+rendered 12 conversations, three populations, three primary eval proposals, a
+bounded review queue, and cited `trace-01` evidence in the reusable
+ConversationViewer. The former proves deterministic runtime parity; the latter
+proves semantic/report/review UI projection only and is not a live-provider
+quality claim.
+
+AWS policy read-check command `039aec91-5ae6-4c01-b15c-f7fed315a08e`
+confirmed the runtime role still lacks `s3:ListBucket` for `workspaces/`.
+Operator IAM introspection is itself unavailable, so the check ran read-only
+from the existing instance role and performed no object write. Do not rerun the
+real persistence smoke until the exact runbook policy is confirmed added.

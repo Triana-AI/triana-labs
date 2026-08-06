@@ -94,3 +94,29 @@ available and records a typed semantic gap.
 7. Treat every `UNAVAILABLE` or `PARTIAL` gap as a gap—not as zero, pass, or
    evidence that the capability ran.
 
+## Verified 2026-08-07 local examples
+
+The smallest deterministic smoke uses the checked-in synthetic fixture:
+
+```bash
+cd /Users/akarshgajbhiye/triana/triana-labs
+UV_CACHE_DIR=/private/tmp/triana-uv-cache \
+uv run --locked triana analysis run \
+  /Users/akarshgajbhiye/triana/triana-labs/tests/fixtures/valid_all_events.jsonl \
+  --source-kind preview-trace-jsonl \
+  --out /private/tmp/triana-cli-smoke-20260807
+```
+
+CLI, loopback backend, and `/analysis` all produced report
+`sha256:328bc47d527fbf7c01d2c2546dd1c468710eb77decbe44f5ebc336db42f3191d`
+with 1/1 accepted conversation, three turns, observed tool activity, and typed
+semantic/outcome/persistence gaps.
+
+For UI-only review and ConversationViewer inspection, the retained synthetic
+semantic test artifact at `/private/tmp/triana-ui-local-artifacts` contains
+report
+`sha256:33d050ea6fffd32dbcf4a0fb2f50751c0f0d4da2488236bd75ca5babe79acc19`.
+It renders 12 conversations, three proposed populations, exactly three primary
+eval proposals, bounded pair/eval review items, and cited DEVELOPMENT evidence.
+This artifact uses a controlled test semantic model; it proves projection,
+grounding checks, review custody, and UI behavior—not live provider quality.

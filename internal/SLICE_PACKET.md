@@ -441,3 +441,28 @@ magic link and authenticated browser smoke also cannot run until an external
 Supabase tenant supplies project/build/JWKS/public-origin configuration. These
 are typed launch gates; they do not weaken the local product-loop evidence or
 permit a less isolated storage path.
+
+### Local replay and visible-product audit — 2026-08-07
+
+After the integration commit, the orchestrator replayed a valid checked-in
+synthetic PreviewTrace through all three local surfaces. Direct CLI, loopback
+backend, and browser UI agreed on report
+`sha256:328bc47d527fbf7c01d2c2546dd1c468710eb77decbe44f5ebc336db42f3191d`,
+1/1 acceptance, three turns, observed tool activity, and the same five typed
+gaps. The CLI artifacts are retained under
+`/private/tmp/triana-cli-smoke-20260807`; report, queue, and conversation file
+SHA-256 values are respectively
+`6bfa4d605954375a1d6f55b917dda22d19d8ddbc0478cb8abd4cdec0d33ad7b6`,
+`2deaeb31368f10ba872d27d61f3e721e9cb16b9bf4bbaefa1d10849aebec0d74`,
+and `4cee94ac3e4158e100f95f30aebd30643cd2ca963b557ee2edc4d1e130576880`.
+
+The browser then loaded retained controlled-semantic report
+`sha256:33d050ea6fffd32dbcf4a0fb2f50751c0f0d4da2488236bd75ca5babe79acc19`:
+12 conversations, three proposed populations, exactly three primary evals,
+stable three-run test semantics, a bounded pair/eval review queue, and cited
+`trace-01` DEVELOPMENT evidence rendered by `ConversationViewer`. This is a
+test-model projection proof, not a new Azure result. No human ruling was
+invented during the audit.
+
+The subsequent read-only instance-role check again returned `AccessDenied` for
+`s3:ListBucket` on the workspace prefix. No remote object write was attempted.
