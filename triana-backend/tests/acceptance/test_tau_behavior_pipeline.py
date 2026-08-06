@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.dialects import postgresql
 
+from triana_backend import composition
 from triana_backend.composition import _persist_artifact
 from triana_backend.domain.models import ArtifactKind, ArtifactRef
 from triana_backend.services.report_projection import (
@@ -145,3 +146,46 @@ def test_non_auth_dbos_artifact_persistence_converges_on_deterministic_id() -> N
     assert "workspace_id" not in compiled[0].params
     assert "ON CONFLICT DO NOTHING" in sql
     assert "ON CONFLICT (" not in sql
+
+
+def test_persisted_analysis_fact_kinds_are_supplemented_once() -> None:
+    def wire_fact(kind: str, value: Any) -> dict[str, Any]:
+        return {
+            "authority": "DETERMINISTIC",
+            "fact_id": f"fact-{kind}",
+            "fact_kind": kind,
+            "schema_version": 1,
+            "value": value,
+        }
+
+    preview_rows = composition._facts_with_supplements(
+        [
+            wire_fact("physical_record_count", 57),
+            wire_fact("rejected_record_count", 0),
+            wire_fact("rejection_summary", {}),
+        ],
+        rejected=[],
+        result_hash="preview-result",
+    )
+    preview_by_kind = {row["fact_kind"]: row for row in preview_rows}
+    assert len(preview_by_kind) == len(preview_rows)
+    assert preview_by_kind["rejected_record_count"]["value"] == 0
+    assert preview_by_kind["rejection_summary"]["value"] == {}
+    assert preview_by_kind["rejected_evidence"]["value"] == []
+
+    rejected = [
+        {"reason_code": "SOURCE_EXECUTION_INCOMPLETE", "record_id": "a"},
+        {"reason_code": "SOURCE_EXECUTION_INCOMPLETE", "record_id": "b"},
+    ]
+    hrai_rows = composition._facts_with_supplements(
+        [wire_fact("physical_record_count", 2)],
+        rejected=rejected,
+        result_hash="hrai-result",
+    )
+    hrai_by_kind = {row["fact_kind"]: row for row in hrai_rows}
+    assert len(hrai_by_kind) == len(hrai_rows)
+    assert hrai_by_kind["rejected_record_count"]["value"] == 2
+    assert hrai_by_kind["rejection_summary"]["value"] == {
+        "SOURCE_EXECUTION_INCOMPLETE": 2
+    }
+    assert hrai_by_kind["rejected_evidence"]["value"] == rejected
