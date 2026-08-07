@@ -1100,3 +1100,16 @@ The owner reports upgraded Luna capacity, so the historical capacity-10 code
 assertion must be replaced only after current read-only Azure identity/capacity
 preflight; the local CLI could confirm the active subscription but returned no
 matching cognitive-account inventory during this planning turn.
+
+Behavior Map local implementation exit (2026-08-07): the independently frozen
+38-case contract is GREEN together with all 43 adjacent Trace-to-Eval tests.
+The engine now performs per-conversation multi-goal extraction, bounded lossless
+global population/behavior consolidation, exact evidence validation, explicit
+unknown/emerging routing, independent audit handling, deployment-bound immutable
+checkpoint reuse, whole-run cumulative budget preflight, post-call lineage, and
+equivalent JSON/Markdown/plain-HTML reports. The local CLI uses separately bound
+Terra primary and Luna auditor configuration with no retry or fallback. No live
+provider call occurred during implementation. The next gate is the single
+authorized DEVELOPMENT-only TAU² Retail run followed by a human usefulness and
+evidence audit; application UI/backend work remains deferred until that report
+passes.

@@ -242,6 +242,7 @@ class FoundryStructuredSemanticModel:
     endpoint: str
     api_key: str
     timeout_seconds: int = 120
+    provider: str = "MICROSOFT_FOUNDRY_OPENAI_V1"
     call_count: int = 0
     attempted_call_count: int = 0
     input_tokens: int = 0
@@ -252,6 +253,10 @@ class FoundryStructuredSemanticModel:
     max_reserved_usd: float = 25.0
     reservation_usd_per_call: float = 0.15
     last_failure_code: str | None = None
+    deployment_version: str | None = None
+    sku: str | None = None
+    capacity: int | None = None
+    credential_boundary_id: str | None = None
 
     @classmethod
     def from_environment(
@@ -281,7 +286,12 @@ class FoundryStructuredSemanticModel:
             or parsed.fragment
         ):
             raise ValueError("TRACE_TO_EVAL_FOUNDRY_CONFIG_INVALID")
-        return cls(model_id=model_id, endpoint=endpoint.rstrip("/"), api_key=api_key)
+        return cls(
+            model_id=model_id,
+            endpoint=endpoint.rstrip("/"),
+            api_key=api_key,
+            provider="MICROSOFT_FOUNDRY_FIREWORKS",
+        )
 
     def complete_json(
         self,
@@ -357,9 +367,15 @@ class FoundryStructuredSemanticModel:
         return parsed.model_dump(mode="json")
 
     def lineage(self) -> JsonObject:
+        endpoint = urlsplit(self.endpoint)
         return {
-            "provider": "MICROSOFT_FOUNDRY_FIREWORKS",
+            "provider": self.provider,
             "model_id": self.model_id,
+            "endpoint_origin": f"{endpoint.scheme}://{endpoint.netloc}{endpoint.path}",
+            "deployment_version": self.deployment_version,
+            "sku": self.sku,
+            "capacity": self.capacity,
+            "credential_boundary_id": self.credential_boundary_id,
             "call_count": self.call_count,
             "attempted_call_count": self.attempted_call_count,
             "successful_call_count": self.call_count,

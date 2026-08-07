@@ -2,11 +2,12 @@
 
 Date: 2026-08-07
 
-Status: **owner-selected release direction; implementation packet to follow**
+Status: **Phase 1 local engine green; real TAU proof and product audit pending**
 
 Authority: `triana-labs/CHARTER.md`, `internal/DECISION_LOG.md`, and this
 bounded product decision. The implementation entry gate remains
-`internal/SLICE_PACKET.md` and must be replaced before production edits.
+`internal/SLICE_PACKET.md`; its local implementation gate is green and its live
+TAU proof remains open.
 
 ## Product sentence
 
