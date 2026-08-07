@@ -1113,3 +1113,15 @@ provider call occurred during implementation. The next gate is the single
 authorized DEVELOPMENT-only TAU² Retail run followed by a human usefulness and
 evidence audit; application UI/backend work remains deferred until that report
 passes.
+
+Behavior Map first TAU proof finding (2026-08-07): exact deployment preflight
+and a DEVELOPMENT-only derivative manifest passed with 34 semantic
+conversations and 23 sealed conversations. The first no-fallback run produced
+three valid Terra checkpoints for `tau2-10`, then Terra consistently failed the
+next independent conversation and Luna failed its first audit item. One explicit
+checkpoint continuation charged the prior reservation forward and reproduced
+both failures; execution stopped rather than loop. The partial map correctly
+separated an aggregate two-order return demand, revised refund destinations,
+and later human-transfer demand, but one failed unit aborted all later work.
+The active correction is per-conversation and per-audit-item typed isolation so
+unaffected evidence continues without retrying or hiding the failed unit.

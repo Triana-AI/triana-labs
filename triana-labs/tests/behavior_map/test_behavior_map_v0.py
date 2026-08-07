@@ -2666,3 +2666,169 @@ def test_human_report_summarizes_generic_deterministic_tool_evidence(
         assert "50 tool calls" in document
         assert "lookup record" in document
         assert document.count("CALLED_TOOL") <= 1
+
+
+class _OneConversationFailureModel(_ScaleSemanticModel):
+    def __init__(self, failed_conversation_id: str) -> None:
+        super().__init__()
+        self.failed_conversation_id = failed_conversation_id
+        self.extraction_attempts: list[str] = []
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            conversation_ids = [
+                str(row["conversation_id"]) for row in payload["conversations"]
+            ]
+            self.extraction_attempts.extend(conversation_ids)
+            if self.failed_conversation_id in conversation_ids:
+                self.provider_calls += 1
+                raise ValueError("SEMANTIC_PROVIDER_CALL_FAILED")
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def test_one_conversation_extraction_failure_isolated_without_retry(
+    tmp_path: Path,
+) -> None:
+    conversation_ids = [f"scale-{index:02d}" for index in range(6)]
+    failed_id = conversation_ids[1]
+    primary = _OneConversationFailureModel(failed_id)
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, len(conversation_ids)),
+        output,
+        primary_model=primary,
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    assert primary.extraction_attempts.count(failed_id) == 1
+    assert set(conversation_ids[2:]) <= set(primary.extraction_attempts)
+    successful_ids = set(conversation_ids) - {failed_id}
+    assert successful_ids <= {str(row["conversation_id"]) for row in report["episodes"]}
+    assert failed_id not in {str(row["conversation_id"]) for row in report["episodes"]}
+    failure_rows = [
+        row
+        for row in report["gaps"]
+        if row["code"]
+        in {"SEMANTIC_EXTRACTION_FAILED", "SEMANTIC_PROVIDER_CALL_FAILED"}
+    ]
+    assert any(failed_id in json.dumps(row, sort_keys=True) for row in failure_rows)
+    assert any(
+        failed_id in json.dumps(row, sort_keys=True)
+        for row in report["emerging_unknown"]
+    )
+    checkpointed_conversation_ids = {
+        str(conversation["conversation_id"])
+        for path in (output / "behavior-map-checkpoints").glob("*.json")
+        for checkpoint in [json.loads(path.read_bytes())]
+        if isinstance(checkpoint.get("result", {}).get("episodes"), list)
+        for conversation in checkpoint.get("payload", {}).get("conversations", [])
+    }
+    assert successful_ids <= checkpointed_conversation_ids
+    assert failed_id not in checkpointed_conversation_ids
+
+
+class _OneAuditItemFailureModel(_SemanticModel):
+    def __init__(self) -> None:
+        super().__init__("luna-test-v0")
+        self.failed_item_id: str | None = None
+        self.failed_item: dict[str, Any] | None = None
+        self.item_attempts: dict[str, int] = {}
+        self.successful_item_ids: set[str] = set()
+        self.failed_once = False
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "audits" not in set(getattr(schema, "model_fields", {})):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+        items = list(payload["items"])
+        if self.failed_item_id is None:
+            target = next(
+                item
+                for item in items
+                if "population_id" in item or "pattern_id" in item
+            )
+            self.failed_item_id = _first_id(target)
+            self.failed_item = deepcopy(target)
+        item_ids = [_first_id(item) for item in items]
+        for item_id in item_ids:
+            self.item_attempts[item_id] = self.item_attempts.get(item_id, 0) + 1
+        if self.failed_item_id in item_ids and not self.failed_once:
+            self.failed_once = True
+            self.provider_calls += 1
+            self.requests.append(
+                {"stage": stage, "system": system, "payload": deepcopy(payload)}
+            )
+            raise ValueError("SEMANTIC_PROVIDER_CALL_FAILED")
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        self.successful_item_ids.update(item_ids)
+        return result
+
+
+def test_one_audit_item_failure_isolated_and_later_items_continue(
+    tmp_path: Path,
+) -> None:
+    auditor = _OneAuditItemFailureModel()
+    report, _, _, _ = _run(tmp_path, auditor=auditor)
+    assert auditor.failed_item_id is not None and auditor.failed_item is not None
+    assert auditor.item_attempts[auditor.failed_item_id] == 1
+    assert auditor.successful_item_ids
+    assert auditor.failed_item_id not in auditor.successful_item_ids
+    ruled_item_ids = {str(row["item_id"]) for row in report["semantic_audit"]["items"]}
+    assert auditor.successful_item_ids <= ruled_item_ids
+    assert auditor.failed_item_id not in ruled_item_ids
+    assert any(
+        auditor.failed_item_id in json.dumps(row, sort_keys=True)
+        and row["code"]
+        in {
+            "SEMANTIC_AUDIT_ITEM_FAILED",
+            "SEMANTIC_AUDIT_MISSING",
+            "SEMANTIC_PROVIDER_CALL_FAILED",
+        }
+        for row in report["gaps"]
+    )
+    public_item_ids = {
+        str(row[key])
+        for key, rows in (
+            ("population_id", report["populations"]),
+            ("pattern_id", report["behavior_patterns"]),
+        )
+        for row in rows
+    }
+    assert auditor.failed_item_id not in public_item_ids
+    occurrence_by_id = {
+        str(row["occurrence_id"]): row for row in report["behavior_occurrences"]
+    }
+    affected_episode_ids = set(map(str, auditor.failed_item.get("episode_ids", [])))
+    for occurrence_id in auditor.failed_item.get("occurrence_ids", []):
+        affected_episode_ids.update(
+            map(str, occurrence_by_id[occurrence_id]["episode_ids"])
+        )
+    uncertain_episode_ids = {
+        str(row["episode_id"])
+        for row in report["emerging_unknown"]
+        if row["reason"] in {"AUDIT_FAILED", "AUDIT_MISSING"}
+    }
+    assert affected_episode_ids <= uncertain_episode_ids
+    assert all(
+        row["audit_state"] != "PENDING"
+        for row in [*report["populations"], *report["behavior_patterns"]]
+    )

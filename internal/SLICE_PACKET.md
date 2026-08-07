@@ -329,6 +329,10 @@ The test author must freeze black-box cases for:
     evidence anchors.
 42. rejecting one vague behavior routes only its attached members unknown and
     cannot contaminate an unrelated specific valid behavior.
+43. one conversation-level extraction failure is attempted once, becomes a
+    conversation-scoped typed unknown, and cannot stop later conversations;
+44. one audit-item provider failure becomes item-scoped uncertainty, removes
+    that item from primary publication, and cannot stop later audit items.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -395,8 +399,8 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`2e4167dbd84fe32a18bcb7fed2ed5bdc9a9bf10e062bf6f6b1058f8521a58af4`.
-It freezes all forty-two acceptance behaviors listed above across thirty-eight
+`667a29b07b3c65cd1b35c544cd84c060dab5481bbb9425bcb0826075b1ca5516`.
+It freezes all forty-four acceptance behaviors listed above across forty
 black-box cases. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
@@ -423,6 +427,10 @@ amended to freeze those four same-slice obligations, superseding only the test
 hash while preserving the collected test count. The final mixed-specificity
 fixture then proved vague-language routing contaminated unrelated valid
 behavior; its isolation assertion supersedes only the test hash again.
+The first real TAU run then proved one deterministic extraction failure stopped
+all later conversations and one audit failure stopped all later items. Two
+per-unit isolation regressions supersede the test hash and expand the inventory
+without retrying or hiding either failure.
 
 Valid RED command:
 
@@ -435,7 +443,7 @@ Observed result: collection stops only at
 `ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
 3.39 seconds against an isolated export of pre-implementation commit `d35dac1`.
 Ruff check, Ruff format check, Python compilation, file hash, and diff check are
-GREEN. Against the 81-test-green implementation handoff, the final amendment
-produces one aggregated intended failure and thirty-seven passing controls in
-4.00 seconds. The test-owned path is frozen. The implementation author may read
-it but must not edit it.
+GREEN. Against the first real-run implementation, the live correction suite
+produces two intended failures and thirty-eight passing controls in 8.02
+seconds. The test-owned path is frozen. The implementation author may read it
+but must not edit it.
