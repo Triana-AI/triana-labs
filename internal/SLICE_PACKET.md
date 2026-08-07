@@ -632,3 +632,11 @@ cardinality. Freeze the next minimal correction: the instruction must require
 remains unchanged; code must not clip, repair, retry, or otherwise accept an
 overlong list. Independent acceptance owns one additive focused test and the
 implementation author may change only the prompt constant in `semantic.py`.
+
+Independent acceptance is frozen in
+`triana-labs/tests/trace_to_eval/test_facet_evidence_quote_prompt.py` at
+SHA-256 `a59542994830cd8c1782b1ccbdfca1c3738d5684ee90a326d014e9fcae87e448`.
+Its public-boundary case proves the requested schema still carries
+`maxItems: 3` and observes valid RED only because the actual facet system
+instruction lacks the exact one-to-three-per-facet guidance. Ruff and diff
+checks pass.
