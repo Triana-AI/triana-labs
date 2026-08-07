@@ -1078,3 +1078,25 @@ files; 43/43 focused tests, all-files format check, Ruff, and mypy then passed.
 The two affected focused test file hashes were superseded in the decision log;
 the partial-handling acceptance hash remained identical. No semantic default,
 assertion, dependency, provider call, or UI behavior changed.
+
+Behavior Map release reset (2026-08-07): Akarsh split the product into an
+immediate one-upload Phase 1 and deferred eval-oriented Phase 2. Phase 1 uses
+`DemandEpisodeV0` so one conversation may contain several user goals and
+several evidence-linked agent behaviors. It outputs only Corpus overview, User
+Demand Map, Agent Behavior Map, Emerging and Unknown Behavior, Evidence, and
+editable Questions for You through canonical JSON plus Markdown/plain HTML.
+Minimum proposed-population support is three; smaller grounded groups are
+`EMERGING`. Agent context is optional and non-blocking. There is no behavior
+difference, outcome slice, eval suggestion, existing-eval coverage,
+Track/Edit/Defer, L4, simulation, or new application UX in Phase 1. The exact
+product and BM0-BM7 checkpoint plan is
+`internal/BEHAVIOR_MAP_PHASES_2026-08-07.md`. Before production edits, replace
+the completed Trace-to-Eval slice packet with a bounded Behavior Map packet and
+run the independent test-author -> implementation-author -> orchestrator gate.
+Terra is the selected primary semantic author; Luna is a separately identified
+calibration auditor and never silent fallback. Deterministic code validates
+evidence and owns accounting. The cumulative semantic budget is now USD 50.
+The owner reports upgraded Luna capacity, so the historical capacity-10 code
+assertion must be replaced only after current read-only Azure identity/capacity
+preflight; the local CLI could confirm the active subscription but returned no
+matching cognitive-account inventory during this planning turn.
