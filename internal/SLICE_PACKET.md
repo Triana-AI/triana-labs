@@ -710,3 +710,13 @@ freeze absence of provider-side `maxItems`, exact-substring filtering, stable
 first-three selection, and rejection when no exact quote survives. Production
 may change only `_Facet.evidence_quotes` in `semantic.py`. No provider call
 occurs until focused and full suites are GREEN.
+
+The superseding independent test contract is frozen in the same focused file
+at new SHA-256
+`5fbe119397a7d9c3624a13233a8b5f0178ccbf2c905d6ac4023731ef4f93606d`.
+Three cases freeze prompt guidance without provider `maxItems`, stable
+first-three exact-substring projection from an overlong proposal, and a public
+semantic gap when no exact quote survives. Observed RED is two failures solely
+at the current provider-side maximum-three schema; the no-grounded-quote gap
+already passes. This supersedes the earlier `a5954299...` test-file hash and
+maximum-three provider-schema assertion, not its prompt-guidance requirement.
