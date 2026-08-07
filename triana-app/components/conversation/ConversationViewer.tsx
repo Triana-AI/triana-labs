@@ -28,7 +28,7 @@ function Event({ event }: { event: ConversationEvent }) {
   if (event.kind === "message") return (
     <article className="conversation-event message-event" data-role={event.role}>
       <header><strong>{event.role}</strong><code>{sequence}</code></header>
-      <p>{event.content}</p>
+      <p className="conversation-message-text">{event.content}</p>
     </article>
   );
   if (event.kind === "tool_call") return (
@@ -73,7 +73,7 @@ export function ConversationViewer({ conversation, context }: { conversation: Co
           <article className="conversation-event gap-event"><strong>Evidence gap</strong><p>No conversation events were recorded.</p></article>
         )}
       </section>
-      {context ? <aside className="conversation-context">{context}</aside> : null}
+      {context ? <aside className="conversation-context conversation-evidence-pane">{context}</aside> : null}
     </div>
   );
 }
