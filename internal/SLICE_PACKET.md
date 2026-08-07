@@ -605,3 +605,13 @@ Correction change budget:
 - no provider call until the new tests and full suite are GREEN; after GREEN,
   one distinct TAU analysis may run with at most 15 calls and USD 2.25 newly
   reserved, still without retry or fallback.
+
+Independent acceptance is frozen in
+`triana-labs/tests/trace_to_eval/test_semantic_byte_bounded_batching.py` at
+SHA-256 `e7b48a860777ff97a2cab1626297e13bf8744633cf2483181c9737680bd0becd`.
+Its three black-box cases cover greedy order/exactly-once preservation under
+both ceilings, unchanged 12/12/1 small-corpus behavior, and pre-attempt refusal
+for one oversized unit. Observed RED is the intended two failures: production
+still sends the first 12 large units together and does not refuse one oversized
+unit; the small-corpus compatibility case already passes. Ruff and diff checks
+are GREEN.
