@@ -1036,3 +1036,20 @@ confirmed the runtime role still lacks `s3:ListBucket` for `workspaces/`.
 Operator IAM introspection is itself unavailable, so the check ran read-only
 from the existing instance role and performed no object write. Do not rerun the
 real persistence smoke until the exact runbook policy is confirmed added.
+
+TAU semantic checkpoint audit (2026-08-07): request-shape compatibility,
+byte-bounded facet batches, grounded evidence projection, exact handling/action
+enums, strict-valid checkpoint/resume, and four-label bounded consolidation are
+GREEN. The four-label value is only a conservative operating bound for the exact
+prompt/schema/payload/deployment/model combination; it is not a Foundry or GLM
+maximum. The cumulative conservative reservation reached approximately USD
+24.60, so provider execution stopped without fallback. Strict checkpoints hold
+two complete 34-conversation DEVELOPMENT runs and 20 stages of run three. Both
+complete runs collapse intent to `Mixed or unresolved demand`, and their
+handling distributions differ slightly; reliable intent populations and stable
+eval proposals therefore remain unproved. A checkpoint-only audit does show a
+useful outcome-linked handling signal in run one: tool-observed handling is
+19/22 successful, handoff/escalation 2/6, information-requested 1/3, and the
+single stalled/repeated trace failed. The active correction is to preserve this
+as proposal-only `PARTIAL` evidence without creating populations, evals, review
+items, passes, or causal claims.

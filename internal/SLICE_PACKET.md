@@ -801,3 +801,58 @@ in final public evidence. Corrected SHA-256 is
 `607091e41d64aeceb1dbc3b126d1d7ad0963fc07437b2a588784c636aa1d1a80`;
 focused and full suites are GREEN with the one-constant production change. This
 supersedes only the incorrect literal-final-key assertion and `055144a0...` hash.
+
+### Partial handling evidence after an incomplete stability run — 2026-08-07
+
+Entry gate: **FROZEN**. The checkpointed TAU execution completed two full
+DEVELOPMENT semantic runs and 20 stages of run three before the cumulative
+semantic reservation reached the owner-authorized USD 25 ceiling. No further
+provider call is authorized. A zero-provider replay of strict-valid exact-
+identity checkpoints proves that runs one and two each cover all 34 DEVELOPMENT
+conversations, while run three is incomplete. Both completed runs collapse the
+intent taxonomy to one `Mixed or unresolved demand` population, so they do not
+support a useful intent-population or eval-proposal claim. They do support
+proposal-only observable handling classifications with exact trace membership.
+
+Freeze the smallest truthful product correction: if at least one fixed semantic
+run completes before a later run fails, the canonical report may retain a
+`PARTIAL` proposal-only handling inventory from completed runs. Populations,
+eval proposals, review items, findings, and passes remain empty until all three
+runs complete and pass the existing stability gate. The report records the
+exact completed-run count and original typed provider/budget failure. When the
+manifest supplies authoritative per-trace outcomes, deterministic code may join
+the first completed run's handling classification to those outcomes and publish
+per-mode support, trace identifiers, success count, failure count, and mean
+reward; without authoritative outcomes this aggregate is absent. Semantic code
+does not invent reward, success, failure, or causal attribution.
+
+The TAU checkpoint-only audit is evidence, not acceptance input: run one
+classified 22 traces as `TOOL_ACTION_OBSERVED` (19 success, 3 failure, mean
+reward 0.863636), six as `HANDOFF_OR_ESCALATION` (2 success, 4 failure, mean
+0.333333), three as `INFORMATION_REQUESTED` (1 success, 2 failure, mean
+0.333333), and one each as `INFORMATION_RETURNED` (success),
+`NO_CLEAR_HANDLING` (success), and `STALLED_OR_REPEATED` (failure). Run two's
+handling distribution differs on three records, so the report must not call the
+classification stable.
+
+Change budget:
+
+- independent test author: one additive black-box test file, at most five cases;
+- implementation author: `triana-labs/src/triana_labs/trace_to_eval/__init__.py`
+  and `semantic.py` only, at most 180 changed physical lines;
+- UI implementation, after engine GREEN: the two existing analysis report
+  components and their existing TypeScript report types/tests only, at most 180
+  changed physical lines;
+- orchestrator: canonical governance/evidence, one checkpoint-only TAU report
+  replay, and local UI verification;
+- no provider call, fallback, retry, new dependency, auth/backend persistence
+  redesign, migration, deployment, infrastructure, holdout opening, population
+  acceptance, or causal failure label.
+
+Acceptance: incomplete run retention is exact and typed; zero completed runs
+retain no semantic inventory; authoritative outcome arithmetic reconciles to its
+published denominator and exact trace IDs; missing outcomes stay absent; no
+partial evidence enters the review queue; existing three-run success behavior
+and all deterministic report identities remain covered. The test author owns
+the acceptance contract, the implementation author owns production, and the
+orchestrator owns the final verdict.
