@@ -603,8 +603,13 @@ Correction change budget:
   physical lines;
 - orchestrator: append-only governance and local evidence records;
 - no provider call until the new tests and full suite are GREEN; after GREEN,
-  one distinct TAU analysis may run with at most 15 calls and USD 2.25 newly
-  reserved, still without retry or fallback.
+  one distinct TAU analysis may run with at most 30 calls and USD 4.50 newly
+  reserved, still without retry or fallback. This supersedes the preliminary
+  15-call/USD 2.25 estimate: the GREEN batcher deterministically projects the
+  34 DEVELOPMENT conversations into nine facet batches, so three independent
+  semantic runs require `3 × (9 facet + 1 consolidation) = 30` calls. Exact
+  planned batch sizes are 4/3/3/5/5/5/5/3/1 and all canonical request contents
+  are at or below 59,856 bytes.
 
 Independent acceptance is frozen in
 `triana-labs/tests/trace_to_eval/test_semantic_byte_bounded_batching.py` at
