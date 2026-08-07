@@ -466,3 +466,86 @@ invented during the audit.
 
 The subsequent read-only instance-role check again returned `AccessDenied` for
 `s3:ListBucket` on the workspace prefix. No remote object write was attempted.
+
+## Owner micro-slice: Foundry JSON-object compatibility and TAU handling patterns
+
+Entry gate: **FROZEN 2026-08-07**. Akarsh selected handling and failure patterns
+instead of first-broken-link/L4 for the immediate product and authorized a
+bounded live TAU² semantic run using the existing HR-AI Azure configuration.
+The first one-call synthetic preflight attempted exactly one request, reserved
+USD 0.15, made no retry or fallback, and failed before a schema-valid result.
+This isolates the provider wire rather than TAU data.
+
+Repository evidence identifies the smallest falsifiable compatibility
+hypothesis. HR-AI commit `9c00cae4576080174d0e741edd8af700c31bc4ca`
+uses `ChatOpenAI(model, api_key, base_url)` directly against the Foundry
+`/openai/v1` surface with no `api-version` query or duplicate `api-key` header.
+Kairos-AI commit `a37e5c0760d8a49996381b93c26dcfa7599c3f5e`
+uses `response_format={"type":"json_object"}` followed by deterministic JSON
+and schema validation. Triana currently requests strict `json_schema` through
+LangChain and adds the legacy query/header shape. The hypothesis is that this
+wire—not trace semantics—is incompatible with the pinned GLM deployment.
+
+Outcome: preserve the exact staged facet/consolidation Pydantic schemas and all
+grounding, membership, qualification, stability, split, budget, no-retry,
+no-fallback, and human-authority behavior while replacing only the provider
+wire with HR-AI-compatible OpenAI-v1 JSON-object generation. Deterministic code
+must parse and validate the returned JSON against the exact requested Pydantic
+schema before any semantic row can enter a report. Provider content remains
+untrusted proposal data.
+
+Input/output authority:
+
+- input remains the DEVELOPMENT-only trace projection plus stage and requested
+  schema; calibration/holdout bodies remain unopened;
+- the model may author only values conforming to the requested schema;
+- deterministic code owns request byte/call/cost ceilings, parsing, strict
+  schema validation, evidence substrings, membership, qualification, report
+  identity, and typed failure;
+- humans own population meaning, accepted taxonomy, eval acceptance/editing,
+  and any reward mapping not supplied by the TAU harness;
+- TAU official reward remains the only authoritative outcome joined in this
+  run. Handling/failure patterns are observable/proposed categories, not causal
+  first-broken-link judgments.
+
+Privacy/execution: the exact verified TAU² archive is synthetic and already
+authorized for the pinned `FW-GLM-5.2` provider. Execution and artifacts remain
+local/private. No AWS write, deployment, Supabase, fallback provider/model,
+retry, repair, raw provider response persistence, or secret output is allowed.
+The cumulative Trace-to-Eval semantic reservation remains below USD 25.
+
+Change budget:
+
+- test author: one additive focused file under
+  `triana-labs/tests/trace_to_eval/`, at most eight black-box cases;
+- implementation author: only
+  `triana-labs/src/triana_labs/trace_to_eval/semantic.py`, at most 150 changed
+  physical lines;
+- orchestrator: slice/decision/provenance/runbook evidence plus a bounded
+  handling/failure-pattern report projection only after provider compatibility
+  is GREEN;
+- no dependency, schema migration, app redesign, backend/auth change, raw data,
+  or unrelated cleanup.
+
+Acceptance:
+
+1. The Foundry client matches the HR-AI OpenAI-v1 connection shape and sends
+   `response_format={"type":"json_object"}` with the requested JSON schema in
+   the instruction; it sends no legacy `api-version`, duplicate `api-key`,
+   retry, or fallback.
+2. Valid JSON is strictly validated by the requested Pydantic model and then
+   projected exactly as before. Invalid JSON, unknown/missing fields, or wrong
+   types produce closed content-free failure codes and no semantic row.
+3. Attempted/successful calls, usage when returned, reserved cost, and the
+   most specific failure stage remain visible without response bodies or
+   secrets; a generic outer failure cannot erase a specific wire/schema code.
+4. Existing staged semantic, grounding, stability, review, and no-provider
+   tests remain GREEN and frozen hashes remain unchanged.
+5. Only after local GREEN, one new synthetic transport preflight may make one
+   call. Only after that passes may one TAU² semantic run execute. Neither is a
+   retry of the consumed failed request; each has a distinct stage/input and
+   the same no-retry policy.
+6. The resulting TAU report must reconcile 57 conversations and official
+   39/18 outcomes, expose grounded populations plus at most three evals or
+   exact typed gaps, and support a bounded review queue and cited
+   ConversationViewer evidence without L4/causal language.
