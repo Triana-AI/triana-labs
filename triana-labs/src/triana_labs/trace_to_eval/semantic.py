@@ -5,8 +5,6 @@ consolidate bounded semantic proposals.  Code validates exact evidence, owns
 membership, exhaustive candidate construction, qualification, and selection.
 """
 
-# ruff: noqa: TRY004 - typed ValueError codes are the public provider boundary.
-
 from __future__ import annotations
 
 import json
@@ -171,32 +169,47 @@ class FoundryStructuredSemanticModel:
             model=self.model_id,
             api_key=SecretStr(self.api_key),
             base_url=self.endpoint,
-            default_headers={"api-key": self.api_key},
-            default_query={"api-version": "2024-05-01-preview"},
             max_retries=0,
             max_completion_tokens=self.max_output_tokens_per_call,
             temperature=0,
             timeout=self.timeout_seconds,
         )
-        structured = model.with_structured_output(
-            schema, method="json_schema", include_raw=True, strict=True
+        requested_schema = json.dumps(
+            schema.model_json_schema(),
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
         )
-        result = structured.invoke(
-            [
-                SystemMessage(content=system),
-                HumanMessage(content=request_content),
-            ]
-        )
-        if not isinstance(result, dict) or result.get("parsing_error") is not None:
-            raise ValueError("SEMANTIC_SCHEMA_INVALID")
-        parsed = result.get("parsed")
-        if not isinstance(parsed, BaseModel):
-            raise ValueError("SEMANTIC_SCHEMA_INVALID")
-        raw = result.get("raw")
+        instruction = f"{system}\nRequested JSON schema:\n{requested_schema}"
+        try:
+            raw = model.bind(response_format={"type": "json_object"}).invoke(
+                [
+                    SystemMessage(content=instruction),
+                    HumanMessage(content=request_content),
+                ]
+            )
+        except Exception:  # noqa: BLE001 - redact the provider boundary.
+            self.last_failure_code = "SEMANTIC_PROVIDER_CALL_FAILED"
+            raise ValueError("SEMANTIC_PROVIDER_CALL_FAILED") from None
+
         usage = getattr(raw, "usage_metadata", None)
         if isinstance(usage, dict):
             self.input_tokens += int(usage.get("input_tokens", 0) or 0)
             self.output_tokens += int(usage.get("output_tokens", 0) or 0)
+        content = getattr(raw, "content", None)
+        if not isinstance(content, str) or not content.strip():
+            self.last_failure_code = "SEMANTIC_RESPONSE_CONTENT_MISSING"
+            raise ValueError("SEMANTIC_RESPONSE_CONTENT_MISSING")
+        try:
+            decoded = json.loads(content)
+        except json.JSONDecodeError:
+            self.last_failure_code = "SEMANTIC_RESPONSE_JSON_INVALID"
+            raise ValueError("SEMANTIC_RESPONSE_JSON_INVALID") from None
+        try:
+            parsed = schema.model_validate(decoded, strict=True)
+        except (TypeError, ValueError):
+            self.last_failure_code = "SEMANTIC_SCHEMA_INVALID"
+            raise ValueError("SEMANTIC_SCHEMA_INVALID") from None
         self.call_count += 1
         return parsed.model_dump(mode="json")
 
@@ -230,7 +243,8 @@ class FoundryStructuredSemanticModel:
     def record_failure(self, code: str) -> None:
         """Record one content-free provider boundary failure for lineage."""
 
-        self.last_failure_code = code
+        if self.last_failure_code is None:
+            self.last_failure_code = code
 
 
 def _transcript(trace: JsonObject) -> str:
