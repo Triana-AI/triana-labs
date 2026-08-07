@@ -856,3 +856,33 @@ partial evidence enters the review queue; existing three-run success behavior
 and all deterministic report identities remain covered. The test author owns
 the acceptance contract, the implementation author owns production, and the
 orchestrator owns the final verdict.
+
+Engine acceptance is frozen at SHA-256
+`5b216a06e5b0f88d896ac9a343c0c8984b0773d37e0f43d52810c0054404d2b0`.
+Three black-box cases were valid RED at completed-run retention and GREEN after
+the bounded implementation; all 43 Trace-to-Eval tests, Ruff, and mypy pass.
+
+UI projection gate: **FROZEN after engine GREEN**. Both the local `/analysis`
+report and authenticated per-agent report must render the same reusable partial
+handling element on the User behavior surface. It identifies the evidence as
+`PARTIAL` and `PROPOSAL_ONLY`, shows exact completed-run count, renders each
+completed run separately so disagreement is not hidden, and—only when present—
+shows authoritative per-mode denominator, success, failure, and mean reward
+with trace IDs opening the existing `ConversationViewer`. It must not relabel
+the evidence as an intent population, stable behavior, eval, finding, pass, or
+causal failure. If the partial field is absent, existing stable-population and
+semantic-unavailable behavior remains unchanged.
+
+UI change-budget refinement:
+
+- independent test author: one additive source-level UI contract test, at most
+  four cases;
+- implementation author: one reusable analysis component, the two existing
+  analysis report components, and their two existing TypeScript report type
+  surfaces; at most 220 changed physical lines;
+- no CSS framework/dependency, route, backend, auth, API, persistence, engine,
+  fixture, deployment, or visual redesign change.
+
+UI acceptance requires the source contract, TypeScript, existing app tests,
+production Next build, and a browser check against a real checkpoint-only TAU
+report before the orchestrator may close the slice.
