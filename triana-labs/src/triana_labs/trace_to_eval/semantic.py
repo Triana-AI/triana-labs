@@ -794,6 +794,26 @@ def run_staged_analysis(
     )
     return {
         "populations": rendered_populations,
+        **(
+            {
+                "handling_items": [
+                    {
+                        "trace_id": row["trace_id"],
+                        "handling_mode": row["handling_mode"],
+                        "claimed_action": row["claimed_action"],
+                        "terminal_summary": row["terminal_summary"],
+                        "evidence_quotes": row["evidence_quotes"],
+                        "tool_observed": row["tool_observed"],
+                        "turn_count": row["turn_count"],
+                    }
+                    for row in sorted(
+                        facets, key=lambda item: cast(str, item["trace_id"])
+                    )
+                ]
+            }
+            if facets
+            else {}
+        ),
         "eval_candidates": [
             {
                 "name": row["name"],

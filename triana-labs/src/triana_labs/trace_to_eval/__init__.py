@@ -29,6 +29,15 @@ _QUEUE_KIND = "review_queue_v0"
 _RULING_KIND = "human_ruling_v0"
 _SPLITS = ("DEVELOPMENT", "CALIBRATION", "HOLDOUT")
 _SAFE_TRACE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$")
+_TYPED_SEMANTIC_FAILURES = {
+    "SEMANTIC_BUDGET_EXCEEDED",
+    "SEMANTIC_CHECKPOINT_INVALID",
+    "SEMANTIC_PROVIDER_CALL_FAILED",
+    "SEMANTIC_REQUEST_TOO_LARGE",
+    "SEMANTIC_RESPONSE_CONTENT_MISSING",
+    "SEMANTIC_RESPONSE_JSON_INVALID",
+    "SEMANTIC_SCHEMA_INVALID",
+}
 
 
 class TraceToEvalError(ValueError):
@@ -254,7 +263,10 @@ def _semantic_runs(model: Any, traces: list[JsonObject], *, model_id: str) -> li
         for run_index in range(1, 4):
             if isinstance(model, ValidatedCheckpointSemanticModel):
                 model.start_run(run_index)
-            responses.append(run_staged_analysis(model, traces))
+            try:
+                responses.append(run_staged_analysis(model, traces))
+            except Exception as error:
+                raise _IncompleteSemanticRuns(responses, error) from error
         return responses
     invoke = _model_callable(model)
     request: JsonObject = {
@@ -269,6 +281,13 @@ def _semantic_runs(model: Any, traces: list[JsonObject], *, model_id: str) -> li
         "traces": _semantic_projection(traces),
     }
     return [invoke(request) for _ in range(3)]
+
+
+class _IncompleteSemanticRuns(Exception):
+    def __init__(self, completed: list[Any], failure: Exception) -> None:
+        super().__init__(str(failure))
+        self.completed = completed
+        self.failure = failure
 
 
 def _authorized_semantic_model(
@@ -496,9 +515,9 @@ def _behavior_analytics(traces: list[JsonObject]) -> JsonObject:
     }
 
 
-def _outcome_analytics(
+def _authoritative_outcomes(
     manifest: JsonObject, accepted_ids: set[str]
-) -> JsonObject | None:
+) -> dict[str, tuple[float, str]] | None:
     capabilities = cast(Mapping[str, Any], manifest["capabilities"])
     source = cast(Mapping[str, Any], manifest["source"])
     if (
@@ -509,8 +528,7 @@ def _outcome_analytics(
     rows = manifest.get("outcomes")
     if not isinstance(rows, list) or not rows:
         raise TraceToEvalError("OUTCOMES_INVALID")
-    rewards: list[float] = []
-    success_count = 0
+    outcomes: dict[str, tuple[float, str]] = {}
     seen: set[str] = set()
     for row in rows:
         if not isinstance(row, dict) or set(row) != {
@@ -537,10 +555,19 @@ def _outcome_analytics(
         ):
             raise TraceToEvalError("OUTCOMES_INVALID")
         seen.add(trace_id)
-        rewards.append(float(reward))
-        success_count += outcome == "SUCCESS"
+        outcomes[trace_id] = (float(reward), cast(str, outcome))
     if seen != accepted_ids:
         raise TraceToEvalError("OUTCOMES_INVALID")
+    return outcomes
+
+
+def _outcome_analytics(
+    outcomes: Mapping[str, tuple[float, str]] | None,
+) -> JsonObject | None:
+    if outcomes is None:
+        return None
+    rewards = [row[0] for row in outcomes.values()]
+    success_count = sum(row[1] == "SUCCESS" for row in outcomes.values())
     return {
         "authority": "DETERMINISTIC",
         "source": "TAU2_REWARD_INFO",
@@ -549,6 +576,53 @@ def _outcome_analytics(
         "failure_count": len(rewards) - success_count,
         "mean_reward": sum(rewards) / len(rewards),
     }
+
+
+def _partial_handling_evidence(
+    responses: list[Any],
+    *,
+    discovery_ids: set[str],
+    outcomes: Mapping[str, tuple[float, str]] | None,
+) -> JsonObject | None:
+    runs: list[JsonObject] = []
+    for run_index, response in enumerate(responses, start=1):
+        raw_items = response.get("handling_items") if isinstance(response, dict) else None
+        items = [
+            cast(JsonObject, item)
+            for item in raw_items
+            if isinstance(item, dict) and item.get("trace_id") in discovery_ids
+        ] if isinstance(raw_items, list) else []
+        items.sort(key=lambda item: cast(str, item["trace_id"]))
+        runs.append({"run_index": run_index, "items": items})
+    if not runs:
+        return None
+    partial: JsonObject = {
+        "state": "PARTIAL",
+        "authority": "PROPOSAL_ONLY",
+        "completed_run_count": len(runs),
+        "runs": runs,
+    }
+    if outcomes is not None:
+        grouped: dict[str, list[tuple[str, float, str]]] = {}
+        for item in cast(list[JsonObject], runs[0]["items"]):
+            trace_id = cast(str, item["trace_id"])
+            outcome = outcomes.get(trace_id)
+            if outcome is None:
+                continue
+            mode = cast(str, item["handling_mode"])
+            grouped.setdefault(mode, []).append((trace_id, *outcome))
+        partial["outcome_by_handling_mode"] = [
+            {
+                "handling_mode": mode,
+                "denominator": len(rows),
+                "trace_ids": [row[0] for row in rows],
+                "success_count": sum(row[2] == "SUCCESS" for row in rows),
+                "failure_count": sum(row[2] == "FAILURE" for row in rows),
+                "mean_reward": sum(row[1] for row in rows) / len(rows),
+            }
+            for mode, rows in sorted(grouped.items())
+        ]
+    return partial
 
 
 def _review_queue(
@@ -763,6 +837,8 @@ def run_trace_to_eval(
     semantic_failure_code: str | None = None
     invalid_semantic_rows = 0
     behavior_candidate_inventory: list[JsonObject] = []
+    partial_handling_evidence: JsonObject | None = None
+    authoritative_outcomes = _authoritative_outcomes(manifest, accepted_ids)
     if semantic_authorized:
         try:
             responses = _semantic_runs(
@@ -791,10 +867,15 @@ def run_trace_to_eval(
             stability = _stability(validated)
             semantic_available = True
         except Exception as error:  # noqa: BLE001 - optional provider boundary.
+            completed_responses = (
+                error.completed if isinstance(error, _IncompleteSemanticRuns) else []
+            )
+            original_error = (
+                error.failure if isinstance(error, _IncompleteSemanticRuns) else error
+            )
             semantic_failure_code = (
-                str(error)
-                if str(error)
-                in {"SEMANTIC_BUDGET_EXCEEDED", "SEMANTIC_CHECKPOINT_INVALID"}
+                str(original_error)
+                if str(original_error) in _TYPED_SEMANTIC_FAILURES
                 else "SEMANTIC_ANALYSIS_FAILED"
             )
             record_failure = getattr(semantic_model, "record_failure", None)
@@ -803,9 +884,19 @@ def run_trace_to_eval(
             populations = []
             qualified_inventory = []
             behavior_candidate_inventory = []
+            partial_handling_evidence = _partial_handling_evidence(
+                completed_responses,
+                discovery_ids=discovery_ids,
+                outcomes=authoritative_outcomes,
+            )
+            completed_run_count = (
+                cast(int, partial_handling_evidence["completed_run_count"])
+                if partial_handling_evidence is not None
+                else 0
+            )
             stability = {
-                "semantic_run_count": 0,
-                "state": "UNAVAILABLE",
+                "semantic_run_count": completed_run_count,
+                "state": "PARTIAL" if completed_run_count else "UNAVAILABLE",
                 "disagreements": [],
                 "rerun_selection": "NONE",
             }
@@ -819,7 +910,7 @@ def run_trace_to_eval(
             "rerun_selection": "NONE",
         }
     eval_proposals = qualified_inventory[:3]
-    outcome_analytics = _outcome_analytics(manifest, accepted_ids)
+    outcome_analytics = _outcome_analytics(authoritative_outcomes)
     report_without_id: JsonObject = {
         "artifact_kind": _REPORT_KIND,
         "schema_version": 0,
@@ -851,6 +942,11 @@ def run_trace_to_eval(
         "populations": populations,
         "behavior_analytics": _behavior_analytics(traces),
         **({"outcome_analytics": outcome_analytics} if outcome_analytics else {}),
+        **(
+            {"partial_handling_evidence": partial_handling_evidence}
+            if partial_handling_evidence is not None
+            else {}
+        ),
         "behavior_candidate_inventory": behavior_candidate_inventory,
         "qualified_eval_inventory": qualified_inventory,
         "eval_proposals": eval_proposals,
