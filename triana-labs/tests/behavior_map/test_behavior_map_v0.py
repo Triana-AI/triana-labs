@@ -1741,6 +1741,87 @@ def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
                 f"generic behavior label was published or not typed unknown: {label}"
             )
 
+    class _MixedSpecificityPatternModel(_SemanticModel):
+        generic_occurrence_ids: set[str]
+        valid_occurrence_ids: set[str]
+
+        def __init__(self) -> None:
+            super().__init__("terra-test-v0")
+            self.generic_occurrence_ids = set()
+            self.valid_occurrence_ids = set()
+
+        def complete_json(
+            self,
+            *,
+            stage: str,
+            system: str,
+            payload: dict[str, Any],
+            schema: Any,
+        ) -> dict[str, Any]:
+            result = super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+            if "patterns" not in set(getattr(schema, "model_fields", {})):
+                return result
+            candidates = payload.get("candidate_patterns")
+            if isinstance(candidates, list):
+                return {"patterns": candidates}
+            occurrence_ids = list(result["patterns"][0]["occurrence_ids"])
+            self.generic_occurrence_ids = {str(occurrence_ids[0])}
+            self.valid_occurrence_ids = {str(occurrence_ids[1])}
+            return {
+                "patterns": [
+                    {
+                        "label": "uses tools",
+                        "definition": "The agent used an available tool.",
+                        "occurrence_ids": sorted(self.generic_occurrence_ids),
+                    },
+                    {
+                        "label": "Requests confirmation before cancelling an order",
+                        "definition": "The agent asks for confirmation before a cancellation.",
+                        "occurrence_ids": sorted(self.valid_occurrence_ids),
+                    },
+                ]
+            }
+
+    mixed_case = tmp_path / "mixed-specificity"
+    mixed_case.mkdir()
+    mixed_model = _MixedSpecificityPatternModel()
+    mixed_report, _, _, _ = _run(mixed_case, primary=mixed_model)
+    mixed_occurrences = {
+        str(row["occurrence_id"]): row for row in mixed_report["behavior_occurrences"]
+    }
+    generic_episode_ids = {
+        str(episode_id)
+        for occurrence_id in mixed_model.generic_occurrence_ids
+        for episode_id in mixed_occurrences[occurrence_id]["episode_ids"]
+    }
+    valid_episode_ids = {
+        str(episode_id)
+        for occurrence_id in mixed_model.valid_occurrence_ids
+        for episode_id in mixed_occurrences[occurrence_id]["episode_ids"]
+    }
+    generic_unknown_episode_ids = {
+        str(row["episode_id"])
+        for row in mixed_report["emerging_unknown"]
+        if row["reason"] == "GENERIC_BEHAVIOR_LANGUAGE"
+    }
+    published_patterns = {
+        str(row["label"]): {str(item) for item in row["occurrence_ids"]}
+        for row in mixed_report["behavior_patterns"]
+    }
+    valid_label = "Requests confirmation before cancelling an order"
+    if (
+        "uses tools" in published_patterns
+        or published_patterns.get(valid_label) != mixed_model.valid_occurrence_ids
+        or not generic_episode_ids <= generic_unknown_episode_ids
+        or valid_episode_ids & generic_unknown_episode_ids
+        or "GENERIC_BEHAVIOR_LANGUAGE" not in _codes(mixed_report)
+    ):
+        violations.append(
+            "mixed pattern filtering did not isolate generic members from the valid pattern"
+        )
+
     class _LossyHierarchyModel(_RecursiveHierarchyModel):
         def complete_json(
             self,

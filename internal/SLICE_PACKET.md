@@ -327,6 +327,8 @@ The test author must freeze black-box cases for:
     a typed loss/no-reduction gap;
 41. every rendered semantic occurrence exposes its identity and navigable exact
     evidence anchors.
+42. rejecting one vague behavior routes only its attached members unknown and
+    cannot contaminate an unrelated specific valid behavior.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -393,8 +395,8 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`1bc8d1f32f0f8c63a6d3f56e74c744121212f3a669ddbc75d5ba1fa448761001`.
-It freezes all forty-one acceptance behaviors listed above across thirty-eight
+`2e4167dbd84fe32a18bcb7fed2ed5bdc9a9bf10e062bf6f6b1058f8521a58af4`.
+It freezes all forty-two acceptance behaviors listed above across thirty-eight
 black-box cases. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
@@ -418,7 +420,9 @@ Final signoff then found missing-audit items still present in the primary map,
 vague synonymous labels, silent hierarchy membership loss, and semantic
 occurrences without navigable evidence. The existing audit-uncertainty case was
 amended to freeze those four same-slice obligations, superseding only the test
-hash while preserving the collected test count.
+hash while preserving the collected test count. The final mixed-specificity
+fixture then proved vague-language routing contaminated unrelated valid
+behavior; its isolation assertion supersedes only the test hash again.
 
 Valid RED command:
 
