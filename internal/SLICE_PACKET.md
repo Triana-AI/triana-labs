@@ -640,3 +640,40 @@ Its public-boundary case proves the requested schema still carries
 `maxItems: 3` and observes valid RED only because the actual facet system
 instruction lacks the exact one-to-three-per-facet guidance. Ruff and diff
 checks pass.
+
+### Validated semantic checkpoint and explicit resume correction — 2026-08-07
+
+The cardinality-aligned TAU execution completed 25 schema-valid calls before
+the 26th provider transport call failed. Lineage retained 26 attempts, 25
+successes, 421,091 input tokens, 23,754 output tokens, USD 3.90 reserved, no
+retry/fallback, and `SEMANTIC_PROVIDER_CALL_FAILED`; deterministic report
+`sha256:5b6cbbd93b9585e2a53fb64ae9141b66909ce8cbbd5d6b64c6679ec314de9c41`
+still preserved 57/57 conversations and official 39/18 outcomes. Because the
+engine persisted no intermediate validated stages, one late transport failure
+discarded all 25 usable responses. This is a product-integrity and cost hole,
+not evidence that the population analysis is wrong.
+
+Freeze the correction: each schema-valid semantic stage result is persisted
+locally under the run output directory using an identity derived
+deterministically from model id, stage, system instruction, canonical payload,
+and requested schema. A subsequent **explicit invocation** of the same run may
+reuse only an exact-identity, strict-schema-valid checkpoint and call the
+provider only for missing stages. There is no automatic retry loop; failed
+responses are never cached; raw provider responses are never persisted;
+corrupt, mismatched, or schema-invalid checkpoints fail closed and never become
+provider success. Lineage separates provider attempts/successes/tokens/cost
+from validated checkpoint hits and declares
+`resume_policy=EXPLICIT_VALIDATED_CHECKPOINTS_ONLY`.
+
+Checkpoint change budget:
+
+- independent test author: one additive file, at most six black-box cases;
+- implementation author: only `trace_to_eval/semantic.py` and
+  `trace_to_eval/__init__.py`, at most 180 changed physical lines;
+- orchestrator: governance/evidence and explicit local run invocation;
+- no dependency, UI/backend/auth/schema migration, provider fallback,
+  automatic retry, holdout opening, raw response persistence, or remote write.
+
+Acceptance covers exact cache identity, valid hit with zero provider attempt,
+strict corrupt/mismatch refusal, successful-write-only behavior, lineage
+separation, output-directory binding, and all existing Trace-to-Eval tests.
