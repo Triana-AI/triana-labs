@@ -324,6 +324,7 @@ def _validate_checkpoint_directory(directory: Path) -> None:
             "identity",
             "result",
             "result_sha256",
+            "payload",
         }:
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
         identity = value.get("identity")
@@ -343,6 +344,8 @@ def _validate_checkpoint_directory(directory: Path) -> None:
             != _digest("behavior-map-checkpoint-v0", identity).removeprefix("sha256:")
             or value.get("result_sha256")
             != _digest("behavior-map-checkpoint-result-v0", value.get("result"))
+            or identity.get("payload_sha256")
+            != _digest("behavior-map-payload-v0", value.get("payload"))
         ):
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
 
@@ -372,6 +375,7 @@ def _write_checkpoint(
         "identity": identity,
         "result": result,
         "result_sha256": _digest("behavior-map-checkpoint-result-v0", result),
+        "payload": payload,
     }
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"{checkpoint_id}.json"
@@ -429,12 +433,15 @@ def _call(
                 "identity",
                 "result",
                 "result_sha256",
+                "payload",
             }
             or value.get("artifact_kind") != "behavior_map_checkpoint_v0"
             or value.get("schema_version") != 0
             or value.get("identity") != identity
             or value.get("result_sha256")
             != _digest("behavior-map-checkpoint-result-v0", value.get("result"))
+            or identity.get("payload_sha256")
+            != _digest("behavior-map-payload-v0", value.get("payload"))
         ):
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
         try:
@@ -1490,13 +1497,37 @@ def run_behavior_map(
                     }
                     gaps.append(
                         {
-                            "code": code
-                            if code in allowed
-                            else "SEMANTIC_SCHEMA_INVALID",
+                            "code": (
+                                code
+                                if code in allowed
+                                else "SEMANTIC_EXTRACTION_FAILED"
+                            ),
                             "stage": f"EXTRACTION_BATCH_{index:04d}",
+                            "conversation_id": cast(
+                                list[JsonObject], payload["conversations"]
+                            )[0]["conversation_id"],
                         }
                     )
-                    break
+                    failed_conversation_id = cast(
+                        str,
+                        cast(list[JsonObject], payload["conversations"])[0][
+                            "conversation_id"
+                        ],
+                    )
+                    emerging_unknown.append(
+                        {
+                            "episode_id": f"conversation:{failed_conversation_id}",
+                            "conversation_id": failed_conversation_id,
+                            "reason": "EXTRACTION_FAILED",
+                            "description": "Semantic extraction failed for this conversation; later conversations continued without retry.",
+                        }
+                    )
+                    if code in {
+                        "SEMANTIC_BUDGET_EXCEEDED",
+                        "SEMANTIC_CHECKPOINT_INVALID",
+                    }:
+                        break
+                    continue
                 checkpoint_ids.append(checkpoint)
                 episode_proposals.extend(cast(list[JsonObject], extraction["episodes"]))
                 behavior_proposals.extend(
@@ -1571,9 +1602,10 @@ def run_behavior_map(
                     set(cast(list[str], existing["episode_ids"]))
                     | set(cast(list[str], proposal["episode_ids"]))
                 )
-            populations, emerging_unknown, population_gaps = _populations(
+            populations, population_unknown, population_gaps = _populations(
                 list(merged_population_proposals.values()), episodes
             )
+            emerging_unknown.extend(population_unknown)
             gaps.extend(population_gaps)
             pattern_inputs = [
                 row
@@ -1714,6 +1746,12 @@ def run_behavior_map(
                     cast(str, row["evidence_id"]): row for row in evidence
                 }
                 for index, item in enumerate(audit_items):
+                    audit_item_id = cast(
+                        str,
+                        item.get("population_id")
+                        or item.get("pattern_id")
+                        or item.get("episode_id"),
+                    )
                     evidence_ids = set(cast(list[str], item.get("evidence_ids", [])))
                     evidence_ids.update(
                         cast(list[str], item.get("representative_evidence_ids", []))
@@ -1742,14 +1780,31 @@ def run_behavior_map(
                             {"code": "SEMANTIC_REQUEST_TOO_LARGE", "stage": "AUDIT"}
                         )
                         continue
-                    audit_result, checkpoint = _call(
-                        audit_model,
-                        checkpoints_dir,
-                        stage=f"independent-semantic-audit-{index:04d}",
-                        system=_AUDIT_SYSTEM,
-                        payload=payload,
-                        schema=AuditBatch,
-                    )
+                    try:
+                        audit_result, checkpoint = _call(
+                            audit_model,
+                            checkpoints_dir,
+                            stage=f"independent-semantic-audit-{index:04d}",
+                            system=_AUDIT_SYSTEM,
+                            payload=payload,
+                            schema=AuditBatch,
+                        )
+                    except (TypeError, ValueError) as error:
+                        code = str(error)
+                        gaps.append(
+                            {
+                                "code": "SEMANTIC_AUDIT_ITEM_FAILED",
+                                "stage": "AUDIT",
+                                "item_id": audit_item_id,
+                                "provider_failure_code": code,
+                            }
+                        )
+                        if code in {
+                            "SEMANTIC_BUDGET_EXCEEDED",
+                            "SEMANTIC_CHECKPOINT_INVALID",
+                        }:
+                            break
+                        continue
                     checkpoint_ids.append(checkpoint)
                     audit_proposals.extend(
                         cast(list[JsonObject], audit_result["audits"])

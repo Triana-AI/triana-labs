@@ -1125,3 +1125,12 @@ separated an aggregate two-order return demand, revised refund destinations,
 and later human-transfer demand, but one failed unit aborted all later work.
 The active correction is per-conversation and per-audit-item typed isolation so
 unaffected evidence continues without retrying or hiding the failed unit.
+
+Behavior Map live isolation implementation exit (2026-08-07): the correction
+is GREEN across 40 Behavior Map and 43 adjacent tests with independent review.
+A failed extraction is attempted once, has no checkpoint, becomes a scoped
+unknown, and later conversations continue. A failed audit item is attempted
+once, becomes item-scoped uncertainty, is removed from primary publication, and
+later items continue with no PENDING leakage. The next operator continuation
+must charge the cumulative reservation forward, reuse exact successful
+checkpoints, and remain no-retry/no-fallback per failed unit.
