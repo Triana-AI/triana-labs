@@ -620,3 +620,15 @@ for one oversized unit. Observed RED is the intended two failures: production
 still sends the first 12 large units together and does not refuse one oversized
 unit; the small-corpus compatibility case already passes. Ruff and diff checks
 are GREEN.
+
+The distinct two-trace content-free schema diagnostic then returned 8,329
+input tokens and 771 output tokens and identified exactly two validation
+errors: `facets[0].evidence_quotes` and `facets[1].evidence_quotes`, both
+`too_long`. No response text, quote, value, trace content, or credential was
+printed or persisted. The Pydantic schema permits at most three quotes, while
+the system instruction required exact substrings but omitted the plain-language
+cardinality. Freeze the next minimal correction: the instruction must require
+**one to three** exact evidence substrings per facet. Strict schema validation
+remains unchanged; code must not clip, repair, retry, or otherwise accept an
+overlong list. Independent acceptance owns one additive focused test and the
+implementation author may change only the prompt constant in `semantic.py`.
