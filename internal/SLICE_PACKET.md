@@ -686,3 +686,27 @@ raw-response exclusion; zero-provider exact resume plus one-missing-stage
 execution; failed-stage exclusion; and corrupt, mismatched, or schema-invalid
 closed refusal. Observed RED is six failures solely because production has no
 checkpoint binding/artifacts/lineage yet. Ruff and diff checks pass.
+
+### Deterministic evidence-quote projection correction — 2026-08-07
+
+The checkpoint-enabled TAU run persisted six valid first-run facet stages, then
+failed closed on stage seven with `SEMANTIC_SCHEMA_INVALID` after 7 attempts,
+6 successes, 124,740 input tokens, 7,065 output tokens, and USD 1.05 reserved.
+A distinct content-free diagnostic again isolated the sole error to one
+`evidence_quotes` list being `too_long`, despite explicit one-to-three guidance.
+
+Inspection exposes an internal contradiction: `_Facet` rejects more than three
+quotes before deterministic grounding, while `_extract_facets` already accepts
+only exact transcript substrings and persists `valid_quotes[:3]`. Supersede the
+provider-schema maximum-three gate, but not the product bound: the provider may
+propose a list within the existing 2,000-output-token ceiling; deterministic
+code filters exact substrings in order and persists at most the first three.
+At least one exact quote remains required or the row is invalid. No other
+field, schema strictness, population membership, retry, fallback, or checkpoint
+identity rule changes. The prompt continues asking for one to three.
+
+Independent acceptance may update only the earlier focused prompt test to
+freeze absence of provider-side `maxItems`, exact-substring filtering, stable
+first-three selection, and rejection when no exact quote survives. Production
+may change only `_Facet.evidence_quotes` in `semantic.py`. No provider call
+occurs until focused and full suites are GREEN.
