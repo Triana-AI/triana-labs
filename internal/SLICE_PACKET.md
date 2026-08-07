@@ -910,3 +910,14 @@ removed static-export route artifacts and twelve expect the superseded LABS-09
 private local-report override/no-network loader. All tests owned by this slice
 pass, and production build/typecheck pass; those legacy contracts were not
 weakened or rewritten inside this budget.
+
+Final-gate formatting correction: the repository-wide verifier found five
+Python files non-canonical under the pinned Ruff formatter. The orchestrator
+applied formatting only to those exact files; focused Trace-to-Eval acceptance
+remains 43/43 GREEN, all 99 Python files are now formatted, Ruff and mypy pass,
+and the partial-handling test hash is unchanged. Formatting-only superseding
+hashes are `77eb762d0a18266c47e66009ad384761b8efe5825cd7805622666ba2ecc32af6`
+for byte-bounded batching and
+`3f45ec9995150cbe6f8ddd94e99e6af84106321f40ca5cdc39740e416e436347`
+for evidence-quote projection. They supersede only the earlier file-byte hashes,
+not any assertion or accepted behavior.

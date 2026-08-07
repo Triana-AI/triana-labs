@@ -586,12 +586,18 @@ def _partial_handling_evidence(
 ) -> JsonObject | None:
     runs: list[JsonObject] = []
     for run_index, response in enumerate(responses, start=1):
-        raw_items = response.get("handling_items") if isinstance(response, dict) else None
-        items = [
-            cast(JsonObject, item)
-            for item in raw_items
-            if isinstance(item, dict) and item.get("trace_id") in discovery_ids
-        ] if isinstance(raw_items, list) else []
+        raw_items = (
+            response.get("handling_items") if isinstance(response, dict) else None
+        )
+        items = (
+            [
+                cast(JsonObject, item)
+                for item in raw_items
+                if isinstance(item, dict) and item.get("trace_id") in discovery_ids
+            ]
+            if isinstance(raw_items, list)
+            else []
+        )
         items.sort(key=lambda item: cast(str, item["trace_id"]))
         runs.append({"run_index": run_index, "items": items})
     if not runs:
@@ -826,9 +832,7 @@ def run_trace_to_eval(
     )
     semantic_authorized = semantic_model_id is not None and bool(discovery_traces)
     destination = Path(output_dir)
-    if semantic_authorized and callable(
-        getattr(semantic_model, "complete_json", None)
-    ):
+    if semantic_authorized and callable(getattr(semantic_model, "complete_json", None)):
         destination.mkdir(parents=True, exist_ok=True)
         semantic_model = ValidatedCheckpointSemanticModel(
             semantic_model, destination / "semantic_checkpoints"

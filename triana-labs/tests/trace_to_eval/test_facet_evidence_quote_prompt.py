@@ -132,9 +132,7 @@ def test_overlong_proposal_projects_first_three_exact_quotes_in_stable_order() -
 
     public_result = run_staged_analysis(_QuoteProposingModel(quotes), [_trace()])
     assert public_result["semantic_gap_count"] == 0
-    assert public_result["populations"][0]["evidence_trace_ids"] == [
-        "synthetic-trace"
-    ]
+    assert public_result["populations"][0]["evidence_trace_ids"] == ["synthetic-trace"]
 
 
 def test_no_exact_quote_is_excluded_as_a_semantic_gap() -> None:

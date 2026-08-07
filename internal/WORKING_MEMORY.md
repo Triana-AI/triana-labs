@@ -1069,3 +1069,12 @@ run; later progressive disclosure may improve usability without changing the
 contract. The focused engine/UI gates, TypeScript, and production build are
 GREEN. Full `npm test` retains 14 unrelated legacy static-export/LABS-09
 contract failures that predate this slice and remain separately visible.
+
+Final verification debugging record (2026-08-07): observed failure was the
+repository Ruff format gate on exactly five previously changed Python files.
+Hypothesis: canonical formatting alone would clear the gate without changing
+acceptance. One formatter invocation changed only whitespace/layout in those
+files; 43/43 focused tests, all-files format check, Ruff, and mypy then passed.
+The two affected focused test file hashes were superseded in the decision log;
+the partial-handling acceptance hash remained identical. No semantic default,
+assertion, dependency, provider call, or UI behavior changed.

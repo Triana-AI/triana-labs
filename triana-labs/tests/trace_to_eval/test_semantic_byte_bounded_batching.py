@@ -97,7 +97,9 @@ def test_facet_batches_preserve_order_once_under_record_and_byte_limits() -> Non
     assert len(calls) >= 2
     assert len(calls[0][1]["traces"]) < 12, "byte ceiling must bind before count"
     assert all(len(payload["traces"]) <= 12 for _, payload in calls)
-    assert all(_canonical_request_bytes(stage, payload) <= 60_000 for stage, payload in calls)
+    assert all(
+        _canonical_request_bytes(stage, payload) <= 60_000 for stage, payload in calls
+    )
     sent = [row for _, payload in calls for row in payload["traces"]]
     assert [row["trace_id"] for row in sent] == [trace["trace_id"] for trace in traces]
     assert len({row["trace_id"] for row in sent}) == len(traces)

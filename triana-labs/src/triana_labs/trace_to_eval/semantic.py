@@ -126,7 +126,8 @@ class ValidatedCheckpointSemanticModel:
                 value = json.loads(path.read_bytes())
                 if (
                     not isinstance(value, dict)
-                    or set(value) != {
+                    or set(value)
+                    != {
                         "artifact_kind",
                         "schema_version",
                         "identity",
@@ -199,8 +200,12 @@ class _Facet(BaseModel):
     demand_summary: str
     goal_label: str
     handling_mode: Literal[
-        "INFORMATION_RETURNED", "INFORMATION_REQUESTED", "TOOL_ACTION_OBSERVED",
-        "HANDOFF_OR_ESCALATION", "REFUSAL_OR_LIMIT", "STALLED_OR_REPEATED",
+        "INFORMATION_RETURNED",
+        "INFORMATION_REQUESTED",
+        "TOOL_ACTION_OBSERVED",
+        "HANDOFF_OR_ESCALATION",
+        "REFUSAL_OR_LIMIT",
+        "STALLED_OR_REPEATED",
         "NO_CLEAR_HANDLING",
     ]
     claimed_action: Literal["TRUE", "FALSE", "UNKNOWN"]
@@ -451,9 +456,7 @@ def _facet_batches(units: list[JsonObject]) -> list[list[JsonObject]]:
         candidate = [*current, unit]
         if (
             len(candidate) <= _FACET_BATCH_MAX_TRACES
-            and _canonical_request_bytes(
-                stage=stage, payload={"traces": candidate}
-            )
+            and _canonical_request_bytes(stage=stage, payload={"traces": candidate})
             <= _FACET_REQUEST_MAX_BYTES
         ):
             current = candidate
