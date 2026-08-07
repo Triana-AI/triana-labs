@@ -549,3 +549,22 @@ Acceptance:
    39/18 outcomes, expose grounded populations plus at most three evals or
    exact typed gaps, and support a bounded review queue and cited
    ConversationViewer evidence without L4/causal language.
+
+### Independent Foundry compatibility RED freeze — 2026-08-07
+
+The independent test author owns exactly
+`triana-labs/tests/trace_to_eval/test_foundry_json_object_compatibility.py`,
+SHA-256
+`a1c3370ff29128312ac7e4e2eafb09d44e463a3287e7a84b37c0907a764fc03b`.
+Seven black-box cases freeze the HR-AI-compatible client constructor,
+JSON-object response binding, canonical requested schema in the instruction,
+strict local validation, closed JSON/content/schema/provider failure codes,
+specific failure preservation, usage/attempt/success/reservation accounting,
+and zero retry/fallback. No network or secret is used.
+
+Observed RED is 7/7 failures at the exact legacy production seam:
+`FoundryStructuredSemanticModel` still supplies `default_headers`,
+`default_query`, and strict `json_schema` through `with_structured_output`.
+There is no collection, fixture, syntax, import, network, or unrelated failure.
+Ruff and diff checks pass. The frozen test may not be edited by the
+implementation author.
