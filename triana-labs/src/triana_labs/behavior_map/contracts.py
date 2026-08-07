@@ -125,6 +125,43 @@ class EvidenceCitationV0(TypedDict):
     quote: str
 
 
+class ExcerptTruncationV0(TypedDict):
+    truncated: Literal[True]
+    field: str
+    original_bytes: int
+    displayed_bytes: int
+    max_bytes: int
+    string_byte_limit: int
+
+
+class ConversationExcerptItemV0(TypedDict, total=False):
+    event_sequence: int
+    display_kind: Literal[
+        "USER_MESSAGE",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "AGENT_RESPONSE",
+        "NEXT_USER_MESSAGE",
+    ]
+    content: str
+    tool_name: str
+    tool_input: Any
+    tool_result_status: str
+    result_state: str | None
+    result: Any
+    error_code: str | None
+    truncation: ExcerptTruncationV0
+
+
+class EvidenceItemV0(TypedDict, total=False):
+    evidence_id: str
+    conversation_id: str
+    kind: Literal["TRANSCRIPT", "EVENT"]
+    ordinal: int
+    text: str
+    conversation_excerpt: list[ConversationExcerptItemV0]
+
+
 class DemandEpisodeV0(TypedDict):
     episode_id: str
     conversation_id: str
@@ -192,7 +229,7 @@ class BehaviorMapReportV0(TypedDict):
     behavior_occurrences: list[AgentBehaviorOccurrenceV0]
     behavior_patterns: list[AgentBehaviorPatternV0]
     emerging_unknown: list[dict[str, Any]]
-    evidence: list[dict[str, Any]]
+    evidence: list[EvidenceItemV0]
     questions: list[str]
     gaps: list[dict[str, Any]]
     semantic_audit: dict[str, Any]

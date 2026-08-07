@@ -3073,3 +3073,607 @@ def test_single_support_pattern_routes_to_unknown_while_recurring_pattern_publis
         or "REVIEW" in str(row["reason"])
     }
     assert low_episode_ids <= support_unknown_episode_ids
+
+
+def _write_readable_evidence_manifest(tmp_path: Path) -> Path:
+    trace = _trace(
+        "readable-evidence",
+        [
+            _event(0, "USER_MESSAGE", content='Find the <blue> & "fragile" order.'),
+            _event(
+                1,
+                "TOOL_CALL",
+                call_id="lookup-1",
+                tool_name="lookup_order",
+                arguments={"query": '<blue> & "fragile"', "limit": 2},
+            ),
+            _event(
+                2,
+                "TOOL_RESULT",
+                call_id="lookup-1",
+                result_state="SUCCEEDED",
+                result={"order": {"id": "A&1", "status": "ready <now>"}},
+            ),
+            _event(
+                3,
+                "ASSISTANT_MESSAGE",
+                content="I found order A&1; it is ready <now>.",
+                is_final=False,
+            ),
+            _event(4, "USER_MESSAGE", content='Cancel order B as "urgent".'),
+            _event(
+                5,
+                "TOOL_CALL",
+                call_id="cancel-2",
+                tool_name="cancel_order",
+                arguments={"order_id": "B", "reason": "urgent <today>"},
+            ),
+            _event(
+                6,
+                "ASSISTANT_MESSAGE",
+                content="I could not confirm cancellation yet.",
+                is_final=False,
+            ),
+            _event(7, "USER_MESSAGE", content="Please leave it unchanged."),
+        ],
+    )
+    source = tmp_path / "readable-evidence.jsonl"
+    payload = _canonical(trace, lf=True)
+    source.write_bytes(payload)
+    manifest = {
+        "artifact_kind": "evidence_bundle_manifest_v0",
+        "schema_version": 0,
+        "source": {
+            "adapter_id": "preview-trace-jsonl",
+            "adapter_version": "1",
+            "path": str(source),
+            "sha256": _sha256(payload),
+            "physical_record_count": 1,
+        },
+        "agent": {"workspace_id": "synthetic", "agent_id": "readable-agent"},
+        "privacy": {
+            "authorization": "SYNTHETIC_FIXTURE",
+            "execution_location": "LOCAL_PRIVATE",
+            "provider_egress": {
+                "authorized": True,
+                "model_id": "terra-test-v0",
+                "audit_model_id": "luna-test-v0",
+            },
+        },
+        "grouping": {
+            "highest_dependency_key": "conversation",
+            "assignments": [
+                {
+                    "group_id": "group-readable-evidence",
+                    "trace_ids": ["readable-evidence"],
+                }
+            ],
+        },
+        "capabilities": {
+            "paired_arms": False,
+            "outcomes": False,
+            "existing_evals": False,
+            "embeddings": False,
+        },
+        "outcomes": None,
+        "existing_evals": None,
+    }
+    path = tmp_path / "readable-evidence-manifest.json"
+    path.write_bytes(_canonical(manifest, lf=True))
+    return path
+
+
+class _ReadableEvidenceSemanticModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        fields = set(getattr(schema, "model_fields", {}))
+        if "episodes" in fields:
+            self.requests.append(
+                {"stage": stage, "system": system, "payload": deepcopy(payload)}
+            )
+            self.provider_calls += 1
+            return {
+                "episodes": [
+                    {
+                        "local_id": "find-order",
+                        "goal": "Find an order",
+                        "requested_action": "GET_INFORMATION",
+                        "subject": "blue fragile order",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 0,
+                        "end_turn_ordinal": 3,
+                        "citations": [
+                            _citation(
+                                "readable-evidence",
+                                0,
+                                'Find the <blue> & "fragile" order.',
+                            )
+                        ],
+                        "status": "PROPOSED",
+                    },
+                    {
+                        "local_id": "cancel-order",
+                        "goal": "Cancel an order",
+                        "requested_action": "CANCEL_ORDER",
+                        "subject": "order B",
+                        "constraints": ["urgent"],
+                        "fallbacks": ["leave it unchanged"],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 4,
+                        "end_turn_ordinal": 7,
+                        "citations": [
+                            _citation(
+                                "readable-evidence", 4, 'Cancel order B as "urgent".'
+                            )
+                        ],
+                        "status": "PROPOSED",
+                    },
+                ],
+                "behaviors": [],
+            }
+        if "populations" in fields:
+            return {"populations": []}
+        if "patterns" in fields:
+            return {"patterns": []}
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def _anchor_block(document: str, anchor: str, next_marker: str) -> str:
+    start = document.index(anchor)
+    end = document.find(next_marker, start + len(anchor))
+    return document[start:] if end < 0 else document[start:end]
+
+
+def test_readable_evidence_is_conversation_shaped_escaped_and_deterministic(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_readable_evidence_manifest(tmp_path)
+    outputs = [tmp_path / "first", tmp_path / "second"]
+    reports = [
+        run_behavior_map(
+            manifest,
+            output,
+            primary_model=_ReadableEvidenceSemanticModel("terra-test-v0"),
+            audit_model=None,
+            agent_context="An order support agent.",
+        )
+        for output in outputs
+    ]
+    assert reports[0] == reports[1]
+    for artifact in ("behavior-map.json", "behavior-map.md", "behavior-map.html"):
+        assert (outputs[0] / artifact).read_bytes() == (
+            outputs[1] / artifact
+        ).read_bytes()
+
+    evidence_by_ordinal = {
+        int(row["ordinal"]): row
+        for row in reports[0]["evidence"]
+        if row["conversation_id"] == "readable-evidence" and row["kind"] == "EVENT"
+    }
+    complete_call = evidence_by_ordinal[1]
+    missing_result_call = evidence_by_ordinal[5]
+    for evidence, expected_ordinals in (
+        (complete_call, [0, 1, 2, 3, 4]),
+        (missing_result_call, [4, 5, 6, 7]),
+    ):
+        excerpt = evidence.get("conversation_excerpt")
+        assert isinstance(excerpt, list) and excerpt
+        assert [int(row["event_sequence"]) for row in excerpt] == expected_ordinals
+
+    complete_excerpt = json.dumps(
+        complete_call["conversation_excerpt"], ensure_ascii=False
+    )
+    assert complete_excerpt.index("Find the <blue>") < complete_excerpt.index(
+        "lookup_order"
+    )
+    assert complete_excerpt.index("lookup_order") < complete_excerpt.index(
+        "ready <now>"
+    )
+    assert complete_excerpt.index("ready <now>") < complete_excerpt.index(
+        "I found order A&1"
+    )
+    assert complete_excerpt.index("I found order A&1") < complete_excerpt.index(
+        'Cancel order B as \\"urgent\\".'
+    )
+    assert "query" in complete_excerpt and '<blue> & \\"fragile\\"' in complete_excerpt
+    missing_excerpt = json.dumps(
+        missing_result_call["conversation_excerpt"], ensure_ascii=False
+    ).casefold()
+    assert "cancel_order" in missing_excerpt
+    assert "tool result" in missing_excerpt and "missing" in missing_excerpt
+
+    markdown = (outputs[0] / "behavior-map.md").read_text()
+    html = (outputs[0] / "behavior-map.html").read_text()
+    for evidence in (complete_call, missing_result_call):
+        evidence_id = str(evidence["evidence_id"])
+        assert f'<a id="{evidence_id}"></a>' in markdown
+        assert f'id="{evidence_id}"' in html
+    complete_markdown = _anchor_block(
+        markdown, f'<a id="{complete_call["evidence_id"]}"></a>', '<a id="'
+    )
+    complete_html = _anchor_block(
+        html, f'id="{complete_call["evidence_id"]}"', '<article id="'
+    )
+    for format_name, block in (
+        ("Markdown", complete_markdown),
+        ("HTML", complete_html),
+    ):
+        lowered = block.casefold()
+        positions = [
+            lowered.index(label)
+            for label in (
+                "user message",
+                "tool call",
+                "tool input",
+                "tool result",
+                "agent response",
+                "next user message",
+            )
+        ]
+        assert positions == sorted(positions)
+        assert "event sequence" in lowered and "1" in lowered
+        raw_markers = (
+            ('{"arguments":', '{"call_id":')
+            if format_name == "Markdown"
+            else ("&quot;event_kind&quot;", "&quot;call_id&quot;")
+        )
+        assert all(
+            (raw_position := lowered.find(marker)) < 0 or raw_position > positions[-1]
+            for marker in raw_markers
+        )
+    assert '<blue> & "fragile"' in complete_markdown
+    assert "ready <now>" in complete_markdown
+    assert "&lt;blue&gt; &amp; &quot;fragile&quot;" in complete_html
+    assert "A&amp;1" in complete_html
+    assert "ready &lt;now&gt;" in complete_html
+
+    missing_markdown = _anchor_block(
+        markdown, f'<a id="{missing_result_call["evidence_id"]}"></a>', '<a id="'
+    ).casefold()
+    missing_html = _anchor_block(
+        html, f'id="{missing_result_call["evidence_id"]}"', '<article id="'
+    ).casefold()
+    assert "tool result" in missing_markdown and "missing" in missing_markdown
+    assert "tool result" in missing_html and "missing" in missing_html
+
+
+def _write_readable_evidence_edge_manifest(tmp_path: Path) -> Path:
+    manifest_path = _write_readable_evidence_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_bytes())
+    hostile = '</li><script>alert("evidence")</script> **literal** `tick`'
+    long_message = "m" * 8_000
+    long_input = "i" * 8_000
+    long_result = "r" * 8_000
+    trace = _trace(
+        "readable-evidence",
+        [
+            _event(
+                0,
+                "USER_MESSAGE",
+                content=f'Find the <blue> & "fragile" order. {hostile} {long_message}',
+            ),
+            _event(
+                1,
+                "TOOL_CALL",
+                call_id="lookup-1",
+                tool_name="lookup_order",
+                arguments={"query": hostile, "payload": long_input},
+            ),
+            _event(
+                2,
+                "TOOL_RESULT",
+                call_id="lookup-1",
+                result_state="SUCCEEDED",
+                result=json.dumps(
+                    {"status": "ok", "note": hostile, "payload": long_result},
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+            ),
+            _event(
+                3,
+                "ASSISTANT_MESSAGE",
+                content=f"Agent response {hostile} {long_message}",
+                is_final=False,
+            ),
+            _event(4, "USER_MESSAGE", content='Cancel order B as "urgent".'),
+            _event(
+                5,
+                "TOOL_CALL",
+                call_id="cancel-2",
+                tool_name="cancel_order",
+                arguments={"order_id": "B", "payload": long_input},
+            ),
+            _event(6, "USER_MESSAGE", content=f"Actually stop now. {hostile}"),
+            _event(
+                7,
+                "ASSISTANT_MESSAGE",
+                content="This later agent response must not attach to the prior tool call.",
+                is_final=True,
+            ),
+        ],
+    )
+    source = Path(manifest["source"]["path"])
+    payload = _canonical(trace, lf=True)
+    source.write_bytes(payload)
+    manifest["source"]["sha256"] = _sha256(payload)
+    manifest_path.write_bytes(_canonical(manifest, lf=True))
+    return manifest_path
+
+
+class _ReadableEvidenceEdgeSemanticModel(_ReadableEvidenceSemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            result["behaviors"] = [
+                {
+                    "local_id": "reported-found-order",
+                    "lane": "SEMANTIC",
+                    "action": "REPORTED_RESULT",
+                    "object": "located order",
+                    "condition": "after the lookup",
+                    "observed_effect": None,
+                    "episode_local_ids": ["find-order"],
+                    "citations": [
+                        _citation(
+                            "readable-evidence",
+                            3,
+                            'Agent response </li><script>alert("evidence")</script>',
+                        )
+                    ],
+                    "event_ids": [],
+                    "status": "PROPOSED",
+                }
+            ]
+        return result
+
+
+def _run_readable_edge(tmp_path: Path) -> tuple[dict[str, Any], Path]:
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        _write_readable_evidence_edge_manifest(tmp_path),
+        output,
+        primary_model=_ReadableEvidenceEdgeSemanticModel("terra-test-v0"),
+        audit_model=None,
+        agent_context="An order support agent.",
+    )
+    return report, output
+
+
+def test_excerpt_stops_at_intervening_user_boundary(tmp_path: Path) -> None:
+    report, _ = _run_readable_edge(tmp_path)
+    evidence = {
+        (str(row["kind"]), int(row["ordinal"])): row for row in report["evidence"]
+    }
+    missing_result_excerpt = evidence[("EVENT", 5)]["conversation_excerpt"]
+    assert [row["event_sequence"] for row in missing_result_excerpt] == [4, 5, 6]
+    assert missing_result_excerpt[-1]["display_kind"] == "NEXT_USER_MESSAGE"
+    assert "Actually stop now" in str(missing_result_excerpt[-1]["content"])
+    assert all(row["event_sequence"] != 7 for row in missing_result_excerpt)
+    assert not any(
+        row["display_kind"] == "AGENT_RESPONSE" for row in missing_result_excerpt
+    )
+
+
+def test_transcript_citations_are_conversation_shaped(tmp_path: Path) -> None:
+    report, _ = _run_readable_edge(tmp_path)
+    evidence = {
+        (str(row["kind"]), int(row["ordinal"])): row for row in report["evidence"]
+    }
+    for ordinal, expected_text in (
+        (0, 'Find the <blue> & "fragile" order.'),
+        (3, "Agent response </li><script>"),
+    ):
+        transcript = evidence[("TRANSCRIPT", ordinal)]
+        excerpt = transcript.get("conversation_excerpt")
+        assert isinstance(excerpt, list) and excerpt
+        assert any(
+            row["event_sequence"] == ordinal
+            and expected_text in str(row.get("content"))
+            for row in excerpt
+        )
+
+
+def test_excerpt_bounds_fields_and_decodes_json_encoded_result(
+    tmp_path: Path,
+) -> None:
+    violations: list[str] = []
+    report, _ = _run_readable_edge(tmp_path)
+    complete_excerpt = next(
+        row["conversation_excerpt"]
+        for row in report["evidence"]
+        if row["kind"] == "EVENT" and row["ordinal"] == 1
+    )
+    result_row = next(
+        row for row in complete_excerpt if row["display_kind"] == "TOOL_RESULT"
+    )
+    if not isinstance(result_row["result"], dict):
+        violations.append("JSON-encoded tool result remained an opaque string")
+    else:
+        assert result_row["result"]["status"] == "ok"
+        assert "</li><script>" in result_row["result"]["note"]
+
+    bounded_rows = {
+        "message": next(
+            row for row in complete_excerpt if row["display_kind"] == "USER_MESSAGE"
+        ),
+        "tool_input": next(
+            row for row in complete_excerpt if row["display_kind"] == "TOOL_CALL"
+        ),
+        "tool_result": result_row,
+    }
+    for field, row in bounded_rows.items():
+        serialized = json.dumps(row, ensure_ascii=False, sort_keys=True)
+        if len(serialized.encode()) >= 8_000:
+            violations.append(f"{field} projection is not byte-bounded")
+        lowered = serialized.casefold()
+        if not (
+            "truncat" in lowered
+            and "byte" in lowered
+            and ("max" in lowered or "limit" in lowered)
+            and field.split("_")[-1] in lowered
+        ):
+            violations.append(f"{field} lacks deterministic truncation metadata")
+    assert not violations, "\n".join(violations)
+
+
+def test_renderers_escape_hostile_evidence_without_content_loss(tmp_path: Path) -> None:
+    _, output = _run_readable_edge(tmp_path)
+
+    markdown = (output / "behavior-map.md").read_text()
+    html = (output / "behavior-map.html").read_text()
+    assert "<script>" not in html
+    for document in (markdown, html):
+        assert "alert" in document and "evidence" in document
+        assert "literal" in document and "tick" in document
+    assert "&lt;/li&gt;&lt;script&gt;" in markdown
+    assert r"\*\*literal\*\*" in markdown
+    assert r"\`tick\`" in markdown
+    assert "&lt;/li&gt;&lt;script&gt;" in html
+    assert "**literal**" in html and "`tick`" in html
+
+
+def _replace_readable_manifest_trace(
+    manifest_path: Path, trace: dict[str, Any]
+) -> None:
+    manifest = json.loads(manifest_path.read_bytes())
+    source = Path(manifest["source"]["path"])
+    payload = _canonical(trace, lf=True)
+    source.write_bytes(payload)
+    manifest["source"]["sha256"] = _sha256(payload)
+    manifest_path.write_bytes(_canonical(manifest, lf=True))
+
+
+def test_truncation_metadata_accounts_for_canonical_wrapper_and_escaping(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_readable_evidence_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_bytes())
+    source = Path(manifest["source"]["path"])
+    trace = json.loads(source.read_bytes())
+    plain_wide = 'Find the <blue> & "fragile" order. ' + "p" * 10_000
+    unicode_wide = {"wide": "界" * 4_000}
+    escaped_wide = {f"escaped_{index}": '\\"' * 1_500 for index in range(5)}
+    trace["events"][0]["content"] = plain_wide
+    trace["events"][1]["arguments"] = unicode_wide
+    trace["events"][2]["result"] = escaped_wide
+    _replace_readable_manifest_trace(manifest_path, trace)
+
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        manifest_path,
+        output,
+        primary_model=_ReadableEvidenceSemanticModel("terra-test-v0"),
+        audit_model=None,
+        agent_context="An order support agent.",
+    )
+    excerpt = next(
+        row["conversation_excerpt"]
+        for row in report["evidence"]
+        if row["kind"] == "EVENT" and row["ordinal"] == 1
+    )
+    cases = (
+        (
+            "plain-wide message",
+            plain_wide,
+            next(row for row in excerpt if row["display_kind"] == "USER_MESSAGE"),
+            "content",
+        ),
+        (
+            "unicode-wide tool input",
+            unicode_wide,
+            next(row for row in excerpt if row["display_kind"] == "TOOL_CALL"),
+            "tool_input",
+        ),
+        (
+            "quote/backslash-heavy tool result",
+            escaped_wide,
+            next(row for row in excerpt if row["display_kind"] == "TOOL_RESULT"),
+            "result",
+        ),
+    )
+    violations: list[str] = []
+    for name, original, row, value_key in cases:
+        metadata = row.get("truncation", {})
+        projected = row[value_key]
+        original_bytes = len(_canonical(original))
+        displayed_bytes = len(_canonical(projected))
+        max_bytes = metadata.get("max_bytes")
+        if not (
+            metadata.get("truncated") is True
+            and metadata.get("original_bytes") == original_bytes
+            and metadata.get("displayed_bytes") == displayed_bytes
+            and isinstance(max_bytes, int)
+            and displayed_bytes <= max_bytes < original_bytes
+        ):
+            violations.append(
+                f"{name}: metadata={metadata!r}, original={original_bytes}, "
+                f"displayed={displayed_bytes}"
+            )
+    assert not violations, "\n".join(violations)
+
+
+def test_deep_json_encoded_result_is_bounded_opaque_evidence_not_a_crash(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_readable_evidence_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_bytes())
+    source = Path(manifest["source"]["path"])
+    trace = json.loads(source.read_bytes())
+    deep_json = "[" * 1_500 + '"leaf"' + "]" * 1_500
+    trace["events"][2]["result"] = deep_json
+    _replace_readable_manifest_trace(manifest_path, trace)
+
+    report = run_behavior_map(
+        manifest_path,
+        tmp_path / "output",
+        primary_model=_ReadableEvidenceSemanticModel("terra-test-v0"),
+        audit_model=None,
+        agent_context="An order support agent.",
+    )
+    result_evidence = next(
+        row
+        for row in report["evidence"]
+        if row["kind"] == "EVENT" and row["ordinal"] == 2
+    )
+    result_row = next(
+        row
+        for row in result_evidence["conversation_excerpt"]
+        if row["display_kind"] == "TOOL_RESULT"
+    )
+    result = result_row.get("result")
+    metadata = result_row.get("truncation", {})
+    if isinstance(result, str):
+        visible = result.removesuffix("…")
+        assert deep_json.startswith(visible)
+        displayed_bytes = len(_canonical(result))
+        assert metadata.get("truncated") is True
+        assert metadata.get("original_bytes") == len(_canonical(deep_json))
+        assert metadata.get("displayed_bytes") == displayed_bytes
+        assert displayed_bytes <= metadata["max_bytes"]
+    else:
+        assert any(
+            "JSON" in str(gap["code"])
+            and ("DEPTH" in str(gap["code"]) or "RECURSION" in str(gap["code"]))
+            and "2" in json.dumps(gap, sort_keys=True)
+            for gap in report["gaps"]
+        )

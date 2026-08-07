@@ -62,6 +62,155 @@ def _gap_counts(gaps: list[JsonObject]) -> list[tuple[str, int]]:
     return sorted(counts.items())
 
 
+def _readable_value(value: Any) -> str:
+    if isinstance(value, dict):
+        return "; ".join(
+            f"{_text(key)}: {_readable_value(item)}"
+            for key, item in sorted(value.items())
+        )
+    if isinstance(value, list):
+        return ", ".join(_readable_value(item) for item in value)
+    if value is None:
+        return "None"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return _text(value)
+
+
+def _markdown_escape(value: Any) -> str:
+    escaped = (
+        _text(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    )
+    escaped = escaped.replace("\\", "\\\\")
+    for marker in ("`", "*", "_", "[", "]"):
+        escaped = escaped.replace(marker, f"\\{marker}")
+    return escaped
+
+
+def _markdown_truncation(row: JsonObject) -> str:
+    metadata = row.get("truncation")
+    if not isinstance(metadata, dict):
+        return ""
+    return (
+        f" Truncated field {_markdown_escape(metadata.get('field'))}: "
+        f"{metadata.get('original_bytes')} original bytes; "
+        f"{metadata.get('displayed_bytes')} displayed bytes; "
+        f"max {metadata.get('max_bytes')} bytes; "
+        f"string byte limit {metadata.get('string_byte_limit')}."
+    )
+
+
+def _html_truncation(row: JsonObject) -> str:
+    metadata = row.get("truncation")
+    if not isinstance(metadata, dict):
+        return ""
+    note = (
+        f" Truncated field {_text(metadata.get('field'))}: "
+        f"{metadata.get('original_bytes')} original bytes; "
+        f"{metadata.get('displayed_bytes')} displayed bytes; "
+        f"max {metadata.get('max_bytes')} bytes; "
+        f"string byte limit {metadata.get('string_byte_limit')}."
+    )
+    return f" <small>{html.escape(note)}</small>"
+
+
+def _markdown_excerpt(excerpt: list[JsonObject]) -> list[str]:
+    lines: list[str] = []
+    for row in excerpt:
+        sequence = row["event_sequence"]
+        kind = row["display_kind"]
+        if kind == "USER_MESSAGE":
+            lines.append(
+                f"- **User message** · Event sequence {sequence}: {_markdown_escape(row.get('content', ''))}"
+                + _markdown_truncation(row)
+            )
+        elif kind == "TOOL_CALL":
+            lines.append(
+                f"- **Tool call** · Event sequence {sequence}: {_markdown_escape(row.get('tool_name', 'tool'))}"
+            )
+            lines.append(
+                f"- **Tool input** · Event sequence {sequence}: {_markdown_escape(_readable_value(row.get('tool_input')))}"
+                + _markdown_truncation(row)
+            )
+            if row.get("tool_result_status"):
+                lines.append(
+                    f"- **Tool result** · Event sequence {sequence}: {_markdown_escape(row['tool_result_status'])}"
+                )
+        elif kind == "TOOL_RESULT":
+            details = _readable_value(row.get("result"))
+            state = _text(row.get("result_state", "UNKNOWN"))
+            error = row.get("error_code")
+            if error:
+                details = f"{details}; error: {_text(error)}"
+            lines.append(
+                f"- **Tool result** · Event sequence {sequence} · {_markdown_escape(state)}: {_markdown_escape(details)}"
+                + _markdown_truncation(row)
+            )
+        elif kind == "AGENT_RESPONSE":
+            lines.append(
+                f"- **Agent response** · Event sequence {sequence}: {_markdown_escape(row.get('content', ''))}"
+                + _markdown_truncation(row)
+            )
+        elif kind == "NEXT_USER_MESSAGE":
+            lines.append(
+                f"- **Next user message** · Event sequence {sequence}: {_markdown_escape(row.get('content', ''))}"
+                + _markdown_truncation(row)
+            )
+    return lines
+
+
+def _html_excerpt(excerpt: list[JsonObject]) -> str:
+    items: list[str] = []
+    for row in excerpt:
+        sequence = row["event_sequence"]
+        kind = row["display_kind"]
+        label = ""
+        details = ""
+        if kind == "USER_MESSAGE":
+            label, details = "User message", _text(row.get("content", ""))
+        elif kind == "TOOL_CALL":
+            items.append(
+                f"<li><strong>Tool call</strong> · Event sequence {sequence}: "
+                f"{html.escape(_text(row.get('tool_name', 'tool')))}</li>"
+            )
+            label, details = "Tool input", _readable_value(row.get("tool_input"))
+            if row.get("tool_result_status"):
+                items.append(
+                    f"<li><strong>Tool result</strong> · Event sequence {sequence}: "
+                    f"{html.escape(_text(row['tool_result_status']))}</li>"
+                )
+        elif kind == "TOOL_RESULT":
+            label = "Tool result"
+            details = _readable_value(row.get("result"))
+            if row.get("error_code"):
+                details += f"; error: {_text(row['error_code'])}"
+            details = f"{_text(row.get('result_state', 'UNKNOWN'))}: {details}"
+        elif kind == "AGENT_RESPONSE":
+            label, details = "Agent response", _text(row.get("content", ""))
+        elif kind == "NEXT_USER_MESSAGE":
+            label, details = "Next user message", _text(row.get("content", ""))
+        if label:
+            items.append(
+                f"<li><strong>{label}</strong> · Event sequence {sequence}: "
+                f"{html.escape(details)}{_html_truncation(row)}</li>"
+            )
+    return "<ol>" + "".join(items) + "</ol>"
+
+
+def _markdown_raw_excerpt_values(excerpt: list[JsonObject]) -> list[str]:
+    """Render lossless values as indented code, never as active Markdown/HTML."""
+
+    values: list[str] = []
+    for row in excerpt:
+        if "content" in row:
+            values.append(_text(row["content"]))
+        if "tool_input" in row:
+            values.append(_readable_value(row["tool_input"]))
+        if "result" in row:
+            values.append(_readable_value(row["result"]))
+    return [f"    {value}" for value in values]
+
+
 def render_markdown(report: JsonObject) -> str:
     lines = ["# Triana Behavior Map", ""]
     accounting = report["accounting"]
@@ -211,10 +360,28 @@ def render_markdown(report: JsonObject) -> str:
                 f'<a id="{row["evidence_id"]}"></a>',
                 f"### {row['conversation_id']} · {row['kind']} · {row['ordinal']}",
                 "",
-                f"> {_text(row['text'])}",
-                "",
             ]
         )
+        excerpt = row.get("conversation_excerpt")
+        if isinstance(excerpt, list) and excerpt:
+            lines.extend(_markdown_excerpt(excerpt))
+            lines.extend(
+                [
+                    "",
+                    "<details><summary>Raw canonical event JSON</summary>",
+                    "",
+                    "    " + _text(row["text"]),
+                    "",
+                    "Raw bounded excerpt values:",
+                    "",
+                    *_markdown_raw_excerpt_values(excerpt),
+                    "",
+                    "</details>",
+                    "",
+                ]
+            )
+        else:
+            lines.extend([f"> {_text(row['text'])}", ""])
     if not report["evidence"]:
         lines.append("No publishable semantic evidence is available.\n")
     return "\n".join(lines).rstrip() + "\n"
@@ -384,10 +551,19 @@ def render_html(report: JsonObject) -> str:
         parts.append(f"<li>{html.escape(question)}<p>Answer:</p></li>")
     parts.extend(["</ul>", f"<h2>{_SECTIONS[5]}</h2>"])
     for row in report["evidence"]:
+        excerpt = row.get("conversation_excerpt")
+        body = (
+            _html_excerpt(excerpt)
+            + "<details><summary>Raw canonical event JSON</summary><code>"
+            + html.escape(_text(row["text"]))
+            + "</code></details>"
+            if isinstance(excerpt, list) and excerpt
+            else f"<blockquote>{html.escape(_text(row['text']))}</blockquote>"
+        )
         parts.append(
             f'<article id="{html.escape(row["evidence_id"])}"><h3>'
             f"{html.escape(_text(row['conversation_id']))} · {html.escape(_text(row['kind']))} · "
-            f"{row['ordinal']}</h3><blockquote>{html.escape(_text(row['text']))}</blockquote></article>"
+            f"{row['ordinal']}</h3>{body}</article>"
         )
     if not report["evidence"]:
         parts.append("<p>No publishable semantic evidence is available.</p>")

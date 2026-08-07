@@ -295,3 +295,13 @@ Phase 1 is evaluated independently from future eval-generation quality:
 The immediate launch claim stops at an evidence-grounded proposed map. It does
 not claim that a population is representative, a behavior is correct or wrong,
 or a source outcome was caused by an observed behavior.
+
+## Readable-evidence continuation
+
+The deterministic readable-evidence continuation supersedes only the human
+evidence projection and report identity. Report
+`sha256:986251c0d2315674ae40075ff9e13053988ffefb87dd96181f323bd2408b6d9e`
+preserves the same semantic populations, patterns, gaps, questions, coverage,
+and provider lineage while adding bounded conversation-shaped excerpts to all
+478 event and 132 transcript evidence rows. It made zero provider calls and
+does not change the Phase 1 claim boundary.

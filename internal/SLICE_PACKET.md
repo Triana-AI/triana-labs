@@ -2,9 +2,109 @@
 
 Date frozen: 2026-08-07
 
-Status: **LOCAL IMPLEMENTATION GREEN — LIVE TAU PROOF PENDING**
+Status: **READABLE-EVIDENCE CONTINUATION GREEN**
 
 Slice ID: `BEHAVIOR-MAP-V0`
+
+Continuation ID: `BEHAVIOR-MAP-V0-READABLE-EVIDENCE`
+
+## Active continuation entry gate — 2026-08-07
+
+The owner accepted the Phase 1 result and requested that every supporting
+evidence link open a readable conversation-shaped excerpt rather than an
+isolated quote or raw JSON event. The deterministic evidence projection must
+show, in source order where available:
+
+```text
+User message
+Agent
+  Tool call: <tool name>
+  Tool input: <readable arguments>
+  Tool result: <readable result/status>
+Agent response
+Next user message
+```
+
+The canonical JSON remains the sole evidence authority. It gains a bounded,
+deterministically projected conversation excerpt structure so Markdown and
+HTML render the same facts. Existing evidence IDs remain navigable and exact
+event sequence/identity remains visible as secondary audit metadata. Trace
+content is escaped; renderers do not infer or summarize semantic meaning.
+
+Input: the existing validated PreviewTrace corpus plus the already produced
+Behavior Map semantic results. Output: byte-deterministic JSON, Markdown, and
+HTML with conversation-shaped supporting evidence. Deterministic code owns
+event selection, role/tool rendering, ordering, anchor membership, and
+truncation. Models and humans have no new authority. Raw traces remain local;
+the excerpt cannot contain fields outside the already authorized canonical
+trace projection. Missing neighboring messages or tool results are shown as
+absent rather than invented.
+
+Change budget:
+
+- test author: `triana-labs/tests/behavior_map/test_behavior_map_v0.py` only;
+- implementation author: `triana-labs/src/triana_labs/behavior_map/{__init__.py,contracts.py,render.py}` only;
+- orchestrator: this packet, `internal/WORKING_MEMORY.md`, append-only
+  `internal/DECISION_LOG.md`, and the current decision-memory journal;
+- no dependencies, provider calls, retries, deployment, app/backend/UI work,
+  adapters, source-trace edits, or unrelated formatting;
+- maximum scope expansion: one purpose-built synthetic fixture inside the
+  existing Behavior Map test file after an orchestrator note.
+
+Acceptance requires an independently authored black-box test proving mixed
+user/assistant/tool-call/tool-result evidence is rendered in chronological,
+human-readable form in both Markdown and HTML; exact evidence anchors and
+event ordinals survive; arguments/results are readable and escaped; a missing
+tool result remains explicit; repeated execution is byte-identical; and raw
+JSON event blobs are not the primary human presentation. The implementation
+author may read but not edit the frozen test. Final verification is the
+existing Behavior Map plus Trace-to-Eval focused gate, Ruff, format, mypy,
+governance, and diff check. Regenerating the real report may reuse exact
+checkpoints only and must make zero provider calls.
+
+Independent test ownership is frozen at
+`triana-labs/tests/behavior_map/test_behavior_map_v0.py` SHA-256
+`7d972535c9585ab27e9467622645ca3f12c370d564129c1db40442d084cecc19`.
+The new focused case is valid RED because canonical `EVENT` evidence lacks the
+required `conversation_excerpt`; all pre-failure determinism controls pass.
+
+Independent post-GREEN review blocked the first implementation: a missing-result
+tool call could attach an assistant response after an intervening user turn;
+transcript citation evidence remained isolated; Markdown could interpret or
+lose untrusted markup/backticks; HTML removed literal evidence characters; and
+the excerpt had no deterministic size/truncation boundary or readable handling
+for JSON-encoded result strings. These are acceptance defects inside this same
+continuation, not deferred UX polish. Superseding independent regressions must
+be frozen before production repair.
+
+The superseding independent test contract is frozen at SHA-256
+`e928420517deede25aeb4cc62d3483357622318e4c7e0b55bda1c5eac6971f23`.
+The preserved original acceptance case passes and four causal regressions are
+RED: intervening-user boundary, transcript excerpts, bounded/decoded values,
+and lossless hostile-content rendering.
+
+The second independent GREEN review retained two blockers: the serialized
+bounded-preview wrapper could exceed its advertised 4096-byte maximum after
+JSON escaping, and a deeply nested valid JSON-string tool result could raise
+an uncaught `RecursionError`. Both are same-slice evidence-integrity failures;
+the bound must cover final canonical bytes and pathological decode depth must
+fall back to opaque bounded evidence rather than crash or invent structure.
+
+The final superseding independent test contract is frozen at SHA-256
+`0bb7486f38cac27ec7b3235697fbc6caee11d1bd3705e398647715f7d1db2ec6`.
+Its two focused cases are valid RED on truthful final canonical byte accounting
+and deep JSON recursion containment; all earlier readable-evidence controls are
+preserved.
+
+Final exit: 51/51 Behavior Map tests and 43/43 adjacent Trace-to-Eval tests
+pass, the seven readable-evidence cases pass, Ruff/format/mypy/governance and
+diff checks are green, and independent adversarial review is PASS. The real
+TAU report was deterministically refreshed with zero provider calls: all 478
+EVENT and 132 TRANSCRIPT evidence rows contain bounded conversation excerpts.
+Report id is
+`sha256:986251c0d2315674ae40075ff9e13053988ffefb87dd96181f323bd2408b6d9e`;
+the local HTML is HTTP 200 and browser inspection confirms readable source
+order with raw canonical JSON secondary and collapsed.
 
 Canonical base: the documentation-freeze commit produced from current
 `codex/selfserve-v0` after this packet is committed.

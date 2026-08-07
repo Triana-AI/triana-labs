@@ -66,6 +66,8 @@ _GENERIC_LABELS = {
 }
 _REQUEST_MAX_BYTES = 60_000
 _CONSOLIDATION_MAX_ITEMS = 12
+_EXCERPT_STRING_MAX_BYTES = 1_024
+_EXCERPT_VALUE_MAX_BYTES = 4_096
 _CONTROL_MARKERS = {"###STOP###", "###OUT-OF-SCOPE###"}
 
 
@@ -914,6 +916,295 @@ def _semantic_occurrences(
     return rows, gaps
 
 
+def _truncate_utf8(value: str, max_bytes: int) -> tuple[str, bool]:
+    if len(_canonical(value)) <= max_bytes:
+        return value, False
+    low = 0
+    high = len(value)
+    while low < high:
+        midpoint = (low + high + 1) // 2
+        candidate = value[:midpoint] + "…"
+        if len(_canonical(candidate)) <= max_bytes:
+            low = midpoint
+        else:
+            high = midpoint - 1
+    return value[:low] + "…", True
+
+
+def _truncate_excerpt_strings(value: Any) -> tuple[Any, bool]:
+    if isinstance(value, str):
+        return _truncate_utf8(value, _EXCERPT_STRING_MAX_BYTES)
+    if isinstance(value, list):
+        rows: list[Any] = []
+        truncated = False
+        for item in value:
+            bounded, item_truncated = _truncate_excerpt_strings(item)
+            rows.append(bounded)
+            truncated = truncated or item_truncated
+        return rows, truncated
+    if isinstance(value, dict):
+        row: JsonObject = {}
+        truncated = False
+        for key in sorted(value, key=str):
+            bounded, item_truncated = _truncate_excerpt_strings(value[key])
+            row[str(key)] = bounded
+            truncated = truncated or item_truncated
+        return row, truncated
+    return value, False
+
+
+def _bounded_excerpt_value(
+    value: Any, field: str, *, original_value: Any | None = None
+) -> tuple[Any, JsonObject | None]:
+    original = value if original_value is None else original_value
+    original_bytes = len(_canonical(original))
+    bounded, truncated = _truncate_excerpt_strings(value)
+    bounded_bytes = len(_canonical(bounded))
+    if bounded_bytes > _EXCERPT_VALUE_MAX_BYTES:
+        serialized = json.dumps(bounded, ensure_ascii=False, sort_keys=True)
+        wrapper_overhead = len(_canonical({"bounded_preview": ""}))
+        preview, _ = _truncate_utf8(
+            serialized,
+            _EXCERPT_VALUE_MAX_BYTES - wrapper_overhead,
+        )
+        bounded = {"bounded_preview": preview}
+        truncated = True
+    displayed_bytes = len(_canonical(bounded))
+    if displayed_bytes > _EXCERPT_VALUE_MAX_BYTES:
+        raise AssertionError("EXCERPT_BOUND_INVARIANT_VIOLATED")
+    if not truncated:
+        return bounded, None
+    return bounded, {
+        "truncated": True,
+        "field": field,
+        "original_bytes": original_bytes,
+        "displayed_bytes": displayed_bytes,
+        "max_bytes": _EXCERPT_VALUE_MAX_BYTES,
+        "string_byte_limit": _EXCERPT_STRING_MAX_BYTES,
+    }
+
+
+def _excerpt_message(event: JsonObject, display_kind: str) -> JsonObject:
+    content, truncation = _bounded_excerpt_value(_event_readable_text(event), "message")
+    row: JsonObject = {
+        "event_sequence": event["sequence"],
+        "display_kind": display_kind,
+        "content": content,
+    }
+    if truncation is not None:
+        row["truncation"] = truncation
+    return row
+
+
+def _conversation_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonObject]:
+    """Project one tool interaction with its nearest conversational context."""
+
+    events = sorted(
+        cast(list[JsonObject], trace["events"]),
+        key=lambda row: cast(int, row["sequence"]),
+    )
+    by_sequence = {cast(int, row["sequence"]): row for row in events}
+    target = by_sequence.get(event_sequence)
+    if target is None:
+        return []
+    call = target if target.get("event_kind") == "TOOL_CALL" else None
+    if target.get("event_kind") == "TOOL_RESULT":
+        call = next(
+            (
+                row
+                for row in reversed(events)
+                if row.get("event_kind") == "TOOL_CALL"
+                and row.get("call_id") == target.get("call_id")
+                and cast(int, row["sequence"]) < event_sequence
+            ),
+            None,
+        )
+    if call is None:
+        return []
+    call_sequence = cast(int, call["sequence"])
+    previous_user = next(
+        (
+            row
+            for row in reversed(events)
+            if row.get("event_kind") == "USER_MESSAGE"
+            and cast(int, row["sequence"]) < call_sequence
+        ),
+        None,
+    )
+    first_user_after_call = next(
+        (
+            row
+            for row in events
+            if row.get("event_kind") == "USER_MESSAGE"
+            and cast(int, row["sequence"]) > call_sequence
+        ),
+        None,
+    )
+    user_boundary = (
+        cast(int, first_user_after_call["sequence"])
+        if first_user_after_call is not None
+        else None
+    )
+    result = next(
+        (
+            row
+            for row in events
+            if row.get("event_kind") == "TOOL_RESULT"
+            and row.get("call_id") == call.get("call_id")
+            and cast(int, row["sequence"]) > call_sequence
+            and (user_boundary is None or cast(int, row["sequence"]) < user_boundary)
+        ),
+        None,
+    )
+    response_after = (
+        cast(int, result["sequence"]) if result is not None else call_sequence
+    )
+    first_conversation_after = next(
+        (
+            row
+            for row in events
+            if row.get("event_kind") in {"USER_MESSAGE", "ASSISTANT_MESSAGE"}
+            and cast(int, row["sequence"]) > response_after
+        ),
+        None,
+    )
+    agent_response = (
+        first_conversation_after
+        if first_conversation_after is not None
+        and first_conversation_after.get("event_kind") == "ASSISTANT_MESSAGE"
+        else None
+    )
+    next_after = (
+        cast(int, agent_response["sequence"])
+        if agent_response is not None
+        else response_after
+    )
+    next_user = (
+        first_conversation_after
+        if first_conversation_after is not None
+        and first_conversation_after.get("event_kind") == "USER_MESSAGE"
+        else next(
+            (
+                row
+                for row in events
+                if row.get("event_kind") == "USER_MESSAGE"
+                and cast(int, row["sequence"]) > next_after
+            ),
+            None,
+        )
+    )
+    excerpt: list[JsonObject] = []
+    if previous_user is not None:
+        excerpt.append(_excerpt_message(previous_user, "USER_MESSAGE"))
+    tool_input, input_truncation = _bounded_excerpt_value(
+        call.get("arguments"), "tool_input"
+    )
+    call_row: JsonObject = {
+        "event_sequence": call_sequence,
+        "display_kind": "TOOL_CALL",
+        "tool_name": str(call.get("tool_name", "tool")),
+        "tool_input": tool_input,
+    }
+    if input_truncation is not None:
+        call_row["truncation"] = input_truncation
+    if result is None:
+        call_row["tool_result_status"] = "Tool result missing from trace export"
+    excerpt.append(call_row)
+    if result is not None:
+        source_result = result.get("result")
+        result_value = source_result
+        if isinstance(source_result, str):
+            try:
+                decoded_result = json.loads(source_result)
+            except (json.JSONDecodeError, RecursionError):
+                decoded_result = None
+            if isinstance(decoded_result, (dict, list)):
+                result_value = decoded_result
+        try:
+            bounded_result, result_truncation = _bounded_excerpt_value(
+                result_value, "tool_result", original_value=source_result
+            )
+        except RecursionError:
+            if not isinstance(source_result, str):
+                raise
+            bounded_result, result_truncation = _bounded_excerpt_value(
+                source_result, "tool_result"
+            )
+        result_row: JsonObject = {
+            "event_sequence": result["sequence"],
+            "display_kind": "TOOL_RESULT",
+            "result_state": result.get("result_state"),
+            "result": bounded_result,
+            "error_code": result.get("error_code"),
+        }
+        if result_truncation is not None:
+            result_row["truncation"] = result_truncation
+        excerpt.append(result_row)
+    if agent_response is not None:
+        excerpt.append(_excerpt_message(agent_response, "AGENT_RESPONSE"))
+    if next_user is not None:
+        excerpt.append(_excerpt_message(next_user, "NEXT_USER_MESSAGE"))
+    return excerpt
+
+
+def _transcript_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonObject]:
+    """Shape a cited message around its nearest same-demand tool interaction."""
+
+    events = sorted(
+        cast(list[JsonObject], trace["events"]),
+        key=lambda row: cast(int, row["sequence"]),
+    )
+    target = next(
+        (row for row in events if row.get("sequence") == event_sequence), None
+    )
+    if target is None:
+        return []
+    target_kind = target.get("event_kind")
+    call: JsonObject | None = None
+    if target_kind == "USER_MESSAGE":
+        call = next(
+            (
+                row
+                for row in events
+                if row.get("event_kind") == "TOOL_CALL"
+                and cast(int, row["sequence"]) > event_sequence
+                and not any(
+                    boundary.get("event_kind") == "USER_MESSAGE"
+                    and event_sequence
+                    < cast(int, boundary["sequence"])
+                    < cast(int, row["sequence"])
+                    for boundary in events
+                )
+            ),
+            None,
+        )
+    elif target_kind == "ASSISTANT_MESSAGE":
+        previous_user_sequence = max(
+            (
+                cast(int, row["sequence"])
+                for row in events
+                if row.get("event_kind") == "USER_MESSAGE"
+                and cast(int, row["sequence"]) < event_sequence
+            ),
+            default=-1,
+        )
+        call = next(
+            (
+                row
+                for row in reversed(events)
+                if row.get("event_kind") == "TOOL_CALL"
+                and previous_user_sequence < cast(int, row["sequence"]) < event_sequence
+            ),
+            None,
+        )
+    if call is not None:
+        excerpt = _conversation_excerpt(trace, cast(int, call["sequence"]))
+        if any(row.get("event_sequence") == event_sequence for row in excerpt):
+            return excerpt
+    display_kind = "USER_MESSAGE" if target_kind == "USER_MESSAGE" else "AGENT_RESPONSE"
+    return [_excerpt_message(target, display_kind)]
+
+
 def _evidence(
     traces: list[JsonObject], episodes: list[JsonObject], occurrences: list[JsonObject]
 ) -> tuple[list[JsonObject], dict[tuple[str, str, int, str], str], dict[str, str]]:
@@ -932,6 +1223,7 @@ def _evidence(
         )
         unique[key] = citation
     event_text: dict[str, str] = {}
+    trace_by_id = {cast(str, trace["trace_id"]): trace for trace in traces}
     for trace in traces:
         conversation_id = cast(str, trace["trace_id"])
         for event in cast(list[JsonObject], trace["events"]):
@@ -954,6 +1246,9 @@ def _evidence(
                 "kind": "TRANSCRIPT",
                 "ordinal": ordinal,
                 "text": quote,
+                "conversation_excerpt": _transcript_excerpt(
+                    trace_by_id[conversation_id], ordinal
+                ),
             }
         )
     used_events = sorted(
@@ -979,6 +1274,9 @@ def _evidence(
                 "kind": "EVENT",
                 "ordinal": int(event_ordinal),
                 "text": event_text[event_id],
+                "conversation_excerpt": _conversation_excerpt(
+                    trace_by_id[conversation_id], int(event_ordinal)
+                ),
             }
         )
     rows.sort(key=lambda row: cast(str, row["evidence_id"]))

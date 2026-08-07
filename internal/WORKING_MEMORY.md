@@ -1194,3 +1194,18 @@ unpublishable behaviors remain typed partial evidence. Final conservative
 reservation is USD 48/50; actual cost is unknown and no further paid run is
 implied. Phase 2 eval generation, comparison/diff, UI productization, and
 accepted taxonomy remain deferred.
+
+Behavior Map readable-evidence continuation (2026-08-07): the original TAU
+semantic result was reprojected without provider calls into report
+`sha256:986251c0d2315674ae40075ff9e13053988ffefb87dd96181f323bd2408b6d9e`.
+All 610 evidence links now carry a deterministic conversation-shaped excerpt:
+user message, exact tool call/input/result when present, agent response, and
+next user message. Intervening user turns hard-stop attachment; missing tool
+results are explicit; transcript citations receive the same readable context;
+valid JSON-string results decode only when safely traversable; primary values
+are byte-bounded with truthful truncation metadata; hostile Markdown/HTML is
+escaped without content loss; and raw canonical event JSON is secondary.
+Independent review initially rejected cross-turn, citation, escaping, and
+false-bound implementations, then passed the final 51-case module. This is a
+deterministic evidence-presentation improvement, not new semantic coverage or
+accepted truth, and consumed USD 0 provider spend.
