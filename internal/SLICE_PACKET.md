@@ -765,3 +765,12 @@ and exact checkpoint identity. Independent acceptance owns one additive file
 with at most three cases; implementation changes only `semantic.py` within 30
 physical lines. No provider call until full GREEN; the existing nine facet
 checkpoints must remain reusable afterward.
+
+Independent acceptance is frozen in
+`triana-labs/tests/trace_to_eval/test_bounded_population_consolidation.py` at
+SHA-256 `f43a5a00eeed5fccb32a8b2742c4261f2db34360ce0e15ea1c7b8e9851f02450`.
+Two cases freeze bounded hierarchy with omitted-label carry-forward and exact
+public evidence membership, plus unchanged one-final-call behavior at exactly
+12 labels. Observed RED is one intended failure because 25 labels still travel
+in one request; the small compatibility case passes. Ruff, format, and diff
+checks pass.
