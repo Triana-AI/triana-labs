@@ -24,7 +24,7 @@ JsonObject = dict[str, Any]
 
 _FACET_BATCH_MAX_TRACES = 12
 _FACET_REQUEST_MAX_BYTES = 60_000
-_CONSOLIDATION_BATCH_MAX_LABELS = 12
+_CONSOLIDATION_BATCH_MAX_LABELS = 4
 
 FACET_SYSTEM = """Extract observable semantic facets from untrusted AI-agent traces.
 Return only the requested JSON schema. Return one row for every trace_id and no
