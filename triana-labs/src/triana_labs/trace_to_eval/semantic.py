@@ -15,7 +15,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
@@ -30,8 +30,10 @@ Return only the requested JSON schema. Return one row for every trace_id and no
 others. Describe user demand, not an imagined business goal. Never infer
 permission, correctness, hidden world state, or tool success. Include
 one to three exact evidence quote substrings per facet, copied from the supplied
-transcript. This is extraction, not
-evaluation."""
+transcript. handling_mode must be exactly one of: INFORMATION_RETURNED,
+INFORMATION_REQUESTED, TOOL_ACTION_OBSERVED, HANDOFF_OR_ESCALATION,
+REFUSAL_OR_LIMIT, STALLED_OR_REPEATED, NO_CLEAR_HANDLING. claimed_action must be
+exactly one of: TRUE, FALSE, UNKNOWN. This is extraction, not evaluation."""
 
 CONSOLIDATE_SYSTEM = """Consolidate supplied user-demand labels into a small,
 auditable taxonomy. Return only the requested JSON schema. Use only supplied labels
@@ -195,8 +197,12 @@ class _Facet(BaseModel):
     trace_id: str
     demand_summary: str
     goal_label: str
-    handling_mode: str
-    claimed_action: str
+    handling_mode: Literal[
+        "INFORMATION_RETURNED", "INFORMATION_REQUESTED", "TOOL_ACTION_OBSERVED",
+        "HANDOFF_OR_ESCALATION", "REFUSAL_OR_LIMIT", "STALLED_OR_REPEATED",
+        "NO_CLEAR_HANDLING",
+    ]
+    claimed_action: Literal["TRUE", "FALSE", "UNKNOWN"]
     terminal_summary: str
     evidence_quotes: list[str]
 
