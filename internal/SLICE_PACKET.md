@@ -568,3 +568,40 @@ Observed RED is 7/7 failures at the exact legacy production seam:
 There is no collection, fixture, syntax, import, network, or unrelated failure.
 Ruff and diff checks pass. The frozen test may not be edited by the
 implementation author.
+
+### Provider GREEN and byte-bounded TAU batching correction — 2026-08-07
+
+The independently implemented compatibility boundary passed all seven frozen
+cases, all 23 Trace-to-Eval cases, Ruff, and mypy. A new one-call synthetic
+preflight then passed on its first and only call with 356 input tokens, 121
+output tokens, USD 0.15 reserved, no retry/fallback, and a schema-valid facet.
+
+The authorized 57-conversation TAU run subsequently failed closed on its first
+and only real facet request: zero successful calls, zero returned tokens, USD
+0.15 reserved, `SEMANTIC_PROVIDER_CALL_FAILED`, and no retry/fallback. All 57
+conversations and official 39/18 outcomes remained intact in deterministic
+report `sha256:252aa7b0a175f4c8b85e0addfa87fa5f7848faae9712154c3b7a65dda54c4a9d`.
+Local measurement falsifies a corpus or credential explanation: the fixed
+12-trace batches serialize to 174,356, 125,499, and 119,509 payload bytes,
+whereas the successful single-trace request is small. The next hypothesis is
+that fixed record-count batching exceeds the pinned deployment's practical
+context/request limit.
+
+Frozen correction: facet extraction must greedily preserve trace order while
+enforcing both the existing maximum 12 traces and a 60,000-byte canonical
+request-content ceiling. A single trace that cannot fit must fail before a
+provider attempt with `SEMANTIC_REQUEST_TOO_LARGE`; no truncation, splitting of
+one conversation, retry, fallback, or silent omission is allowed. Accounting,
+schemas, consolidation, evidence validation, and all product authority remain
+unchanged.
+
+Correction change budget:
+
+- independent test author: one additive test file, at most five cases;
+- implementation author: only
+  `triana-labs/src/triana_labs/trace_to_eval/semantic.py`, at most 100 changed
+  physical lines;
+- orchestrator: append-only governance and local evidence records;
+- no provider call until the new tests and full suite are GREEN; after GREEN,
+  one distinct TAU analysis may run with at most 15 calls and USD 2.25 newly
+  reserved, still without retry or fallback.
