@@ -207,3 +207,14 @@ required.
    physical line, canonical run/report identity, S3 object hash, and RDS index.
 8. Verify TLS, server-only backend routing, logs without payloads/tokens, and a
    rollback to the preceding image and database backup.
+
+## Partial handling report state
+
+When one or two fixed semantic runs complete before a later run fails, the User
+behavior tab now renders the same reusable `PARTIAL`/`PROPOSAL_ONLY` handling
+element as local `/analysis`. Completed runs remain separate. Authoritative
+outcome joins appear only when the canonical manifest provides validated TAU
+per-trace rewards; every trace citation opens the existing ConversationViewer.
+This state never creates populations, eval proposals, review work, findings, or
+a pass. The real checkpoint-only TAU example and current local URL are recorded
+in `docs/TRACE_TO_EVAL_LOCAL_RUNBOOK.md`.

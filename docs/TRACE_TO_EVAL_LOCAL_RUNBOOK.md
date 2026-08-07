@@ -120,3 +120,43 @@ It renders 12 conversations, three proposed populations, exactly three primary
 eval proposals, bounded pair/eval review items, and cited DEVELOPMENT evidence.
 This artifact uses a controlled test semantic model; it proves projection,
 grounding checks, review custody, and UI behavior—not live provider quality.
+
+### Real TAU checkpoint-only partial handling example
+
+Validated report:
+
+```text
+sha256:59e42ad3fe20474ed1cd82bf65cd34a356853c575ccb4922c12d636629269592
+```
+
+Its artifact directory is
+`/private/tmp/triana-tau57-semantic-enums-v4`. It reconciles 57 conversations,
+official 39 successes/18 failures, two complete 34-conversation DEVELOPMENT
+handling runs, 88 validated checkpoint hits, and zero provider calls during the
+final replay. It remains `PARTIAL` with `SEMANTIC_BUDGET_EXCEEDED`; populations,
+eval proposals, and review items are correctly empty.
+
+To inspect the retained report without provider configuration, point the local
+backend at a parent containing the artifact directory and use any free loopback
+ports:
+
+```bash
+cd /Users/akarshgajbhiye/triana/triana-backend
+TRIANA_TRACE_TO_EVAL_LOCAL=1 \
+TRIANA_TRACE_TO_EVAL_ROOT=/private/tmp \
+TRIANA_PORT=8010 \
+UV_CACHE_DIR=/private/tmp/triana-uv-cache \
+uv run python -m triana_backend.main
+
+cd /Users/akarshgajbhiye/triana/triana-app
+PORT=3010 \
+TRIANA_BACKEND_API_ORIGIN=http://127.0.0.1:8010 \
+npm run dev
+```
+
+Open <http://127.0.0.1:3010/analysis>, paste the report ID into **Existing
+report ID**, and select **Refresh report**. The verified surface shows both runs
+separately, per-mode authoritative outcome arithmetic, typed gaps, and report-
+bound ConversationViewer evidence. Port 3010 is the currently running local
+verification URL because existing developer processes already occupy 3000 and
+8000/8001; no existing process was terminated.

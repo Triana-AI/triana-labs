@@ -1053,3 +1053,19 @@ useful outcome-linked handling signal in run one: tool-observed handling is
 single stalled/repeated trace failed. The active correction is to preserve this
 as proposal-only `PARTIAL` evidence without creating populations, evals, review
 items, passes, or causal claims.
+
+TAU partial-handling product exit (2026-08-07): the correction is now real in
+the canonical engine and both local/authenticated UI report paths. Provider-
+disabled checkpoint replay produced report
+`sha256:59e42ad3fe20474ed1cd82bf65cd34a356853c575ccb4922c12d636629269592`:
+57 accepted, official 39/18 outcomes, two completed 34-trace DEVELOPMENT runs,
+88 checkpoint hits, zero provider calls, `PARTIAL`/`PROPOSAL_ONLY`, and the
+original semantic-budget gap. Browser verification opened the report and
+`tau2-54` ConversationViewer evidence with no console errors. This is the
+current release wow: observable handling patterns tied to authoritative
+outcomes while uncertainty remains visible. It is not yet a reliable intent
+taxonomy or eval-generation result. The UI is dense at 34 trace citations per
+run; later progressive disclosure may improve usability without changing the
+contract. The focused engine/UI gates, TypeScript, and production build are
+GREEN. Full `npm test` retains 14 unrelated legacy static-export/LABS-09
+contract failures that predate this slice and remain separately visible.

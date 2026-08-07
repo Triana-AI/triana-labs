@@ -886,3 +886,27 @@ UI change-budget refinement:
 UI acceptance requires the source contract, TypeScript, existing app tests,
 production Next build, and a browser check against a real checkpoint-only TAU
 report before the orchestrator may close the slice.
+
+Partial-handling exit: **GREEN WITH EXPLICIT PRODUCT GAPS — 2026-08-07**.
+Engine acceptance is 43/43 GREEN; the shared UI contract is 4/4 GREEN;
+TypeScript and the production Next build pass. A provider-disabled replay read
+88 strict-valid exact-identity checkpoints and published canonical report
+`sha256:59e42ad3fe20474ed1cd82bf65cd34a356853c575ccb4922c12d636629269592`
+with 57 accepted conversations, official 39/18 outcome accounting, two
+separate complete 34-conversation DEVELOPMENT handling runs, and the original
+`SEMANTIC_BUDGET_EXCEEDED` gap. It made zero provider calls. The local browser
+rendered the report at `/analysis`, showed exact per-mode outcome arithmetic,
+and opened `tau2-54` in the reusable ConversationViewer; browser console errors
+were empty.
+
+The result is useful but bounded. Intent populations and eval proposals remain
+empty because both completed runs collapse intent to one unresolved bucket and
+run three is incomplete. Run-one and run-two handling disagree on three traces,
+so the UI shows them separately and never calls them stable. The 68 per-run
+trace buttons plus outcome citations are readable but dense; aggregation or
+progressive disclosure is a later UI refinement, not a correctness blocker.
+The full app test command still has 14 pre-existing legacy failures: two expect
+removed static-export route artifacts and twelve expect the superseded LABS-09
+private local-report override/no-network loader. All tests owned by this slice
+pass, and production build/typecheck pass; those legacy contracts were not
+weakened or rewritten inside this budget.
