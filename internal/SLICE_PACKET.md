@@ -774,3 +774,12 @@ public evidence membership, plus unchanged one-final-call behavior at exactly
 12 labels. Observed RED is one intended failure because 25 labels still travel
 in one request; the small compatibility case passes. Ruff, format, and diff
 checks pass.
+
+The first 12-label TAU hierarchical request also failed transport with zero
+tokens. A distinct two-label synthetic consolidation passed, followed by a
+distinct four-label real-TAU diagnostic that passed with 444 input and 935
+output tokens. Supersede only the preliminary 12-label bound with a certified
+four-label bound for this pinned provider profile. The existing hierarchy,
+identity, accounting, and acceptance rules remain unchanged; the focused test
+must be independently updated to require at most four and retain exactly-four
+single-final-call compatibility before production changes.
