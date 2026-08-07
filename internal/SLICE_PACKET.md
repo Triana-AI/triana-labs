@@ -287,6 +287,8 @@ The test author must freeze black-box cases for:
     model role, budget, or output structure;
 16. budget refusal occurs before a model call and secrets/raw provider payloads
     never enter artifacts.
+17. Terra primary and Luna auditor identities are independently role-authorized;
+    either mismatch refuses both provider calls with a typed role-specific gap.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -353,13 +355,16 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`33dfa0ae3eb0780541252274ac727f54e5a2726fc3a2277e98fe0ff038cfa2c1`.
-It freezes all sixteen acceptance behaviors listed above. The orchestrator
+`0e0a2fc2664238d69d9a36dddb359002f5726d0af72ae305dfda6b59574c771c`.
+It freezes all seventeen acceptance behaviors listed above. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
 cancellation population. The corrected test keys by conversation and requested
 action and asserts the cancellation population includes the cancellation
-episode and excludes the return episode.
+episode and excludes the return episode. A later fixture correction explicitly
+authorizes the independently identified Luna auditor and adds atomic refusal
+when either configured model identity is not authorized; this supersedes only
+the prior test-file hash and incomplete role-authorization fixture.
 
 Valid RED command:
 
@@ -370,6 +375,7 @@ UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked pytest -q tests/behavi
 
 Observed result: collection stops only at
 `ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
-0.21 seconds. Ruff check, Ruff format check, Python compilation, file hash, and
+3.39 seconds against an isolated export of pre-implementation commit `d35dac1`.
+Ruff check, Ruff format check, Python compilation, file hash, and
 diff check are GREEN. The test-owned path is frozen. The implementation author
 may read it but must not edit it.

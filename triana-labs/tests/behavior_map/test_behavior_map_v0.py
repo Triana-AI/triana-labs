@@ -206,6 +206,7 @@ def _write_manifest(
             "provider_egress": {
                 "authorized": provider_authorized,
                 "model_id": "terra-test-v0" if provider_authorized else None,
+                "audit_model_id": "luna-test-v0" if provider_authorized else None,
             },
         },
         "grouping": {
@@ -856,6 +857,34 @@ def test_primary_and_auditor_identity_and_disagreement_are_preserved(
         row["reason"] == "AUDIT_DISAGREEMENT" for row in report["emerging_unknown"]
     )
     assert report["method"]["fallback_policy"] == "NONE"
+
+
+def test_unauthorized_primary_or_auditor_is_refused_before_either_model_call(
+    tmp_path: Path,
+) -> None:
+    for role, primary_id, audit_id in (
+        ("PRIMARY", "unauthorized-terra", "luna-test-v0"),
+        ("AUDITOR", "terra-test-v0", "unauthorized-luna"),
+    ):
+        case = tmp_path / role.casefold()
+        case.mkdir()
+        primary = _SemanticModel(primary_id)
+        auditor = _SemanticModel(audit_id)
+        report = run_behavior_map(
+            _write_manifest(case),
+            case / "output",
+            primary_model=primary,
+            audit_model=auditor,
+            agent_context="A retail agent helps users manage orders and products.",
+        )
+        assert primary.provider_calls == 0
+        assert auditor.provider_calls == 0
+        assert "SEMANTIC_MODEL_UNAUTHORIZED" in _codes(report)
+        assert any(
+            gap.get("role") == role
+            for gap in report["gaps"]
+            if gap["code"] == "SEMANTIC_MODEL_UNAUTHORIZED"
+        )
 
 
 def test_source_outcomes_stay_lineage_only_and_never_become_behavior_claims(
