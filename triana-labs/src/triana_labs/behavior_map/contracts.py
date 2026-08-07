@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -181,6 +181,7 @@ class DemandEpisodeV0(TypedDict):
 
 class UserPopulationV0(TypedDict):
     population_id: str
+    audit_subject_id: NotRequired[str]
     label: str
     definition: str
     episode_ids: list[str]

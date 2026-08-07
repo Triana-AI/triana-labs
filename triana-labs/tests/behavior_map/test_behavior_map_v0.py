@@ -46,6 +46,11 @@ def _sha256(payload: bytes) -> str:
     return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
+def _domain_digest(domain: str, value: Any) -> str:
+    """Independent test-side reproduction of the documented domain hash."""
+    return _sha256(domain.encode("ascii") + b"\0" + _canonical(value))
+
+
 def _event(sequence: int, kind: str, **values: Any) -> dict[str, Any]:
     return {"sequence": sequence, "event_kind": kind, **values}
 
@@ -650,6 +655,97 @@ class _SemanticModel:
             "retry_policy": "NONE",
             "fallback_policy": "NONE",
         }
+
+
+class _AuditScopeSemanticModel(_SemanticModel):
+    """Control population membership and subject-scoped audit decisions."""
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        boundary_support: bool = False,
+        unsupported_conversations: set[str] | None = None,
+        unsupported_population_label: str | None = None,
+    ) -> None:
+        super().__init__(model_id)
+        self.boundary_support = boundary_support
+        self.unsupported_conversations = unsupported_conversations or set()
+        self.unsupported_population_label = unsupported_population_label
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        fields = set(getattr(schema, "model_fields", {}))
+        if "audits" in fields:
+            self.requests.append(
+                {"stage": stage, "system": system, "payload": deepcopy(payload)}
+            )
+            self.provider_calls += 1
+            audits = []
+            for item in payload["items"]:
+                unsupported = (
+                    "episode_id" in item
+                    and str(item["conversation_id"]) in self.unsupported_conversations
+                ) or (
+                    "population_id" in item
+                    and item.get("label") == self.unsupported_population_label
+                )
+                audits.append(
+                    {
+                        "item_id": _first_id(item),
+                        "decision": "UNSUPPORTED" if unsupported else "SUPPORTED",
+                        "reason": "Synthetic scoped independent audit.",
+                    }
+                )
+            return {"audits": audits}
+        if "populations" in fields:
+            self.requests.append(
+                {"stage": stage, "system": system, "payload": deepcopy(payload)}
+            )
+            self.provider_calls += 1
+            episodes = _objects_with_key(payload, ("episode_id",))
+            episode_ids = {
+                (str(row["conversation_id"]), str(row["requested_action"])): str(
+                    row["episode_id"]
+                )
+                for row in episodes
+            }
+            first_members = [
+                episode_ids[("cancel-three", "CANCEL_ORDER")],
+                episode_ids[("multi-goal", "CANCEL_ORDER")],
+                episode_ids[("warranty-one", "GET_INFORMATION")],
+            ]
+            if not self.boundary_support:
+                first_members.append(episode_ids[("changed-mind", "EXCHANGE_ITEM")])
+            second_members = [
+                episode_ids[("cancel-two", "CANCEL_ORDER")],
+                episode_ids[("multi-goal", "RETURN_ITEM")],
+                episode_ids[("warranty-two", "GET_INFORMATION")],
+                episode_ids[("changed-mind", "RETURN_ITEM")],
+            ]
+            return {
+                "populations": [
+                    {
+                        "label": "First supported demand family",
+                        "definition": "A synthetic family used to verify scoped audit projection.",
+                        "episode_ids": first_members,
+                    },
+                    {
+                        "label": "Second supported demand family",
+                        "definition": "A second synthetic family used to verify scoped audit projection.",
+                        "episode_ids": second_members,
+                    },
+                ]
+            }
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
 
 
 def _objects_with_key(value: Any, keys: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -2815,6 +2911,238 @@ class _OneAuditItemFailureModel(_SemanticModel):
         )
         self.successful_item_ids.update(item_ids)
         return result
+
+
+def _expected_reprojected_population_id(
+    population: dict[str, Any],
+    members: list[str],
+    episode_by_id: dict[str, dict[str, Any]],
+) -> str:
+    sorted_members = sorted(members)
+    identity = {
+        "label": population["label"],
+        "definition": population["definition"],
+        "episode_ids": sorted_members,
+        "support": len(sorted_members),
+        "visibility": (
+            "PROPOSED_POPULATION" if len(sorted_members) >= 3 else "EMERGING"
+        ),
+        "method": "PRIMARY_POPULATION_CONSOLIDATION_V0",
+        "audit_state": "PENDING",
+        "representative_evidence_ids": sorted(
+            {
+                evidence_id
+                for member in sorted_members[:3]
+                for evidence_id in episode_by_id[member]["evidence_ids"]
+            }
+        ),
+    }
+    return _domain_digest("behavior-map-population-v0", identity)
+
+
+def test_episode_audit_scope_detaches_only_disputed_members_and_reprojects(
+    tmp_path: Path,
+) -> None:
+    primary = _AuditScopeSemanticModel("terra-test-v0")
+    auditor = _AuditScopeSemanticModel(
+        "luna-test-v0", unsupported_conversations={"cancel-three", "cancel-two"}
+    )
+    report, output, _, _ = _run(tmp_path, primary=primary, auditor=auditor)
+
+    disputed_ids = {
+        str(row["episode_id"])
+        for row in report["episodes"]
+        if row["conversation_id"] in {"cancel-three", "cancel-two"}
+    }
+    assert len(disputed_ids) == 2
+    original_populations = {
+        str(item["label"]): item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if "population_id" in item
+    }
+    assert set(original_populations) == {
+        "First supported demand family",
+        "Second supported demand family",
+    }
+    original_population_ids = {
+        str(row["population_id"]) for row in original_populations.values()
+    }
+    supported_audit_ids = {
+        str(row["item_id"])
+        for row in report["semantic_audit"]["items"]
+        if row["decision"] == "SUPPORTED"
+    }
+
+    assert len(report["populations"]) == 2
+    episode_by_id = {str(row["episode_id"]): row for row in report["episodes"]}
+    assigned_ids: set[str] = set()
+    for population in report["populations"]:
+        original = original_populations[str(population["label"])]
+        expected_members = sorted(set(map(str, original["episode_ids"])) - disputed_ids)
+        assert population["episode_ids"] == expected_members
+        assert population["support"] == 3
+        assert population["visibility"] == "PROPOSED_POPULATION"
+        assert population["audit_state"] == "SUPPORTED"
+        assert population["population_id"] not in original_population_ids
+        assert population["audit_subject_id"] == original["population_id"]
+        assert population["audit_subject_id"] in supported_audit_ids
+        assert population["population_id"] == _expected_reprojected_population_id(
+            population, expected_members, episode_by_id
+        )
+        assert population["representative_evidence_ids"] == sorted(
+            {
+                evidence_id
+                for member in expected_members
+                for evidence_id in episode_by_id[member]["evidence_ids"]
+            }
+        )
+        assigned_ids.update(expected_members)
+
+    assert (
+        assigned_ids
+        == {
+            episode_id
+            for row in original_populations.values()
+            for episode_id in map(str, row["episode_ids"])
+        }
+        - disputed_ids
+    )
+    assert report["accounting"]["population_assigned_episode_count"] == 6
+    assert {
+        str(row["episode_id"])
+        for row in report["emerging_unknown"]
+        if row["reason"] == "AUDIT_DISAGREEMENT"
+    } == disputed_ids
+    assert {
+        str(row["episode_id"]): row.get("audit_state")
+        for row in report["episodes"]
+        if str(row["episode_id"]) in disputed_ids
+    } == {episode_id: "UNSUPPORTED" for episode_id in disputed_ids}
+    audits = {
+        str(row["item_id"]): str(row["decision"])
+        for row in report["semantic_audit"]["items"]
+    }
+    assert original_population_ids <= set(audits)
+    assert all(audits[item_id] == "SUPPORTED" for item_id in original_population_ids)
+    assert all(audits[item_id] == "UNSUPPORTED" for item_id in disputed_ids)
+    assert not report["gaps"]
+    assert {
+        f"Does the population ‘{row['label']}’ describe one distinct user demand?"
+        for row in report["populations"]
+    } <= set(report["questions"])
+
+    first_bytes = (output / "behavior-map.json").read_bytes()
+    replay_primary = _AuditScopeSemanticModel("terra-test-v0")
+    replay_auditor = _AuditScopeSemanticModel(
+        "luna-test-v0", unsupported_conversations={"cancel-three", "cancel-two"}
+    )
+    replay = run_behavior_map(
+        tmp_path / "manifest.json",
+        output,
+        primary_model=replay_primary,
+        audit_model=replay_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert replay_primary.provider_calls == replay_auditor.provider_calls == 0
+    assert replay == report
+    assert (output / "behavior-map.json").read_bytes() == first_bytes
+
+
+def test_population_audit_scope_still_rejects_the_whole_population(
+    tmp_path: Path,
+) -> None:
+    auditor = _AuditScopeSemanticModel(
+        "luna-test-v0", unsupported_population_label="First supported demand family"
+    )
+    report, _, _, _ = _run(
+        tmp_path,
+        primary=_AuditScopeSemanticModel("terra-test-v0"),
+        auditor=auditor,
+    )
+    original = next(
+        item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if item.get("label") == "First supported demand family"
+    )
+    rejected_population_id = str(original["population_id"])
+    rejected_member_ids = set(map(str, original["episode_ids"]))
+
+    assert rejected_population_id not in {
+        str(row["population_id"]) for row in report["populations"]
+    }
+    assert {str(row["label"]) for row in report["populations"]} == {
+        "Second supported demand family"
+    }
+    assert rejected_member_ids.isdisjoint(
+        {
+            str(episode_id)
+            for row in report["populations"]
+            for episode_id in row["episode_ids"]
+        }
+    )
+    assert (
+        next(
+            row
+            for row in report["semantic_audit"]["items"]
+            if row["item_id"] == rejected_population_id
+        )["decision"]
+        == "UNSUPPORTED"
+    )
+    assert rejected_member_ids <= {
+        str(row["episode_id"])
+        for row in report["emerging_unknown"]
+        if row["reason"] == "AUDIT_DISAGREEMENT"
+    }
+
+
+def test_episode_audit_detachment_crosses_publication_boundary_to_emerging(
+    tmp_path: Path,
+) -> None:
+    primary = _AuditScopeSemanticModel("terra-test-v0", boundary_support=True)
+    auditor = _AuditScopeSemanticModel(
+        "luna-test-v0", unsupported_conversations={"cancel-three"}
+    )
+    report, _, _, _ = _run(tmp_path, primary=primary, auditor=auditor)
+    original = next(
+        item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if item.get("label") == "First supported demand family"
+    )
+    disputed_id = next(
+        str(row["episode_id"])
+        for row in report["episodes"]
+        if row["conversation_id"] == "cancel-three"
+    )
+    population = next(
+        row
+        for row in report["populations"]
+        if row["label"] == "First supported demand family"
+    )
+    expected_members = sorted(set(map(str, original["episode_ids"])) - {disputed_id})
+    episode_by_id = {str(row["episode_id"]): row for row in report["episodes"]}
+
+    assert population["episode_ids"] == expected_members
+    assert population["support"] == 2
+    assert population["visibility"] == "EMERGING"
+    assert population["audit_state"] == "SUPPORTED"
+    assert population["population_id"] != original["population_id"]
+    assert population["audit_subject_id"] == original["population_id"]
+    assert any(
+        row["item_id"] == population["audit_subject_id"]
+        and row["decision"] == "SUPPORTED"
+        for row in report["semantic_audit"]["items"]
+    )
+    assert population["population_id"] == _expected_reprojected_population_id(
+        population, expected_members, episode_by_id
+    )
+    assert report["accounting"]["population_assigned_episode_count"] == 6
+    assert any(
+        row["episode_id"] == disputed_id and row["reason"] == "AUDIT_DISAGREEMENT"
+        for row in report["emerging_unknown"]
+    )
 
 
 def test_one_audit_item_failure_isolated_and_later_items_continue(

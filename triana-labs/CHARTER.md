@@ -71,6 +71,11 @@ outcome judgment, L4, simulation, and accepted taxonomy remain later phases.
 Semantic output is proposed evidence, never correctness or policy truth;
 deterministic code owns trace/sample identity, sealed splits, evidence
 coordinates, support, lineage, budget, artifact integrity, and typed gaps.
+Independent semantic audit authority is subject-scoped: an episode ruling may
+detach only that episode from a population, while a population ruling governs
+the population. Any surviving membership is deterministically reprojected so
+support, visibility, identity, assignments, denominators, and typed uncertainty
+remain consistent; an unsupported member and its audit evidence remain visible.
 
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as

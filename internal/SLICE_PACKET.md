@@ -966,3 +966,159 @@ under `/private/tmp/triana-labs-verify.nnM9OV`. The first sandboxed invocation
 reported 716 passes and thirty pre-existing fake-HTTP failures solely because
 loopback socket binding was denied; the unchanged escalated rerun passed all
 746 tests.
+
+## BEHAVIOR-MAP-V0-AUDIT-SCOPE-PROJECTION — 2026-08-07
+
+Status: **COMPLETE — INDEPENDENT FINAL PASS**
+
+Canonical base: `57ab5fdcee7ca252543817adcf8a53bce7b11af7` on
+`codex/selfserve-v0`. Active authority is `triana-labs/CHARTER.md`; this slice
+advances the Phase 1 promise that proposed populations, support, evidence, and
+typed uncertainty are internally consistent.
+
+Observed failure: the canonical private Blitz V4 checkpoints contain fourteen
+surviving episodes and ten pre-audit population memberships. Three independent
+population-scoped audits are `SUPPORTED`, while two separately sampled
+episode-scoped audits are `UNSUPPORTED`. The current deterministic projection
+turns both episode IDs into population-wide disputes and deletes every parent
+population containing either member, reducing assignment from ten of fourteen
+to one of fourteen. This conflates two evidence scopes.
+
+Single falsifiable hypothesis: if post-audit projection distinguishes an audit
+whose subject is a population from one whose subject is an episode, an
+unsupported episode can be detached and the remainder reprojected without
+invalidating a separately supported population. This is falsified if the
+reprojected membership, support, visibility, identity/lineage, assignments,
+denominators, or preserved audit evidence disagree with a fresh deterministic
+projection of the same surviving members.
+
+Input is the already validated in-memory episodes, populations, semantic audit
+items, gaps, and evidence produced by Behavior Map V0. Output is the same
+canonical report contract with audit scope applied correctly. Deterministic
+code owns subject typing, membership detachment, support arithmetic,
+visibility, population identity/lineage, episode assignment, denominators,
+sorting, and typed gaps. The audit model owns only its immutable proposal for
+the exact audited subject. A human creates no new ruling in this slice.
+
+Public behavior is frozen as follows:
+
+| Audit subject and decision | Deterministic result |
+| --- | --- |
+| episode `UNSUPPORTED`, `MERGE`, `SPLIT`, or `UNCERTAIN` | preserve the audit item and episode as disputed/partial evidence; detach only that episode from each population membership |
+| parent population independently `SUPPORTED` | keep the population after member detachment if the remaining membership is valid; recompute support, visibility, identity and lineage |
+| parent population `UNSUPPORTED`, `MERGE`, `SPLIT`, or `UNCERTAIN` | remove the whole population under the existing audit contract and preserve its audit evidence/typed uncertainty |
+| remaining population support at least three | publish as `PROPOSED_POPULATION` with recomputed support and identity |
+| remaining population support below three but nonzero | retain only through the existing `EMERGING` typed visibility; do not publish it as denominator-worthy |
+| no remaining members | remove the population and retain the affected episodes/audit evidence through existing typed uncertainty |
+
+Missing audits retain their existing typed behavior. Pattern audits, citation
+validation, redaction/privacy, provider binding, budget, retry/fallback, and
+minimum-support semantics are unchanged. Report summaries and questions must
+be derived after the corrected projection, never patched independently.
+
+Privacy and execution: local deterministic fixtures and, only after GREEN,
+the existing sanitized Blitz V4 checkpoints under `/private/tmp` may be read.
+No provider call, credential use, raw-corpus mutation, network egress, or
+report overwrite is permitted. A no-call trap is required for any checkpoint
+reprojection.
+
+Change budget:
+
+- test author owns only
+  `triana-labs/tests/behavior_map/test_behavior_map_v0.py`;
+- implementation author owns only
+  `triana-labs/src/triana_labs/behavior_map/__init__.py`;
+- orchestrator owns only `internal/SLICE_PACKET.md`,
+  `internal/WORKING_MEMORY.md`, `internal/DECISION_LOG.md`,
+  `triana-labs/CHARTER.md`, and the gitignored current decision-memory journal;
+- no dependency, schema/prompt/citation/redaction/renderer/CLI/UI/backend,
+  provider, adapter, source-trace, infrastructure, or unrelated formatting
+  change is allowed;
+- maximum scope expansion without returning to the orchestrator is one small
+  test-local semantic-model fixture inside the existing Behavior Map test file.
+
+Acceptance requires independently authored black-box coverage for two supported
+multi-member populations each losing one independently unsupported sampled
+episode; surviving parent populations and members; recomputed support,
+visibility, identity/lineage, episode assignments, denominators, gaps,
+questions, and immutable audit evidence; a population-scoped unsupported audit
+that still removes the whole population; the support-three to support-two
+visibility boundary; and byte-identical repeated runs. RED command:
+`cd triana-labs && uv run pytest -q tests/behavior_map/test_behavior_map_v0.py -k 'audit_scope or episode_audit or population_audit'`.
+Final focused gate is the complete Behavior Map test file plus the adjacent
+Trace-to-Eval test directory, Ruff format/check, strict mypy, governance, and
+diff reconciliation. The repository verifier runs before commit. No worker may
+change ownership or broaden scope; ambiguity returns to the orchestrator.
+
+Independent test ownership is frozen at SHA-256
+`25c37e8ad28b0f33fd38504170fc8ead008b240eb87c8cce5890e6b1d960f3d1`.
+The focused pre-implementation result is two causal failures, two passing
+controls, and sixty-three deselected tests: both independently supported parent
+populations are deleted, and the support-three parent disappears instead of
+becoming `EMERGING`. The population-scoped `UNSUPPORTED` rejection control and
+the existing scope control pass. Ruff, formatting, and diff checks pass. The
+test-owned path is now immutable; the implementation author may read it but
+must not edit it.
+
+Independent final review withheld the preliminary GREEN because recomputed
+population IDs inherited `SUPPORTED` while the preserved audit item still
+named only the pre-projection ID. Without an explicit edge, the audit evidence
+was orphaned from the surviving population. This is falsifying evidence for
+the preliminary identity/lineage implementation, not a change to the user's
+accepted behavior.
+
+The smallest scope expansion is frozen: a population whose identity changes
+after episode detachment must carry optional `audit_subject_id` equal to the
+exact pre-projection population ID. That ID must exist in immutable
+`semantic_audit.items`; unchanged populations need no redundant edge because
+their `population_id` remains the audited subject. The test author may amend
+only the existing scoped regression in the already owned test file and must
+reproduce RED on the preliminary implementation. The implementation author may
+add the optional field to
+`triana-labs/src/triana_labs/behavior_map/contracts.py` and populate it only in
+the existing owned engine file. No other budget changes. This contract/type
+file expansion is necessary to keep the public report type synchronized with
+the lineage required by the original request; it permits no schema, provider,
+prompt, renderer, or unrelated contract change.
+
+The corrected lineage acceptance bytes are frozen at SHA-256
+`230b71e7a5ffe54e557dff1a973a7e5c84074407e6f8bc6497e7bf04458243e1`.
+Focused replay is valid RED with two `KeyError: audit_subject_id` failures, two
+passing controls, and sixty-three deselected tests; Ruff, formatting, and diff
+checks pass. `audit_subject_id` is lineage metadata added after the current
+population identity digest and therefore does not participate in that digest.
+The existing `population_assigned_episode_count` continues to count every
+episode assigned to a retained population row, including an `EMERGING` row;
+`EMERGING` means not denominator-worthy as a published population claim, not
+unassigned for accounting.
+
+Final exit: the corrected test SHA-256 is
+`230b71e7a5ffe54e557dff1a973a7e5c84074407e6f8bc6497e7bf04458243e1`;
+engine SHA-256 is
+`ef5b6f226c9bd53bf06049b04eb15da4d958dbf49860048243fc774f227c0e81`;
+contract SHA-256 is
+`3013672a1ab69ab3a45a6a84a7000a136d61c4cf8fe69d5a812fb3958c206f5f`.
+Four scoped regressions, 110 Behavior Map/Trace-to-Eval tests, Ruff, strict
+mypy, governance, and the complete 749-test/build/install verifier pass;
+repository evidence is `/private/tmp/triana-labs-verify.goUqmZ`.
+
+The no-provider Blitz checkpoint projection is report
+`sha256:37f4067073c3ccab11269454c46ada85faa16e55ce74bcfedac32f620d0bc418`
+under `/private/tmp/triana-blitz-audit-scope.tmfc0b`. Its JSON, Markdown, and
+HTML SHA-256 values are respectively
+`0c530b6b12e9889303ee5354c72a22426fc4ffea46eda1ece3589a43f7b3d91d`,
+`74c9b914b19ca90e70582f66276f7c3ae06351b901e95bc22d0349aa5bcfcf5b`,
+and `a191408e3f9685f4b80f5401ea1f3655fcd716042ed50c520997fb1ee4282389`;
+two repeated projections are byte-identical. It derives 8/14 assignment from
+support 4, 3, and 1, preserves both episode disputes, links both changed
+population identities to their exact supported audit subjects, and leaves all
+fifty copied checkpoints byte-identical. The model trap would raise on any
+provider invocation; none occurred and spend was USD 0.
+
+Independent preliminary review withheld on the orphaned audit-subject edge.
+After the separately frozen lineage RED/GREEN correction, independent final
+re-review passed with no remaining blocker. Actual diff matches the expanded
+budget: one test file, two production contract/engine files, the charter,
+slice packet, working memory, decision log, and ignored decision journal. No
+dependency, prompt, citation, redaction, renderer, CLI, UI/backend, provider,
+adapter, trace, report overwrite, infrastructure, or unrelated cleanup changed.

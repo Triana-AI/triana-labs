@@ -1612,6 +1612,46 @@ def _populations(
     return rows, unknown, gaps
 
 
+def _reproject_population_after_episode_audit(
+    population: JsonObject,
+    episode_by_id: Mapping[str, JsonObject],
+    disputed_episode_ids: set[str],
+) -> JsonObject | None:
+    members = sorted(
+        set(cast(list[str], population["episode_ids"])) - disputed_episode_ids
+    )
+    if not members:
+        return None
+    support = len(members)
+    identity: JsonObject = {
+        "label": population["label"],
+        "definition": population["definition"],
+        "episode_ids": members,
+        "support": support,
+        "visibility": "PROPOSED_POPULATION" if support >= 3 else "EMERGING",
+        "method": population["method"],
+        "audit_state": "PENDING",
+        "representative_evidence_ids": sorted(
+            {
+                evidence_id
+                for member in members[:3]
+                for evidence_id in cast(
+                    list[str], episode_by_id[member]["evidence_ids"]
+                )
+            }
+        ),
+    }
+    population_id = _digest("behavior-map-population-v0", identity)
+    reprojected = {
+        "population_id": population_id,
+        **identity,
+        "audit_state": population["audit_state"],
+    }
+    if population_id != population["population_id"]:
+        reprojected["audit_subject_id"] = population["population_id"]
+    return reprojected
+
+
 def _patterns(
     proposals: list[JsonObject], occurrences: list[JsonObject]
 ) -> tuple[list[JsonObject], list[JsonObject]]:
@@ -1813,6 +1853,8 @@ def _lineage_with_history(
         int(_numeric_lineage_value(lineage, None, "provider_calls") or 0),
     )
     enriched["attempted_call_count"] = max(current_attempted, attempted)
+    if "provider_calls" in lineage:
+        enriched["provider_calls"] = enriched["attempted_call_count"]
     current_successful = int(
         _numeric_lineage_value(lineage, None, "successful_call_count") or 0
     )
@@ -2612,23 +2654,31 @@ def run_behavior_map(
                     for audit in audits
                     if audit["decision"] != "SUPPORTED"
                 }
+                disputed_population_ids = {
+                    item_id
+                    for item_id in disputed_ids
+                    if "population_id" in known_items[item_id]
+                }
                 disputed_episode_ids = {
-                    cast(str, row["episode_id"])
-                    for row in episodes
-                    if row["episode_id"] in disputed_ids
+                    item_id
+                    for item_id in disputed_ids
+                    if "episode_id" in known_items[item_id]
                 }
                 for population in populations:
-                    if population["population_id"] in disputed_ids:
+                    if population["population_id"] in disputed_population_ids:
                         disputed_episode_ids.update(
                             cast(list[str], population["episode_ids"])
                         )
-                populations = [
-                    row
-                    for row in populations
-                    if row["population_id"] not in disputed_ids
-                    and not (
-                        set(cast(list[str], row["episode_ids"])) & disputed_episode_ids
+                episode_by_id = {cast(str, row["episode_id"]): row for row in episodes}
+                reprojected_populations = [
+                    _reproject_population_after_episode_audit(
+                        row, episode_by_id, disputed_episode_ids
                     )
+                    for row in populations
+                    if row["population_id"] not in disputed_population_ids
+                ]
+                populations = [
+                    row for row in reprojected_populations if row is not None
                 ]
                 patterns = [
                     row for row in patterns if row["pattern_id"] not in disputed_ids

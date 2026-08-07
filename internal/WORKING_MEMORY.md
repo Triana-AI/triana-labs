@@ -1253,3 +1253,17 @@ claim complete PII removal or cover unseen international/free-form locations.
 The final Blitz result is a trustworthy proposed Behavior Map and useful agent-
 handling report, but not a wow-complete user taxonomy: only 12/34 conversations
 yield surviving episodes and only 1/14 episodes is population-assigned.
+
+Blitz post-audit projection correction (2026-08-07): independent regression
+proved that the 1/14 assignment was a deterministic authority bug, not the
+semantic result. Two sampled episode-level `UNSUPPORTED` audits incorrectly
+caused deletion of their separately `SUPPORTED` parent populations. The
+corrected no-provider checkpoint projection detaches only those two members,
+recomputes population identities/support/visibility, preserves both episode
+audit records as `AUDIT_DISAGREEMENT`, and yields 8/14 assigned: Expected
+delivery timing support 4, Delayed or missing delivery support 3, and Order
+status inquiries support 1/`EMERGING`. Repeated JSON, Markdown, and HTML bytes
+are identical. Each identity-changed population now carries `audit_subject_id`
+to its preserved pre-projection `SUPPORTED` audit item; the unchanged emerging
+population retains its direct ID. This repairs report consistency; it does not upgrade proposed
+semantics to accepted truth or erase the two disputed episodes.
