@@ -1151,3 +1151,18 @@ boundaries that do not always contain later supporting citations, a semantically
 wrong cross-goal citation in `tau2-6`, and a human report dominated by repeated
 machine gaps and generic tool occurrences. Do not call the current report a
 launch artifact.
+
+Behavior Map first useful TAU draft (2026-08-07): after omitting the unsupported
+Luna temperature, report
+`sha256:208f62a7e87d66e73191eba9fbc89e6970a6afeb6822fc179f32b2c44a5481d2`
+published 45 demand episodes across 25/34 eligible conversations, two user
+populations, three recurring agent patterns, six questions, and 11/11 successful
+Luna audits. The continuation newly reserved USD 4.93 and reported a cumulative
+conservative reservation of USD 39.43/50; actual provider cost remained unknown.
+Independent review accepted the content as a useful analyst draft but withheld
+self-serve launch on deterministic report truth. The launch-honesty correction
+is now locally GREEN: citation bounds enclose accepted evidence; coverage and
+population assignment denominators are explicit; audit is labeled sampled;
+gaps are aggregated; questions precede the evidence appendix. Semantic relevance
+is still a proposal boundary: the known `tau2-6` water-bottle/desk-lamp citation
+mismatch must not be described as deterministically solved.

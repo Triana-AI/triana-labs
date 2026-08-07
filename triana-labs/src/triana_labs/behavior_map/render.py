@@ -12,8 +12,8 @@ _SECTIONS = (
     "User Demand Map",
     "Agent Behavior Map",
     "Emerging and Unknown Behavior",
-    "Evidence",
     "Questions for You",
+    "Evidence",
 )
 
 
@@ -54,12 +54,29 @@ def _deterministic_tool_summary(
     return f"CALLED_TOOL — {len(tool_rows)} tool calls: {breakdown}.", remaining
 
 
+def _gap_counts(gaps: list[JsonObject]) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for gap in gaps:
+        code = _text(gap["code"])
+        counts[code] = counts.get(code, 0) + 1
+    return sorted(counts.items())
+
+
 def render_markdown(report: JsonObject) -> str:
     lines = ["# Triana Behavior Map", ""]
     accounting = report["accounting"]
     context = report["agent_context"]
     episodes = {row["episode_id"]: row for row in report["episodes"]}
-    grounded = sum(1 for row in report["episodes"] if row.get("evidence_ids"))
+    surviving_conversations = len(
+        {str(row["conversation_id"]) for row in report["episodes"]}
+    )
+    assigned_episodes = len(
+        {
+            str(episode_id)
+            for row in report["populations"]
+            for episode_id in row["episode_ids"]
+        }
+    )
     lines.extend(
         [
             f"## {_SECTIONS[0]}",
@@ -67,7 +84,8 @@ def render_markdown(report: JsonObject) -> str:
             f"- Accepted conversations: {accounting['accepted_conversation_count']}",
             f"- Rejected conversations: {accounting['rejected_conversation_count']}",
             f"- Agent context ({context['status']}): {_text(context['text'])}",
-            f"- Grounded episode coverage: {grounded}/{len(report['episodes'])}",
+            f"- Grounded episode coverage: {surviving_conversations}/{accounting['semantic_conversation_count']}",
+            f"- Population assignment coverage: {assigned_episodes}/{len(report['episodes'])}",
             f"- Typed gaps: {len(report['gaps'])}",
             "",
             "### Method and limitations",
@@ -76,12 +94,13 @@ def render_markdown(report: JsonObject) -> str:
             f"- Primary model: {_text(report['method'].get('primary_model_id'))}",
             f"- Audit model: {_text(report['method'].get('audit_model_id'))}",
             "- Semantic labels are proposals grounded in observed evidence; they are not correctness or policy rulings.",
+            "- Independent audit checks sampled proposal support; it does not verify every member.",
             "",
             "#### Typed gaps",
             "",
             *[
-                f"- `{gap['code']}` — {_gap_explanation(_text(gap['code']))}"
-                for gap in report["gaps"]
+                f"- `{code}` ({count}) — {_gap_explanation(code)}"
+                for code, count in _gap_counts(report["gaps"])
             ],
             "",
             f"## {_SECTIONS[1]}",
@@ -183,6 +202,9 @@ def render_markdown(report: JsonObject) -> str:
     else:
         lines.append("- None observed.")
     lines.extend(["", f"## {_SECTIONS[4]}", ""])
+    for question in report["questions"]:
+        lines.extend([f"- {question}", "  - Answer:", ""])
+    lines.extend([f"## {_SECTIONS[5]}", ""])
     for row in report["evidence"]:
         lines.extend(
             [
@@ -195,9 +217,6 @@ def render_markdown(report: JsonObject) -> str:
         )
     if not report["evidence"]:
         lines.append("No publishable semantic evidence is available.\n")
-    lines.extend([f"## {_SECTIONS[5]}", ""])
-    for question in report["questions"]:
-        lines.extend([f"- {question}", "  - Answer:", ""])
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -205,7 +224,16 @@ def render_html(report: JsonObject) -> str:
     accounting = report["accounting"]
     context = report["agent_context"]
     episodes = {row["episode_id"]: row for row in report["episodes"]}
-    grounded = sum(1 for row in report["episodes"] if row.get("evidence_ids"))
+    surviving_conversations = len(
+        {str(row["conversation_id"]) for row in report["episodes"]}
+    )
+    assigned_episodes = len(
+        {
+            str(episode_id)
+            for row in report["populations"]
+            for episode_id in row["episode_ids"]
+        }
+    )
     parts = [
         '<!doctype html><html lang="en"><head><meta charset="utf-8">',
         "<title>Triana Behavior Map</title>",
@@ -222,18 +250,20 @@ def render_html(report: JsonObject) -> str:
             f"Agent context ({html.escape(_text(context['status']))}): "
             f"{html.escape(_text(context['text']))}</p>"
         ),
-        f"<p>Grounded episode coverage: {grounded}/{len(report['episodes'])}<br>",
+        f"<p>Grounded episode coverage: {surviving_conversations}/{accounting['semantic_conversation_count']}<br>",
+        f"Population assignment coverage: {assigned_episodes}/{len(report['episodes'])}<br>",
         f"Typed gaps: {len(report['gaps'])}</p>",
         "<h3>Method and limitations</h3>",
         f"<p>Method: {html.escape(_text(report['method']['method_version']))}<br>",
         f"Primary model: {html.escape(_text(report['method'].get('primary_model_id')))}<br>",
         f"Audit model: {html.escape(_text(report['method'].get('audit_model_id')))}<br>",
-        "Semantic labels are evidence-grounded proposals, not correctness or policy rulings.</p>",
+        "Semantic labels are evidence-grounded proposals, not correctness or policy rulings.<br>",
+        "Independent audit checks sampled proposal support; it does not verify every member.</p>",
         "<h4>Typed gaps</h4><ul>",
         *[
-            f"<li><code>{html.escape(_text(gap['code']))}</code> — "
-            f"{html.escape(_gap_explanation(_text(gap['code'])))}</li>"
-            for gap in report["gaps"]
+            f"<li><code>{html.escape(code)}</code> ({count}) — "
+            f"{html.escape(_gap_explanation(code))}</li>"
+            for code, count in _gap_counts(report["gaps"])
         ],
         "</ul>",
         f"<h2>{_SECTIONS[1]}</h2>",
@@ -349,7 +379,10 @@ def render_html(report: JsonObject) -> str:
             )
     else:
         parts.append("<li>None observed.</li>")
-    parts.extend(["</ul>", f"<h2>{_SECTIONS[4]}</h2>"])
+    parts.extend(["</ul>", f"<h2>{_SECTIONS[4]}</h2><ul>"])
+    for question in report["questions"]:
+        parts.append(f"<li>{html.escape(question)}<p>Answer:</p></li>")
+    parts.extend(["</ul>", f"<h2>{_SECTIONS[5]}</h2>"])
     for row in report["evidence"]:
         parts.append(
             f'<article id="{html.escape(row["evidence_id"])}"><h3>'
@@ -358,8 +391,5 @@ def render_html(report: JsonObject) -> str:
         )
     if not report["evidence"]:
         parts.append("<p>No publishable semantic evidence is available.</p>")
-    parts.extend([f"<h2>{_SECTIONS[5]}</h2><ul>"])
-    for question in report["questions"]:
-        parts.append(f"<li>{html.escape(question)}<p>Answer:</p></li>")
-    parts.append("</ul></body></html>\n")
+    parts.append("</body></html>\n")
     return "".join(parts)

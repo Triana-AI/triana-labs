@@ -2832,3 +2832,109 @@ def test_one_audit_item_failure_isolated_and_later_items_continue(
         row["audit_state"] != "PENDING"
         for row in [*report["populations"], *report["behavior_patterns"]]
     )
+
+
+class _CitationOutsideEpisodeBoundaryModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            cited = next(row for row in result["episodes"] if row["citations"])
+            citation_ordinal = int(
+                cited["citations"][0].get(
+                    "event_sequence", cited["citations"][0].get("turn_ordinal", -1)
+                )
+            )
+            cited["start_turn_ordinal"] = citation_ordinal + 1
+            cited["end_turn_ordinal"] = citation_ordinal + 1
+        return result
+
+
+def test_launch_report_denominators_order_audit_scope_and_gap_aggregation(
+    tmp_path: Path,
+) -> None:
+    violations: list[str] = []
+    report, output, _, _ = _run(tmp_path)
+    surviving_episode_conversations = {
+        str(row["conversation_id"]) for row in report["episodes"]
+    }
+    semantic_eligible_conversations = int(
+        report["accounting"]["semantic_conversation_count"]
+    )
+    assigned_episode_ids = {
+        str(episode_id)
+        for row in report["populations"]
+        for episode_id in row["episode_ids"]
+    }
+    expected_conversation_coverage = (
+        "Grounded episode coverage: "
+        f"{len(surviving_episode_conversations)}/{semantic_eligible_conversations}"
+    )
+    expected_assignment_coverage = (
+        f"Population assignment coverage: {len(assigned_episode_ids)}/"
+        f"{len(report['episodes'])}"
+    )
+    markdown = (output / "behavior-map.md").read_text()
+    html = (output / "behavior-map.html").read_text()
+    for format_name, document in (("Markdown", markdown), ("HTML", html)):
+        if expected_conversation_coverage not in document:
+            violations.append(f"{format_name} lacks truthful conversation coverage")
+        if expected_assignment_coverage not in document:
+            violations.append(f"{format_name} lacks population assignment coverage")
+        normalized = document.casefold()
+        if "sampled proposal support" not in normalized or not (
+            "does not verify every member" in normalized
+            or "not all-membership verification" in normalized
+        ):
+            violations.append(f"{format_name} leaves audit scope unclear")
+    if markdown.index("## Questions for You") > markdown.index("## Evidence"):
+        violations.append("Markdown renders Evidence before Questions for You")
+    if html.index("<h2>Questions for You</h2>") > html.index("<h2>Evidence</h2>"):
+        violations.append("HTML renders Evidence before Questions for You")
+
+    gap_case = tmp_path / "repeated-gaps"
+    gap_case.mkdir()
+    gap_report, gap_output, _, _ = _run(
+        gap_case, auditor=_UnknownAuditModel("luna-test-v0")
+    )
+    gap_code = "SEMANTIC_AUDIT_MISSING"
+    gap_count = sum(row["code"] == gap_code for row in gap_report["gaps"])
+    assert gap_count > 1
+    for format_name, document in (
+        ("Markdown", (gap_output / "behavior-map.md").read_text()),
+        ("HTML", (gap_output / "behavior-map.html").read_text()),
+    ):
+        if document.count(gap_code) != 1:
+            violations.append(f"{format_name} repeats typed gap bullets")
+            continue
+        gap_position = document.index(gap_code)
+        if str(gap_count) not in document[gap_position : gap_position + 240]:
+            violations.append(f"{format_name} omits the typed gap count")
+    assert not violations, "\n".join(violations)
+
+
+def test_published_episode_boundaries_enclose_every_accepted_citation(
+    tmp_path: Path,
+) -> None:
+    report, _, _, _ = _run(
+        tmp_path, primary=_CitationOutsideEpisodeBoundaryModel("terra-test-v0")
+    )
+    assert report["episodes"]
+    for episode in report["episodes"]:
+        for citation in episode["citations"]:
+            citation_ordinal = int(
+                citation.get("event_sequence", citation.get("turn_ordinal", -1))
+            )
+            assert (
+                episode["start_turn_ordinal"]
+                <= citation_ordinal
+                <= episode["end_turn_ordinal"]
+            )

@@ -444,6 +444,18 @@ accounting. Its smallest production correction and all 83 focused adjacent
 checks are GREEN. Product-value exit remains open pending one explicitly
 budgeted checkpoint continuation and independent human artifact audit.
 
+That continuation repaired Luna and produced the first genuinely useful analyst
+draft: 45 episodes, two user populations, three recurring agent patterns, six
+human questions, and 11/11 successful independent audit calls. Independent
+artifact review still withheld self-serve launch because the report showed an
+episode-row `45/45` as coverage, omitted population-assignment coverage, left
+accepted citations outside episode bounds, overstated sampled audit support,
+repeated 47 gap bullets, and placed questions after the evidence appendix. The
+launch-honesty contract is now frozen at Behavior Map test SHA-256
+`c57790a09743db77d565cdb43a5c0536cc76edcc846c63438ae5eeaa5992170` and
+GREEN with all 43 adjacent Trace-to-Eval checks. One final bounded checkpoint
+continuation plus human artifact audit remains the product-value exit.
+
 Valid RED command:
 
 ```text

@@ -672,6 +672,13 @@ def _episodes(
         ):
             gaps.append({"code": "SEMANTIC_CITATION_INVALID", "stage": "EPISODES"})
             continue
+        citation_ordinals = [_citation_sequence(citation) for citation in citations]
+        proposal = {
+            **proposal,
+            "citations": citations,
+            "start_turn_ordinal": min([start, *citation_ordinals]),
+            "end_turn_ordinal": max([end, *citation_ordinals]),
+        }
         valid.append((proposal, conversation_id))
     valid.sort(
         key=lambda item: (
@@ -1965,6 +1972,18 @@ def run_behavior_map(
             "rejected_conversation_count": len(rejected),
             "physical_record_count": len(source_payload.splitlines()),
             "semantic_conversation_count": len(semantic_traces),
+            "semantic_eligible_conversation_count": len(semantic_traces),
+            "surviving_episode_conversation_count": len(
+                {cast(str, row["conversation_id"]) for row in episodes}
+            ),
+            "surviving_episode_count": len(episodes),
+            "population_assigned_episode_count": len(
+                {
+                    episode_id
+                    for population in populations
+                    for episode_id in cast(list[str], population["episode_ids"])
+                }
+            ),
             "sealed_calibration_count": sealed_counts["calibration"],
             "sealed_holdout_count": sealed_counts["holdout"],
         },
