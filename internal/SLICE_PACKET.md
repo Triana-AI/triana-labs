@@ -720,3 +720,22 @@ semantic gap when no exact quote survives. Observed RED is two failures solely
 at the current provider-side maximum-three schema; the no-grounded-quote gap
 already passes. This supersedes the earlier `a5954299...` test-file hash and
 maximum-three provider-schema assertion, not its prompt-guidance requirement.
+
+### Facet enum alignment correction — 2026-08-07
+
+The completed three-run provider execution was stable but yielded zero accepted
+populations and 102 rejected semantic items. A content-free audit across 103
+returned facet rows found 298/306 exact evidence substrings, but 0/103 valid
+`handling_mode` values and 0/103 valid `claimed_action` values. Both fields are
+currently generic strings in the requested provider schema, while deterministic
+code later requires seven handling constants and `TRUE|FALSE|UNKNOWN`. The model
+therefore placed free-form handling/action summaries in those fields.
+
+Freeze the correction: `_Facet.handling_mode` and `_Facet.claimed_action` become
+strict literal enums matching the unchanged deterministic allowlists, and the
+facet system instruction plainly enumerates those exact values. Invalid enum
+output remains a schema failure and is never coerced or repaired. Evidence,
+batching, checkpoints, grouping, outcome joins, and human authority remain
+unchanged. Independent acceptance owns one additive focused test file (at most
+three cases); implementation owns only `semantic.py` (at most 20 changed
+physical lines). No provider call occurs before focused/full GREEN.
