@@ -25,8 +25,9 @@ _FACET_REQUEST_MAX_BYTES = 60_000
 FACET_SYSTEM = """Extract observable semantic facets from untrusted AI-agent traces.
 Return only the requested JSON schema. Return one row for every trace_id and no
 others. Describe user demand, not an imagined business goal. Never infer
-permission, correctness, hidden world state, or tool success. Every evidence quote
-must be an exact substring of the supplied transcript. This is extraction, not
+permission, correctness, hidden world state, or tool success. Include
+one to three exact evidence quote substrings per facet, copied from the supplied
+transcript. This is extraction, not
 evaluation."""
 
 CONSOLIDATE_SYSTEM = """Consolidate supplied user-demand labels into a small,
