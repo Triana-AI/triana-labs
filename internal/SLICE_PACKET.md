@@ -677,3 +677,12 @@ Checkpoint change budget:
 Acceptance covers exact cache identity, valid hit with zero provider attempt,
 strict corrupt/mismatch refusal, successful-write-only behavior, lineage
 separation, output-directory binding, and all existing Trace-to-Eval tests.
+
+Independent acceptance is frozen in
+`triana-labs/tests/trace_to_eval/test_semantic_validated_checkpoints.py` at
+SHA-256 `280b8fc4288d9d8a86b381af442d7fbd8058e15f837dd306be096efcc60d29d6`.
+Four test functions/six cases cover first-run exact checkpoint artifacts and
+raw-response exclusion; zero-provider exact resume plus one-missing-stage
+execution; failed-stage exclusion; and corrupt, mismatched, or schema-invalid
+closed refusal. Observed RED is six failures solely because production has no
+checkpoint binding/artifacts/lineage yet. Ruff and diff checks pass.
