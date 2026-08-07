@@ -96,6 +96,9 @@ def test_openai_v1_json_object_wire_includes_requested_schema_and_accounts_usage
     assert client.kwargs["api_key"].get_secret_value() == "synthetic-test-key"
     assert client.kwargs["base_url"].endswith("/openai/v1")
     assert client.kwargs["max_retries"] == 0
+    assert client.kwargs["max_completion_tokens"] == 2_000
+    assert client.kwargs["timeout"] == 120
+    assert "temperature" not in client.kwargs
     assert {
         "api_version",
         "azure_endpoint",

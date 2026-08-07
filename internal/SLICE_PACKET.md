@@ -432,6 +432,18 @@ all later conversations and one audit failure stopped all later items. Two
 per-unit isolation regressions supersede the test hash and expand the inventory
 without retrying or hiding either failure.
 
+The corrected continuation then reached the full corpus control path but all
+eighteen Luna audit items failed. One bounded diagnostic reproduced HTTP 400:
+the shared client forced `temperature=0`, while the Luna deployment accepts
+only its default temperature. The independent provider-wire test in
+`triana-labs/tests/trace_to_eval/test_foundry_json_object_compatibility.py` at
+SHA-256 `2181deb9ff3d3a1965df3181b994ca6aa615676ebc66bc7d4286fa5c38c489eb`
+freezes omission of the explicit temperature while retaining JSON-object mode,
+strict schema validation, no SDK retry, token cap, timeout, and budget
+accounting. Its smallest production correction and all 83 focused adjacent
+checks are GREEN. Product-value exit remains open pending one explicitly
+budgeted checkpoint continuation and independent human artifact audit.
+
 Valid RED command:
 
 ```text

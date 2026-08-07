@@ -324,7 +324,6 @@ class FoundryStructuredSemanticModel:
             base_url=self.endpoint,
             max_retries=0,
             max_completion_tokens=self.max_output_tokens_per_call,
-            temperature=0,
             timeout=self.timeout_seconds,
         )
         requested_schema = json.dumps(

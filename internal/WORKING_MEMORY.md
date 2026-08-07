@@ -1134,3 +1134,20 @@ once, becomes item-scoped uncertainty, is removed from primary publication, and
 later items continue with no PENDING leakage. The next operator continuation
 must charge the cumulative reservation forward, reuse exact successful
 checkpoints, and remain no-retry/no-fallback per failed unit.
+
+Behavior Map corrected TAU continuation finding (2026-08-07): report
+`sha256:2f25bc3faa9341dd9a867fc2315289950c28a17f582e20d8fbcf13bb817c4497`
+proved per-unit continuation but failed the product-value gate. It retained 38
+grounded episodes across 20 of 34 eligible DEVELOPMENT conversations, including
+useful multi-goal and supersession examples, but published zero populations and
+zero recurring patterns because all 18 independent Luna audits failed. One
+bounded provider diagnostic found the precise adapter defect: Luna rejects the
+explicit `temperature=0` shared by the OpenAI-v1 client and supports only its
+default temperature. The frozen provider-wire RED and one-line production
+correction are GREEN across the 83 focused Behavior Map/Trace-to-Eval checks.
+The report also exposed follow-up quality debt that must remain visible during
+the next human audit: misleading surviving-episode coverage language, episode
+boundaries that do not always contain later supporting citations, a semantically
+wrong cross-goal citation in `tau2-6`, and a human report dominated by repeated
+machine gaps and generic tool occurrences. Do not call the current report a
+launch artifact.
