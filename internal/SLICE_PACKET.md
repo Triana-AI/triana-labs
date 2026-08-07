@@ -320,6 +320,13 @@ The test author must freeze black-box cases for:
 36. human reports print actual typed gap codes and understandable limitations;
 37. generic deterministic tool evidence is summarized rather than dumped as
     hundreds of low-value rows.
+38. missing or unknown audit rulings remove affected items from the primary map
+    and route their members to emerging/unknown or an explicit question;
+39. synonymous vague behavior labels such as `uses tools` cannot publish;
+40. every hierarchy level conserves episode and occurrence membership or emits
+    a typed loss/no-reduction gap;
+41. every rendered semantic occurrence exposes its identity and navigable exact
+    evidence anchors.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -386,8 +393,8 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`0673f975bf57058183c55733b851c74503257ca54fdc2024a249e0788860c22d`.
-It freezes all thirty-seven acceptance behaviors listed above across thirty-eight
+`1bc8d1f32f0f8c63a6d3f56e74c744121212f3a669ddbc75d5ba1fa448761001`.
+It freezes all forty-one acceptance behaviors listed above across thirty-eight
 black-box cases. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
@@ -407,6 +414,11 @@ lineage, next-call-only cumulative reservation, checkpoint binding/integrity
 gaps, TAU wrapped-evidence coordinate loss, non-global hierarchy, ungrounded
 context, and report-density failures. Ten additional focused regressions
 supersede the third hash while retaining all twenty-eight controls.
+Final signoff then found missing-audit items still present in the primary map,
+vague synonymous labels, silent hierarchy membership loss, and semantic
+occurrences without navigable evidence. The existing audit-uncertainty case was
+amended to freeze those four same-slice obligations, superseding only the test
+hash while preserving the collected test count.
 
 Valid RED command:
 
@@ -419,7 +431,7 @@ Observed result: collection stops only at
 `ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
 3.39 seconds against an isolated export of pre-implementation commit `d35dac1`.
 Ruff check, Ruff format check, Python compilation, file hash, and diff check are
-GREEN. Against the post-hardening implementation handoff, the final suite
-produces ten intended failures and twenty-eight passing controls in 2.86
-seconds. The test-owned path is frozen. The implementation author may read it
-but must not edit it.
+GREEN. Against the 81-test-green implementation handoff, the final amendment
+produces one aggregated intended failure and thirty-seven passing controls in
+4.00 seconds. The test-owned path is frozen. The implementation author may read
+it but must not edit it.

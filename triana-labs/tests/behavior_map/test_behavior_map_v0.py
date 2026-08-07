@@ -1632,6 +1632,7 @@ def test_cross_conversation_episode_citations_are_rejected(tmp_path: Path) -> No
 def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
     tmp_path: Path,
 ) -> None:
+    violations: list[str] = []
     auditor = _UnknownAuditModel("luna-test-v0")
     report, _, _, _ = _run(tmp_path, auditor=auditor)
     assert {"SEMANTIC_AUDIT_ITEM_UNKNOWN", "SEMANTIC_AUDIT_MISSING"} <= _codes(report)
@@ -1640,6 +1641,200 @@ def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
         row["audit_state"] != "PENDING"
         for row in [*report["populations"], *report["behavior_patterns"]]
     )
+    missing_item_ids = {
+        str(row["item_id"])
+        for row in report["gaps"]
+        if row["code"] == "SEMANTIC_AUDIT_MISSING"
+    }
+    published_item_ids = {
+        str(row[key])
+        for key, rows in (
+            ("population_id", report["populations"]),
+            ("pattern_id", report["behavior_patterns"]),
+        )
+        for row in rows
+    }
+    still_published = missing_item_ids & published_item_ids
+    if still_published:
+        violations.append(
+            "missing-audit populations/patterns remained public: "
+            + ", ".join(sorted(still_published))
+        )
+    affected_episode_ids: set[str] = set()
+    occurrence_by_id = {
+        str(row["occurrence_id"]): row for row in report["behavior_occurrences"]
+    }
+    audited_items = {
+        _first_id(item): item
+        for request in auditor.requests
+        for item in request["payload"].get("items", [])
+    }
+    for item_id in missing_item_ids:
+        item = audited_items.get(item_id, {})
+        if "episode_id" in item:
+            affected_episode_ids.add(str(item["episode_id"]))
+        affected_episode_ids.update(map(str, item.get("episode_ids", [])))
+        for occurrence_id in item.get("occurrence_ids", []):
+            if occurrence_id in occurrence_by_id:
+                affected_episode_ids.update(
+                    map(str, occurrence_by_id[occurrence_id]["episode_ids"])
+                )
+    unresolved_episode_ids = {
+        str(row["episode_id"])
+        for row in report["emerging_unknown"]
+        if row["reason"] == "AUDIT_MISSING"
+    }
+    if not affected_episode_ids <= unresolved_episode_ids or not any(
+        "emerging" in question.casefold() or "unresolved" in question.casefold()
+        for question in report["questions"]
+    ):
+        violations.append(
+            "missing-audit members lack an emerging/unknown disposition or question"
+        )
+
+    class _SynonymousGenericPatternModel(_SemanticModel):
+        def __init__(self, label: str) -> None:
+            super().__init__("terra-test-v0")
+            self.label = label
+
+        def complete_json(
+            self,
+            *,
+            stage: str,
+            system: str,
+            payload: dict[str, Any],
+            schema: Any,
+        ) -> dict[str, Any]:
+            result = super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+            if "patterns" in set(getattr(schema, "model_fields", {})):
+                for pattern in result["patterns"]:
+                    pattern["label"] = self.label
+            return result
+
+    for index, label in enumerate(("uses tools", "performed action")):
+        case = tmp_path / f"generic-{index}"
+        case.mkdir()
+        generic_report, _, _, _ = _run(
+            case, primary=_SynonymousGenericPatternModel(label)
+        )
+        generic_episode_ids = {
+            str(episode_id)
+            for row in generic_report["behavior_occurrences"]
+            if row["lane"] == "SEMANTIC"
+            for episode_id in row["episode_ids"]
+        }
+        generic_unknown_ids = {
+            str(row["episode_id"]) for row in generic_report["emerging_unknown"]
+        }
+        if (
+            label
+            in {
+                str(row["label"]).casefold()
+                for row in generic_report["behavior_patterns"]
+            }
+            or "GENERIC_BEHAVIOR_LANGUAGE" not in _codes(generic_report)
+            or not generic_episode_ids <= generic_unknown_ids
+        ):
+            violations.append(
+                f"generic behavior label was published or not typed unknown: {label}"
+            )
+
+    class _LossyHierarchyModel(_RecursiveHierarchyModel):
+        def complete_json(
+            self,
+            *,
+            stage: str,
+            system: str,
+            payload: dict[str, Any],
+            schema: Any,
+        ) -> dict[str, Any]:
+            result = super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+            population_candidates = payload.get("candidate_populations")
+            if isinstance(population_candidates, list) and result["populations"]:
+                result["populations"][0]["episode_ids"] = result["populations"][0][
+                    "episode_ids"
+                ][1:]
+            pattern_candidates = payload.get("candidate_patterns")
+            if isinstance(pattern_candidates, list) and result["patterns"]:
+                result["patterns"][0]["occurrence_ids"] = []
+            return result
+
+    hierarchy_case = tmp_path / "hierarchy-loss"
+    hierarchy_case.mkdir()
+    hierarchy_report = run_behavior_map(
+        _write_scale_manifest(hierarchy_case, 25),
+        hierarchy_case / "output",
+        primary_model=_LossyHierarchyModel(),
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    all_episode_ids = {str(row["episode_id"]) for row in hierarchy_report["episodes"]}
+    published_episode_ids = {
+        str(episode_id)
+        for row in hierarchy_report["populations"]
+        for episode_id in row["episode_ids"]
+    }
+    all_occurrence_ids = {
+        str(row["occurrence_id"]) for row in hierarchy_report["behavior_occurrences"]
+    }
+    published_occurrence_ids = {
+        str(occurrence_id)
+        for row in hierarchy_report["behavior_patterns"]
+        for occurrence_id in row["occurrence_ids"]
+    }
+    hierarchy_gap_codes = {
+        "SEMANTIC_HIERARCHY_MEMBER_LOSS",
+        "SEMANTIC_HIERARCHY_NO_REDUCTION",
+    }
+    if (
+        not all_episode_ids <= published_episode_ids
+        or not all_occurrence_ids <= published_occurrence_ids
+    ) and not (hierarchy_gap_codes & _codes(hierarchy_report)):
+        violations.append("hierarchy silently lost episode or occurrence members")
+
+    human_case = tmp_path / "human-evidence"
+    human_case.mkdir()
+    human_report, human_output, _, _ = _run(human_case)
+    markdown = (human_output / "behavior-map.md").read_text()
+    html = (human_output / "behavior-map.html").read_text()
+    semantic_evidence_ids = {
+        str(evidence_id)
+        for row in human_report["behavior_occurrences"]
+        if row["lane"] == "SEMANTIC"
+        for evidence_id in row["evidence_ids"]
+    }
+    semantic_occurrence_ids = {
+        str(row["occurrence_id"])
+        for row in human_report["behavior_occurrences"]
+        if row["lane"] == "SEMANTIC"
+    }
+    unlinked_evidence_ids = {
+        evidence_id
+        for evidence_id in semantic_evidence_ids
+        if f"[View](#{evidence_id})" not in markdown
+        or f'href="#{evidence_id}"' not in html
+    }
+    if unlinked_evidence_ids:
+        violations.append(
+            "semantic occurrence evidence is not navigable: "
+            + ", ".join(sorted(unlinked_evidence_ids))
+        )
+    occurrence_ids_missing_from_rows = {
+        occurrence_id
+        for occurrence_id in semantic_occurrence_ids
+        if occurrence_id not in markdown or occurrence_id not in html
+    }
+    if occurrence_ids_missing_from_rows:
+        violations.append(
+            "semantic occurrence rows omit their IDs: "
+            + ", ".join(sorted(occurrence_ids_missing_from_rows))
+        )
+
+    assert not violations, "\n".join(violations)
 
 
 def test_human_reports_explain_demands_occurrences_evidence_and_quality(
