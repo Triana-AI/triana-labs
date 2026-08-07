@@ -13,7 +13,7 @@ class _ConsolidatingModel:
     def __init__(self, *, omit_one_from_intermediate: bool = False) -> None:
         self.omit_one_from_intermediate = omit_one_from_intermediate
         self.consolidation_calls: list[tuple[str, list[str]]] = []
-        self.omitted_labels: list[str] = []
+        self.omissions: list[tuple[str, int]] = []
 
     def complete_json(
         self,
@@ -51,7 +51,7 @@ class _ConsolidatingModel:
                 and len(labels) > 1
             ):
                 members = labels[:-1]
-                self.omitted_labels.append(labels[-1])
+                self.omissions.append((labels[-1], len(self.consolidation_calls) - 1))
             proposed = {
                 "populations": [
                     {
@@ -108,8 +108,14 @@ def test_more_than_four_labels_use_bounded_hierarchy_and_preserve_membership() -
         for stage, _ in model.consolidation_calls
     )
     assert model.consolidation_calls[-1][0] == "population-consolidation-final"
-    final_input = set(model.consolidation_calls[-1][1])
-    assert model.omitted_labels and set(model.omitted_labels) <= final_input
+    assert model.omissions
+    assert all(
+        any(
+            omitted_label in later_labels
+            for _, later_labels in model.consolidation_calls[omitted_at + 1 :]
+        )
+        for omitted_label, omitted_at in model.omissions
+    )
     expected_trace_ids = sorted(trace["trace_id"] for trace in traces)
     evidence = _population_evidence(result)
     assert sorted(evidence) == expected_trace_ids

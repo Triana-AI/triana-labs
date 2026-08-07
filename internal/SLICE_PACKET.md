@@ -791,3 +791,13 @@ Two cases require at most four items with hierarchy/carry-forward/exact public
 membership above four and retain one final call at exactly four. Observed RED
 is one intended nine-label overage; exact-four compatibility passes. This
 supersedes only the prior `f43a5a00...` test hash and 12-label threshold.
+
+The first four-label implementation pass exposed one over-strong test
+assertion: it required every label omitted at any intermediate level to remain
+a literal final-stage key even after correct carry-forward and later aggregation.
+The independently corrected contract now requires each omitted label to appear
+in a later consolidation input and preserves every original trace exactly once
+in final public evidence. Corrected SHA-256 is
+`607091e41d64aeceb1dbc3b126d1d7ad0963fc07437b2a588784c636aa1d1a80`;
+focused and full suites are GREEN with the one-constant production change. This
+supersedes only the incorrect literal-final-key assertion and `055144a0...` hash.
