@@ -1,3 +1,5 @@
+import type { PartialHandlingEvidence } from "@/components/analysis/PartialHandlingEvidence";
+
 export type ImportStatus =
   | "PENDING"
   | "VALIDATING"
@@ -106,6 +108,7 @@ export interface TraceToEvalReport {
   stability: { state: string; semantic_run_count: number; disagreements: unknown[] };
   method: Record<string, unknown>;
   outcome_analytics?: Record<string, unknown>;
+  partial_handling_evidence?: PartialHandlingEvidence;
   judgment: {
     state: string;
     required_review_item_count: number;

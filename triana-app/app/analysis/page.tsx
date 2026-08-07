@@ -6,6 +6,7 @@ import {
   ConversationViewer,
   ConversationViewModel,
 } from "@/components/conversation/ConversationViewer";
+import { PartialHandlingEvidence } from "@/components/analysis/PartialHandlingEvidence";
 
 type Gap = { code: string; capability: string; state: string };
 type Population = {
@@ -53,6 +54,7 @@ type Report = {
     failure_count: number;
     mean_reward: number;
   };
+  partial_handling_evidence?: PartialHandlingEvidence;
   method: {
     semantic_discovery_conversation_count: number;
     sealed_calibration_conversation_count: number;
@@ -258,6 +260,8 @@ export default function AnalysisPage() {
         </section>
 
         <section className="labs-section light-section"><div className="section-heading"><div><span className="mono-label">Deterministic</span><h2>Behavior summary</h2></div><button className="btn" type="button" onClick={downloadReport}>Download report JSON</button></div><div className="authority-strip"><div className="labs-fact"><span className="mono-label">Conversations</span><strong>{report.behavior_analytics.conversation_count}</strong></div><div className="labs-fact"><span className="mono-label">Tool observed</span><strong>{report.behavior_analytics.tool_observed_conversation_count}</strong></div><div className="labs-fact"><span className="mono-label">Turns</span><strong>{report.behavior_analytics.turn_count.total}</strong><p>{report.behavior_analytics.turn_count.minimum}–{report.behavior_analytics.turn_count.maximum} per conversation</p></div><div className="labs-fact"><span className="mono-label">Discovery visible</span><strong>{report.method.semantic_discovery_conversation_count}</strong><p>{report.method.persisted_conversation_split}</p></div><div className="labs-fact"><span className="mono-label">Sealed</span><strong>{report.method.sealed_calibration_conversation_count + report.method.sealed_holdout_conversation_count}</strong><p>{report.method.sealed_calibration_conversation_count} calibration · {report.method.sealed_holdout_conversation_count} holdout</p></div></div><div className="row-evidence">{Object.entries(report.behavior_analytics.event_kind_counts).map(([kind, count]) => <span className="labs-status" key={kind}>{kind}: {count}</span>)}</div></section>
+
+        <PartialHandlingEvidence evidence={report.partial_handling_evidence} onOpenTrace={openConversation} />
 
         {report.outcome_analytics ? <section className="labs-section light-section"><div className="section-heading"><div><span className="mono-label">Official outcome evidence</span><h2>Observed benchmark result</h2></div><span className="labs-status">{report.outcome_analytics.authority}</span></div><div className="authority-strip"><div className="labs-fact"><span className="mono-label">Denominator</span><strong>{report.outcome_analytics.denominator}</strong></div><div className="labs-fact"><span className="mono-label">Success</span><strong>{report.outcome_analytics.success_count}</strong></div><div className="labs-fact"><span className="mono-label">Failure</span><strong>{report.outcome_analytics.failure_count}</strong></div><div className="labs-fact"><span className="mono-label">Mean reward</span><strong>{report.outcome_analytics.mean_reward.toFixed(4)}</strong></div></div><p>Source: {report.outcome_analytics.source}. This is deterministic source reward accounting, not an L4 judgment or first-broken-link explanation.</p></section> : null}
 
