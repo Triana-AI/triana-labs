@@ -198,7 +198,7 @@ class _Facet(BaseModel):
     handling_mode: str
     claimed_action: str
     terminal_summary: str
-    evidence_quotes: list[str] = Field(max_length=3)
+    evidence_quotes: list[str]
 
 
 class _FacetBatch(BaseModel):
