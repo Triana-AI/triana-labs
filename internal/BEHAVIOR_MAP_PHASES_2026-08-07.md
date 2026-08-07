@@ -2,12 +2,15 @@
 
 Date: 2026-08-07
 
-Status: **Phase 1 local engine green; real TAU proof and product audit pending**
+Status: **Phase 1 self-serve preview passed on TAU²; Blitz/HRAI generalization and Phase 2 remain pending**
 
 Authority: `triana-labs/CHARTER.md`, `internal/DECISION_LOG.md`, and this
 bounded product decision. The implementation entry gate remains
 `internal/SLICE_PACKET.md`; its local implementation gate is green and its live
-TAU proof remains open.
+The TAU² product-value proof passed on report
+`sha256:df7222f892a637ed8a9eb3ea788ae73205efe79be4fc5b365168852d8b1911f4`
+with the bounded claim “proposed behavior map, evidence, emerging observations,
+and unresolved questions.” This is not an exhaustive or accepted taxonomy.
 
 ## Product sentence
 

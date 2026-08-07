@@ -467,6 +467,18 @@ preserving their occurrences and evidence. All 44 Behavior Map and 43 adjacent
 Trace-to-Eval checks plus independent review are GREEN. Final live artifact
 validation remains the only open product-value gate.
 
+Final product-value exit passed on report
+`sha256:df7222f892a637ed8a9eb3ea788ae73205efe79be4fc5b365168852d8b1911f4`.
+The 57-conversation TAU² artifact kept 12 calibration and 11 holdout
+conversations sealed, produced 50 episodes across 27/34 eligible conversations,
+assigned 25/50 episodes to four demand groups, published three behavior patterns
+with distinct support at least two, exposed eight questions before exact
+evidence, and closed both final trust failures in the live bytes. The final run
+reserved USD 3.53; the conservative cumulative reservation is USD 48/50 and
+actual provider cost is unknown. No further paid run is authorized by this
+slice. Phase 1 exits only as a proposed self-serve preview, never complete or
+accepted behavioral truth.
+
 Valid RED command:
 
 ```text

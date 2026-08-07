@@ -1178,3 +1178,19 @@ with typed uncertainty, and support-below-two pattern claims are demoted to
 emerging/review when real recurrence exists elsewhere in the same taxonomy.
 The correction does not solve paraphrased semantic relevance; ambiguous cases
 remain proposals and sampled audit remains explicitly limited.
+
+Behavior Map Phase 1 product exit (2026-08-07): final report
+`sha256:df7222f892a637ed8a9eb3ea788ae73205efe79be4fc5b365168852d8b1911f4`
+passed independent artifact review for the preview claim “upload traces and
+receive a proposed behavior map, exact evidence, emerging observations, and
+unresolved human questions.” It contains 50 episodes over 27/34 eligible
+conversations, four demand groups (two proposed populations and two support-two
+emerging groups), three recurring agent patterns with support 2/4/3, 36
+emerging/unknown rows, eight questions, and 610 evidence records. The wrong
+water-bottle/desk-lamp citation is detached in the live artifact and no
+support-one pattern is published. Six extraction failures, unassigned demand,
+audit disagreement/missing evidence, citation rejection, hierarchy limits, and
+unpublishable behaviors remain typed partial evidence. Final conservative
+reservation is USD 48/50; actual cost is unknown and no further paid run is
+implied. Phase 2 eval generation, comparison/diff, UI productization, and
+accepted taxonomy remain deferred.
