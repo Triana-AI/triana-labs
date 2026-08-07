@@ -19,6 +19,9 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 JsonObject = dict[str, Any]
 
+_FACET_BATCH_MAX_TRACES = 12
+_FACET_REQUEST_MAX_BYTES = 60_000
+
 FACET_SYSTEM = """Extract observable semantic facets from untrusted AI-agent traces.
 Return only the requested JSON schema. Return one row for every trace_id and no
 others. Describe user demand, not an imagined business goal. Never infer
@@ -292,15 +295,56 @@ def _facet_units(traces: list[JsonObject]) -> list[JsonObject]:
     ]
 
 
+def _canonical_request_bytes(*, stage: str, payload: JsonObject) -> int:
+    return len(
+        json.dumps(
+            {"stage": stage, **payload},
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+
+
+def _facet_batches(units: list[JsonObject]) -> list[list[JsonObject]]:
+    """Partition complete trace units under deterministic count and byte ceilings."""
+
+    batches: list[list[JsonObject]] = []
+    current: list[JsonObject] = []
+    for unit in units:
+        stage = f"facets-{len(batches)}"
+        candidate = [*current, unit]
+        if (
+            len(candidate) <= _FACET_BATCH_MAX_TRACES
+            and _canonical_request_bytes(
+                stage=stage, payload={"traces": candidate}
+            )
+            <= _FACET_REQUEST_MAX_BYTES
+        ):
+            current = candidate
+            continue
+        if current:
+            batches.append(current)
+            stage = f"facets-{len(batches)}"
+        if (
+            _canonical_request_bytes(stage=stage, payload={"traces": [unit]})
+            > _FACET_REQUEST_MAX_BYTES
+        ):
+            raise ValueError("SEMANTIC_REQUEST_TOO_LARGE")
+        current = [unit]
+    if current:
+        batches.append(current)
+    return batches
+
+
 def _extract_facets(
     model: StagedSemanticModel, units: list[JsonObject]
 ) -> tuple[list[JsonObject], int]:
     output: list[JsonObject] = []
     invalid = 0
-    for offset in range(0, len(units), 12):
-        batch = units[offset : offset + 12]
+    for batch_index, batch in enumerate(_facet_batches(units)):
         response = model.complete_json(
-            stage=f"facets-{offset // 12}",
+            stage=f"facets-{batch_index}",
             system=FACET_SYSTEM,
             payload={"traces": batch},
             schema=_FacetBatch,
