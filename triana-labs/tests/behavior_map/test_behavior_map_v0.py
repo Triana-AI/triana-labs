@@ -1688,3 +1688,705 @@ def test_missing_agent_context_inference_covers_every_conversation_not_first_bat
     }
     assert context_conversations == {f"scale-{index:02d}" for index in range(13)}
     assert report["agent_context"]["status"] == "PROPOSED"
+
+
+class _FullBoundModel(_SemanticModel):
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        provider: str,
+        endpoint_origin: str,
+        deployment_version: str,
+        sku: str,
+        capacity: int,
+        credential_boundary_id: str,
+        max_calls: int,
+        reservation_usd_per_call: float,
+    ) -> None:
+        super().__init__(model_id)
+        self.provider = provider
+        self.endpoint_origin = endpoint_origin
+        self.deployment_version = deployment_version
+        self.sku = sku
+        self.capacity = capacity
+        self.credential_boundary_id = credential_boundary_id
+        self.max_calls = max_calls
+        self.reservation_usd_per_call = reservation_usd_per_call
+
+    def lineage(self) -> dict[str, Any]:
+        reserved = round(self.provider_calls * self.reservation_usd_per_call, 2)
+        return {
+            "provider": self.provider,
+            "model_id": self.model_id,
+            "endpoint_origin": self.endpoint_origin,
+            "deployment_version": self.deployment_version,
+            "sku": self.sku,
+            "capacity": self.capacity,
+            "credential_boundary_id": self.credential_boundary_id,
+            "call_count": self.provider_calls,
+            "provider_calls": self.provider_calls,
+            "attempted_call_count": self.provider_calls,
+            "successful_call_count": self.provider_calls,
+            "cost_usd": reserved,
+            "budget": {
+                "max_calls": self.max_calls,
+                "max_reserved_usd": round(
+                    self.max_calls * self.reservation_usd_per_call, 2
+                ),
+                "reservation_usd_per_call": self.reservation_usd_per_call,
+                "reserved_usd": reserved,
+                "reservation_method": "CONFIGURED_RUN_MAXIMUM",
+            },
+            "retry_policy": "NONE",
+            "fallback_policy": "NONE",
+        }
+
+
+def _full_models(
+    *, primary_overrides: dict[str, Any] | None = None
+) -> tuple[_FullBoundModel, _FullBoundModel]:
+    primary = {
+        "provider": "SYNTHETIC_TEST_BOUNDARY",
+        "endpoint_origin": "https://terra.example",
+        "deployment_version": "terra-v1",
+        "sku": "GlobalStandard",
+        "capacity": 20,
+        "credential_boundary_id": "credential-boundary-terra",
+    }
+    primary.update(primary_overrides or {})
+    return (
+        _FullBoundModel(
+            "terra-test-v0",
+            **primary,
+            max_calls=20,
+            reservation_usd_per_call=0.15,
+        ),
+        _FullBoundModel(
+            "luna-test-v0",
+            provider="SYNTHETIC_TEST_BOUNDARY",
+            endpoint_origin="https://luna.example",
+            deployment_version="luna-v2",
+            sku="GlobalStandard",
+            capacity=10,
+            credential_boundary_id="credential-boundary-luna",
+            max_calls=10,
+            reservation_usd_per_call=0.10,
+        ),
+    )
+
+
+def _authorize_full_bindings(
+    path: Path, *, primary_overrides: dict[str, Any] | None = None
+) -> Path:
+    primary = {
+        "provider": "SYNTHETIC_TEST_BOUNDARY",
+        "endpoint_origin": "https://terra.example",
+        "deployment_version": "terra-v1",
+        "sku": "GlobalStandard",
+        "capacity": 20,
+        "credential_boundary_id": "credential-boundary-terra",
+    }
+    primary.update(primary_overrides or {})
+
+    def mutate(value: dict[str, Any]) -> None:
+        value["privacy"]["provider_egress"].update(
+            {
+                **primary,
+                "audit_provider": "SYNTHETIC_TEST_BOUNDARY",
+                "audit_endpoint_origin": "https://luna.example",
+                "audit_deployment_version": "luna-v2",
+                "audit_sku": "GlobalStandard",
+                "audit_capacity": 10,
+                "audit_credential_boundary_id": "credential-boundary-luna",
+            }
+        )
+
+    return _rewrite_manifest(path, mutate)
+
+
+def test_report_samples_provider_lineage_and_budget_after_semantic_calls(
+    tmp_path: Path,
+) -> None:
+    manifest = _authorize_full_bindings(_write_manifest(tmp_path))
+    primary, auditor = _full_models()
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert primary.provider_calls > 0 and auditor.provider_calls > 0
+    for role, model in (("primary", primary), ("auditor", auditor)):
+        lineage = report["provider_lineage"][role]
+        assert lineage["attempted_call_count"] == model.provider_calls
+        assert lineage["successful_call_count"] == model.provider_calls
+        assert lineage["provider_calls"] == model.provider_calls
+        assert lineage["budget"]["reserved_usd"] == round(
+            model.provider_calls * model.reservation_usd_per_call, 2
+        )
+    assert report["budget"]["primary_reserved_usd"] == round(
+        primary.provider_calls * primary.reservation_usd_per_call, 2
+    )
+    assert report["budget"]["audit_reserved_usd"] == round(
+        auditor.provider_calls * auditor.reservation_usd_per_call, 2
+    )
+
+
+def test_cumulative_preflight_reserves_both_complete_configured_run_maxima(
+    tmp_path: Path,
+) -> None:
+    manifest = _authorize_full_bindings(_write_manifest(tmp_path))
+
+    def set_prior(value: dict[str, Any]) -> None:
+        value["semantic_budget"] = {
+            "cumulative_limit_usd": 50.0,
+            "prior_reserved_usd": 46.5,
+        }
+
+    _rewrite_manifest(manifest, set_prior)
+    primary, auditor = _full_models()
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert primary.provider_calls == auditor.provider_calls == 0
+    assert "SEMANTIC_BUDGET_EXCEEDED" in _codes(report)
+
+
+def test_structurally_valid_checkpoint_result_tamper_refuses_before_egress(
+    tmp_path: Path,
+) -> None:
+    manifest = _authorize_full_bindings(_write_manifest(tmp_path))
+    output = tmp_path / "output"
+    primary, auditor = _full_models()
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    path = next(
+        candidate
+        for candidate in (output / "behavior-map-checkpoints").glob("*.json")
+        if json.loads(candidate.read_bytes())["result"].get("episodes")
+    )
+    tampered = json.loads(path.read_bytes())
+    tampered["result"]["episodes"][0]["goal"] = "Schema-valid tampered goal"
+    path.write_bytes(_canonical(tampered, lf=True))
+    check_primary, check_auditor = _full_models()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=check_primary,
+        audit_model=check_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert check_primary.provider_calls == check_auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(report)
+
+
+def test_any_changed_provider_binding_cannot_reuse_old_checkpoints(
+    tmp_path: Path,
+) -> None:
+    changed_values = {
+        "provider": "SECOND_SYNTHETIC_PROVIDER",
+        "endpoint_origin": "https://terra-second.example",
+        "deployment_version": "terra-v2",
+        "sku": "ProvisionedManaged",
+        "capacity": 30,
+        "credential_boundary_id": "credential-boundary-terra-second",
+    }
+    for field, changed_value in changed_values.items():
+        case = tmp_path / field
+        case.mkdir()
+        manifest = _authorize_full_bindings(_write_manifest(case))
+        output = case / "output"
+        primary, auditor = _full_models()
+        first = run_behavior_map(
+            manifest,
+            output,
+            primary_model=primary,
+            audit_model=auditor,
+            agent_context="A retail agent helps users manage orders and products.",
+        )
+        first_checkpoints = set(first["checkpoints"])
+        overrides = {field: changed_value}
+        _authorize_full_bindings(manifest, primary_overrides=overrides)
+        changed_primary, changed_auditor = _full_models(primary_overrides=overrides)
+        changed = run_behavior_map(
+            manifest,
+            output,
+            primary_model=changed_primary,
+            audit_model=changed_auditor,
+            agent_context="A retail agent helps users manage orders and products.",
+        )
+        assert changed_primary.provider_calls > 0, field
+        assert set(changed["checkpoints"]) - first_checkpoints, field
+
+
+def _write_wrapped_manifest(tmp_path: Path) -> Path:
+    readable = 'The agent said "ready".\nNext line.'
+    trace = _trace(
+        "wrapped-assistant",
+        [
+            _event(0, "SYSTEM_VISIBLE_MESSAGE", content="Synthetic wrapper fixture."),
+            _event(1, "USER_MESSAGE", content="Check the wrapped response."),
+            _event(
+                2,
+                "TOOL_CALL",
+                call_id="wrapped-lookup",
+                tool_name="lookup_record",
+                arguments={"id": "wrapped"},
+            ),
+            _event(
+                3,
+                "TOOL_RESULT",
+                call_id="wrapped-lookup",
+                result_state="SUCCEEDED",
+                result={"found": True},
+            ),
+            _event(
+                4,
+                "ASSISTANT_MESSAGE",
+                content=json.dumps({"message": {"content": readable}}),
+                is_final=True,
+            ),
+        ],
+    )
+    source = tmp_path / "wrapped.jsonl"
+    payload = _canonical(trace, lf=True)
+    source.write_bytes(payload)
+    manifest = {
+        "artifact_kind": "evidence_bundle_manifest_v0",
+        "schema_version": 0,
+        "source": {
+            "adapter_id": "tau-archive",
+            "adapter_version": "synthetic-wrapper-v0",
+            "path": str(source),
+            "sha256": _sha256(payload),
+            "physical_record_count": 1,
+        },
+        "agent": {"workspace_id": "synthetic", "agent_id": "wrapped-agent"},
+        "privacy": {
+            "authorization": "SYNTHETIC_FIXTURE",
+            "execution_location": "LOCAL_PRIVATE",
+            "provider_egress": {
+                "authorized": True,
+                "model_id": "terra-test-v0",
+                "audit_model_id": "luna-test-v0",
+            },
+        },
+        "grouping": {
+            "highest_dependency_key": "conversation",
+            "assignments": [
+                {"group_id": "group-wrapped", "trace_ids": ["wrapped-assistant"]}
+            ],
+        },
+        "capabilities": {
+            "paired_arms": False,
+            "outcomes": False,
+            "existing_evals": False,
+            "embeddings": False,
+        },
+        "outcomes": None,
+        "existing_evals": None,
+    }
+    path = tmp_path / "wrapped-manifest.json"
+    path.write_bytes(_canonical(manifest, lf=True))
+    return path
+
+
+class _WrappedSemanticModel(_SemanticModel):
+    def __init__(self, model_id: str) -> None:
+        super().__init__(model_id)
+        self.extraction_citation_properties: set[str] = set()
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        fields = set(getattr(schema, "model_fields", {}))
+        if "episodes" not in fields:
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+        self.requests.append(
+            {"stage": stage, "system": system, "payload": deepcopy(payload)}
+        )
+        self.provider_calls += 1
+        schema_json = schema.model_json_schema()
+        citation_schema = schema_json["$defs"]["EvidenceCitationProposal"]
+        self.extraction_citation_properties = set(citation_schema["properties"])
+        coordinate = (
+            "event_sequence"
+            if "event_sequence" in self.extraction_citation_properties
+            else "turn_ordinal"
+        )
+
+        def cite(sequence: int, quote: str) -> dict[str, Any]:
+            return {
+                "conversation_id": "wrapped-assistant",
+                coordinate: sequence,
+                "quote": quote,
+            }
+
+        return {
+            "episodes": [
+                {
+                    "local_id": "wrapped-demand",
+                    "goal": "Check a wrapped response",
+                    "requested_action": "GET_INFORMATION",
+                    "subject": "wrapped response",
+                    "constraints": [],
+                    "fallbacks": [],
+                    "supersedes_local_id": None,
+                    "start_turn_ordinal": 1,
+                    "end_turn_ordinal": 4,
+                    "citations": [cite(1, "Check the wrapped response.")],
+                    "status": "PROPOSED",
+                }
+            ],
+            "behaviors": [
+                {
+                    "local_id": "quoted-wrapped-result",
+                    "lane": "SEMANTIC",
+                    "action": "QUOTED_RESULT",
+                    "object": "wrapped lookup response",
+                    "condition": "after the lookup completed",
+                    "observed_effect": None,
+                    "episode_local_ids": ["wrapped-demand"],
+                    "citations": [cite(4, 'The agent said "ready".\nNext line.')],
+                    "event_ids": [],
+                    "status": "PROPOSED",
+                }
+            ],
+        }
+
+
+def test_tau_wrapped_assistant_preserves_exact_readable_evidence(
+    tmp_path: Path,
+) -> None:
+    primary = _WrappedSemanticModel("terra-test-v0")
+    report = run_behavior_map(
+        _write_wrapped_manifest(tmp_path),
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=_SemanticModel("luna-test-v0"),
+        agent_context="A support agent reads wrapped tool responses.",
+    )
+    assert any(
+        row["kind"] == "TRANSCRIPT"
+        and row["ordinal"] == 4
+        and row["text"] == 'The agent said "ready".\nNext line.'
+        for row in report["evidence"]
+    )
+    assert not (
+        {"SEMANTIC_CITATION_INVALID", "UNGROUNDED_SEMANTIC_OUTPUT"} & _codes(report)
+    )
+
+
+def test_provider_citation_schema_names_canonical_event_sequence(
+    tmp_path: Path,
+) -> None:
+    primary = _WrappedSemanticModel("terra-test-v0")
+    run_behavior_map(
+        _write_wrapped_manifest(tmp_path),
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=_SemanticModel("luna-test-v0"),
+        agent_context="A support agent reads wrapped tool responses.",
+    )
+    assert primary.extraction_citation_properties >= {
+        "conversation_id",
+        "event_sequence",
+        "quote",
+    }
+    assert "turn_ordinal" not in primary.extraction_citation_properties
+
+
+class _RecursiveHierarchyModel(_ScaleSemanticModel):
+    def __init__(self) -> None:
+        super().__init__()
+        self.population_hierarchy_calls = 0
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        candidates = payload.get("candidate_populations")
+        if not isinstance(candidates, list):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+        self.provider_calls += 1
+        self.requests.append(
+            {
+                "stage": stage,
+                "payload": deepcopy(payload),
+                "request_bytes": len(system.encode())
+                + len(_canonical(payload))
+                + len(_canonical(schema.model_json_schema())),
+            }
+        )
+        episode_ids = sorted(
+            {
+                episode_id
+                for candidate in candidates
+                for episode_id in candidate["episode_ids"]
+            }
+        )
+        if all(
+            str(row["label"]).startswith("Reconciled cancellation batch")
+            for row in candidates
+        ):
+            label = "Order cancellation requests"
+        else:
+            self.population_hierarchy_calls += 1
+            label = f"Reconciled cancellation batch {self.population_hierarchy_calls}"
+        return {
+            "populations": [
+                {
+                    "label": label,
+                    "definition": "Users request cancellation of an order.",
+                    "episode_ids": episode_ids,
+                }
+            ]
+        }
+
+
+def test_hierarchy_recurses_to_one_global_taxonomy_without_unbounded_calls(
+    tmp_path: Path,
+) -> None:
+    primary = _RecursiveHierarchyModel()
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 25),
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    assert len(report["populations"]) == 1
+    assert report["populations"][0]["support"] == 25
+    assert set(report["populations"][0]["episode_ids"]) == {
+        row["episode_id"] for row in report["episodes"]
+    }
+    assert primary.population_hierarchy_calls >= 4
+    assert all(request["request_bytes"] <= 60_000 for request in primary.requests)
+
+
+class _InvalidContextCitationModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "agent_context" not in set(getattr(schema, "model_fields", {})):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+        self.requests.append(
+            {"stage": stage, "system": system, "payload": deepcopy(payload)}
+        )
+        self.provider_calls += 1
+        return {
+            "agent_context": {
+                "text": "An unsupported inferred agent purpose.",
+                "status": "PROPOSED",
+                "citations": [
+                    _citation("multi-goal", 0, "This context quote does not exist.")
+                ],
+            }
+        }
+
+
+def test_inferred_agent_context_requires_exact_citations_or_becomes_unknown(
+    tmp_path: Path,
+) -> None:
+    primary = _InvalidContextCitationModel("terra-test-v0")
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        _write_manifest(tmp_path),
+        output,
+        primary_model=primary,
+        audit_model=_SemanticModel("luna-test-v0"),
+        agent_context=None,
+    )
+    assert report["agent_context"]["status"] == "UNKNOWN"
+    assert "SEMANTIC_CONTEXT_CITATION_INVALID" in _codes(report)
+    assert (
+        "unsupported inferred agent purpose"
+        not in _canonical(report).decode().casefold()
+    )
+    assert (
+        "unsupported inferred agent purpose"
+        not in (output / "behavior-map.md").read_text().casefold()
+    )
+
+
+def _run_tool_flood(tmp_path: Path) -> tuple[dict[str, Any], Path]:
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        _write_tool_flood_manifest(tmp_path, 50),
+        output,
+        primary_model=_ToolFloodSemanticModel("terra-test-v0"),
+        audit_model=None,
+        agent_context="A support agent looks up records.",
+    )
+    return report, output
+
+
+def _write_tool_flood_manifest(tmp_path: Path, tool_calls: int) -> Path:
+    events = [_event(0, "USER_MESSAGE", content="Look up every synthetic record.")]
+    for index in range(tool_calls):
+        call_id = f"lookup-{index:03d}"
+        events.extend(
+            [
+                _event(
+                    1 + index * 2,
+                    "TOOL_CALL",
+                    call_id=call_id,
+                    tool_name="lookup_record",
+                    arguments={"index": index},
+                ),
+                _event(
+                    2 + index * 2,
+                    "TOOL_RESULT",
+                    call_id=call_id,
+                    result_state="SUCCEEDED",
+                    result={"found": True},
+                ),
+            ]
+        )
+    events.append(
+        _event(
+            1 + tool_calls * 2,
+            "ASSISTANT_MESSAGE",
+            content="All synthetic records were checked.",
+            is_final=True,
+        )
+    )
+    trace = _trace("tool-flood", events)
+    source = tmp_path / "tool-flood.jsonl"
+    payload = _canonical(trace, lf=True)
+    source.write_bytes(payload)
+    manifest = {
+        "artifact_kind": "evidence_bundle_manifest_v0",
+        "schema_version": 0,
+        "source": {
+            "adapter_id": "preview-trace-jsonl",
+            "adapter_version": "1",
+            "path": str(source),
+            "sha256": _sha256(payload),
+            "physical_record_count": 1,
+        },
+        "agent": {"workspace_id": "synthetic", "agent_id": "tool-flood-agent"},
+        "privacy": {
+            "authorization": "SYNTHETIC_FIXTURE",
+            "execution_location": "LOCAL_PRIVATE",
+            "provider_egress": {
+                "authorized": True,
+                "model_id": "terra-test-v0",
+                "audit_model_id": "luna-test-v0",
+            },
+        },
+        "grouping": {
+            "highest_dependency_key": "conversation",
+            "assignments": [
+                {"group_id": "group-tool-flood", "trace_ids": ["tool-flood"]}
+            ],
+        },
+        "capabilities": {
+            "paired_arms": False,
+            "outcomes": False,
+            "existing_evals": False,
+            "embeddings": False,
+        },
+        "outcomes": None,
+        "existing_evals": None,
+    }
+    path = tmp_path / "tool-flood-manifest.json"
+    path.write_bytes(_canonical(manifest, lf=True))
+    return path
+
+
+class _ToolFloodSemanticModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "episodes" not in set(getattr(schema, "model_fields", {})):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+        self.requests.append(
+            {"stage": stage, "system": system, "payload": deepcopy(payload)}
+        )
+        self.provider_calls += 1
+        return {
+            "episodes": [
+                {
+                    "local_id": "look-up-all-records",
+                    "goal": "Look up every synthetic record",
+                    "requested_action": "LOOKUP_RECORDS",
+                    "subject": "all synthetic records",
+                    "constraints": [],
+                    "fallbacks": [],
+                    "supersedes_local_id": None,
+                    "start_turn_ordinal": 0,
+                    "end_turn_ordinal": 101,
+                    "citations": [
+                        _citation("tool-flood", 0, "Look up every synthetic record.")
+                    ],
+                    "status": "PROPOSED",
+                }
+            ],
+            "behaviors": [],
+        }
+
+
+def test_human_report_prints_actual_gap_codes_and_explanations(
+    tmp_path: Path,
+) -> None:
+    report, output = _run_tool_flood(tmp_path)
+    assert "SEMANTIC_AUDIT_UNAVAILABLE" in _codes(report)
+    for document in (
+        (output / "behavior-map.md").read_text(),
+        (output / "behavior-map.html").read_text(),
+    ):
+        assert "SEMANTIC_AUDIT_UNAVAILABLE" in document
+        assert "audit" in document.casefold()
+        assert "unavailable" in document.casefold()
+
+
+def test_human_report_summarizes_generic_deterministic_tool_evidence(
+    tmp_path: Path,
+) -> None:
+    _, output = _run_tool_flood(tmp_path)
+    for document in (
+        (output / "behavior-map.md").read_text(),
+        (output / "behavior-map.html").read_text(),
+    ):
+        assert "50 tool calls" in document
+        assert "lookup record" in document
+        assert document.count("CALLED_TOOL") <= 1

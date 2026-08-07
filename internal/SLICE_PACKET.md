@@ -304,6 +304,22 @@ The test author must freeze black-box cases for:
     behavior, evidence lanes, method, limitations, quality accounting, and gaps;
 27. absent optional agent context is inferred from the eligible corpus rather
     than silently from only its first batch.
+28. final provider lineage and reserved-cost accounting are sampled after calls;
+29. preflight reserves both roles' complete configured run maxima against the
+    cumulative USD 50 ceiling before either role calls;
+30. schema-valid checkpoint-result tamper refuses before egress;
+31. checkpoint reuse is bound to provider, endpoint, deployment version, SKU,
+    capacity, and non-secret credential boundary;
+32. readable TAU JSON-wrapped assistant evidence resolves exact escaped quotes
+    and newlines against its canonical projection;
+33. provider citations name canonical `event_sequence`, never ambiguous
+    conversational `turn_ordinal`;
+34. hierarchy recursively reaches one globally reconciled taxonomy while every
+    request remains bounded;
+35. ungrounded inferred context becomes typed unknown rather than publication;
+36. human reports print actual typed gap codes and understandable limitations;
+37. generic deterministic tool evidence is summarized rather than dumped as
+    hundreds of low-value rows.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -370,8 +386,8 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`8cd17bc9ef48453a22923c16818d67590cad3d4b1688fc3f2a84349f2184b6e8`.
-It freezes all twenty-seven acceptance behaviors listed above across twenty-eight
+`0673f975bf57058183c55733b851c74503257ca54fdc2024a249e0788860c22d`.
+It freezes all thirty-seven acceptance behaviors listed above across thirty-eight
 black-box cases. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
@@ -386,7 +402,11 @@ extraction, flat hierarchy loss, unsupported promotion, weak provider binding,
 post-call budget accounting, cross-conversation citations, silent audit gaps,
 first-batch-only context, and insufficient human explanation. Eleven focused
 regressions supersede the second hash without weakening the original seventeen
-controls.
+controls. A final post-hardening read-only review reproduced stale post-call
+lineage, next-call-only cumulative reservation, checkpoint binding/integrity
+gaps, TAU wrapped-evidence coordinate loss, non-global hierarchy, ungrounded
+context, and report-density failures. Ten additional focused regressions
+supersede the third hash while retaining all twenty-eight controls.
 
 Valid RED command:
 
@@ -399,7 +419,7 @@ Observed result: collection stops only at
 `ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
 3.39 seconds against an isolated export of pre-implementation commit `d35dac1`.
 Ruff check, Ruff format check, Python compilation, file hash, and diff check are
-GREEN. Against the first implementation handoff, the hardening suite produces
-eleven intended failures and seventeen passing controls in 1.42 seconds. The
-test-owned path is frozen. The implementation author may read it but must not
-edit it.
+GREEN. Against the post-hardening implementation handoff, the final suite
+produces ten intended failures and twenty-eight passing controls in 2.86
+seconds. The test-owned path is frozen. The implementation author may read it
+but must not edit it.
