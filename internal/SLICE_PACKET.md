@@ -747,3 +747,21 @@ Three cases freeze exact schema enum membership, plain prompt enumeration,
 valid handling-distribution projection, and strict rejection of free-form
 handling/action strings. Observed RED is three failures solely at the missing
 enum constraints. Ruff, format, and diff checks pass.
+
+### Bounded hierarchical population consolidation — 2026-08-07
+
+After enum alignment, all nine first-run facet batches completed and persisted
+strict-valid checkpoints. The single final consolidation of 34 labels (8,643
+canonical request bytes) then failed at the provider transport boundary on
+three explicit invocations with zero returned tokens. Stop repeating that exact
+request. The existing hierarchical consolidator activates only above 40 labels,
+which is too permissive for the observed provider profile.
+
+Freeze the minimal correction: reuse the existing hierarchical algorithm but
+cap every population-consolidation request at 12 input label items. Preserve
+source order, every original label exactly once across the level, deterministic
+unmapped-label carry-forward, final membership validation, no retry/fallback,
+and exact checkpoint identity. Independent acceptance owns one additive file
+with at most three cases; implementation changes only `semantic.py` within 30
+physical lines. No provider call until full GREEN; the existing nine facet
+checkpoints must remain reusable afterward.
