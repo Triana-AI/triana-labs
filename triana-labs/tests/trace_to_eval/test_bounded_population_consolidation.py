@@ -95,16 +95,14 @@ def _population_evidence(result: dict[str, Any]) -> list[str]:
     ]
 
 
-def test_more_than_twelve_labels_use_bounded_hierarchy_and_preserve_membership() -> (
-    None
-):
-    traces = _traces(25)
+def test_more_than_four_labels_use_bounded_hierarchy_and_preserve_membership() -> None:
+    traces = _traces(9)
     model = _ConsolidatingModel(omit_one_from_intermediate=True)
 
     result = run_staged_analysis(model, traces)
 
     assert len(model.consolidation_calls) > 1
-    assert all(len(labels) <= 12 for _, labels in model.consolidation_calls)
+    assert all(len(labels) <= 4 for _, labels in model.consolidation_calls)
     assert any(
         stage.startswith("population-consolidation-0-")
         for stage, _ in model.consolidation_calls
@@ -115,12 +113,12 @@ def test_more_than_twelve_labels_use_bounded_hierarchy_and_preserve_membership()
     expected_trace_ids = sorted(trace["trace_id"] for trace in traces)
     evidence = _population_evidence(result)
     assert sorted(evidence) == expected_trace_ids
-    assert len(evidence) == len(set(evidence)) == 25
+    assert len(evidence) == len(set(evidence)) == 9
     assert result["semantic_gap_count"] == 0
 
 
-def test_twelve_labels_retain_one_final_consolidation_call() -> None:
-    traces = _traces(12)
+def test_four_labels_retain_one_final_consolidation_call() -> None:
+    traces = _traces(4)
     model = _ConsolidatingModel()
 
     result = run_staged_analysis(model, traces)
@@ -128,7 +126,7 @@ def test_twelve_labels_retain_one_final_consolidation_call() -> None:
     assert model.consolidation_calls == [
         (
             "population-consolidation-final",
-            [f"goal-trace-{index:02d}" for index in range(12)],
+            [f"goal-trace-{index:02d}" for index in range(4)],
         )
     ]
     assert sorted(_population_evidence(result)) == sorted(

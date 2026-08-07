@@ -778,8 +778,16 @@ checks pass.
 The first 12-label TAU hierarchical request also failed transport with zero
 tokens. A distinct two-label synthetic consolidation passed, followed by a
 distinct four-label real-TAU diagnostic that passed with 444 input and 935
-output tokens. Supersede only the preliminary 12-label bound with a certified
-four-label bound for this pinned provider profile. The existing hierarchy,
-identity, accounting, and acceptance rules remain unchanged; the focused test
-must be independently updated to require at most four and retain exactly-four
-single-final-call compatibility before production changes.
+output tokens. Supersede only the preliminary 12-label bound with a conservative
+four-label operating bound for this exact Triana prompt, schema, TAU payload,
+Azure deployment, and model combination. This is the largest directly validated
+working batch in this run, not a proven provider or model maximum: labels 5–11
+were not tested and the transport-failure cause is not established. The existing
+hierarchy, identity, accounting, and acceptance rules remain unchanged.
+
+The superseding focused test is frozen at SHA-256
+`055144a0e9f96fc94d0539f53be14eda9b92d098af4d14cb26cac0d5b4536182`.
+Two cases require at most four items with hierarchy/carry-forward/exact public
+membership above four and retain one final call at exactly four. Observed RED
+is one intended nine-label overage; exact-four compatibility passes. This
+supersedes only the prior `f43a5a00...` test hash and 12-label threshold.
