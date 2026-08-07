@@ -456,6 +456,17 @@ launch-honesty contract is now frozen at Behavior Map test SHA-256
 GREEN with all 43 adjacent Trace-to-Eval checks. One final bounded checkpoint
 continuation plus human artifact audit remains the product-value exit.
 
+The launch-honest preview then exposed two final trust failures: one
+water-bottle episode retained desk-lamp-only sibling evidence, and one
+single-occurrence observation was presented as recurring. The trust gate is
+frozen at Behavior Map test SHA-256
+`f70233d41111606d7ebf0321a74668da34b288b4d534b7e9e43060276b29f7c9`.
+It conservatively detaches only explicit distinct sibling-subject citations,
+emits linked uncertainty, and demotes support-below-two recurrence claims while
+preserving their occurrences and evidence. All 44 Behavior Map and 43 adjacent
+Trace-to-Eval checks plus independent review are GREEN. Final live artifact
+validation remains the only open product-value gate.
+
 Valid RED command:
 
 ```text

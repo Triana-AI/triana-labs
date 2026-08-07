@@ -680,6 +680,59 @@ def _episodes(
             "end_turn_ordinal": max([end, *citation_ordinals]),
         }
         valid.append((proposal, conversation_id))
+    relevance_filtered: list[tuple[JsonObject, str]] = []
+    for proposal, conversation_id in valid:
+        subject = " ".join(str(proposal["subject"]).casefold().split())
+        sibling_subjects = {
+            " ".join(str(sibling["subject"]).casefold().split())
+            for sibling, sibling_conversation_id in valid
+            if sibling_conversation_id == conversation_id
+            and sibling is not proposal
+            and sibling["subject"] != proposal["subject"]
+        }
+        sibling_subjects = {
+            value
+            for value in sibling_subjects
+            if len(value) >= 8 and len(value.split()) >= 2
+        }
+        retained: list[JsonObject] = []
+        detached = 0
+        for citation in cast(list[JsonObject], proposal["citations"]):
+            quote = " ".join(str(citation["quote"]).casefold().split())
+            names_sibling = any(value in quote for value in sibling_subjects)
+            names_current = bool(subject) and subject in quote
+            if names_sibling and not names_current:
+                detached += 1
+            else:
+                retained.append(citation)
+        if not retained:
+            gaps.append(
+                {
+                    "code": "SEMANTIC_CITATION_RELEVANCE_INVALID",
+                    "stage": "EPISODES",
+                    "conversation_id": conversation_id,
+                    "local_id": proposal["local_id"],
+                }
+            )
+            continue
+        citation_ordinals = [_citation_sequence(citation) for citation in retained]
+        relevance_filtered.append(
+            (
+                {
+                    **proposal,
+                    "citations": retained,
+                    "start_turn_ordinal": min(
+                        [proposal["start_turn_ordinal"], *citation_ordinals]
+                    ),
+                    "end_turn_ordinal": max(
+                        [proposal["end_turn_ordinal"], *citation_ordinals]
+                    ),
+                    "_detached_citation_count": detached,
+                },
+                conversation_id,
+            )
+        )
+    valid = relevance_filtered
     valid.sort(
         key=lambda item: (
             item[1],
@@ -715,6 +768,15 @@ def _episodes(
             {"conversation_id": conversation_id, "semantic": identity},
         )
         local_to_id[(conversation_id, cast(str, proposal["local_id"]))] = episode_id
+        if proposal.get("_detached_citation_count", 0):
+            gaps.append(
+                {
+                    "code": "SEMANTIC_CITATION_RELEVANCE_DETACHED",
+                    "stage": "EPISODES",
+                    "episode_id": episode_id,
+                    "detached_citation_count": proposal["_detached_citation_count"],
+                }
+            )
         rows.append(
             {
                 "episode_id": episode_id,
@@ -1034,6 +1096,19 @@ def _patterns(
     proposals: list[JsonObject], occurrences: list[JsonObject]
 ) -> tuple[list[JsonObject], list[JsonObject]]:
     occurrence_ids = {cast(str, row["occurrence_id"]) for row in occurrences}
+
+    def proposal_support(proposal: JsonObject) -> set[str]:
+        members = set(cast(list[str], proposal["occurrence_ids"])) & occurrence_ids
+        member_rows = [row for row in occurrences if row["occurrence_id"] in members]
+        return {
+            episode_id
+            for row in member_rows
+            for episode_id in cast(list[str], row["episode_ids"])
+        } or {cast(str, row["conversation_id"]) for row in member_rows}
+
+    recurring_support_present = any(
+        len(proposal_support(proposal)) >= 2 for proposal in proposals
+    )
     rows: list[JsonObject] = []
     gaps: list[JsonObject] = []
     for proposal in sorted(
@@ -1065,6 +1140,23 @@ def _patterns(
             for row in member_rows
             for episode_id in cast(list[str], row["episode_ids"])
         } or {cast(str, row["conversation_id"]) for row in member_rows}
+        if recurring_support_present and len(distinct_support) < 2:
+            gaps.append(
+                {
+                    "code": "BEHAVIOR_PATTERN_SUPPORT_INSUFFICIENT",
+                    "stage": "PATTERNS",
+                    "occurrence_ids": members,
+                    "episode_ids": sorted(
+                        {
+                            episode_id
+                            for row in member_rows
+                            for episode_id in cast(list[str], row["episode_ids"])
+                        }
+                    ),
+                    "support": len(distinct_support),
+                }
+            )
+            continue
         identity = {
             "label": label,
             "definition": proposal["definition"],
@@ -1682,6 +1774,16 @@ def run_behavior_map(
                 for occurrence_id in cast(list[str], pattern["occurrence_ids"])
             }
             for gap in pattern_gaps:
+                if gap.get("code") == "BEHAVIOR_PATTERN_SUPPORT_INSUFFICIENT":
+                    for episode_id in cast(list[str], gap.get("episode_ids", [])):
+                        emerging_unknown.append(
+                            {
+                                "episode_id": episode_id,
+                                "reason": "PATTERN_SUPPORT_INSUFFICIENT",
+                                "description": "This observed behavior has fewer than two distinct supporting episodes or conversations and remains emerging.",
+                            }
+                        )
+                    continue
                 if gap.get("code") != "GENERIC_BEHAVIOR_LANGUAGE":
                     continue
                 affected_occurrence_ids = set(

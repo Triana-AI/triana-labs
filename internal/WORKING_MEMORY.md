@@ -1166,3 +1166,15 @@ population assignment denominators are explicit; audit is labeled sampled;
 gaps are aggregated; questions precede the evidence appendix. Semantic relevance
 is still a proposal boundary: the known `tau2-6` water-bottle/desk-lamp citation
 mismatch must not be described as deterministically solved.
+
+Behavior Map final trust-gate reset (2026-08-07): the launch-honest preview
+reached five user populations, four agent behavior entries, 27/34 grounded
+conversation coverage, 38/51 population assignment, and USD 44.47 cumulative
+conservative reservation, but independent review found the known `tau2-6`
+water-bottle member still carried desk-lamp-only evidence and a support-one
+observation still appeared as recurring. The final local correction is GREEN:
+explicit distinct sibling-subject citations are detached from the wrong episode
+with typed uncertainty, and support-below-two pattern claims are demoted to
+emerging/review when real recurrence exists elsewhere in the same taxonomy.
+The correction does not solve paraphrased semantic relevance; ambiguous cases
+remain proposals and sampled audit remains explicitly limited.

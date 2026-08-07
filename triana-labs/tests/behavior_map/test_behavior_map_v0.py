@@ -2938,3 +2938,138 @@ def test_published_episode_boundaries_enclose_every_accepted_citation(
                 <= citation_ordinal
                 <= episode["end_turn_ordinal"]
             )
+
+
+class _CrossDemandCitationModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            target = next(
+                (
+                    row
+                    for row in result["episodes"]
+                    if row["local_id"] == "cancel-alpha"
+                ),
+                None,
+            )
+            if target is not None:
+                target["citations"] = [
+                    _citation("multi-goal", 0, "Cancel order alpha"),
+                    _citation(
+                        "multi-goal", 0, "return the blue jacket from order beta"
+                    ),
+                ]
+        return result
+
+
+def test_cross_demand_citation_is_detached_without_dropping_valid_episode(
+    tmp_path: Path,
+) -> None:
+    report, _, _, _ = _run(tmp_path, primary=_CrossDemandCitationModel("terra-test-v0"))
+    episode = next(
+        row
+        for row in report["episodes"]
+        if row["conversation_id"] == "multi-goal"
+        and row["requested_action"] == "CANCEL_ORDER"
+    )
+    quotes = {str(row["quote"]) for row in episode["citations"]}
+    assert "Cancel order alpha" in quotes
+    assert "return the blue jacket from order beta" not in quotes
+    relevance_rows = [
+        row
+        for row in [*report["gaps"], *report["emerging_unknown"]]
+        if "CITATION" in str(row.get("code", row.get("reason", "")))
+        or "RELEVANCE" in str(row.get("code", row.get("reason", "")))
+    ]
+    assert any(
+        episode["episode_id"] in json.dumps(row, sort_keys=True)
+        for row in relevance_rows
+    )
+
+
+class _MixedPatternSupportModel(_SemanticModel):
+    low_occurrence_ids: set[str]
+    recurring_occurrence_ids: set[str]
+
+    def __init__(self) -> None:
+        super().__init__("terra-test-v0")
+        self.low_occurrence_ids = set()
+        self.recurring_occurrence_ids = set()
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if "patterns" not in set(getattr(schema, "model_fields", {})):
+            return result
+        candidates = payload.get("candidate_patterns")
+        if isinstance(candidates, list):
+            return {"patterns": candidates}
+        semantic_occurrences = [
+            row for row in payload["behavior_occurrences"] if row["lane"] == "SEMANTIC"
+        ]
+        low = next(row for row in semantic_occurrences if len(row["episode_ids"]) == 1)
+        recurring = [row for row in semantic_occurrences if row is not low][:2]
+        self.low_occurrence_ids = {str(low["occurrence_id"])}
+        self.recurring_occurrence_ids = {str(row["occurrence_id"]) for row in recurring}
+        return {
+            "patterns": [
+                {
+                    "label": "Explains one isolated shipping limitation",
+                    "definition": "The agent explains one observed shipping limitation.",
+                    "occurrence_ids": sorted(self.low_occurrence_ids),
+                },
+                {
+                    "label": "Clarifies scope before consequential order handling",
+                    "definition": "The agent clarifies request scope before order handling.",
+                    "occurrence_ids": sorted(self.recurring_occurrence_ids),
+                },
+            ]
+        }
+
+
+def test_single_support_pattern_routes_to_unknown_while_recurring_pattern_publishes(
+    tmp_path: Path,
+) -> None:
+    primary = _MixedPatternSupportModel()
+    report, _, _, _ = _run(tmp_path, primary=primary)
+    patterns = {str(row["label"]): row for row in report["behavior_patterns"]}
+    low_label = "Explains one isolated shipping limitation"
+    recurring_label = "Clarifies scope before consequential order handling"
+    assert low_label not in patterns
+    assert patterns[recurring_label]["support"] >= 2
+    assert {
+        str(item) for item in patterns[recurring_label]["occurrence_ids"]
+    } == primary.recurring_occurrence_ids
+    occurrence_by_id = {
+        str(row["occurrence_id"]): row for row in report["behavior_occurrences"]
+    }
+    low_episode_ids = {
+        str(episode_id)
+        for occurrence_id in primary.low_occurrence_ids
+        for episode_id in occurrence_by_id[occurrence_id]["episode_ids"]
+    }
+    support_unknown_episode_ids = {
+        str(row["episode_id"])
+        for row in report["emerging_unknown"]
+        if "SUPPORT" in str(row["reason"])
+        or "RECURR" in str(row["reason"])
+        or "REVIEW" in str(row["reason"])
+    }
+    assert low_episode_ids <= support_unknown_episode_ids
