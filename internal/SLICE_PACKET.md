@@ -289,6 +289,21 @@ The test author must freeze black-box cases for:
     never enter artifacts.
 17. Terra primary and Luna auditor identities are independently role-authorized;
     either mismatch refuses both provider calls with a typed role-specific gap.
+18. valid exact checkpoints are reused without provider calls and tamper refuses
+    before egress;
+19. semantic extraction is one conversation per provider request;
+20. population and behavior consolidation remains bounded and lossless across
+    more than one hierarchy level;
+21. unknown, unsupported, or unattached proposals cannot become published
+    populations or patterns;
+22. live role authorization binds provider and endpoint as well as model ID;
+23. the cumulative USD 50 reservation is enforced before either role calls;
+24. one episode cannot cite evidence from a different conversation;
+25. missing or unknown audit items remain visible typed uncertainty;
+26. human artifacts expose representative demands, occurrence-level multi-label
+    behavior, evidence lanes, method, limitations, quality accounting, and gaps;
+27. absent optional agent context is inferred from the eligible corpus rather
+    than silently from only its first batch.
 
 Expected RED must be caused by the absent `triana_labs.behavior_map` public
 seam, not syntax, fixtures, imports, or dependency failure.
@@ -355,8 +370,9 @@ typed-gap artifact but cannot be called the useful Phase 1 launch result.
 
 The independent test author owns exactly
 `triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
-`0e0a2fc2664238d69d9a36dddb359002f5726d0af72ae305dfda6b59574c771c`.
-It freezes all seventeen acceptance behaviors listed above. The orchestrator
+`8cd17bc9ef48453a22923c16818d67590cad3d4b1688fc3f2a84349f2184b6e8`.
+It freezes all twenty-seven acceptance behaviors listed above across twenty-eight
+black-box cases. The orchestrator
 rejected the preliminary test bytes because its population fake keyed only by
 conversation and silently assigned the simultaneous return episode to the
 cancellation population. The corrected test keys by conversation and requested
@@ -364,7 +380,13 @@ action and asserts the cancellation population includes the cancellation
 episode and excludes the return episode. A later fixture correction explicitly
 authorizes the independently identified Luna auditor and adds atomic refusal
 when either configured model identity is not authorized; this supersedes only
-the prior test-file hash and incomplete role-authorization fixture.
+the prior test-file hash and incomplete role-authorization fixture. Independent
+post-implementation review then reproduced checkpoint re-egress, cross-corpus
+extraction, flat hierarchy loss, unsupported promotion, weak provider binding,
+post-call budget accounting, cross-conversation citations, silent audit gaps,
+first-batch-only context, and insufficient human explanation. Eleven focused
+regressions supersede the second hash without weakening the original seventeen
+controls.
 
 Valid RED command:
 
@@ -376,6 +398,8 @@ UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked pytest -q tests/behavi
 Observed result: collection stops only at
 `ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
 3.39 seconds against an isolated export of pre-implementation commit `d35dac1`.
-Ruff check, Ruff format check, Python compilation, file hash, and
-diff check are GREEN. The test-owned path is frozen. The implementation author
-may read it but must not edit it.
+Ruff check, Ruff format check, Python compilation, file hash, and diff check are
+GREEN. Against the first implementation handoff, the hardening suite produces
+eleven intended failures and seventeen passing controls in 1.42 seconds. The
+test-owned path is frozen. The implementation author may read it but must not
+edit it.

@@ -637,7 +637,11 @@ class _SemanticModel:
             "provider_calls": self.provider_calls,
             "raw_provider_payload": RAW_PROVIDER_PAYLOAD,
             "credential": SECRET,
-            "budget": {"max_reserved_usd": 50.0, "reserved_usd": 0.0},
+            "budget": {
+                "max_reserved_usd": 50.0,
+                "reservation_usd_per_call": 0.15,
+                "reserved_usd": 0.0,
+            },
             "retry_policy": "NONE",
             "fallback_policy": "NONE",
         }
@@ -988,3 +992,699 @@ def test_budget_refusal_precedes_provider_call_and_redacts_boundary_material(
     )
     assert SECRET.encode() not in artifacts
     assert RAW_PROVIDER_PAYLOAD.encode() not in artifacts
+
+
+def _rewrite_manifest(path: Path, mutate: Any) -> Path:
+    manifest = json.loads(path.read_bytes())
+    mutate(manifest)
+    path.write_bytes(_canonical(manifest, lf=True))
+    return path
+
+
+class _BoundSemanticModel(_SemanticModel):
+    def __init__(self, model_id: str, *, provider: str, endpoint_origin: str) -> None:
+        super().__init__(model_id)
+        self.provider = provider
+        self.endpoint_origin = endpoint_origin
+
+    def lineage(self) -> dict[str, Any]:
+        return {
+            **super().lineage(),
+            "provider": self.provider,
+            "endpoint_origin": self.endpoint_origin,
+        }
+
+
+class _ScaleSemanticModel:
+    model_id = "terra-test-v0"
+
+    def __init__(self) -> None:
+        self.requests: list[dict[str, Any]] = []
+        self.provider_calls = 0
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        self.provider_calls += 1
+        self.requests.append(
+            {
+                "stage": stage,
+                "payload": deepcopy(payload),
+                "request_bytes": len(system.encode())
+                + len(_canonical(payload))
+                + len(_canonical(schema.model_json_schema())),
+            }
+        )
+        fields = set(getattr(schema, "model_fields", {}))
+        if "agent_context" in fields:
+            conversations = payload["conversations"]
+            first = conversations[0]
+            conversation_id = first["conversation_id"]
+            quote = next(
+                event["content"]
+                for event in first["events"]
+                if event["event_kind"] == "USER_MESSAGE"
+            )
+            return {
+                "agent_context": {
+                    "text": "A support agent handles all observed synthetic requests.",
+                    "status": "PROPOSED",
+                    "citations": [_citation(conversation_id, 0, quote)],
+                }
+            }
+        if "episodes" in fields:
+            episodes = []
+            behaviors = []
+            for conversation in payload["conversations"]:
+                conversation_id = conversation["conversation_id"]
+                user = next(
+                    event["content"]
+                    for event in conversation["events"]
+                    if event["event_kind"] == "USER_MESSAGE"
+                )
+                assistant = next(
+                    event["content"]
+                    for event in conversation["events"]
+                    if event["event_kind"] == "ASSISTANT_MESSAGE"
+                )
+                local_id = f"episode-{conversation_id}"
+                episodes.append(
+                    {
+                        "local_id": local_id,
+                        "goal": f"Resolve {user}",
+                        "requested_action": "HANDLE_REQUEST",
+                        "subject": f"request {conversation_id}",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 0,
+                        "end_turn_ordinal": 1,
+                        "citations": [_citation(conversation_id, 0, user)],
+                        "status": "PROPOSED",
+                    }
+                )
+                behaviors.append(
+                    {
+                        "local_id": f"behavior-{conversation_id}",
+                        "lane": "SEMANTIC",
+                        "action": "EXPLAINED_REQUEST",
+                        "object": f"request {conversation_id}",
+                        "condition": "after the user asked for help",
+                        "observed_effect": None,
+                        "episode_local_ids": [local_id],
+                        "citations": [_citation(conversation_id, 1, assistant)],
+                        "event_ids": [],
+                        "status": "PROPOSED",
+                    }
+                )
+            return {"episodes": episodes, "behaviors": behaviors}
+        if "populations" in fields:
+            candidates = payload.get("candidate_populations")
+            if isinstance(candidates, list):
+                return {"populations": candidates}
+            return {
+                "populations": [
+                    {
+                        "label": f"Demand {episode['conversation_id']}",
+                        "definition": f"Observed demand {episode['conversation_id']}",
+                        "episode_ids": [episode["episode_id"]],
+                    }
+                    for episode in payload["episodes"]
+                ]
+            }
+        if "patterns" in fields:
+            candidates = payload.get("candidate_patterns")
+            if isinstance(candidates, list):
+                return {"patterns": candidates}
+            return {
+                "patterns": [
+                    {
+                        "label": f"Explains {row['object']}",
+                        "definition": f"The agent explains {row['object']}.",
+                        "occurrence_ids": [row["occurrence_id"]],
+                    }
+                    for row in payload["behavior_occurrences"]
+                ]
+            }
+        if "audits" in fields:
+            return {
+                "audits": [
+                    {
+                        "item_id": _first_id(item),
+                        "decision": "SUPPORTED",
+                        "reason": "Synthetic scale audit.",
+                    }
+                    for item in payload["items"]
+                ]
+            }
+        raise AssertionError((stage, fields, payload.keys()))
+
+    def lineage(self) -> dict[str, Any]:
+        return {
+            "provider": "SYNTHETIC_TEST_BOUNDARY",
+            "model_id": self.model_id,
+            "provider_calls": self.provider_calls,
+            "budget": {
+                "max_reserved_usd": 50.0,
+                "reservation_usd_per_call": 0.15,
+                "reserved_usd": round(self.provider_calls * 0.15, 2),
+            },
+            "retry_policy": "NONE",
+            "fallback_policy": "NONE",
+        }
+
+
+class _ScaleAuditModel(_ScaleSemanticModel):
+    model_id = "luna-test-v0"
+
+
+def _write_scale_manifest(tmp_path: Path, count: int) -> Path:
+    source = tmp_path / "scale-traces.jsonl"
+    padding = "x" * 2_500
+    traces = [
+        _trace(
+            f"scale-{index:02d}",
+            [
+                _event(
+                    0,
+                    "USER_MESSAGE",
+                    content=f"Handle synthetic request {index}: {padding}",
+                ),
+                _event(
+                    1,
+                    "ASSISTANT_MESSAGE",
+                    content=f"I handled synthetic request {index}.",
+                    is_final=True,
+                ),
+            ],
+        )
+        for index in range(count)
+    ]
+    payload = b"".join(_canonical(trace, lf=True) for trace in traces)
+    source.write_bytes(payload)
+    manifest = {
+        "artifact_kind": "evidence_bundle_manifest_v0",
+        "schema_version": 0,
+        "source": {
+            "adapter_id": "preview-trace-jsonl",
+            "adapter_version": "1",
+            "path": str(source),
+            "sha256": _sha256(payload),
+            "physical_record_count": count,
+        },
+        "agent": {"workspace_id": "synthetic", "agent_id": "scale-agent"},
+        "privacy": {
+            "authorization": "SYNTHETIC_FIXTURE",
+            "execution_location": "LOCAL_PRIVATE",
+            "provider_egress": {
+                "authorized": True,
+                "model_id": "terra-test-v0",
+                "audit_model_id": "luna-test-v0",
+            },
+        },
+        "grouping": {
+            "highest_dependency_key": "conversation",
+            "assignments": [
+                {
+                    "group_id": f"group-{trace['trace_id']}",
+                    "trace_ids": [trace["trace_id"]],
+                }
+                for trace in traces
+            ],
+        },
+        "capabilities": {
+            "paired_arms": False,
+            "outcomes": False,
+            "existing_evals": False,
+            "embeddings": False,
+        },
+        "outcomes": None,
+        "existing_evals": None,
+    }
+    path = tmp_path / "scale-manifest.json"
+    path.write_bytes(_canonical(manifest, lf=True))
+    return path
+
+
+class _StatusSemanticModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        self.requests.append(
+            {"stage": stage, "system": system, "payload": deepcopy(payload)}
+        )
+        self.provider_calls += 1
+        fields = set(getattr(schema, "model_fields", {}))
+        if "episodes" in fields:
+            conversation_id = "multi-goal"
+            user_quote = (
+                "Cancel order alpha and return the blue jacket from order beta."
+            )
+            assistant_quote = (
+                "I will confirm both requests before changing either order."
+            )
+            episodes = [
+                {
+                    "local_id": f"episode-{status.casefold()}",
+                    "goal": f"{status.title()} demand",
+                    "requested_action": "CANCEL_ORDER",
+                    "subject": f"{status.casefold()} subject",
+                    "constraints": [],
+                    "fallbacks": [],
+                    "supersedes_local_id": None,
+                    "start_turn_ordinal": 0,
+                    "end_turn_ordinal": 1,
+                    "citations": [_citation(conversation_id, 0, user_quote)],
+                    "status": status,
+                }
+                for status in ("PROPOSED", "UNKNOWN", "UNSUPPORTED")
+            ]
+            behaviors = [
+                {
+                    "local_id": f"behavior-{status.casefold()}",
+                    "lane": "SEMANTIC",
+                    "action": f"DESCRIBED_{status}",
+                    "object": "the requested cancellation",
+                    "condition": "before acting",
+                    "observed_effect": None,
+                    "episode_local_ids": ["episode-proposed"],
+                    "citations": [_citation(conversation_id, 1, assistant_quote)],
+                    "event_ids": [],
+                    "status": status,
+                }
+                for status in ("PROPOSED", "UNKNOWN", "UNSUPPORTED")
+            ]
+            behaviors.append(
+                {
+                    "local_id": "behavior-orphan",
+                    "lane": "SEMANTIC",
+                    "action": "DESCRIBED_ORPHAN_REQUEST",
+                    "object": "an unattached request",
+                    "condition": "without a grounded demand episode",
+                    "observed_effect": None,
+                    "episode_local_ids": ["not-an-episode"],
+                    "citations": [_citation(conversation_id, 1, assistant_quote)],
+                    "event_ids": [],
+                    "status": "PROPOSED",
+                }
+            )
+            return {"episodes": episodes, "behaviors": behaviors}
+        if "populations" in fields:
+            return {
+                "populations": [
+                    {
+                        "label": "All semantic statuses",
+                        "definition": "A deliberately unsafe mixed-status proposal.",
+                        "episode_ids": [
+                            row["episode_id"] for row in payload["episodes"]
+                        ],
+                    }
+                ]
+            }
+        if "patterns" in fields:
+            return {
+                "patterns": [
+                    {
+                        "label": "Describes a requested cancellation before acting",
+                        "definition": "A deliberately unsafe mixed-status behavior pattern.",
+                        "occurrence_ids": [
+                            row["occurrence_id"]
+                            for row in payload["behavior_occurrences"]
+                        ],
+                    }
+                ]
+            }
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+class _CrossConversationCitationModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if (
+            "episodes" in set(getattr(schema, "model_fields", {}))
+            and result["episodes"]
+        ):
+            row = result["episodes"][0]
+            source = row["citations"][0]["conversation_id"]
+            other = "cancel-two" if source != "cancel-two" else "cancel-three"
+            quote = (
+                "Please cancel order gamma."
+                if other == "cancel-two"
+                else "Cancel order delta."
+            )
+            row["citations"].append(_citation(other, 0, quote))
+        return result
+
+
+class _UnknownAuditModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        self.requests.append(
+            {"stage": stage, "system": system, "payload": deepcopy(payload)}
+        )
+        self.provider_calls += 1
+        return {
+            "audits": [
+                {
+                    "item_id": "sha256:unknown-audit-item",
+                    "decision": "SUPPORTED",
+                    "reason": "This item was never requested.",
+                }
+            ]
+        }
+
+
+def test_exact_checkpoint_reuse_costs_zero_new_model_calls(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_manifest(tmp_path)
+    output = tmp_path / "output"
+    first_primary = _SemanticModel("terra-test-v0")
+    first_auditor = _SemanticModel("luna-test-v0")
+    first = run_behavior_map(
+        manifest,
+        output,
+        primary_model=first_primary,
+        audit_model=first_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert first_primary.provider_calls > 0 and first_auditor.provider_calls > 0
+
+    cached_primary = _SemanticModel("terra-test-v0")
+    cached_auditor = _SemanticModel("luna-test-v0")
+    cached = run_behavior_map(
+        manifest,
+        output,
+        primary_model=cached_primary,
+        audit_model=cached_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert cached_primary.provider_calls == cached_auditor.provider_calls == 0
+    assert cached["episodes"] == first["episodes"]
+
+
+def test_checkpoint_tamper_refuses_before_either_model_call(tmp_path: Path) -> None:
+    manifest = _write_manifest(tmp_path)
+    output = tmp_path / "output"
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_SemanticModel("terra-test-v0"),
+        audit_model=_SemanticModel("luna-test-v0"),
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    checkpoint = next((output / "behavior-map-checkpoints").glob("*.json"))
+    tampered = json.loads(checkpoint.read_bytes())
+    tampered["identity"]["method_sha256"] = "sha256:" + "0" * 64
+    checkpoint.write_bytes(_canonical(tampered, lf=True))
+    tamper_primary = _SemanticModel("terra-test-v0")
+    tamper_auditor = _SemanticModel("luna-test-v0")
+    refused = run_behavior_map(
+        manifest,
+        output,
+        primary_model=tamper_primary,
+        audit_model=tamper_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert tamper_primary.provider_calls == tamper_auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(refused)
+
+
+def test_each_extraction_provider_call_contains_exactly_one_conversation(
+    tmp_path: Path,
+) -> None:
+    report, _, primary, _ = _run(tmp_path)
+    assert report["episodes"]
+    assert primary is not None
+    calls = [
+        request
+        for request in primary.requests
+        if "demand-episodes-and-agent-behaviors" in request["stage"]
+    ]
+    assert len(calls) == report["accounting"]["semantic_conversation_count"]
+    assert all(len(request["payload"]["conversations"]) == 1 for request in calls)
+
+
+def test_large_population_and_pattern_hierarchies_are_bounded_and_lossless(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_scale_manifest(tmp_path, 25)
+    primary = _ScaleSemanticModel()
+    auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+    assert len(report["episodes"]) == 25
+    assert len(report["populations"]) == 25
+    assert len(report["behavior_patterns"]) == 25
+    assert {
+        episode_id for row in report["populations"] for episode_id in row["episode_ids"]
+    } == {row["episode_id"] for row in report["episodes"]}
+    assert {
+        occurrence_id
+        for row in report["behavior_patterns"]
+        for occurrence_id in row["occurrence_ids"]
+    } == {row["occurrence_id"] for row in report["behavior_occurrences"]}
+    for request in primary.requests:
+        for key in (
+            "conversations",
+            "episodes",
+            "candidate_populations",
+            "behavior_occurrences",
+            "candidate_patterns",
+        ):
+            rows = request["payload"].get(key)
+            if isinstance(rows, list):
+                assert len(rows) <= 12, (request["stage"], key, len(rows))
+        assert request["request_bytes"] <= 60_000
+
+
+def test_nonproposed_or_unattached_semantics_cannot_be_promoted(tmp_path: Path) -> None:
+    primary = _StatusSemanticModel("terra-test-v0")
+    report, _, _, _ = _run(tmp_path, primary=primary)
+    episode_by_id = {row["episode_id"]: row for row in report["episodes"]}
+    promoted_episode_ids = {
+        episode_id
+        for population in report["populations"]
+        for episode_id in population["episode_ids"]
+    }
+    assert promoted_episode_ids
+    assert all(
+        episode_by_id[item]["status"] == "PROPOSED" for item in promoted_episode_ids
+    )
+    occurrence_by_id = {
+        row["occurrence_id"]: row for row in report["behavior_occurrences"]
+    }
+    promoted_occurrence_ids = {
+        occurrence_id
+        for pattern in report["behavior_patterns"]
+        for occurrence_id in pattern["occurrence_ids"]
+    }
+    assert promoted_occurrence_ids
+    assert all(
+        occurrence_by_id[item]["status"] in {"PROPOSED", "OBSERVED"}
+        and occurrence_by_id[item]["episode_ids"]
+        for item in promoted_occurrence_ids
+    )
+    assert {
+        row["status"] for row in report["episodes"] if row["status"] != "PROPOSED"
+    } == {"UNKNOWN", "UNSUPPORTED"}
+    nonproposed_episode_ids = {
+        row["episode_id"] for row in report["episodes"] if row["status"] != "PROPOSED"
+    }
+    assert nonproposed_episode_ids <= {
+        row["episode_id"] for row in report["emerging_unknown"]
+    }
+
+
+def test_provider_and_role_endpoint_binding_mismatch_refuses_both_calls(
+    tmp_path: Path,
+) -> None:
+    cases = (
+        (
+            "PRIMARY",
+            _BoundSemanticModel(
+                "terra-test-v0",
+                provider="WRONG_PROVIDER",
+                endpoint_origin="https://terra.example",
+            ),
+            _BoundSemanticModel(
+                "luna-test-v0",
+                provider="SYNTHETIC_TEST_BOUNDARY",
+                endpoint_origin="https://luna.example",
+            ),
+        ),
+        (
+            "AUDITOR",
+            _BoundSemanticModel(
+                "terra-test-v0",
+                provider="SYNTHETIC_TEST_BOUNDARY",
+                endpoint_origin="https://terra.example",
+            ),
+            _BoundSemanticModel(
+                "luna-test-v0",
+                provider="SYNTHETIC_TEST_BOUNDARY",
+                endpoint_origin="https://wrong-luna.example",
+            ),
+        ),
+    )
+    for role, primary, auditor in cases:
+        case = tmp_path / role.casefold()
+        case.mkdir()
+        manifest = _write_manifest(case)
+
+        def bind(value: dict[str, Any]) -> None:
+            egress = value["privacy"]["provider_egress"]
+            egress.update(
+                {
+                    "provider": "SYNTHETIC_TEST_BOUNDARY",
+                    "endpoint_origin": "https://terra.example",
+                    "audit_provider": "SYNTHETIC_TEST_BOUNDARY",
+                    "audit_endpoint_origin": "https://luna.example",
+                }
+            )
+
+        _rewrite_manifest(manifest, bind)
+        report = run_behavior_map(
+            manifest,
+            case / "output",
+            primary_model=primary,
+            audit_model=auditor,
+            agent_context="A retail agent helps users manage orders and products.",
+        )
+        assert primary.provider_calls == auditor.provider_calls == 0
+        assert any(
+            gap["code"] == "SEMANTIC_PROVIDER_BINDING_UNAUTHORIZED"
+            and gap.get("role") == role
+            for gap in report["gaps"]
+        )
+
+
+def test_cumulative_budget_is_reserved_before_any_semantic_egress(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_manifest(tmp_path)
+
+    def exhaust(value: dict[str, Any]) -> None:
+        value["semantic_budget"] = {
+            "cumulative_limit_usd": 50.0,
+            "prior_reserved_usd": 49.9,
+        }
+
+    _rewrite_manifest(manifest, exhaust)
+    primary = _SemanticModel("terra-test-v0")
+    auditor = _SemanticModel("luna-test-v0")
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert primary.provider_calls == auditor.provider_calls == 0
+    assert "SEMANTIC_BUDGET_EXCEEDED" in _codes(report)
+    assert report["budget"]["cumulative_limit_usd"] == 50.0
+    assert report["budget"]["prior_reserved_usd"] == 49.9
+
+
+def test_cross_conversation_episode_citations_are_rejected(tmp_path: Path) -> None:
+    primary = _CrossConversationCitationModel("terra-test-v0")
+    report, _, _, _ = _run(tmp_path, primary=primary)
+    assert "SEMANTIC_CITATION_INVALID" in _codes(report)
+    assert all(
+        {citation["conversation_id"] for citation in row["citations"]}
+        == {row["conversation_id"]}
+        for row in report["episodes"]
+    )
+
+
+def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
+    tmp_path: Path,
+) -> None:
+    auditor = _UnknownAuditModel("luna-test-v0")
+    report, _, _, _ = _run(tmp_path, auditor=auditor)
+    assert {"SEMANTIC_AUDIT_ITEM_UNKNOWN", "SEMANTIC_AUDIT_MISSING"} <= _codes(report)
+    assert any(row["reason"] == "AUDIT_MISSING" for row in report["emerging_unknown"])
+    assert all(
+        row["audit_state"] != "PENDING"
+        for row in [*report["populations"], *report["behavior_patterns"]]
+    )
+
+
+def test_human_reports_explain_demands_occurrences_evidence_and_quality(
+    tmp_path: Path,
+) -> None:
+    _, output, _, _ = _run(tmp_path)
+    markdown = (output / "behavior-map.md").read_text()
+    html = (output / "behavior-map.html").read_text()
+    for document in (markdown, html):
+        for label in (
+            "Representative demands",
+            "Variations",
+            "Occurrences and attachments",
+            "both requested order changes",
+            "multi-goal",
+            "Deterministic evidence",
+            "Semantic evidence",
+            "Method and limitations",
+            "behavior-map-v0",
+            "Grounded episode coverage",
+            "Typed gaps",
+        ):
+            assert label in document
+
+
+def test_missing_agent_context_inference_covers_every_conversation_not_first_batch(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_scale_manifest(tmp_path, 13)
+    primary = _ScaleSemanticModel()
+    auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context=None,
+    )
+    context_requests = [
+        request for request in primary.requests if "agent-context" in request["stage"]
+    ]
+    context_conversations = {
+        row["conversation_id"]
+        for request in context_requests
+        for row in request["payload"].get("conversations", [])
+    }
+    assert context_conversations == {f"scale-{index:02d}" for index in range(13)}
+    assert report["agent_context"]["status"] == "PROPOSED"
