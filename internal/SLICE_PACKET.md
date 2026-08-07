@@ -739,3 +739,11 @@ batching, checkpoints, grouping, outcome joins, and human authority remain
 unchanged. Independent acceptance owns one additive focused test file (at most
 three cases); implementation owns only `semantic.py` (at most 20 changed
 physical lines). No provider call occurs before focused/full GREEN.
+
+Independent acceptance is frozen in
+`triana-labs/tests/trace_to_eval/test_facet_enum_alignment.py` at SHA-256
+`682e8cc9bb7b4d9a40dc87bfe5c657d14d5f88afbd6524a9be59c1b08e85b0e5`.
+Three cases freeze exact schema enum membership, plain prompt enumeration,
+valid handling-distribution projection, and strict rejection of free-form
+handling/action strings. Observed RED is three failures solely at the missing
+enum constraints. Ruff, format, and diff checks pass.
