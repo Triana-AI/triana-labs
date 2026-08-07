@@ -27,6 +27,8 @@ from .contracts import (
     PopulationBatch,
     UserPopulationV0,
 )
+from .redaction import RedactionFailure as RedactionFailure
+from .redaction import redact_preview_traces as redact_preview_traces
 from .render import render_html, render_markdown
 
 JsonObject = dict[str, Any]
@@ -315,11 +317,83 @@ def _checkpoint_identity(
     )
 
 
+def _valid_checkpoint_identity(value: Any) -> bool:
+    if not isinstance(value, dict) or set(value) != {
+        "stage",
+        "model_id",
+        "method_sha256",
+        "payload_sha256",
+        "provider_binding_sha256",
+    }:
+        return False
+    if not all(isinstance(item, str) and item for item in value.values()):
+        return False
+    return all(
+        len(cast(str, value[key])) == 71
+        and cast(str, value[key]).startswith("sha256:")
+        and all(
+            character in "0123456789abcdef" for character in cast(str, value[key])[7:]
+        )
+        for key in ("method_sha256", "payload_sha256", "provider_binding_sha256")
+    )
+
+
+def _valid_attempt_payload(value: Any) -> bool:
+    if not isinstance(value, dict) or set(value) not in (
+        set(),
+        {"conversation_ids"},
+        {"item_ids"},
+    ):
+        return False
+    return all(
+        isinstance(items, list)
+        and bool(items)
+        and all(isinstance(item, str) and item for item in items)
+        for items in value.values()
+    )
+
+
 def _validate_checkpoint_directory(directory: Path) -> None:
     """Reject corrupt checkpoint state before the first possible provider call."""
 
+    directory.chmod(0o700)
     for path in sorted(directory.glob("*.json")):
+        path.chmod(0o600)
         value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+        if value.get("artifact_kind") == "behavior_map_attempt_v0":
+            identity = value.get("identity")
+            if (
+                set(value)
+                != {
+                    "artifact_kind",
+                    "schema_version",
+                    "identity",
+                    "state",
+                    "failure_code",
+                    "payload",
+                    "payload_descriptor_sha256",
+                }
+                or value.get("schema_version") != 0
+                or value.get("state") not in {"IN_FLIGHT", "FAILED"}
+                or (
+                    value.get("state") == "IN_FLIGHT"
+                    and value.get("failure_code") is not None
+                )
+                or (
+                    value.get("state") == "FAILED"
+                    and value.get("failure_code") != "FAILURE"
+                )
+                or not _valid_checkpoint_identity(identity)
+                or not _valid_attempt_payload(value.get("payload"))
+                or value.get("payload_descriptor_sha256")
+                != _digest("behavior-map-attempt-descriptor-v0", value.get("payload"))
+                or path.stem
+                != _digest("behavior-map-checkpoint-v0", identity).removeprefix(
+                    "sha256:"
+                )
+            ):
+                raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+            continue
         if set(value) != {
             "artifact_kind",
             "schema_version",
@@ -333,20 +407,12 @@ def _validate_checkpoint_directory(directory: Path) -> None:
         if (
             value.get("artifact_kind") != "behavior_map_checkpoint_v0"
             or value.get("schema_version") != 0
-            or not isinstance(identity, dict)
-            or set(identity)
-            != {
-                "stage",
-                "model_id",
-                "method_sha256",
-                "payload_sha256",
-                "provider_binding_sha256",
-            }
+            or not _valid_checkpoint_identity(identity)
             or path.stem
             != _digest("behavior-map-checkpoint-v0", identity).removeprefix("sha256:")
             or value.get("result_sha256")
             != _digest("behavior-map-checkpoint-result-v0", value.get("result"))
-            or identity.get("payload_sha256")
+            or cast(JsonObject, identity).get("payload_sha256")
             != _digest("behavior-map-payload-v0", value.get("payload"))
         ):
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
@@ -388,13 +454,67 @@ def _write_checkpoint(
         except OSError as error:
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID") from error
         if observed != expected:
-            raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+            existing = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+            if (
+                existing.get("artifact_kind") != "behavior_map_attempt_v0"
+                or existing.get("identity") != identity
+                or existing.get("state") != "IN_FLIGHT"
+            ):
+                raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+            _write_artifact(path, expected)
     else:
         _write_artifact(path, expected)
     return "sha256:" + checkpoint_id
 
 
-def _call(
+def _attempt_payload(payload: JsonObject) -> JsonObject:
+    """Retain only non-content identifiers needed to route visible uncertainty."""
+
+    descriptor: JsonObject = {}
+    conversations = payload.get("conversations")
+    if isinstance(conversations, list):
+        descriptor["conversation_ids"] = [
+            row.get("conversation_id")
+            for row in conversations
+            if isinstance(row, dict) and isinstance(row.get("conversation_id"), str)
+        ]
+    items = payload.get("items")
+    if isinstance(items, list):
+        descriptor["item_ids"] = [
+            next(
+                cast(str, row[key])
+                for key in ("item_id", "episode_id", "population_id", "pattern_id")
+                if isinstance(row.get(key), str)
+            )
+            for row in items
+            if isinstance(row, dict)
+            and any(
+                isinstance(row.get(key), str)
+                for key in ("item_id", "episode_id", "population_id", "pattern_id")
+            )
+        ]
+    return descriptor
+
+
+def _write_attempt(
+    path: Path, *, identity: JsonObject, payload: JsonObject, state: str
+) -> None:
+    descriptor = _attempt_payload(payload)
+    value: JsonObject = {
+        "artifact_kind": "behavior_map_attempt_v0",
+        "schema_version": 0,
+        "identity": identity,
+        "state": state,
+        "failure_code": "FAILURE" if state == "FAILED" else None,
+        "payload": descriptor,
+        "payload_descriptor_sha256": _digest(
+            "behavior-map-attempt-descriptor-v0", descriptor
+        ),
+    }
+    _write_artifact(path, _canonical(value, lf=True))
+
+
+def _call_plan(
     model: SemanticModel,
     directory: Path,
     *,
@@ -402,7 +522,7 @@ def _call(
     system: str,
     payload: JsonObject,
     schema: type[BaseModel],
-) -> tuple[JsonObject, str]:
+) -> tuple[JsonObject, Path, JsonObject]:
     lineage = _safe_lineage(model) or {}
     provider_binding = {
         key: lineage.get(key)
@@ -424,9 +544,79 @@ def _call(
         schema=schema,
         provider_binding=provider_binding,
     )
-    path = directory / f"{checkpoint_id}.json"
+    return identity, directory / f"{checkpoint_id}.json", provider_binding
+
+
+def _preflight_existing_call_artifact(
+    model: SemanticModel,
+    directory: Path,
+    *,
+    stage: str,
+    system: str,
+    payload: JsonObject,
+    schema: type[BaseModel],
+) -> None:
+    identity, path, _provider_binding = _call_plan(
+        model,
+        directory,
+        stage=stage,
+        system=system,
+        payload=payload,
+        schema=schema,
+    )
+    if not path.exists():
+        return
+    value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+    if value.get("identity") != identity:
+        raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+    if value.get("artifact_kind") == "behavior_map_attempt_v0":
+        if value.get("payload") != _attempt_payload(payload):
+            raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+        return
+    if (
+        value.get("artifact_kind") != "behavior_map_checkpoint_v0"
+        or value.get("payload") != payload
+        or value.get("result_sha256")
+        != _digest("behavior-map-checkpoint-result-v0", value.get("result"))
+    ):
+        raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+    try:
+        schema.model_validate(value.get("result"), strict=True)
+    except (TypeError, ValueError):
+        raise ValueError("SEMANTIC_CHECKPOINT_INVALID") from None
+
+
+def _call(
+    model: SemanticModel,
+    directory: Path,
+    *,
+    stage: str,
+    system: str,
+    payload: JsonObject,
+    schema: type[BaseModel],
+) -> tuple[JsonObject, str]:
+    identity, path, provider_binding = _call_plan(
+        model,
+        directory,
+        stage=stage,
+        system=system,
+        payload=payload,
+        schema=schema,
+    )
+    checkpoint_id = path.stem
     if path.exists():
         value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+        if value.get("artifact_kind") == "behavior_map_attempt_v0":
+            if value.get("identity") != identity or value.get(
+                "payload"
+            ) != _attempt_payload(payload):
+                raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+            state = value.get("state")
+            if state == "FAILED":
+                raise ValueError("SEMANTIC_ATTEMPT_FAILED")
+            if state == "IN_FLIGHT":
+                raise ValueError("SEMANTIC_ATTEMPT_IN_FLIGHT")
+            raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
         if (
             set(value)
             != {
@@ -453,20 +643,25 @@ def _call(
         except (TypeError, ValueError):
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID") from None
         return validated, "sha256:" + checkpoint_id
-    result = model.complete_json(
-        stage=stage, system=system, payload=payload, schema=schema
-    )
-    validated = schema.model_validate(result, strict=True).model_dump(mode="json")
-    checkpoint = _write_checkpoint(
-        directory,
-        stage=stage,
-        model_id=model.model_id,
-        system=system,
-        payload=payload,
-        schema=schema,
-        result=validated,
-        provider_binding=provider_binding,
-    )
+    _write_attempt(path, identity=identity, payload=payload, state="IN_FLIGHT")
+    try:
+        result = model.complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        validated = schema.model_validate(result, strict=True).model_dump(mode="json")
+        checkpoint = _write_checkpoint(
+            directory,
+            stage=stage,
+            model_id=model.model_id,
+            system=system,
+            payload=payload,
+            schema=schema,
+            result=validated,
+            provider_binding=provider_binding,
+        )
+    except Exception:
+        _write_attempt(path, identity=identity, payload=payload, state="FAILED")
+        raise
     return validated, checkpoint
 
 
@@ -1022,52 +1217,69 @@ def _conversation_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonOb
     if call is None:
         return []
     call_sequence = cast(int, call["sequence"])
-    previous_user = next(
+    previous_conversation = next(
         (
             row
             for row in reversed(events)
-            if row.get("event_kind") == "USER_MESSAGE"
+            if row.get("event_kind") in {"USER_MESSAGE", "ASSISTANT_MESSAGE"}
             and cast(int, row["sequence"]) < call_sequence
         ),
         None,
     )
-    first_user_after_call = next(
-        (
-            row
-            for row in events
-            if row.get("event_kind") == "USER_MESSAGE"
-            and cast(int, row["sequence"]) > call_sequence
-        ),
-        None,
-    )
-    user_boundary = (
-        cast(int, first_user_after_call["sequence"])
-        if first_user_after_call is not None
+    previous_user = (
+        previous_conversation
+        if previous_conversation is not None
+        and previous_conversation.get("event_kind") == "USER_MESSAGE"
         else None
     )
-    result = next(
-        (
-            row
-            for row in events
-            if row.get("event_kind") == "TOOL_RESULT"
-            and row.get("call_id") == call.get("call_id")
-            and cast(int, row["sequence"]) > call_sequence
-            and (user_boundary is None or cast(int, row["sequence"]) < user_boundary)
-        ),
-        None,
-    )
-    response_after = (
-        cast(int, result["sequence"]) if result is not None else call_sequence
+    turn_start_sequence = (
+        cast(int, previous_conversation["sequence"])
+        if previous_conversation is not None
+        else call_sequence - 1
     )
     first_conversation_after = next(
         (
             row
             for row in events
             if row.get("event_kind") in {"USER_MESSAGE", "ASSISTANT_MESSAGE"}
-            and cast(int, row["sequence"]) > response_after
+            and cast(int, row["sequence"]) > call_sequence
         ),
         None,
     )
+    conversation_boundary = (
+        cast(int, first_conversation_after["sequence"])
+        if first_conversation_after is not None
+        else None
+    )
+    same_turn_tool_events = [
+        row
+        for row in events
+        if cast(int, row["sequence"]) > turn_start_sequence
+        and (
+            conversation_boundary is None
+            or cast(int, row["sequence"]) < conversation_boundary
+        )
+        and row.get("event_kind") in {"TOOL_CALL", "TOOL_RESULT"}
+    ]
+    same_turn_calls = [
+        row for row in same_turn_tool_events if row.get("event_kind") == "TOOL_CALL"
+    ]
+    valid_results = {
+        cast(int, result["sequence"])
+        for result in same_turn_tool_events
+        if result.get("event_kind") == "TOOL_RESULT"
+        and any(
+            prior_call.get("call_id") == result.get("call_id")
+            and cast(int, prior_call["sequence"]) < cast(int, result["sequence"])
+            for prior_call in same_turn_calls
+        )
+    }
+    same_turn_tool_events = [
+        row
+        for row in same_turn_tool_events
+        if row.get("event_kind") == "TOOL_CALL"
+        or cast(int, row["sequence"]) in valid_results
+    ]
     agent_response = (
         first_conversation_after
         if first_conversation_after is not None
@@ -1077,7 +1289,7 @@ def _conversation_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonOb
     next_after = (
         cast(int, agent_response["sequence"])
         if agent_response is not None
-        else response_after
+        else call_sequence
     )
     next_user = (
         first_conversation_after
@@ -1096,22 +1308,31 @@ def _conversation_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonOb
     excerpt: list[JsonObject] = []
     if previous_user is not None:
         excerpt.append(_excerpt_message(previous_user, "USER_MESSAGE"))
-    tool_input, input_truncation = _bounded_excerpt_value(
-        call.get("arguments"), "tool_input"
-    )
-    call_row: JsonObject = {
-        "event_sequence": call_sequence,
-        "display_kind": "TOOL_CALL",
-        "tool_name": str(call.get("tool_name", "tool")),
-        "tool_input": tool_input,
-    }
-    if input_truncation is not None:
-        call_row["truncation"] = input_truncation
-    if result is None:
-        call_row["tool_result_status"] = "Tool result missing from trace export"
-    excerpt.append(call_row)
-    if result is not None:
-        source_result = result.get("result")
+    for tool_event in same_turn_tool_events:
+        if tool_event.get("event_kind") == "TOOL_CALL":
+            tool_input, input_truncation = _bounded_excerpt_value(
+                tool_event.get("arguments"), "tool_input"
+            )
+            call_row: JsonObject = {
+                "event_sequence": tool_event["sequence"],
+                "display_kind": "TOOL_CALL",
+                "call_id": tool_event.get("call_id"),
+                "tool_name": str(tool_event.get("tool_name", "tool")),
+                "tool_input": tool_input,
+            }
+            if input_truncation is not None:
+                call_row["truncation"] = input_truncation
+            if not any(
+                result_event.get("event_kind") == "TOOL_RESULT"
+                and result_event.get("call_id") == tool_event.get("call_id")
+                and cast(int, result_event["sequence"])
+                > cast(int, tool_event["sequence"])
+                for result_event in same_turn_tool_events
+            ):
+                call_row["tool_result_status"] = "Tool result missing from trace export"
+            excerpt.append(call_row)
+            continue
+        source_result = tool_event.get("result")
         result_value = source_result
         if isinstance(source_result, str):
             try:
@@ -1131,11 +1352,12 @@ def _conversation_excerpt(trace: JsonObject, event_sequence: int) -> list[JsonOb
                 source_result, "tool_result"
             )
         result_row: JsonObject = {
-            "event_sequence": result["sequence"],
+            "event_sequence": tool_event["sequence"],
             "display_kind": "TOOL_RESULT",
-            "result_state": result.get("result_state"),
+            "call_id": tool_event.get("call_id"),
+            "result_state": tool_event.get("result_state"),
             "result": bounded_result,
-            "error_code": result.get("error_code"),
+            "error_code": tool_event.get("error_code"),
         }
         if result_truncation is not None:
             result_row["truncation"] = result_truncation
@@ -1560,15 +1782,74 @@ def _numeric_lineage_value(
     return None
 
 
+def _historical_attempt_counts(directory: Path) -> dict[str, tuple[int, int]]:
+    counts: dict[str, tuple[int, int]] = {}
+    for path in sorted(directory.glob("*.json")):
+        value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+        identity = value.get("identity")
+        if not isinstance(identity, dict) or not isinstance(
+            identity.get("model_id"), str
+        ):
+            raise TypeError("SEMANTIC_CHECKPOINT_INVALID")
+        model_id = cast(str, identity["model_id"])
+        attempted, successful = counts.get(model_id, (0, 0))
+        counts[model_id] = (
+            attempted + 1,
+            successful
+            + (1 if value.get("artifact_kind") == "behavior_map_checkpoint_v0" else 0),
+        )
+    return counts
+
+
+def _lineage_with_history(
+    lineage: JsonObject | None, historical: tuple[int, int]
+) -> JsonObject | None:
+    if lineage is None:
+        return None
+    attempted, successful = historical
+    enriched = dict(lineage)
+    current_attempted = max(
+        int(_numeric_lineage_value(lineage, None, "attempted_call_count") or 0),
+        int(_numeric_lineage_value(lineage, None, "provider_calls") or 0),
+    )
+    enriched["attempted_call_count"] = max(current_attempted, attempted)
+    current_successful = int(
+        _numeric_lineage_value(lineage, None, "successful_call_count") or 0
+    )
+    enriched["successful_call_count"] = max(current_successful, successful)
+    budget = lineage.get("budget")
+    if isinstance(budget, dict):
+        enriched_budget = dict(budget)
+        per_call = _numeric_lineage_value(lineage, "budget", "reservation_usd_per_call")
+        current_reserved = (
+            _numeric_lineage_value(lineage, "budget", "reserved_usd") or 0.0
+        )
+        if per_call is not None:
+            enriched_budget["reserved_usd"] = round(
+                max(current_reserved, attempted * per_call), 2
+            )
+        enriched["budget"] = enriched_budget
+    return enriched
+
+
 def _write_artifact(path: Path, payload: bytes) -> None:
     descriptor, name = tempfile.mkstemp(
         dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
     )
     temporary = Path(name)
     try:
+        os.fchmod(descriptor, 0o600)
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
         os.replace(temporary, path)
+        path.chmod(0o600)
+        directory_descriptor = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
@@ -1625,7 +1906,9 @@ def run_behavior_map(
     capabilities = cast(Mapping[str, Any], manifest.get("capabilities", {}))
     checkpoints_dir = destination / "behavior-map-checkpoints"
     destination.mkdir(parents=True, exist_ok=True)
+    destination.chmod(0o700)
     checkpoints_dir.mkdir(parents=True, exist_ok=True)
+    checkpoints_dir.chmod(0o700)
     gaps: list[JsonObject] = []
     checkpoint_ids: list[str] = []
     episodes: list[JsonObject] = []
@@ -1872,6 +2155,15 @@ def run_behavior_map(
                 gaps.append(
                     {"code": "SEMANTIC_REQUEST_TOO_LARGE", "stage": "EXTRACTION"}
                 )
+            for index, payload in enumerate(extraction_batches):
+                _preflight_existing_call_artifact(
+                    primary_model,
+                    checkpoints_dir,
+                    stage=f"demand-episodes-and-agent-behaviors-{index:04d}",
+                    system=_EXTRACT_SYSTEM,
+                    payload=payload,
+                    schema=ExtractionBatch,
+                )
             episode_proposals: list[JsonObject] = []
             behavior_proposals: list[JsonObject] = []
             for index, payload in enumerate(extraction_batches):
@@ -1891,6 +2183,8 @@ def run_behavior_map(
                         "SEMANTIC_PROVIDER_CALL_FAILED",
                         "SEMANTIC_SCHEMA_INVALID",
                         "SEMANTIC_CHECKPOINT_INVALID",
+                        "SEMANTIC_ATTEMPT_FAILED",
+                        "SEMANTIC_ATTEMPT_IN_FLIGHT",
                     }
                     gaps.append(
                         {
@@ -1919,10 +2213,9 @@ def run_behavior_map(
                             "description": "Semantic extraction failed for this conversation; later conversations continued without retry.",
                         }
                     )
-                    if code in {
-                        "SEMANTIC_BUDGET_EXCEEDED",
-                        "SEMANTIC_CHECKPOINT_INVALID",
-                    }:
+                    if code == "SEMANTIC_CHECKPOINT_INVALID":
+                        raise
+                    if code == "SEMANTIC_BUDGET_EXCEEDED":
                         break
                     continue
                 checkpoint_ids.append(checkpoint)
@@ -1934,6 +2227,28 @@ def run_behavior_map(
                 episode_proposals, trace_by_id
             )
             gaps.extend(episode_gaps)
+            surviving_episode_conversations = {
+                cast(str, row["conversation_id"]) for row in episodes
+            }
+            existing_unknown_conversations = {
+                cast(str, row["conversation_id"])
+                for row in emerging_unknown
+                if isinstance(row.get("conversation_id"), str)
+            }
+            for trace in semantic_traces:
+                conversation_id = cast(str, trace["trace_id"])
+                if (
+                    conversation_id not in surviving_episode_conversations
+                    and conversation_id not in existing_unknown_conversations
+                ):
+                    emerging_unknown.append(
+                        {
+                            "episode_id": f"conversation:{conversation_id}",
+                            "conversation_id": conversation_id,
+                            "reason": "NO_SURVIVING_EPISODE",
+                            "description": "No grounded demand episode survived validation for this eligible conversation.",
+                        }
+                    )
             semantic_occurrences, behavior_gaps = _semantic_occurrences(
                 behavior_proposals, trace_by_id, local_to_id
             )
@@ -2339,6 +2654,8 @@ def run_behavior_map(
                 "SEMANTIC_PROVIDER_CALL_FAILED",
                 "SEMANTIC_SCHEMA_INVALID",
                 "SEMANTIC_CHECKPOINT_INVALID",
+                "SEMANTIC_ATTEMPT_FAILED",
+                "SEMANTIC_ATTEMPT_IN_FLIGHT",
             }
             gaps.append(
                 {
@@ -2357,6 +2674,19 @@ def run_behavior_map(
     }
     primary_lineage = _safe_lineage(primary_model)
     audit_lineage = _safe_lineage(audit_model)
+    historical_attempts = _historical_attempt_counts(checkpoints_dir)
+    primary_lineage = _lineage_with_history(
+        primary_lineage,
+        historical_attempts.get(
+            primary_model.model_id if primary_model is not None else "", (0, 0)
+        ),
+    )
+    audit_lineage = _lineage_with_history(
+        audit_lineage,
+        historical_attempts.get(
+            audit_model.model_id if audit_model is not None else "", (0, 0)
+        ),
+    )
     primary_reserved = _numeric_lineage_value(primary_lineage, "budget", "reserved_usd")
     audit_reserved = _numeric_lineage_value(audit_lineage, "budget", "reserved_usd")
     report: JsonObject = {

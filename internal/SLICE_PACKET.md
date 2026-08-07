@@ -2,11 +2,132 @@
 
 Date frozen: 2026-08-07
 
-Status: **READABLE-EVIDENCE CONTINUATION GREEN**
+Status: **ACTIVE GENERALIZATION — TAU, BLITZ, AND HRAI REPORTS**
 
 Slice ID: `BEHAVIOR-MAP-V0`
 
 Continuation ID: `BEHAVIOR-MAP-V0-READABLE-EVIDENCE`
+
+Generalization ID: `BEHAVIOR-MAP-V0-THREE-CORPUS-REPORTS`
+
+## Three-corpus report entry gate — 2026-08-07
+
+After the readable TAU evidence exit, the owner requested three equivalent
+Phase 1 Behavior Map reports: the completed TAU² Retail corpus, the authorized
+private Blitz trace corpus with agent purpose inferred from owner-authorized
+Kairos-AI/Agentagon evidence, and an authorized HRAI trace corpus with agent
+purpose inferred from Kairos-AI/Agentagon/HRAI evidence. The output remains the
+same canonical JSON plus Markdown/plain HTML contract. Each report must show
+user demand, agent behavior, emerging/unknown observations, questions, and
+conversation-shaped evidence; no corpus may borrow semantic labels, outcomes,
+or evidence from another corpus.
+
+The USD 100 approval is interpreted conservatively as a cumulative ceiling
+including the existing USD 48 reservation. For the new Blitz and HRAI runs the
+owner explicitly reversed the roles on cost grounds: Luna is the primary
+semantic author at USD 0.072 reserved per attempted call and Terra is the
+separately identified auditor at USD 0.18 reserved per attempted call. Each
+run is capped at 100 Luna calls/USD 7.20 plus 69 Terra calls/USD 12.42, so both
+new reports reserve at most USD 39.24 and the three-report cumulative ceiling
+is USD 87.24. The completed TAU checkpoints retain their historical Terra
+primary/Luna auditor lineage. There is no fallback, silent model substitution, retry to
+green, locked-holdout opening, provider-response persistence, deployment,
+infrastructure mutation, or new public claim. Exact source paths, hashes,
+privacy class, DEVELOPMENT/holdout boundary, adapter counts, agent-context
+evidence, provider identities, and per-run reservations must be frozen after
+read-only preflight and before egress. One corpus failure becomes a typed
+corpus-specific gap and cannot falsify or rewrite another report.
+
+Preflight workers are read-only. They may inspect only the authorized
+Agentagon, Kairos-AI, and HRAI repositories plus existing private local trace
+artifacts to identify source identity, adapter compatibility, and grounded
+agent context. No worker may edit production, tests, canonical documentation,
+raw data, manifests, or reports during preflight. Any code correction requires
+a separately reconciled change budget plus independent RED/implementation/
+review ownership. The orchestrator alone freezes live manifests, performs
+provider preflight, authorizes bounded calls, audits artifacts, and updates
+canonical decisions. Generated private reports remain under `/private/tmp`.
+
+Blitz preflight established a required privacy correction before provider
+execution: the grouped adapter produces customer-authorized full conversations
+with redaction `NOT_DECLARED`. A bounded `BEHAVIOR-MAP-V0-REDACTED-PROJECTION`
+subslice is therefore authorized. It may adapt the owner-authorized Agentagon
+`experiments/blitz_seed/anonymize_tasks.py` detector categories into a generic,
+deterministic PreviewTrace projection that redacts every string-bearing event,
+preserves event/trace identity and structure, writes a content-free audit, and
+refuses malformed or residual direct-identifier evidence. It must never alter
+the source file, silently drop a trace/event, claim complete PII removal, or
+mark semantic provider egress authorized. The derived manifest remains an
+orchestrator-owned separate step and may record only `APPLIED` plus exact audit
+and source hashes. The semantic report uses the redacted projection as both its
+provider evidence and displayed evidence; raw customer text remains local and
+outside report artifacts.
+
+Redaction change budget: independent test author may create only
+`triana-labs/tests/behavior_map/test_redacted_projection_v0.py`; implementation
+author may create only
+`triana-labs/src/triana_labs/behavior_map/redaction.py` and minimally expose a
+`behavior-map redact` command in `triana-labs/src/triana_labs/cli.py` plus
+`triana-labs/src/triana_labs/behavior_map/__init__.py`; the orchestrator may
+update this packet, `docs/PROVENANCE.md`, `internal/WORKING_MEMORY.md`, the
+append-only decision log, and the current decision-memory journal. No new
+dependency, UI/backend change, provider call, retry, raw fixture, copied
+customer value, or unrelated cleanup is allowed. Acceptance requires an
+independently authored black-box test for stable repeated-value placeholders,
+all event string surfaces, structure/count preservation, content-free audit,
+source immutability, residual refusal, exception-safe paired publication, byte
+determinism, and a fresh-process CLI invocation. Pair publication must leave
+neither destination after any handled validation or `OSError` failure. It is
+not claimed to be crash-atomic across two filesystem renames and does not
+defend against a hostile concurrent process racing destination creation; live
+runs therefore use new explicit paths inside one operator-owned private
+directory, and both artifacts must be present and hash-verified before use.
+Final review is independently owned.
+
+Acceptance requires: the existing readable TAU report still passes its frozen
+contract; Blitz and HRAI each have exact accepted/rejected/eligible accounting,
+corpus-specific grounded context, non-empty useful semantic output or honest
+typed abstention, readable evidence on every supporting link, exact provider
+and budget lineage, no cross-corpus evidence, independent artifact review, and
+reproducible local URLs/commands. Total cumulative reservation must remain at
+or below USD 100 and actual provider cost must remain unknown unless directly
+reported rather than inferred.
+
+The first-report semantic discovery scope is exactly 34 DEVELOPMENT
+conversations per corpus, while deterministic accounting covers every accepted
+conversation. Selection is content-independent and reproducible: rank only
+DEVELOPMENT trace IDs by SHA-256 of
+`behavior-map-discovery-sample-v0\0<normalized-source-sha256>\0<trace-id>`, take
+the first 34, then publish the selected-list SHA-256 and the full DEVELOPMENT,
+selected, calibration, and holdout counts. This is an initial behavior-discovery
+sample, not exhaustive rare-behavior coverage. For Blitz the counts are
+624 accepted, 374 DEVELOPMENT, 34 selected, 125 calibration, 125 holdout. For
+HRAI they are 185 accepted plus 15 typed source rejections, 111 DEVELOPMENT,
+34 selected, 37 calibration, and 37 holdout. Calibration and holdout content
+remain outside every semantic request.
+
+Independent three-corpus entry audit blocked the previously accepted TAU
+artifact on two deterministic integrity defects. First, every semantic-eligible
+conversation that yields no surviving demand episode must appear as an explicit
+conversation-scoped emerging/unknown item; `tau2-56` may not silently disappear.
+Second, a conversation excerpt spanning one user turn to its assistant response
+must preserve every intervening same-turn tool call and result in canonical
+source order; it may not select one call and place the aggregate response beside
+it while hiding sibling calls. Excerpts remain bounded, and visible truncation
+must be explicit rather than silently selective.
+
+The repair ID is `BEHAVIOR-MAP-V0-TAU-AUDIT-INTEGRITY`. Independent test author
+may edit only `triana-labs/tests/behavior_map/test_behavior_map_v0.py`.
+Implementation author may edit only
+`triana-labs/src/triana_labs/behavior_map/__init__.py` and, only if the frozen
+test proves renderer behavior itself is defective,
+`triana-labs/src/triana_labs/behavior_map/render.py`. Orchestrator documentation
+scope is unchanged. No provider calls, prompt/schema changes, checkpoints,
+dependencies, adapters, source traces, UI/backend, or semantic-result edits are
+allowed. Acceptance requires both independent regressions, all earlier
+readability/integrity tests, deterministic regeneration from existing TAU
+checkpoints, exact re-audit of semantic coverage and excerpt source order, and
+independent final artifact review.
 
 ## Active continuation entry gate — 2026-08-07
 
@@ -594,3 +715,254 @@ GREEN. Against the first real-run implementation, the live correction suite
 produces two intended failures and thirty-eight passing controls in 8.02
 seconds. The test-owned path is frozen. The implementation author may read it
 but must not edit it.
+
+## Integrity repair freeze — 2026-08-07
+
+The three-corpus generalization preflight exposed two release-blocking local
+integrity defects before either new report completed: ordinary umask recreated
+private report directories as `0755`, and failed or interrupted provider calls
+left no durable attempt record, so a restarted process could retry a consumed
+stage and understate cumulative reservation. Provider execution is paused.
+
+The independent test author supersedes the Behavior Map test bytes at SHA-256
+`6b4792392bfac32087014d0658fe902a2b9d3172bbe9078a3ed969f8e55a3910`.
+Three focused cases are valid RED: every attempted stage must durably become a
+validated success checkpoint or a content-free `FAILED`/`IN_FLIGHT` tombstone;
+a restart must never reissue a consumed identity and must surface it as typed
+unknown; historical attempts must remain in attempted-call and conservative
+reservation lineage; and all output/checkpoint directories and files must be
+`0700`/`0600` regardless of ordinary umask. Retry and fallback remain `NONE`.
+
+The same independent author supersedes the redaction projection tests at
+SHA-256
+`56a8b458b029505cebf415bbb90155e4c32e19885208b757e2ae14e212d3f1cd`.
+The two added publication controls are already GREEN: existing targets are
+never clobbered, and a handled second publication failure removes the first
+published counterpart. This supersedes the unrecorded intermediate
+`ef600e020e912b9fc1f4a738f29b5edcc0cc9030b8ef708f9548e004c30f8e1e`
+bytes while preserving all prior redaction controls.
+
+The repair change budget permits production edits only in
+`triana-labs/src/triana_labs/behavior_map/__init__.py`; acceptance tests remain
+test-author owned. No dependencies, schemas outside Behavior Map V0, adapters,
+CLI, rendering language, provider configuration, raw data, UI/backend, or
+infrastructure may change. The implementation author runs no provider. The
+orchestrator alone reconciles the six conservative Blitz Luna attempts and one
+HRAI Luna attempt already consumed, selects fresh DEVELOPMENT conversations
+for those identities, and may restart only after focused GREEN plus independent
+review. Existing successful partial checkpoints remain immutable abandoned-run
+evidence and are not inputs to the fresh reports.
+
+Independent adversarial review then proved the first tombstone implementation
+accepted descriptor and identity tampering and used process-visible rename
+without crash-durable file and parent-directory sync. The test author therefore
+supersedes only the Behavior Map test bytes at SHA-256
+`e3f2323e30d2cb02bb2eb24332d195c75ce3178252e815681e5f381df81c3226`.
+Four focused cases are valid RED: wrong routing IDs, unexpected/raw descriptor
+keys, a recomputed filename around a malformed one-key identity, and absent
+file-plus-directory `fsync` before egress and after final replacement. The
+production change budget remains the single Behavior Map implementation file;
+provider execution remains paused until GREEN and independent re-review.
+
+A further independent adversarial probe recomputed the public descriptor digest
+after changing a routing ID while retaining the provider-call identity and
+filename. The test author supersedes only the Behavior Map test bytes again at
+SHA-256
+`fb4ffab87fddaf7cb7a2ae2cfa7dc168e75a37b239108d28a6f3058e819c96db`.
+The one added case is valid RED and requires tombstone reuse to compare its
+stored descriptor exactly with the descriptor derived from the current
+hash-bound payload before returning a consumed-attempt state. Scope and paused
+provider status are unchanged.
+
+Package-configured Ruff then mechanically wrapped the final regression without
+changing its assertion. The frozen Behavior Map test bytes are therefore
+superseded one final time at SHA-256
+`88169439dc4b7d92edb9c762f84cefc51a92a780b4a0ef318dbeca93b00dc4b7`;
+all sixty-two cases in that file remain GREEN.
+
+Final independent ordering review showed that a missing earlier extraction
+checkpoint could egress before a later, internally self-consistent but rerouted
+tombstone was reached. The test author supersedes the Behavior Map test bytes
+at SHA-256
+`d9f1168e94d2583b64954813566dcc4fd62c23d6cba712e5b915c79ff45827dc`.
+The one added case is valid RED and requires every statically knowable existing
+extraction artifact to be validated against its planned current payload before
+the first missing extraction identity may egress. Scope remains the same one
+production file and providers remain paused.
+
+## Blitz privacy and Markdown canonical rerun — 2026-08-07
+
+The first Luna-primary Blitz report is mechanically sound and semantically
+promising but blocked from release. Independent audit found bare shipment
+identifiers shaped `GS` plus at least nine digits and `NM` or `NN` plus at
+least nine digits in the redacted source, checkpoints, and final evidence.
+The original detector required a nearby order/tracking keyword and residual
+validation reused that same blind detector. The Markdown renderer also emitted
+population detail between table rows, leaving every row after the first
+outside the table. The localhost Blitz server was stopped immediately.
+
+The new independent acceptance contract must freeze both observed identifier
+families as direct and structured-tool values, require deterministic stable
+replacement plus residual refusal, and preserve structural trace identities
+and existing placeholders. It must also require all Markdown population rows
+to remain contiguous before per-population detail while HTML/JSON semantics
+remain unchanged. Test-author budget is only the two existing Behavior Map test
+files. Production-author budget is only
+`triana-labs/src/triana_labs/behavior_map/redaction.py` and
+`triana-labs/src/triana_labs/behavior_map/render.py`. No dependency, adapter,
+schema, CLI, semantic engine, provider boundary, UI/backend, or infrastructure
+change is allowed.
+
+The leaking report/checkpoints remain private abandoned evidence and cannot be
+mutated into a canonical report. After GREEN and independent review, the
+orchestrator may re-redact the original normalized Blitz source, exclude all
+thirty-nine distinct Blitz conversations previously attempted, deterministically
+select thirty-four untouched DEVELOPMENT conversations, and run one fresh
+Luna-primary/Terra-audited report with no retry/fallback. Prior conservative
+reservation is USD 70.14; the complete new run maximum is USD 19.62, keeping
+the cumulative ceiling at USD 89.76/100. HRAI remains a zero-semantic typed
+failure artifact and is not rerun.
+
+The independent test author froze the redaction acceptance contract at
+SHA-256 `46d3770e703f56e870d90757d1cb433e00baf273b024c97f00a1be36c64ee2cb`
+and the Behavior Map rendering contract at SHA-256
+`e09af238a19ab3936256ee75833440524260c4609b85a63cf205f8f3839adea6`.
+The expected RED state is two privacy failures and one Markdown failure;
+format and lint checks on the test changes pass.
+
+Implementation exposed two fixture-local contradictions: raw substring absence
+could not coexist with preserving an identifier embedded in an ordinary
+alphanumeric token, and the generated-token count included the explicitly
+preserved pre-existing placeholder. The independent test author corrected only
+those assertions without weakening standalone-identifier absence. The
+redaction acceptance contract is superseded at SHA-256
+`68225f1a0d4b7957281c4d2d10a2ee39853cddbcd27a4db524564a1966058304`;
+the rendering contract remains
+`e09af238a19ab3936256ee75833440524260c4609b85a63cf205f8f3839adea6`.
+Focused privacy and Markdown checks are GREEN.
+
+## Blitz address residual canonical rerun — 2026-08-07
+
+The frozen standalone-identifier gate passed and one fresh Luna/Terra run
+completed, but the orchestrator's broader pre-publication audit found
+street-address-like customer text in fourteen redacted-source traces, mostly
+user messages, and confirmed that one such phrase propagated into semantic
+output. The report at
+`/private/tmp/triana-blitz-behavior-v1/report-clean` therefore remains private
+non-canonical evidence even though its identity, rendering, and configured
+identifier residual checks pass.
+
+The next independent acceptance contract must cover address phrases whose
+street markers appear without a preceding `address` keyword, including common
+house, flat, plot, colony, lane, road, street, sector, nagar, apartment,
+building, and society forms. It must require stable recursive replacement,
+independent residual refusal when replacement is bypassed, existing-placeholder
+preservation, structural identity preservation, and ordinary non-address prose
+preservation. Independent audit also found generic uppercase-alphanumeric
+order/tracking shapes: the contract must redact values under structured keys
+that explicitly denote order, tracking, AWB, shipment, reference, ticket, or
+identifier fields, and shapes in explicit order/delivery/tracking text context,
+while preserving unrelated ordinary alphanumeric tokens. Test-author budget is only
+`triana-labs/tests/behavior_map/test_redacted_projection_v0.py` and
+production-author budget is only
+`triana-labs/src/triana_labs/behavior_map/redaction.py`. No rendering, adapter,
+schema, CLI, semantic, provider, UI/backend, dependency, or infrastructure
+change is allowed.
+
+After GREEN and independent review, the orchestrator may re-redact the original
+normalized Blitz source, exclude all seventy-three distinct conversations from
+the five aborted, first blocked, and address-blocked runs, select thirty-four
+untouched DEVELOPMENT conversations, and run one fresh Luna-primary/Terra-
+audited report with no retry/fallback. The prior conservative reservation is
+USD 74.57; the complete new run maximum is USD 19.62, keeping the cumulative
+ceiling at USD 94.19/100.
+
+The independent test author froze the address and generic order/tracking
+privacy contract at SHA-256
+`edaebda5e53faa1dc91a8d410130d01412c5fd1db052724487cdd663d7553825`.
+The expected RED state is four failures and one already-passing contextual
+residual-refusal case; Ruff formatting and lint pass. The production budget
+remains the single redaction module.
+
+The real-corpus refusal then exposed only a structural `call_id` false positive;
+the implementation author proved all 1,238 structured residual candidates came
+from that top-level relationship field and narrowly exempted it while leaving
+nested/plain fulfillment `id` fields covered. A broader independent scan then
+found address variants fragmented by earlier numeric/person rules. The test
+author supersedes the privacy contract at SHA-256
+`adbd81a0328fe652868a7117ecea6b6691840639eeb6f6dea133198f227f86cb`,
+requiring whole-span address replacement before postal, long-number, or person
+rules. The expected focused state is one RED failure; Ruff remains GREEN.
+
+## Blitz location residual final rerun — 2026-08-07
+
+The address/order repair passed its frozen and actual-corpus gate, and the next
+Luna/Terra report produced the strongest semantic draft so far, but expanded
+post-run privacy audit found fifteen high-confidence customer-location forms in
+the redacted source: five leading-number street/sector/phase/lane forms and ten
+named landmarks preceded by `near`, `opposite`, or `behind`. One persisted into
+a private checkpoint; none persisted into the final render. The report at
+`/private/tmp/triana-blitz-behavior-v3/report-clean` remains private non-
+canonical evidence.
+
+The final test-author budget is only the redaction test file and must cover both
+location families, stable whole-span ADDRESS replacement, replacement-bypass
+residual refusal, and ordinary non-location uses of the same words. The final
+production-author budget is only the redaction module. No other code, data,
+dependency, provider boundary, or infrastructure surface may change. After
+GREEN and independent actual-corpus review, the orchestrator may exclude all
+107 previously attempted conversations, select thirty-four untouched
+DEVELOPMENT conversations, and run one last Luna-primary/Terra-judged report
+with no retry/fallback. Prior conservative reservation is USD 79.65; the
+complete run maximum is USD 19.62, keeping the cumulative ceiling at USD
+99.27/100.
+
+The independent test author froze the final location contract at SHA-256
+`efccbb16a0e29f298be95366b42c24fde75c550939ccdf643fb8637f349adaab`.
+Focused expected RED is three failures with sixteen deselected; Ruff formatting,
+lint, and diff checks are GREEN.
+
+Final implementation and runtime reconciliation: the frozen location test hash
+remained exact, 83 focused Behavior Map tests plus Ruff formatting/lint passed,
+and independent actual-corpus review found zero configured or expanded
+residuals across 624 traces and 5,229 events. The projection preserves exact
+trace/source identities and stable injective pseudonymization across all 622
+tool call/result relationships. The canonical redacted Blitz source is
+`sha256:0904a38121d5af58fd1919cfa8b5a36965afa3d2eb7a5b0f3489ac2db099333d`.
+
+The final untouched-sample Blitz report is
+`sha256:738e3001837f3aba5033c2ecfbf878ceadfe5d01813515f20bf21b4a324d438a`
+at `/private/tmp/triana-blitz-behavior-v4/report-clean`. Artifact SHA-256 values
+are JSON `1324e53c0e287c0ac5f92454f922a0abb8d946b3ddcdc6c4308d1751521b4381`,
+Markdown `1e5c95f64c8d0ee2f5190c4809d4a838d442017b90df8cbdffd95d86d8e68a32`,
+and HTML `f2b838fcc1ff42c0ea1b8ef2c176b4ec91e91e2bbbc3d44e9b335efad07b7a17`.
+It is served privately at `http://127.0.0.1:8910/behavior-map.html`.
+
+Independent final audit passed report identity, byte regeneration, 44 success
+checkpoints plus six durable tombstones, private modes, reference/citation/link
+closure, exact source/audit hashes, 107 prior-conversation exclusions, sealed
+125/125 calibration/holdout groups, and all expanded privacy scans. Luna made
+41 attempts with 35 successful stages and USD 2.95 reserved; Terra judged 9/9
+items with USD 1.62 reserved; no retry/fallback occurred. Cumulative
+conservative reservation is USD 84.22/100 and actual billing is unknown.
+
+The final product-value boundary is partial: 14 episodes survive across 12/34
+selected conversations, one support-one user population remains EMERGING, and
+three useful agent-handling patterns have support 5/4/4. Twenty-eight
+emerging/unknown rows, 37 typed gaps, five questions, and 106 readable evidence
+records remain visible. This passes as a private proposed Behavior Map, not an
+accepted taxonomy or a wow-complete user-demand result. The canonical TAU²
+report remains
+`sha256:4b0e1f76a652656c6586e74118e92b16b750ec97436c08c6d33d63cfde85e6e1`;
+the HRAI artifact remains the truthful zero-semantic typed provider-failure
+report
+`sha256:fe95e939ebb0e2dfd01c3df9a9bf35b2d702d90df05c3d5793569f4e86a5eabe`.
+
+Repository-wide exit gate passed outside the restricted socket sandbox:
+governance, locked dependency resolution, formatting, Ruff, strict mypy, all
+746 tests, source distribution, wheel build, clean-environment installation,
+and installed-artifact acceptance/repeatability checks are GREEN. Evidence is
+under `/private/tmp/triana-labs-verify.nnM9OV`. The first sandboxed invocation
+reported 716 passes and thirty pre-existing fake-HTTP failures solely because
+loopback socket binding was denied; the unchanged escalated rerun passed all
+746 tests.

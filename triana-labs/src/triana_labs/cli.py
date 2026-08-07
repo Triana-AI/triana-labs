@@ -68,6 +68,13 @@ class _SafeArgumentParser(argparse.ArgumentParser):
                 reason_code="CLI_USAGE_ERROR",
                 duration_ms=0,
             )
+        elif _usage_command == "behavior-map.redact":
+            event = {
+                "command": "behavior-map.redact",
+                "outcome": "REJECTED",
+                "reason_code": "CLI_USAGE_ERROR",
+                "service": _SERVICE,
+            }
         else:
             event = _terminal_log(
                 event_name="triana.traces.observe.rejected",
@@ -189,6 +196,12 @@ def _build_parser() -> _SafeArgumentParser:
     behavior_map_run.add_argument("--manifest", required=True)
     behavior_map_run.add_argument("--output-dir", required=True)
     behavior_map_run.add_argument("--agent-context")
+    behavior_map_redact = behavior_map_commands.add_parser(
+        "redact", help="Create a deterministic redacted PreviewTrace projection."
+    )
+    behavior_map_redact.add_argument("--input", required=True)
+    behavior_map_redact.add_argument("--output", required=True)
+    behavior_map_redact.add_argument("--audit", required=True)
     return parser
 
 
@@ -276,6 +289,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         _usage_command = "episodes.run"
     elif raw_arguments[:2] == ["corpus", "derive"]:
         _usage_command = "corpus.derive"
+    elif raw_arguments[:2] == ["behavior-map", "redact"]:
+        _usage_command = "behavior-map.redact"
     else:
         _usage_command = "traces.observe"
     parser = _build_parser()
@@ -630,6 +645,46 @@ def _run_trace_to_eval_command(arguments: argparse.Namespace) -> int:
 
 def _run_behavior_map_command(arguments: argparse.Namespace) -> int:
     """Run the Behavior Map through explicit, role-bound local configuration."""
+
+    if arguments.behavior_map_command == "redact":
+        from triana_labs.behavior_map import RedactionFailure, redact_preview_traces
+
+        try:
+            audit = redact_preview_traces(
+                Path(arguments.input), Path(arguments.output), Path(arguments.audit)
+            )
+        except RedactionFailure as failure:
+            _write_json(
+                sys.stderr,
+                {
+                    "command": "behavior-map.redact",
+                    "outcome": "REJECTED",
+                    "reason_code": failure.reason_code,
+                    "service": _SERVICE,
+                },
+            )
+            return 2
+        except Exception:  # noqa: BLE001 - never expose redaction input or exceptions.
+            _write_json(
+                sys.stderr,
+                {
+                    "command": "behavior-map.redact",
+                    "outcome": "REJECTED",
+                    "reason_code": "REDACTION_OPERATION_REJECTED",
+                    "service": _SERVICE,
+                },
+            )
+            return 2
+        _write_json(
+            sys.stdout,
+            {
+                "command": "behavior-map.redact",
+                "outcome": "COMPLETED",
+                "input_trace_count": audit["input_trace_count"],
+                "output_trace_count": audit["output_trace_count"],
+            },
+        )
+        return 0
 
     from triana_labs.behavior_map import run_behavior_map
     from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel

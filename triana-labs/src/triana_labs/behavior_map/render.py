@@ -269,6 +269,7 @@ def render_markdown(report: JsonObject) -> str:
             f"| {_text(row['label'])} | {_text(row['definition'])} | {row['support']} | "
             f"{row['visibility']} | {evidence} |"
         )
+    for row in report["populations"]:
         members = [episodes[item] for item in row["episode_ids"] if item in episodes]
         lines.extend(
             [

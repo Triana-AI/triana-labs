@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import pytest
+
+from triana_labs import behavior_map as behavior_map_module
 from triana_labs.behavior_map import run_behavior_map
 
 PHASE_ONE_SECTIONS = (
@@ -960,6 +965,35 @@ def test_markdown_and_html_are_equivalent_plain_phase_one_reports(
     for banned in ("proposed eval", "behavior difference", "track/edit/defer", "L4"):
         assert banned.casefold() not in markdown.casefold()
         assert banned.casefold() not in html.casefold()
+
+
+def test_markdown_population_table_keeps_all_rows_before_population_details(
+    tmp_path: Path,
+) -> None:
+    report, output, _, _ = _run(tmp_path)
+    assert len(report["populations"]) >= 2
+    markdown = (output / "behavior-map.md").read_text()
+    html = (output / "behavior-map.html").read_text()
+    persisted = json.loads((output / "behavior-map.json").read_bytes())
+    lines = markdown.splitlines()
+    header = "| Population | Meaning | Episodes | Visibility | Supporting material |"
+    header_index = lines.index(header)
+    detail_index = next(
+        index
+        for index in range(header_index + 2, len(lines))
+        if lines[index].startswith("### Representative demands")
+    )
+    contiguous_table = [
+        line for line in lines[header_index:detail_index] if line.strip()
+    ]
+
+    assert contiguous_table[0] == header
+    assert contiguous_table[1] == "|---|---|---:|---|---|"
+    assert len(contiguous_table) == len(report["populations"]) + 2
+    for row, table_row in zip(report["populations"], contiguous_table[2:], strict=True):
+        assert table_row.startswith(f"| {row['label']} |")
+        assert f"<td>{row['label']}</td>" in html
+    assert persisted["populations"] == report["populations"]
 
 
 def test_prompt_injection_remains_quoted_evidence_and_cannot_change_control_state(
@@ -3677,3 +3711,713 @@ def test_deep_json_encoded_result_is_bounded_opaque_evidence_not_a_crash(
             and "2" in json.dumps(gap, sort_keys=True)
             for gap in report["gaps"]
         )
+
+
+class _NoEpisodeWithoutExceptionModel(_ScaleSemanticModel):
+    def __init__(self, omitted_conversation_id: str) -> None:
+        super().__init__()
+        self.omitted_conversation_id = omitted_conversation_id
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        result = super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            result["episodes"] = [
+                row
+                for row in result["episodes"]
+                if row["local_id"] != f"episode-{self.omitted_conversation_id}"
+            ]
+            result["behaviors"] = [
+                row
+                for row in result["behaviors"]
+                if row["local_id"] != f"behavior-{self.omitted_conversation_id}"
+            ]
+        return result
+
+
+def test_semantic_conversation_without_surviving_episode_is_visible_unknown(
+    tmp_path: Path,
+) -> None:
+    conversation_ids = [f"scale-{index:02d}" for index in range(3)]
+    omitted = conversation_ids[1]
+    primary = _NoEpisodeWithoutExceptionModel(omitted)
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, len(conversation_ids)),
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert primary.provider_calls > 0
+    assert omitted not in {str(row["conversation_id"]) for row in report["episodes"]}
+    assert any(
+        row.get("conversation_id") == omitted for row in report["emerging_unknown"]
+    )
+    assert not any(
+        "PROVIDER" in str(row.get("code", "")) and omitted in json.dumps(row)
+        for row in report["gaps"]
+    )
+
+
+class _SiblingToolEvidenceSemanticModel(_SemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        fields = set(getattr(schema, "model_fields", {}))
+        if "episodes" in fields:
+            self.provider_calls += 1
+            return {
+                "episodes": [
+                    {
+                        "local_id": "resolve-order",
+                        "goal": "Resolve an order request",
+                        "requested_action": "GET_INFORMATION",
+                        "subject": "order and shipment",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 0,
+                        "end_turn_ordinal": 5,
+                        "citations": [
+                            _citation(
+                                "readable-evidence",
+                                0,
+                                "Find the order and its shipment status.",
+                            )
+                        ],
+                        "status": "PROPOSED",
+                    }
+                ],
+                "behaviors": [],
+            }
+        if "populations" in fields:
+            return {"populations": []}
+        if "patterns" in fields:
+            return {"patterns": []}
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def _run_sibling_tool_evidence(tmp_path: Path) -> dict[str, Any]:
+    manifest = _write_readable_evidence_manifest(tmp_path)
+    _replace_readable_manifest_trace(
+        manifest,
+        _trace(
+            "readable-evidence",
+            [
+                _event(
+                    0,
+                    "USER_MESSAGE",
+                    content="Find the order and its shipment status.",
+                ),
+                _event(
+                    1,
+                    "TOOL_CALL",
+                    call_id="order-lookup",
+                    tool_name="lookup_order",
+                    arguments={"order_id": "order-a"},
+                ),
+                _event(
+                    2,
+                    "TOOL_RESULT",
+                    call_id="order-lookup",
+                    result_state="SUCCEEDED",
+                    result={"shipment_id": "shipment-a"},
+                ),
+                _event(
+                    3,
+                    "TOOL_CALL",
+                    call_id="shipment-lookup",
+                    tool_name="lookup_shipment",
+                    arguments={"shipment_id": "shipment-a"},
+                ),
+                _event(
+                    4,
+                    "TOOL_RESULT",
+                    call_id="shipment-lookup",
+                    result_state="SUCCEEDED",
+                    result={"status": "in_transit"},
+                ),
+                _event(
+                    5,
+                    "ASSISTANT_MESSAGE",
+                    content="The order is in transit.",
+                    is_final=True,
+                ),
+            ],
+        ),
+    )
+    return run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=_SiblingToolEvidenceSemanticModel("terra-test-v0"),
+        audit_model=None,
+        agent_context="An order support agent.",
+    )
+
+
+def test_excerpt_preserves_all_same_turn_sibling_tools_before_response(
+    tmp_path: Path,
+) -> None:
+    report = _run_sibling_tool_evidence(tmp_path)
+    excerpt = next(
+        row["conversation_excerpt"]
+        for row in report["evidence"]
+        if row["kind"] == "EVENT" and row["ordinal"] == 1
+    )
+
+    assert [row["event_sequence"] for row in excerpt] == [0, 1, 2, 3, 4, 5]
+    assert [row["display_kind"] for row in excerpt] == [
+        "USER_MESSAGE",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "AGENT_RESPONSE",
+    ]
+    assert [
+        row.get("call_id")
+        for row in excerpt
+        if row["display_kind"] in {"TOOL_CALL", "TOOL_RESULT"}
+    ] == ["order-lookup", "order-lookup", "shipment-lookup", "shipment-lookup"]
+
+
+def test_late_tool_anchor_rewinds_to_user_and_preserves_prior_sibling_tool(
+    tmp_path: Path,
+) -> None:
+    report = _run_sibling_tool_evidence(tmp_path)
+    excerpt = next(
+        row["conversation_excerpt"]
+        for row in report["evidence"]
+        if row["kind"] == "EVENT" and row["ordinal"] == 3
+    )
+
+    assert [row["event_sequence"] for row in excerpt] == [0, 1, 2, 3, 4, 5]
+    assert [row["display_kind"] for row in excerpt] == [
+        "USER_MESSAGE",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "TOOL_CALL",
+        "TOOL_RESULT",
+        "AGENT_RESPONSE",
+    ]
+    assert [
+        row.get("call_id")
+        for row in excerpt
+        if row["display_kind"] in {"TOOL_CALL", "TOOL_RESULT"}
+    ] == ["order-lookup", "order-lookup", "shipment-lookup", "shipment-lookup"]
+
+
+class _DurableAttemptModel(_ScaleSemanticModel):
+    def __init__(
+        self,
+        conversation_id: str,
+        *,
+        interruption: bool = False,
+    ) -> None:
+        super().__init__()
+        self.conversation_id = conversation_id
+        self.interruption = interruption
+        self.extraction_attempts: list[str] = []
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            conversation_ids = [
+                str(row["conversation_id"]) for row in payload["conversations"]
+            ]
+            self.extraction_attempts.extend(conversation_ids)
+            if self.conversation_id in conversation_ids:
+                self.provider_calls += 1
+                if self.interruption:
+                    raise KeyboardInterrupt("unknown-provider-completion")
+                raise ValueError("synthetic-provider-failure-must-not-persist")
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+class _RecoveryAttemptModel(_ScaleSemanticModel):
+    def __init__(self) -> None:
+        super().__init__()
+        self.extraction_attempts: list[str] = []
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "episodes" in set(getattr(schema, "model_fields", {})):
+            self.extraction_attempts.extend(
+                str(row["conversation_id"]) for row in payload["conversations"]
+            )
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def _semantic_attempt_artifacts(output: Path) -> dict[Path, bytes]:
+    return {
+        path: path.read_bytes()
+        for path in sorted((output / "behavior-map-checkpoints").glob("*.json"))
+    }
+
+
+def _attempts_for_conversation(
+    artifacts: dict[Path, bytes], conversation_id: str
+) -> dict[Path, dict[str, Any]]:
+    return {
+        path: value
+        for path, payload in artifacts.items()
+        for value in [json.loads(payload)]
+        if conversation_id in json.dumps(value.get("payload"), sort_keys=True)
+    }
+
+
+def test_failed_attempt_tombstone_is_durable_and_restart_never_reissues(
+    tmp_path: Path,
+) -> None:
+    failed_conversation_id = "scale-01"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    primary = _DurableAttemptModel(failed_conversation_id)
+    auditor = _ScaleAuditModel()
+    first = run_behavior_map(
+        manifest,
+        output,
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+    first_attempt_count = primary.provider_calls + auditor.provider_calls
+    artifacts_before = _semantic_attempt_artifacts(output)
+    failed_attempts = _attempts_for_conversation(
+        artifacts_before, failed_conversation_id
+    )
+
+    assert len(artifacts_before) == first_attempt_count
+    assert len(failed_attempts) == 1
+    failed_payload = next(iter(failed_attempts.values()))
+    failed_text = json.dumps(failed_payload, sort_keys=True).upper()
+    assert "FAILED" in failed_text and "FAILURE" in failed_text
+    assert "synthetic-provider-failure-must-not-persist" not in failed_text.casefold()
+    assert any(
+        failed_conversation_id in json.dumps(row, sort_keys=True)
+        for row in [*first["gaps"], *first["emerging_unknown"]]
+    )
+
+    recovery_primary = _RecoveryAttemptModel()
+    recovery_auditor = _ScaleAuditModel()
+    restarted = run_behavior_map(
+        manifest,
+        output,
+        primary_model=recovery_primary,
+        audit_model=recovery_auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert recovery_primary.provider_calls == recovery_auditor.provider_calls == 0
+    assert failed_conversation_id not in recovery_primary.extraction_attempts
+    assert _semantic_attempt_artifacts(output) == artifacts_before
+    assert any(
+        failed_conversation_id in json.dumps(row, sort_keys=True)
+        and any(
+            token in str(row.get("code", ""))
+            for token in ("ATTEMPT", "FAILED", "TOMBSTONE")
+        )
+        for row in [*restarted["gaps"], *restarted["emerging_unknown"]]
+    )
+    primary_lineage = restarted["provider_lineage"]["primary"]
+    assert primary_lineage["attempted_call_count"] >= primary.provider_calls
+    assert restarted["budget"]["primary_reserved_usd"] >= round(
+        primary.provider_calls * 0.15, 2
+    )
+    assert restarted["method"]["retry_policy"] == "NONE"
+    assert restarted["method"]["fallback_policy"] == "NONE"
+
+
+def test_interrupted_attempt_becomes_in_flight_tombstone_and_visible_gap(
+    tmp_path: Path,
+) -> None:
+    interrupted_conversation_id = "scale-00"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    interrupted = _DurableAttemptModel(
+        interrupted_conversation_id,
+        interruption=True,
+    )
+
+    with pytest.raises(KeyboardInterrupt, match="unknown-provider-completion"):
+        run_behavior_map(
+            manifest,
+            output,
+            primary_model=interrupted,
+            audit_model=_ScaleAuditModel(),
+            agent_context="A synthetic scale-test support agent.",
+        )
+
+    artifacts_before = _semantic_attempt_artifacts(output)
+    interrupted_attempts = _attempts_for_conversation(
+        artifacts_before, interrupted_conversation_id
+    )
+    assert len(interrupted_attempts) == 1
+    tombstone_text = json.dumps(
+        next(iter(interrupted_attempts.values())), sort_keys=True
+    ).upper()
+    assert "IN_FLIGHT" in tombstone_text or "UNKNOWN" in tombstone_text
+    assert "unknown-provider-completion" not in tombstone_text.casefold()
+
+    recovery = _RecoveryAttemptModel()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=recovery,
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert interrupted_conversation_id not in recovery.extraction_attempts
+    assert artifacts_before.items() <= _semantic_attempt_artifacts(output).items()
+    assert any(
+        interrupted_conversation_id in json.dumps(row, sort_keys=True)
+        and any(
+            token in str(row.get("code", ""))
+            for token in ("ATTEMPT", "IN_FLIGHT", "INTERRUPTED", "UNKNOWN")
+        )
+        for row in [*report["gaps"], *report["emerging_unknown"]]
+    )
+    assert (
+        report["provider_lineage"]["primary"]["attempted_call_count"]
+        >= interrupted.provider_calls + recovery.provider_calls
+    )
+    assert report["method"]["retry_policy"] == "NONE"
+    assert report["method"]["fallback_policy"] == "NONE"
+
+
+def test_private_report_and_checkpoint_permissions_ignore_ordinary_umask(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_scale_manifest(tmp_path, 2)
+    output = tmp_path / "private-output"
+    previous_umask = os.umask(0o022)
+    try:
+        run_behavior_map(
+            manifest,
+            output,
+            primary_model=_ScaleSemanticModel(),
+            audit_model=_ScaleAuditModel(),
+            agent_context="A synthetic scale-test support agent.",
+        )
+    finally:
+        os.umask(previous_umask)
+
+    directories = [output, *(path for path in output.rglob("*") if path.is_dir())]
+    files = [path for path in output.rglob("*") if path.is_file()]
+    assert files and (output / "behavior-map-checkpoints").is_dir()
+    assert all(path.stat().st_mode & 0o777 == 0o700 for path in directories)
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in files)
+
+
+@pytest.mark.parametrize("tamper_kind", ["wrong_id", "extra_raw_secret"])
+def test_tampered_attempt_routing_descriptor_refuses_before_egress(
+    tmp_path: Path,
+    tamper_kind: str,
+) -> None:
+    failed_conversation_id = "scale-01"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_DurableAttemptModel(failed_conversation_id),
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    failed_attempts = _attempts_for_conversation(
+        _semantic_attempt_artifacts(output), failed_conversation_id
+    )
+    assert len(failed_attempts) == 1
+    path, tombstone = next(iter(failed_attempts.items()))
+    assert set(tombstone["identity"]) == {
+        "stage",
+        "model_id",
+        "method_sha256",
+        "payload_sha256",
+        "provider_binding_sha256",
+    }
+    assert all(isinstance(value, str) for value in tombstone["identity"].values())
+    assert set(tombstone["payload"]) == {"conversation_ids"}
+    assert all(
+        isinstance(value, str) for value in tombstone["payload"]["conversation_ids"]
+    )
+
+    if tamper_kind == "wrong_id":
+        tombstone["payload"]["conversation_ids"] = ["wrong-conversation-id"]
+    else:
+        tombstone["payload"]["raw_secret"] = SECRET
+    path.write_bytes(_canonical(tombstone, lf=True))
+
+    recovery_primary = _RecoveryAttemptModel()
+    recovery_auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=recovery_primary,
+        audit_model=recovery_auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert recovery_primary.provider_calls == recovery_auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(report)
+
+
+def test_rehashed_tampered_attempt_descriptor_still_refuses_before_egress(
+    tmp_path: Path,
+) -> None:
+    failed_conversation_id = "scale-01"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_DurableAttemptModel(failed_conversation_id),
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    failed_attempts = _attempts_for_conversation(
+        _semantic_attempt_artifacts(output), failed_conversation_id
+    )
+    assert len(failed_attempts) == 1
+    path, tombstone = next(iter(failed_attempts.items()))
+    original_identity = deepcopy(tombstone["identity"])
+    original_name = path.name
+
+    tombstone["payload"]["conversation_ids"] = ["wrong-conversation-id"]
+    tombstone["payload_descriptor_sha256"] = (
+        "sha256:"
+        + hashlib.sha256(
+            b"behavior-map-attempt-descriptor-v0\0" + _canonical(tombstone["payload"])
+        ).hexdigest()
+    )
+    path.write_bytes(_canonical(tombstone, lf=True))
+    assert path.name == original_name
+    assert tombstone["identity"] == original_identity
+
+    recovery_primary = _RecoveryAttemptModel()
+    recovery_auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=recovery_primary,
+        audit_model=recovery_auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert recovery_primary.provider_calls == recovery_auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(report)
+
+
+def test_later_rehashed_attempt_tamper_refuses_before_missing_earlier_egress(
+    tmp_path: Path,
+) -> None:
+    failed_conversation_id = "scale-01"
+    earlier_conversation_id = "scale-00"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_DurableAttemptModel(failed_conversation_id),
+        audit_model=_ScaleAuditModel(),
+        agent_context="A synthetic scale-test support agent.",
+    )
+    artifacts = _semantic_attempt_artifacts(output)
+    failed_attempts = _attempts_for_conversation(artifacts, failed_conversation_id)
+    assert len(failed_attempts) == 1
+    failed_path, tombstone = next(iter(failed_attempts.items()))
+    earlier_successes = {
+        path: value
+        for path, payload in artifacts.items()
+        for value in [json.loads(payload)]
+        if value.get("artifact_kind") == "behavior_map_checkpoint_v0"
+        and earlier_conversation_id in json.dumps(value.get("payload"), sort_keys=True)
+        and value.get("result", {}).get("episodes")
+    }
+    assert len(earlier_successes) == 1
+    next(iter(earlier_successes)).unlink()
+
+    tombstone["payload"]["conversation_ids"] = [earlier_conversation_id]
+    tombstone["payload_descriptor_sha256"] = (
+        "sha256:"
+        + hashlib.sha256(
+            b"behavior-map-attempt-descriptor-v0\0" + _canonical(tombstone["payload"])
+        ).hexdigest()
+    )
+    failed_path.write_bytes(_canonical(tombstone, lf=True))
+
+    recovery_primary = _RecoveryAttemptModel()
+    recovery_auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=recovery_primary,
+        audit_model=recovery_auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert recovery_primary.provider_calls == recovery_auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(report)
+
+
+def test_malformed_attempt_identity_with_matching_filename_refuses_before_egress(
+    tmp_path: Path,
+) -> None:
+    manifest = _write_scale_manifest(tmp_path, 2)
+    output = tmp_path / "output"
+    checkpoints = output / "behavior-map-checkpoints"
+    checkpoints.mkdir(parents=True)
+    malformed_identity = {"model_id": "scale-semantic-v0"}
+    checkpoint_id = hashlib.sha256(
+        b"behavior-map-checkpoint-v0\0" + _canonical(malformed_identity)
+    ).hexdigest()
+    malformed_attempt = {
+        "artifact_kind": "behavior_map_attempt_v0",
+        "schema_version": 0,
+        "identity": malformed_identity,
+        "state": "FAILED",
+        "failure_code": "FAILURE",
+        "payload": {
+            "conversation_ids": ["scale-00"],
+            "raw_secret": SECRET,
+        },
+    }
+    (checkpoints / f"{checkpoint_id}.json").write_bytes(
+        _canonical(malformed_attempt, lf=True)
+    )
+
+    primary = _RecoveryAttemptModel()
+    auditor = _ScaleAuditModel()
+    report = run_behavior_map(
+        manifest,
+        output,
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert primary.provider_calls == auditor.provider_calls == 0
+    assert "SEMANTIC_CHECKPOINT_INVALID" in _codes(report)
+
+
+def test_attempt_file_and_directory_fsync_bracket_provider_and_final_replace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = _write_scale_manifest(tmp_path, 1)
+    output = tmp_path / "output"
+    checkpoints = output / "behavior-map-checkpoints"
+    events: list[dict[str, Any]] = []
+    real_fsync = os.fsync
+
+    def artifact_states() -> list[str]:
+        states: list[str] = []
+        if not checkpoints.exists():
+            return states
+        for candidate in checkpoints.glob("*.json"):
+            value = json.loads(candidate.read_bytes())
+            if value.get("artifact_kind") == "behavior_map_attempt_v0":
+                states.append(str(value.get("state")))
+            elif value.get("artifact_kind") == "behavior_map_checkpoint_v0":
+                states.append("SUCCEEDED")
+        return sorted(states)
+
+    def tracked_fsync(descriptor: int) -> None:
+        metadata = os.fstat(descriptor)
+        real_fsync(descriptor)
+        if stat.S_ISDIR(metadata.st_mode):
+            events.append({"kind": "DIRECTORY_FSYNC", "states": artifact_states()})
+            return
+        payload: dict[str, Any] | None = None
+        if checkpoints.exists():
+            for candidate in checkpoints.iterdir():
+                try:
+                    if candidate.stat().st_ino == metadata.st_ino:
+                        payload = json.loads(candidate.read_bytes())
+                        break
+                except (FileNotFoundError, json.JSONDecodeError):
+                    continue
+        events.append({"kind": "FILE_FSYNC", "payload": payload})
+
+    class _OrderingModel(_ScaleSemanticModel):
+        def complete_json(
+            self,
+            *,
+            stage: str,
+            system: str,
+            payload: dict[str, Any],
+            schema: Any,
+        ) -> dict[str, Any]:
+            events.append({"kind": "PROVIDER", "stage": stage})
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
+
+    monkeypatch.setattr(behavior_map_module.os, "fsync", tracked_fsync)
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_OrderingModel(),
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    first_provider = next(
+        index for index, event in enumerate(events) if event["kind"] == "PROVIDER"
+    )
+    before_provider = events[:first_provider]
+    after_provider = events[first_provider + 1 :]
+    assert any(
+        event["kind"] == "FILE_FSYNC"
+        and event["payload"] is not None
+        and event["payload"].get("artifact_kind") == "behavior_map_attempt_v0"
+        and event["payload"].get("state") == "IN_FLIGHT"
+        for event in before_provider
+    )
+    assert any(
+        event["kind"] == "DIRECTORY_FSYNC" and "IN_FLIGHT" in event["states"]
+        for event in before_provider
+    )
+    assert any(
+        event["kind"] == "FILE_FSYNC"
+        and event["payload"] is not None
+        and event["payload"].get("artifact_kind") == "behavior_map_checkpoint_v0"
+        for event in after_provider
+    )
+    assert any(
+        event["kind"] == "DIRECTORY_FSYNC" and "SUCCEEDED" in event["states"]
+        for event in after_provider
+    )

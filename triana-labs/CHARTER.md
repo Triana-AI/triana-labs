@@ -62,6 +62,26 @@ proves neither semantic user populations nor the authenticated analysis bridge;
 no model/provider call, new infrastructure, entitlement grant, or persistent
 ruling is authorized by that canary.
 
+On 2026-08-07 Akarsh superseded the immediate analysis value surface with
+Phase 1 Behavior Map: one authorized conversational-trace corpus produces a
+proposed User Demand Map over multi-goal episodes, a multi-label Agent Behavior
+Map, emerging/unknown observations, exact readable evidence, and unresolved
+human questions. Comparison/diff, eval generation, existing-eval integration,
+outcome judgment, L4, simulation, and accepted taxonomy remain later phases.
+Semantic output is proposed evidence, never correctness or policy truth;
+deterministic code owns trace/sample identity, sealed splits, evidence
+coordinates, support, lineage, budget, artifact integrity, and typed gaps.
+
+The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
+and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
+primary author and Terra as independent auditor, with no retry or fallback and
+a cumulative USD 100 conservative reservation ceiling. That role choice is a
+named run configuration, not a claim that either model is globally better.
+The completed Blitz run produced a useful partial map; the HRAI run produced a
+truthful zero-semantic typed-gap report after every Luna extraction request
+failed at the provider boundary. Neither result is accepted behavior or a
+complete taxonomy.
+
 For the first public developer preview, the value moment is narrower and
 supersedes the immediate baseline/candidate sequence above without erasing the
 longer-term comparison product:

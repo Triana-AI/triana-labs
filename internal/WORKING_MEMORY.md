@@ -1209,3 +1209,47 @@ Independent review initially rejected cross-turn, citation, escaping, and
 false-bound implementations, then passed the final 51-case module. This is a
 deterministic evidence-presentation improvement, not new semantic coverage or
 accepted truth, and consumed USD 0 provider spend.
+
+Three-corpus Behavior Map generalization (2026-08-07): the canonical private
+TAU² artifact is report
+`sha256:4b0e1f76a652656c6586e74118e92b16b750ec97436c08c6d33d63cfde85e6e1`
+under `/private/tmp/triana-behavior-map-tau57-live/report`. It accepts all 57
+conversations, keeps 23 sealed, maps 50 episodes into four demand groups and
+three recurring agent patterns, preserves 37 emerging/unknown observations and
+eight questions, and exposes 610 readable evidence records. Its USD 48
+conservative reservation is not actual billing.
+
+The HRAI generalization artifact at
+`/private/tmp/triana-hrai-behavior-v0/report-clean` is an integrity-valid typed
+failure report, not a product demo: 185 normalized conversations were accepted,
+34 semantic requests were attempted once through Luna, all failed at the
+provider boundary, Terra made zero calls, and no episode, population, or
+semantic behavior was published. The upstream 200 physical / 185 normalized /
+15 adapter-rejected accounting is not yet representable inside the post-
+normalization report and remains a typed accounting limitation.
+
+The canonical private Blitz artifact is report
+`sha256:738e3001837f3aba5033c2ecfbf878ceadfe5d01813515f20bf21b4a324d438a`
+under `/private/tmp/triana-blitz-behavior-v4/report-clean`, served locally at
+`http://127.0.0.1:8910/behavior-map.html`. It accepts 624 conversations, selects
+34 untouched DEVELOPMENT conversations, seals 125 calibration and 125 holdout
+groups, retains 14 episodes across 12 selected conversations, publishes one
+support-one emerging user population and three Terra-supported agent-handling
+patterns with support 5/4/4, and exposes 28 emerging/unknown rows, five human
+questions, and 106 readable evidence records. Luna made 41 attempts with 35
+successful stages and six durable failures; Terra judged 9/9 items. No retry or
+fallback occurred. The cumulative conservative reservation is USD 84.22/100;
+actual provider billing remains unknown.
+
+Three earlier Blitz reports and one refused projection remain private non-
+canonical evidence. Independent audits successively found bare shipment IDs,
+generic structured fulfillment IDs, numbered/free-form addresses, and landmark
+locations; none was served as canonical. The final projection replaces 30
+address/location occurrences and 811 fulfillment-ID occurrences, preserves all
+624 trace/source identities and 622 tool call/result relationships, and passes
+independent placeholder-aware scans for every frozen identifier, phone, email,
+address, and landmark class. The bounded deterministic projection still cannot
+claim complete PII removal or cover unseen international/free-form locations.
+The final Blitz result is a trustworthy proposed Behavior Map and useful agent-
+handling report, but not a wow-complete user taxonomy: only 12/34 conversations
+yield surviving episodes and only 1/14 episodes is population-assigned.
