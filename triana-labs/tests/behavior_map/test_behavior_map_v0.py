@@ -665,13 +665,23 @@ class _AuditScopeSemanticModel(_SemanticModel):
         model_id: str,
         *,
         boundary_support: bool = False,
+        pattern_projection: bool = False,
+        pattern_boundary_support: bool = False,
         unsupported_conversations: set[str] | None = None,
         unsupported_population_label: str | None = None,
+        unsupported_pattern_label: str | None = None,
     ) -> None:
         super().__init__(model_id)
         self.boundary_support = boundary_support
+        self.pattern_projection = pattern_projection
+        self.pattern_boundary_support = pattern_boundary_support
         self.unsupported_conversations = unsupported_conversations or set()
         self.unsupported_population_label = unsupported_population_label
+        self.unsupported_pattern_label = unsupported_pattern_label
+        self.projected_pattern_occurrence_ids: set[str] = set()
+        self.unaffected_pattern_occurrence_ids: set[str] = set()
+        self._projected_occurrence_by_conversation: dict[str, str] = {}
+        self._unaffected_occurrence_by_conversation: dict[str, str] = {}
 
     def complete_json(
         self,
@@ -690,11 +700,19 @@ class _AuditScopeSemanticModel(_SemanticModel):
             audits = []
             for item in payload["items"]:
                 unsupported = (
-                    "episode_id" in item
-                    and str(item["conversation_id"]) in self.unsupported_conversations
-                ) or (
-                    "population_id" in item
-                    and item.get("label") == self.unsupported_population_label
+                    (
+                        "episode_id" in item
+                        and str(item["conversation_id"])
+                        in self.unsupported_conversations
+                    )
+                    or (
+                        "population_id" in item
+                        and item.get("label") == self.unsupported_population_label
+                    )
+                    or (
+                        "pattern_id" in item
+                        and item.get("label") == self.unsupported_pattern_label
+                    )
                 )
                 audits.append(
                     {
@@ -743,9 +761,153 @@ class _AuditScopeSemanticModel(_SemanticModel):
                     },
                 ]
             }
-        return super().complete_json(
+        if self.pattern_projection and "patterns" in fields:
+            candidates = payload.get("candidate_patterns")
+            if isinstance(candidates, list):
+                return {"patterns": candidates}
+            self.requests.append(
+                {"stage": stage, "system": system, "payload": deepcopy(payload)}
+            )
+            self.provider_calls += 1
+            semantic_occurrences = [
+                row
+                for row in payload["behavior_occurrences"]
+                if row["lane"] == "SEMANTIC"
+            ]
+            projected_conversations = [
+                "cancel-two",
+                "cancel-three",
+                "warranty-one",
+            ]
+            if not self.pattern_boundary_support:
+                projected_conversations.append("warranty-two")
+            projected_ids: set[str] = set()
+            for conversation_id in projected_conversations:
+                if conversation_id in self._projected_occurrence_by_conversation:
+                    continue
+                candidates_for_conversation = sorted(
+                    str(row["occurrence_id"])
+                    for row in semantic_occurrences
+                    if row["conversation_id"] == conversation_id
+                )
+                if candidates_for_conversation:
+                    selected = candidates_for_conversation[0]
+                    self._projected_occurrence_by_conversation[conversation_id] = (
+                        selected
+                    )
+                    projected_ids.add(selected)
+            unaffected_ids: set[str] = set()
+            if "multi-goal" not in self._unaffected_occurrence_by_conversation:
+                unaffected_candidates = sorted(
+                    str(row["occurrence_id"])
+                    for row in semantic_occurrences
+                    if row["conversation_id"] == "multi-goal"
+                )
+                if unaffected_candidates:
+                    selected = unaffected_candidates[0]
+                    self._unaffected_occurrence_by_conversation["multi-goal"] = selected
+                    unaffected_ids.add(selected)
+            self.projected_pattern_occurrence_ids.update(projected_ids)
+            self.unaffected_pattern_occurrence_ids.update(unaffected_ids)
+            patterns = []
+            if projected_ids:
+                patterns.append(
+                    {
+                        "label": "Requests an identifier before delivery support",
+                        "definition": "The agent requests or uses an order identifier before handling a delivery question.",
+                        "occurrence_ids": sorted(projected_ids),
+                    }
+                )
+            if unaffected_ids:
+                patterns.append(
+                    {
+                        "label": "Confirms multiple requested changes before acting",
+                        "definition": "The agent confirms the scope of multiple requested order changes before acting.",
+                        "occurrence_ids": sorted(unaffected_ids),
+                    }
+                )
+            return {"patterns": patterns}
+        result = super().complete_json(
             stage=stage, system=system, payload=payload, schema=schema
         )
+        if self.pattern_projection and "episodes" in fields:
+            result["behaviors"].extend(
+                [
+                    {
+                        "local_id": "requested-gamma-identifier",
+                        "lane": "SEMANTIC",
+                        "action": "REQUESTED_IDENTIFIER",
+                        "object": "order gamma",
+                        "condition": "before handling the cancellation request",
+                        "observed_effect": None,
+                        "episode_local_ids": ["cancel-gamma"],
+                        "citations": [
+                            _citation(
+                                "cancel-two",
+                                1,
+                                "Please confirm that I should cancel order gamma.",
+                            )
+                        ],
+                        "event_ids": [],
+                        "status": "PROPOSED",
+                    },
+                    {
+                        "local_id": "explained-delta-shipped-limit",
+                        "lane": "SEMANTIC",
+                        "action": "EXPLAINED_CANCEL_LIMIT",
+                        "object": "order delta after shipment",
+                        "condition": "when cancellation was unavailable",
+                        "observed_effect": None,
+                        "episode_local_ids": ["cancel-delta"],
+                        "citations": [
+                            _citation(
+                                "cancel-three",
+                                1,
+                                "Order delta is already shipped, so I cannot cancel it.",
+                            )
+                        ],
+                        "event_ids": [],
+                        "status": "PROPOSED",
+                    },
+                    {
+                        "local_id": "reported-warranty-duration",
+                        "lane": "SEMANTIC",
+                        "action": "STATED_WARRANTY",
+                        "object": "the lamp's one-year warranty",
+                        "condition": "when the user asked about coverage",
+                        "observed_effect": None,
+                        "episode_local_ids": ["warranty-lamp-one"],
+                        "citations": [
+                            _citation(
+                                "warranty-one",
+                                1,
+                                "The lamp has a one-year warranty.",
+                            )
+                        ],
+                        "event_ids": [],
+                        "status": "PROPOSED",
+                    },
+                    {
+                        "local_id": "excluded-normal-wear",
+                        "lane": "SEMANTIC",
+                        "action": "EXCLUDED_WEAR",
+                        "object": "normal wear from warranty coverage",
+                        "condition": "when the user asked whether wear counts",
+                        "observed_effect": None,
+                        "episode_local_ids": ["warranty-lamp-two"],
+                        "citations": [
+                            _citation(
+                                "warranty-two",
+                                1,
+                                "Normal wear is not covered by the lamp warranty.",
+                            )
+                        ],
+                        "event_ids": [],
+                        "status": "PROPOSED",
+                    },
+                ]
+            )
+        return result
 
 
 def _objects_with_key(value: Any, keys: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -2940,6 +3102,31 @@ def _expected_reprojected_population_id(
     return _domain_digest("behavior-map-population-v0", identity)
 
 
+def _expected_reprojected_pattern_id(
+    pattern: dict[str, Any],
+    occurrence_ids: list[str],
+    occurrence_by_id: dict[str, dict[str, Any]],
+) -> str:
+    sorted_occurrence_ids = sorted(occurrence_ids)
+    distinct_episode_ids = {
+        episode_id
+        for occurrence_id in sorted_occurrence_ids
+        for episode_id in occurrence_by_id[occurrence_id]["episode_ids"]
+        if episode_id
+        not in occurrence_by_id[occurrence_id].get("audit_disputed_episode_ids", [])
+    }
+    identity = {
+        "label": pattern["label"],
+        "definition": pattern["definition"],
+        "occurrence_ids": sorted_occurrence_ids,
+        "occurrence_count": len(sorted_occurrence_ids),
+        "support": len(distinct_episode_ids),
+        "method": "PRIMARY_PATTERN_CONSOLIDATION_V0",
+        "audit_state": "PENDING",
+    }
+    return _domain_digest("behavior-map-pattern-v0", identity)
+
+
 def test_episode_audit_scope_detaches_only_disputed_members_and_reprojects(
     tmp_path: Path,
 ) -> None:
@@ -3143,6 +3330,238 @@ def test_episode_audit_detachment_crosses_publication_boundary_to_emerging(
         row["episode_id"] == disputed_id and row["reason"] == "AUDIT_DISAGREEMENT"
         for row in report["emerging_unknown"]
     )
+
+
+def test_disputed_occurrence_projection_recomputes_supported_pattern(
+    tmp_path: Path,
+) -> None:
+    label = "Requests an identifier before delivery support"
+    unaffected_label = "Confirms multiple requested changes before acting"
+    primary = _AuditScopeSemanticModel("terra-test-v0", pattern_projection=True)
+    auditor = _AuditScopeSemanticModel(
+        "luna-test-v0",
+        unsupported_conversations={"cancel-three", "cancel-two"},
+    )
+    report, output, _, _ = _run(tmp_path, primary=primary, auditor=auditor)
+
+    original_patterns = {
+        str(item["label"]): item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if "pattern_id" in item
+    }
+    original = original_patterns[label]
+    unaffected_original = original_patterns[unaffected_label]
+    assert len(original["occurrence_ids"]) == 4
+    assert original["support"] == 4
+
+    disputed_episode_ids = {
+        str(row["episode_id"])
+        for row in report["episodes"]
+        if row["conversation_id"] in {"cancel-three", "cancel-two"}
+    }
+    assert len(disputed_episode_ids) == 2
+    occurrence_by_id = {
+        str(row["occurrence_id"]): row for row in report["behavior_occurrences"]
+    }
+    disputed_occurrence_ids = {
+        occurrence_id
+        for occurrence_id in map(str, original["occurrence_ids"])
+        if set(map(str, occurrence_by_id[occurrence_id]["episode_ids"]))
+        <= disputed_episode_ids
+    }
+    eligible_occurrence_ids = sorted(
+        set(map(str, original["occurrence_ids"])) - disputed_occurrence_ids
+    )
+    assert len(disputed_occurrence_ids) == len(eligible_occurrence_ids) == 2
+
+    projected = next(
+        row for row in report["behavior_patterns"] if row["label"] == label
+    )
+    assert projected["occurrence_ids"] == eligible_occurrence_ids
+    assert projected["occurrence_count"] == 2
+    assert projected["support"] == 2
+    assert projected["audit_state"] == "SUPPORTED"
+    assert projected["pattern_id"] != original["pattern_id"]
+    assert projected["audit_subject_id"] == original["pattern_id"]
+    assert projected["pattern_id"] == _expected_reprojected_pattern_id(
+        projected, eligible_occurrence_ids, occurrence_by_id
+    )
+    assert any(
+        row["item_id"] == projected["audit_subject_id"]
+        and row["decision"] == "SUPPORTED"
+        for row in report["semantic_audit"]["items"]
+    )
+
+    for occurrence_id in sorted(disputed_occurrence_ids):
+        occurrence = occurrence_by_id[occurrence_id]
+        expected_disputes = sorted(
+            set(map(str, occurrence["episode_ids"])) & disputed_episode_ids
+        )
+        assert occurrence["episode_ids"]
+        assert occurrence["audit_state"] == "DISPUTED"
+        assert occurrence["audit_disputed_episode_ids"] == expected_disputes
+        assert occurrence_id not in projected["occurrence_ids"]
+    for occurrence_id in eligible_occurrence_ids:
+        assert (
+            occurrence_by_id[occurrence_id].get("audit_disputed_episode_ids", []) == []
+        )
+
+    unaffected = next(
+        row for row in report["behavior_patterns"] if row["label"] == unaffected_label
+    )
+    assert unaffected["pattern_id"] == unaffected_original["pattern_id"]
+    assert unaffected["occurrence_ids"] == unaffected_original["occurrence_ids"]
+    assert unaffected["support"] == unaffected_original["support"]
+    assert "audit_subject_id" not in unaffected
+
+    population_episode_ids = {
+        str(episode_id)
+        for population in report["populations"]
+        for episode_id in population["episode_ids"]
+    }
+    assert disputed_episode_ids.isdisjoint(population_episode_ids)
+    assert report["accounting"]["population_assigned_episode_count"] == 6
+
+    first_bytes = (output / "behavior-map.json").read_bytes()
+    replay_primary = _AuditScopeSemanticModel("terra-test-v0", pattern_projection=True)
+    replay_auditor = _AuditScopeSemanticModel(
+        "luna-test-v0",
+        unsupported_conversations={"cancel-three", "cancel-two"},
+    )
+    replay = run_behavior_map(
+        tmp_path / "manifest.json",
+        output,
+        primary_model=replay_primary,
+        audit_model=replay_auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+    assert replay_primary.provider_calls == replay_auditor.provider_calls == 0
+    assert replay == report
+    assert (output / "behavior-map.json").read_bytes() == first_bytes
+
+
+def test_disputed_occurrence_projection_routes_support_one_to_typed_gap(
+    tmp_path: Path,
+) -> None:
+    label = "Requests an identifier before delivery support"
+    primary = _AuditScopeSemanticModel(
+        "terra-test-v0",
+        pattern_projection=True,
+        pattern_boundary_support=True,
+    )
+    auditor = _AuditScopeSemanticModel(
+        "luna-test-v0",
+        unsupported_conversations={"cancel-three", "cancel-two"},
+    )
+    report, _, _, _ = _run(tmp_path, primary=primary, auditor=auditor)
+    original = next(
+        item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if item.get("label") == label
+    )
+    assert original["support"] == 3
+    assert label not in {str(row["label"]) for row in report["behavior_patterns"]}
+    gaps = [
+        row
+        for row in report["gaps"]
+        if row["code"] == "BEHAVIOR_PATTERN_SUPPORT_INSUFFICIENT"
+    ]
+    assert len(gaps) == 1
+    assert gaps[0]["support"] == 1
+    assert len(gaps[0]["occurrence_ids"]) == 1
+    assert any(
+        row["item_id"] == original["pattern_id"] and row["decision"] == "SUPPORTED"
+        for row in report["semantic_audit"]["items"]
+    )
+    assert any(
+        row["reason"] == "PATTERN_SUPPORT_INSUFFICIENT"
+        for row in report["emerging_unknown"]
+    )
+    assert report["accounting"]["population_assigned_episode_count"] == 6
+
+
+def test_pattern_audit_projection_still_rejects_the_whole_pattern(
+    tmp_path: Path,
+) -> None:
+    label = "Requests an identifier before delivery support"
+    unaffected_label = "Confirms multiple requested changes before acting"
+    primary = _AuditScopeSemanticModel("terra-test-v0", pattern_projection=True)
+    auditor = _AuditScopeSemanticModel("luna-test-v0", unsupported_pattern_label=label)
+    report, _, _, _ = _run(tmp_path, primary=primary, auditor=auditor)
+    original = next(
+        item
+        for request in auditor.requests
+        for item in request["payload"]["items"]
+        if item.get("label") == label
+    )
+
+    assert label not in {str(row["label"]) for row in report["behavior_patterns"]}
+    assert unaffected_label in {
+        str(row["label"]) for row in report["behavior_patterns"]
+    }
+    assert any(
+        row["item_id"] == original["pattern_id"] and row["decision"] == "UNSUPPORTED"
+        for row in report["semantic_audit"]["items"]
+    )
+    assert all(
+        "audit_disputed_episode_ids" not in occurrence
+        for occurrence in report["behavior_occurrences"]
+    )
+    assert report["accounting"]["population_assigned_episode_count"] == 8
+
+
+def test_pattern_audit_projection_preserves_conversation_fallback_members() -> None:
+    occurrences = [
+        {
+            "occurrence_id": "occurrence-without-episode-a",
+            "conversation_id": "conversation-a",
+            "episode_ids": [],
+        },
+        {
+            "occurrence_id": "occurrence-without-episode-b",
+            "conversation_id": "conversation-b",
+            "episode_ids": [],
+        },
+    ]
+    patterns, initial_gaps = behavior_map_module._patterns(
+        [
+            {
+                "label": "Uses conversation context when episode linkage is absent",
+                "definition": "The agent uses available conversation context when an occurrence has no episode linkage.",
+                "occurrence_ids": [
+                    "occurrence-without-episode-a",
+                    "occurrence-without-episode-b",
+                ],
+            }
+        ],
+        occurrences,
+    )
+    assert initial_gaps == []
+    assert len(patterns) == 1
+    assert patterns[0]["support"] == 2
+    patterns[0]["audit_state"] = "SUPPORTED"
+    original = deepcopy(patterns[0])
+
+    projected, projection_gaps, projection_unknown = (
+        behavior_map_module._reproject_patterns_after_episode_audit(
+            patterns,
+            occurrences,
+            {"unrelated-rejected-episode"},
+        )
+    )
+
+    assert projection_gaps == []
+    assert projection_unknown == []
+    assert projected == [original]
+    assert projected[0]["occurrence_ids"] == [
+        "occurrence-without-episode-a",
+        "occurrence-without-episode-b",
+    ]
+    assert projected[0]["support"] == 2
+    assert projected[0]["pattern_id"] == original["pattern_id"]
+    assert all("audit_state" not in occurrence for occurrence in occurrences)
 
 
 def test_one_audit_item_failure_isolated_and_later_items_continue(

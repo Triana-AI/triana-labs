@@ -1267,3 +1267,22 @@ are identical. Each identity-changed population now carries `audit_subject_id`
 to its preserved pre-projection `SUPPORTED` audit item; the unchanged emerging
 population retains its direct ID. This repairs report consistency; it does not upgrade proposed
 semantics to accepted truth or erase the two disputed episodes.
+
+Blitz occurrence-support correction (2026-08-08): the first population-correct
+projection still counted two occurrences derived exclusively from the two
+episode-level `UNSUPPORTED` items in the independently supported “Request an
+AWB or order number” pattern. The no-provider correction retains those two
+occurrences as `DISPUTED` evidence, excludes them from eligible pattern
+membership, reduces the pattern deterministically from support/occurrence count
+4/4 to 2/2, reidentifies it as
+`sha256:45ed9df04c931cb9f7f58021d10b42d4e1d3b9be52d1c374c76ab826dfcbb5e6`,
+and links it to the preserved pre-projection supported audit subject
+`sha256:65b48d428de77fe01c83cd5c421dc47f638cb8d2a405b6590250f5c4a747ad92`.
+The other patterns remain support 5 and 4; population assignment remains 8/14.
+Corrected report
+`sha256:c296a2d8bff204c27b128ea43e3a5f51f9104c894d26e088dc625933fd598507`
+replays byte-identically from the sanitized checkpoints with zero provider
+calls. JSON/Markdown/HTML SHA-256 values are respectively
+`1d46a9905c046e01ad6acff4bc3ef698dbddf39c7d5ae1f6711ce6eefb6187bb`,
+`c6b9c03748b9a3596908c78af065bb2c523595f6bc63c0146719b1d8165c02f8`,
+and `f7bfaa3712f9b3a554d216dce657396886d5db9d260b26212d066d75dbcdab03`.

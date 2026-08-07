@@ -206,10 +206,13 @@ class AgentBehaviorOccurrenceV0(TypedDict):
     evidence_ids: list[str]
     status: str
     method: str
+    audit_disputed_episode_ids: NotRequired[list[str]]
+    audit_state: NotRequired[Literal["DISPUTED", "PARTIAL"]]
 
 
 class AgentBehaviorPatternV0(TypedDict):
     pattern_id: str
+    audit_subject_id: NotRequired[str]
     label: str
     definition: str
     occurrence_ids: list[str]

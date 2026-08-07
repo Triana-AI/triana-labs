@@ -1652,6 +1652,104 @@ def _reproject_population_after_episode_audit(
     return reprojected
 
 
+def _reproject_patterns_after_episode_audit(
+    patterns: list[JsonObject],
+    occurrences: list[JsonObject],
+    disputed_episode_ids: set[str],
+) -> tuple[list[JsonObject], list[JsonObject], list[JsonObject]]:
+    if not disputed_episode_ids:
+        return patterns, [], []
+
+    occurrence_by_id = {
+        cast(str, occurrence["occurrence_id"]): occurrence for occurrence in occurrences
+    }
+    eligible_episode_ids_by_occurrence: dict[str, set[str]] = {}
+    for occurrence_id, occurrence in occurrence_by_id.items():
+        episode_ids = set(cast(list[str], occurrence["episode_ids"]))
+        disputed_members = sorted(episode_ids & disputed_episode_ids)
+        eligible_episode_ids_by_occurrence[occurrence_id] = (
+            episode_ids - disputed_episode_ids
+        )
+        if disputed_members:
+            occurrence["audit_disputed_episode_ids"] = disputed_members
+            occurrence["audit_state"] = (
+                "DISPUTED"
+                if not eligible_episode_ids_by_occurrence[occurrence_id]
+                else "PARTIAL"
+            )
+
+    projected_inputs: list[tuple[JsonObject, list[str], set[str], set[str]]] = []
+    for pattern in patterns:
+        members = sorted(
+            occurrence_id
+            for occurrence_id in cast(list[str], pattern["occurrence_ids"])
+            if occurrence_id in occurrence_by_id
+            and (
+                not cast(list[str], occurrence_by_id[occurrence_id]["episode_ids"])
+                or eligible_episode_ids_by_occurrence[occurrence_id]
+            )
+        )
+        eligible_episode_support = {
+            episode_id
+            for occurrence_id in members
+            for episode_id in eligible_episode_ids_by_occurrence[occurrence_id]
+        }
+        support = eligible_episode_support or {
+            cast(str, occurrence_by_id[occurrence_id]["conversation_id"])
+            for occurrence_id in members
+        }
+        projected_inputs.append((pattern, members, eligible_episode_support, support))
+
+    recurring_support_present = any(
+        len(support) >= 2 for _, _, _, support in projected_inputs
+    )
+    projected_patterns: list[JsonObject] = []
+    gaps: list[JsonObject] = []
+    unknown: list[JsonObject] = []
+    for pattern, members, eligible_episode_support, support in projected_inputs:
+        if not members or (recurring_support_present and len(support) < 2):
+            gaps.append(
+                {
+                    "code": "BEHAVIOR_PATTERN_SUPPORT_INSUFFICIENT",
+                    "stage": "PATTERNS",
+                    "occurrence_ids": members
+                    or sorted(cast(list[str], pattern["occurrence_ids"])),
+                    "episode_ids": sorted(eligible_episode_support),
+                    "support": len(support),
+                    "audit_subject_id": pattern["pattern_id"],
+                }
+            )
+            unknown.extend(
+                {
+                    "episode_id": episode_id,
+                    "reason": "PATTERN_SUPPORT_INSUFFICIENT",
+                    "description": "This observed behavior has fewer than two distinct supporting episodes or conversations and remains emerging.",
+                }
+                for episode_id in sorted(eligible_episode_support)
+            )
+            continue
+
+        identity: JsonObject = {
+            "label": pattern["label"],
+            "definition": pattern["definition"],
+            "occurrence_ids": members,
+            "occurrence_count": len(members),
+            "support": len(support),
+            "method": pattern["method"],
+            "audit_state": "PENDING",
+        }
+        pattern_id = _digest("behavior-map-pattern-v0", identity)
+        projected: JsonObject = {
+            "pattern_id": pattern_id,
+            **identity,
+            "audit_state": pattern["audit_state"],
+        }
+        if pattern_id != pattern["pattern_id"]:
+            projected["audit_subject_id"] = pattern["pattern_id"]
+        projected_patterns.append(projected)
+    return projected_patterns, gaps, unknown
+
+
 def _patterns(
     proposals: list[JsonObject], occurrences: list[JsonObject]
 ) -> tuple[list[JsonObject], list[JsonObject]]:
@@ -2659,11 +2757,12 @@ def run_behavior_map(
                     for item_id in disputed_ids
                     if "population_id" in known_items[item_id]
                 }
-                disputed_episode_ids = {
+                episode_audit_disputed_ids = {
                     item_id
                     for item_id in disputed_ids
                     if "episode_id" in known_items[item_id]
                 }
+                disputed_episode_ids = set(episode_audit_disputed_ids)
                 for population in populations:
                     if population["population_id"] in disputed_population_ids:
                         disputed_episode_ids.update(
@@ -2683,6 +2782,13 @@ def run_behavior_map(
                 patterns = [
                     row for row in patterns if row["pattern_id"] not in disputed_ids
                 ]
+                patterns, post_audit_pattern_gaps, post_audit_pattern_unknown = (
+                    _reproject_patterns_after_episode_audit(
+                        patterns, occurrences, episode_audit_disputed_ids
+                    )
+                )
+                gaps.extend(post_audit_pattern_gaps)
+                emerging_unknown.extend(post_audit_pattern_unknown)
                 existing_unknowns = {
                     (cast(str, row["episode_id"]), cast(str, row["reason"]))
                     for row in emerging_unknown

@@ -1122,3 +1122,145 @@ budget: one test file, two production contract/engine files, the charter,
 slice packet, working memory, decision log, and ignored decision journal. No
 dependency, prompt, citation, redaction, renderer, CLI, UI/backend, provider,
 adapter, trace, report overwrite, infrastructure, or unrelated cleanup changed.
+
+## BEHAVIOR-MAP-V0-DISPUTED-OCCURRENCE-PROJECTION — 2026-08-08
+
+Status: **COMPLETE — INDEPENDENT FINAL PASS**
+
+Canonical base: `9d8c0d9c9ffd4de72c4afcdea496f5fc2960f1c2` on
+`codex/selfserve-v0`. Active authority is `triana-labs/CHARTER.md`. This P0
+integrity slice extends the accepted subject-scoped audit rule from user
+population membership to agent-behavior pattern support.
+
+Observed failure: the corrected no-provider Blitz projection has two sampled
+episodes ruled `UNSUPPORTED`. Two semantic occurrences derived exclusively
+from those episodes remain members of the supported “Request an AWB or order
+number to identify the referenced delivery” pattern, leaving displayed support
+at four. Excluding the disputed episode evidence yields two eligible
+occurrences/support units. Population projection is already correct.
+
+Single falsifiable hypothesis: applying episode audit eligibility to every
+occurrence before final pattern projection will reduce only the affected
+pattern membership/support while preserving occurrence history and separately
+supported patterns. It is falsified if a disputed episode still contributes,
+an unaffected occurrence/pattern disappears, a below-threshold pattern is
+silently published or deleted without its existing typed state, identities or
+audit lineage do not match recomputed membership, or replay differs.
+
+Input is the validated in-memory episodes, behavior occurrences, preliminary
+patterns, and immutable semantic-audit items. Output is the same report with a
+post-audit occurrence/pattern projection. The original occurrence remains the
+historical semantic extraction record and retains its original `episode_ids`.
+An affected occurrence gains sorted `audit_disputed_episode_ids` and
+`audit_state`: `DISPUTED` when every derived episode is rejected, otherwise
+`PARTIAL`. These fields make excluded evidence explicit; pattern support uses
+only episode IDs outside that disputed set.
+
+For every retained, non-population-disputed pattern, deterministic code removes
+fully disputed occurrence IDs, recomputes `occurrence_count`, distinct episode
+support, the existing support-based publishability decision, and the existing
+`behavior-map-pattern-v0` identity. If identity changes, optional
+`audit_subject_id` links the new pattern to its exact pre-projection pattern ID
+and immutable audit item; this lineage field is added after and excluded from
+the new content digest. A pattern-level non-`SUPPORTED` audit continues to
+reject the whole pattern. A pattern below the existing recurrence threshold
+uses `BEHAVIOR_PATTERN_SUPPORT_INSUFFICIENT` and the existing emerging/unknown
+projection; it cannot remain published or become a pass. Unaffected patterns
+retain direct identity and omit redundant lineage.
+
+The episode and both affected occurrences remain visible. No audit, citation,
+privacy, minimum-support, provider, or validation rule is weakened. Questions,
+gaps, pattern summaries, and report identity are derived only after the final
+projection. Semantic extraction output and audit decisions are not rewritten.
+
+Privacy and execution: local deterministic fixtures plus the already sanitized
+Blitz V4 checkpoints may be read after GREEN. No provider/model call, network
+egress, credential use, source/checkpoint mutation, report overwrite, retry,
+fallback, deployment, or infrastructure action is permitted. Any checkpoint
+reprojection uses a model trap that raises if called and writes a new private
+temporary artifact before the localhost projection is changed.
+
+Change budget:
+
+- test author owns only
+  `triana-labs/tests/behavior_map/test_behavior_map_v0.py` and may extend the
+  existing configurable audit-scope fixture;
+- implementation author owns only
+  `triana-labs/src/triana_labs/behavior_map/__init__.py` and
+  `triana-labs/src/triana_labs/behavior_map/contracts.py`;
+- orchestrator owns only `internal/SLICE_PACKET.md`,
+  `internal/WORKING_MEMORY.md`, `internal/DECISION_LOG.md`,
+  `triana-labs/CHARTER.md`, and the gitignored decision journal;
+- no renderer, prompt, citation, redaction, provider, adapter, CLI, UI/backend,
+  dependency, raw trace, infrastructure, or unrelated formatting change;
+- maximum scope expansion without returning to the orchestrator is one
+  existing renderer assertion only if the canonical HTML already exposes
+  affected occurrence audit state without renderer code changes.
+
+Acceptance requires an independently authored fixture where two supported and
+two episode-rejected occurrences initially support one independently supported
+pattern. Final support and membership must be exactly two; the two rejected
+occurrences remain in `behavior_occurrences` with `DISPUTED` state and exact
+episode linkage; the retained pattern receives a new deterministic identity
+and predecessor audit edge; its immutable pattern-level audit remains
+`SUPPORTED`; unrelated supported patterns survive unchanged; a separately
+tested post-detachment support-one pattern takes the existing insufficient-
+support typed path; a pattern-scoped `UNSUPPORTED` audit still rejects the
+whole pattern; assignment/population results remain unchanged; and repeated
+checkpoint projection is byte-identical. RED command:
+`cd triana-labs && uv run pytest -q tests/behavior_map/test_behavior_map_v0.py -k 'disputed_occurrence or pattern_audit_projection'`.
+Final gate is the complete Behavior Map and Trace-to-Eval suites, Ruff, strict
+mypy, governance, the repository verifier, a no-provider Blitz replay, exact
+artifact audit, and independent final verdict.
+
+Implementation handoff: production changes are limited to the two frozen
+engine/contract files. Focused acceptance is 3 passed/67 deselected, the full
+Behavior Map suite is 70 passed, and Behavior Map plus Trace-to-Eval is 113
+passed. Strict mypy passes 37 source files. On the real sanitized Blitz V4
+checkpoints, the AWB/order-number pattern is reprojected from support 4 to 2;
+both excluded occurrences remain present with exact `DISPUTED` episode links;
+the surviving pattern has a new membership-derived identity and an
+`audit_subject_id` edge to the preserved supported predecessor audit. The two
+unaffected patterns remain support 5 and 4 and population assignment remains
+8/14. A second model-trapped projection produces byte-identical JSON,
+Markdown, HTML, and checkpoint directories. No provider or network call was
+made. Repository-wide gates and independent final verdict remain pending.
+
+The first independent final verdict was `WITHHOLD`: the post-audit helper
+dropped an unaffected occurrence with empty `episode_ids`, although canonical
+pre-audit pattern construction preserves such members and uses their distinct
+`conversation_id` values only when the whole eligible episode union is empty.
+The independent test author added the exact edge at amended test SHA-256
+`9cf23dd278d3d4cd810c9589d82dc213ff2f6c9e4af9e01548673c91aae55545`;
+pre-fix result was 1 causal failure, 3 passing controls, and 67 deselected.
+The amended engine retains no-episode members unless independently disputed
+and reproduces the established conversation fallback. Focused acceptance is
+now 4 passed/67 deselected and the full Behavior Map suite is 71 passed.
+The amended real Blitz output is byte-identical to the prior corrected
+projection, including report identity and all checkpoint bytes. The fresh full
+repository gate and final independent re-verdict are recorded below.
+
+Final closeout: the amended repository verifier passes all 753 tests, Ruff,
+formatting, strict mypy over 38 source files, governance, sdist/wheel builds,
+and clean-environment wheel install. Evidence is
+`/private/tmp/triana-labs-verify.umaYXk`. Fresh independent re-review returns
+`PASS`: the withheld no-episode edge is closed; real Blitz remains pattern
+support 5/4/2 with two disputed occurrence rows and 8/14 population assignment;
+the corrected JSON, Markdown, HTML, and all 50 checkpoints are byte-identical
+across replays. Actual diff is exactly the frozen four orchestrator paths, one
+test path, and two implementation paths; no dependency, provider, prompt,
+renderer, adapter, privacy, infrastructure, or unrelated source changed. No
+provider/network call was made and incremental cost is USD 0.
+
+The original independent test ownership was frozen at SHA-256
+`38d8fffd404f8e5df846d888cae0d9c8e5dabd182867c4549a621441425ad82c`;
+the final-review edge regression supersedes it with amended frozen SHA-256
+`9cf23dd278d3d4cd810c9589d82dc213ff2f6c9e4af9e01548673c91aae55545`.
+The focused pre-implementation result is two causal failures, one passing
+whole-pattern audit control, and sixty-seven deselected tests. The target
+fixture proves four original occurrences/four distinct episode support, two
+occurrences derived exclusively from the two rejected sampled episodes, and
+two eligible occurrences. Current production incorrectly retains all four and
+publishes the support-three-to-one boundary instead of the existing typed
+insufficient-support path. Ruff, formatting, and diff checks pass. The
+test-owned file is now immutable; implementation may read but not edit it.

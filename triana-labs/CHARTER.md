@@ -76,6 +76,12 @@ detach only that episode from a population, while a population ruling governs
 the population. Any surviving membership is deterministically reprojected so
 support, visibility, identity, assignments, denominators, and typed uncertainty
 remain consistent; an unsupported member and its audit evidence remain visible.
+The same episode ruling propagates to every agent-behavior occurrence derived
+from that episode. Disputed occurrences remain visible as excluded evidence,
+but only independently eligible occurrences contribute to a published
+pattern's membership and support. Any surviving pattern is deterministically
+reidentified and linked to its pre-projection audit subject; a pattern-level
+ruling continues to govern the whole pattern.
 
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
