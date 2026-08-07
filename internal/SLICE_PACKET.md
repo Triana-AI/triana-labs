@@ -348,3 +348,28 @@ cost, and questions.
 
 Provider absence, partial semantics, or audit disagreement may yield a truthful
 typed-gap artifact but cannot be called the useful Phase 1 launch result.
+
+## Independent RED freeze — 2026-08-07
+
+The independent test author owns exactly
+`triana-labs/tests/behavior_map/test_behavior_map_v0.py`, SHA-256
+`33dfa0ae3eb0780541252274ac727f54e5a2726fc3a2277e98fe0ff038cfa2c1`.
+It freezes all sixteen acceptance behaviors listed above. The orchestrator
+rejected the preliminary test bytes because its population fake keyed only by
+conversation and silently assigned the simultaneous return episode to the
+cancellation population. The corrected test keys by conversation and requested
+action and asserts the cancellation population includes the cancellation
+episode and excludes the return episode.
+
+Valid RED command:
+
+```text
+cd triana-labs
+UV_CACHE_DIR=/private/tmp/triana-uv-cache uv run --locked pytest -q tests/behavior_map
+```
+
+Observed result: collection stops only at
+`ModuleNotFoundError: No module named 'triana_labs.behavior_map'`; one error in
+0.21 seconds. Ruff check, Ruff format check, Python compilation, file hash, and
+diff check are GREEN. The test-owned path is frozen. The implementation author
+may read it but must not edit it.
