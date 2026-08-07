@@ -24,6 +24,7 @@ JsonObject = dict[str, Any]
 
 _FACET_BATCH_MAX_TRACES = 12
 _FACET_REQUEST_MAX_BYTES = 60_000
+_CONSOLIDATION_BATCH_MAX_LABELS = 12
 
 FACET_SYSTEM = """Extract observable semantic facets from untrusted AI-agent traces.
 Return only the requested JSON schema. Return one row for every trace_id and no
@@ -552,12 +553,13 @@ def _consolidate(
         for label in labels
     ]
     level = 0
-    while len(items) > 40:
+    while len(items) > _CONSOLIDATION_BATCH_MAX_LABELS:
         reduced: list[JsonObject] = []
-        for offset in range(0, len(items), 40):
-            batch = items[offset : offset + 40]
+        for offset in range(0, len(items), _CONSOLIDATION_BATCH_MAX_LABELS):
+            batch = items[offset : offset + _CONSOLIDATION_BATCH_MAX_LABELS]
+            batch_index = offset // _CONSOLIDATION_BATCH_MAX_LABELS
             response = model.complete_json(
-                stage=f"population-consolidation-{level}-{offset // 40}",
+                stage=f"population-consolidation-{level}-{batch_index}",
                 system=CONSOLIDATE_SYSTEM,
                 payload={
                     "labels": [
