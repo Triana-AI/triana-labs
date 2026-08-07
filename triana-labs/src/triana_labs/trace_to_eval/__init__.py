@@ -17,7 +17,10 @@ from pathlib import Path
 from typing import Any, cast
 
 from triana_labs.contracts.traces import LineRejection, parse_and_validate_line
-from triana_labs.trace_to_eval.semantic import run_staged_analysis
+from triana_labs.trace_to_eval.semantic import (
+    ValidatedCheckpointSemanticModel,
+    run_staged_analysis,
+)
 
 JsonObject = dict[str, Any]
 
@@ -247,7 +250,12 @@ def _semantic_projection(traces: list[JsonObject]) -> list[JsonObject]:
 
 def _semantic_runs(model: Any, traces: list[JsonObject], *, model_id: str) -> list[Any]:
     if callable(getattr(model, "complete_json", None)):
-        return [run_staged_analysis(model, traces) for _ in range(3)]
+        responses = []
+        for run_index in range(1, 4):
+            if isinstance(model, ValidatedCheckpointSemanticModel):
+                model.start_run(run_index)
+            responses.append(run_staged_analysis(model, traces))
+        return responses
     invoke = _model_callable(model)
     request: JsonObject = {
         "contract_kind": "trace_to_eval_semantic_request_v0",
@@ -743,6 +751,14 @@ def run_trace_to_eval(
         manifest, semantic_model, discovery_traces
     )
     semantic_authorized = semantic_model_id is not None and bool(discovery_traces)
+    destination = Path(output_dir)
+    if semantic_authorized and callable(
+        getattr(semantic_model, "complete_json", None)
+    ):
+        destination.mkdir(parents=True, exist_ok=True)
+        semantic_model = ValidatedCheckpointSemanticModel(
+            semantic_model, destination / "semantic_checkpoints"
+        )
     semantic_available = False
     semantic_failure_code: str | None = None
     invalid_semantic_rows = 0
@@ -776,8 +792,9 @@ def run_trace_to_eval(
             semantic_available = True
         except Exception as error:  # noqa: BLE001 - optional provider boundary.
             semantic_failure_code = (
-                "SEMANTIC_BUDGET_EXCEEDED"
-                if str(error) == "SEMANTIC_BUDGET_EXCEEDED"
+                str(error)
+                if str(error)
+                in {"SEMANTIC_BUDGET_EXCEEDED", "SEMANTIC_CHECKPOINT_INVALID"}
                 else "SEMANTIC_ANALYSIS_FAILED"
             )
             record_failure = getattr(semantic_model, "record_failure", None)
@@ -876,7 +893,6 @@ def run_trace_to_eval(
     report = {**report_without_id, "report_id": report_id}
     queue = _review_queue(report_id, populations, eval_proposals)
 
-    destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     # Validate an existing ledger before replacing projections, but keep the report
     # immutable. Current human state is the append-only ledger, not mutable report

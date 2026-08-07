@@ -7,11 +7,14 @@ membership, exhaustive candidate construction, qualification, and selection.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import tempfile
 from collections import Counter, defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol, cast
 from urllib.parse import urlsplit
 
@@ -60,6 +63,130 @@ class StagedSemanticModel(Protocol):
     ) -> JsonObject: ...
 
     def lineage(self) -> JsonObject: ...
+
+
+@dataclass(slots=True)
+class ValidatedCheckpointSemanticModel:
+    """Persist and reuse only exact-identity, strict-schema-valid stage results."""
+
+    delegate: StagedSemanticModel
+    directory: Path
+    run_index: int = 0
+    validated_checkpoint_hit_count: int = 0
+
+    @property
+    def model_id(self) -> str:
+        return self.delegate.model_id
+
+    def start_run(self, run_index: int) -> None:
+        self.run_index = run_index
+
+    @staticmethod
+    def _canonical(value: Any, *, lf: bool = False) -> bytes:
+        encoded = json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        return encoded + (b"\n" if lf else b"")
+
+    @classmethod
+    def _sha256(cls, value: Any) -> str:
+        return "sha256:" + hashlib.sha256(cls._canonical(value)).hexdigest()
+
+    def _invalid(self) -> None:
+        self.record_failure("SEMANTIC_CHECKPOINT_INVALID")
+        raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: JsonObject,
+        schema: type[BaseModel],
+    ) -> JsonObject:
+        qualified_stage = f"semantic-run-{self.run_index}/{stage}"
+        identity: JsonObject = {
+            "model_id": self.model_id,
+            "stage": qualified_stage,
+            "system_sha256": self._sha256(system),
+            "canonical_payload_sha256": self._sha256(payload),
+            "requested_schema_sha256": self._sha256(schema.model_json_schema()),
+        }
+        checkpoint_id = self._sha256(identity).removeprefix("sha256:")
+        path = self.directory / f"{checkpoint_id}.json"
+        if path.exists():
+            try:
+                value = json.loads(path.read_bytes())
+                if (
+                    not isinstance(value, dict)
+                    or set(value) != {
+                        "artifact_kind",
+                        "schema_version",
+                        "identity",
+                        "result",
+                    }
+                    or value.get("artifact_kind") != "semantic_checkpoint_v0"
+                    or value.get("schema_version") != 0
+                    or value.get("identity") != identity
+                ):
+                    self._invalid()
+                cached = schema.model_validate(value["result"], strict=True)
+            except (
+                OSError,
+                json.JSONDecodeError,
+                UnicodeDecodeError,
+                TypeError,
+                ValueError,
+            ):
+                self._invalid()
+            self.validated_checkpoint_hit_count += 1
+            return cached.model_dump(mode="json")
+
+        result = self.delegate.complete_json(
+            stage=qualified_stage,
+            system=system,
+            payload=payload,
+            schema=schema,
+        )
+        try:
+            validated = schema.model_validate(result, strict=True)
+        except (TypeError, ValueError):
+            self._invalid()
+        checkpoint: JsonObject = {
+            "artifact_kind": "semantic_checkpoint_v0",
+            "schema_version": 0,
+            "identity": identity,
+            "result": validated.model_dump(mode="json"),
+        }
+        self.directory.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary_name = tempfile.mkstemp(
+            dir=self.directory, prefix=f".{checkpoint_id}.", suffix=".tmp"
+        )
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(self._canonical(checkpoint, lf=True))
+            os.replace(temporary, path)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+        return validated.model_dump(mode="json")
+
+    def lineage(self) -> JsonObject:
+        return {
+            **self.delegate.lineage(),
+            "validated_checkpoint_hit_count": self.validated_checkpoint_hit_count,
+            "resume_policy": "EXPLICIT_VALIDATED_CHECKPOINTS_ONLY",
+        }
+
+    def record_failure(self, code: str) -> None:
+        record = getattr(self.delegate, "record_failure", None)
+        if callable(record):
+            record(code)
 
 
 class _Facet(BaseModel):
