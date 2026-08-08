@@ -1870,6 +1870,7 @@ def _safe_lineage(model: SemanticModel | None) -> JsonObject | None:
         "successful_call_count",
         "input_tokens",
         "output_tokens",
+        "min_call_interval_seconds",
         "cost_usd",
         "actual_cost_state",
         "last_failure_code",
@@ -1889,6 +1890,8 @@ def _safe_lineage(model: SemanticModel | None) -> JsonObject | None:
             "max_calls",
             "max_request_bytes_per_call",
             "max_output_tokens_per_call",
+            "extraction_max_output_tokens_per_call",
+            "consolidation_max_output_tokens_per_call",
             "max_reserved_usd",
             "reservation_usd_per_call",
             "reserved_usd",
@@ -2845,6 +2848,38 @@ def run_behavior_map(
     )
     primary_reserved = _numeric_lineage_value(primary_lineage, "budget", "reserved_usd")
     audit_reserved = _numeric_lineage_value(audit_lineage, "budget", "reserved_usd")
+    campaign_budget_keys = (
+        "cumulative_limit_usd",
+        "prior_reserved_usd",
+        "run_max_reserved_usd",
+        "post_reservation_total_usd",
+        "remaining_reserve_usd",
+        "primary_max_reserved_usd",
+        "audit_max_reserved_usd",
+    )
+    explicit_campaign_budget = (
+        cast(JsonObject, prior_budget)
+        if isinstance(prior_budget, dict)
+        and all(
+            isinstance(prior_budget.get(key), (int, float))
+            and not isinstance(prior_budget.get(key), bool)
+            for key in campaign_budget_keys
+        )
+        else None
+    )
+    if explicit_campaign_budget is not None:
+        reported_cumulative_limit = explicit_campaign_budget["cumulative_limit_usd"]
+        reported_prior_reserved = explicit_campaign_budget["prior_reserved_usd"]
+        primary_reserved = explicit_campaign_budget["primary_max_reserved_usd"]
+        audit_reserved = explicit_campaign_budget["audit_max_reserved_usd"]
+        total_reserved = explicit_campaign_budget["post_reservation_total_usd"]
+    else:
+        reported_cumulative_limit = cumulative_limit
+        reported_prior_reserved = prior_reserved
+        total_reserved = round(
+            prior_reserved + (primary_reserved or 0.0) + (audit_reserved or 0.0),
+            2,
+        )
     report: JsonObject = {
         "artifact_kind": "behavior_map_report_v0",
         "schema_version": 0,
@@ -2892,14 +2927,16 @@ def run_behavior_map(
         },
         "checkpoints": sorted(checkpoint_ids),
         "budget": {
-            "cumulative_limit_usd": cumulative_limit,
-            "prior_reserved_usd": prior_reserved,
+            **(
+                {key: explicit_campaign_budget[key] for key in campaign_budget_keys}
+                if explicit_campaign_budget is not None
+                else {}
+            ),
+            "cumulative_limit_usd": reported_cumulative_limit,
+            "prior_reserved_usd": reported_prior_reserved,
             "primary_reserved_usd": primary_reserved,
             "audit_reserved_usd": audit_reserved,
-            "total_reserved_usd": round(
-                prior_reserved + (primary_reserved or 0.0) + (audit_reserved or 0.0),
-                2,
-            ),
+            "total_reserved_usd": total_reserved,
             "primary_actual_cost_usd": _numeric_lineage_value(
                 primary_lineage, None, "cost_usd"
             ),

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from types import ModuleType
 from typing import Any, ClassVar
 
@@ -73,13 +74,164 @@ def _model() -> FoundryStructuredSemanticModel:
     )
 
 
-def _complete(model: FoundryStructuredSemanticModel) -> dict[str, Any]:
+def _complete(
+    model: FoundryStructuredSemanticModel, *, stage: str = "synthetic-preflight"
+) -> dict[str, Any]:
     return model.complete_json(
-        stage="synthetic-preflight",
+        stage=stage,
         system="Return the requested result.",
         payload={"input": "synthetic"},
         schema=_RequestedResult,
     )
+
+
+def test_extraction_stage_uses_its_exact_output_ceiling_without_changing_wire_mode(
+    fake_chat_openai: type[_FakeChatOpenAI],
+) -> None:
+    fake_chat_openai.next_result = _RawResponse('{"label":"observed","count":2}')
+    model = _model()
+
+    assert _complete(
+        model, stage="demand-episodes-and-agent-behaviors-conversation-42"
+    ) == {"label": "observed", "count": 2}
+    assert _complete(
+        model,
+        stage=("semantic-run-0/demand-episodes-and-agent-behaviors-conversation-43"),
+    ) == {"label": "observed", "count": 2}
+    assert _complete(model, stage="population-consolidation-0") == {
+        "label": "observed",
+        "count": 2,
+    }
+
+    assert len(fake_chat_openai.instances) == 3
+    extraction_client, checkpoint_qualified_extraction_client, non_extraction_client = (
+        fake_chat_openai.instances
+    )
+    assert extraction_client.kwargs["max_completion_tokens"] == 8_000
+    assert (
+        checkpoint_qualified_extraction_client.kwargs["max_completion_tokens"] == 8_000
+    )
+    assert non_extraction_client.kwargs["max_completion_tokens"] == 2_000
+    for client in fake_chat_openai.instances:
+        assert client.kwargs["max_retries"] == 0
+        assert "temperature" not in client.kwargs
+        assert client.bind_calls == [{"response_format": {"type": "json_object"}}]
+        assert (
+            json.dumps(
+                _RequestedResult.model_json_schema(),
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+            in client.invoke_calls[0][0].content
+        )
+
+    lineage = model.lineage()
+    assert lineage["budget"]["max_output_tokens_per_call"] == 2_000
+    assert lineage["budget"]["extraction_max_output_tokens_per_call"] == 8_000
+
+
+def test_consolidation_stages_use_exact_output_ceiling_without_changing_wire_mode(
+    fake_chat_openai: type[_FakeChatOpenAI],
+) -> None:
+    fake_chat_openai.next_result = _RawResponse('{"label":"observed","count":2}')
+    model = _model()
+
+    for stage in (
+        "semantic-run-0/user-populations-0005",
+        "semantic-run-0/agent-behavior-patterns-0000",
+        "semantic-run-0/demand-episodes-and-agent-behaviors-conversation-42",
+        "semantic-run-0/semantic-audit-population-0000",
+    ):
+        assert _complete(model, stage=stage) == {"label": "observed", "count": 2}
+
+    assert len(fake_chat_openai.instances) == 4
+    user_population, behavior_pattern, extraction, unrelated = (
+        fake_chat_openai.instances
+    )
+    assert user_population.kwargs["max_completion_tokens"] == 8_000
+    assert behavior_pattern.kwargs["max_completion_tokens"] == 8_000
+    assert extraction.kwargs["max_completion_tokens"] == 8_000
+    assert unrelated.kwargs["max_completion_tokens"] == 2_000
+    for client in fake_chat_openai.instances:
+        assert client.kwargs["max_retries"] == 0
+        assert "temperature" not in client.kwargs
+        assert client.bind_calls == [{"response_format": {"type": "json_object"}}]
+        assert (
+            json.dumps(
+                _RequestedResult.model_json_schema(),
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+            in client.invoke_calls[0][0].content
+        )
+
+    lineage = model.lineage()
+    assert lineage["budget"]["max_output_tokens_per_call"] == 2_000
+    assert lineage["budget"]["extraction_max_output_tokens_per_call"] == 8_000
+    assert lineage["budget"]["consolidation_max_output_tokens_per_call"] == 8_000
+
+
+def test_configured_minimum_call_interval_paces_without_changing_attempt_accounting(
+    fake_chat_openai: type[_FakeChatOpenAI],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_chat_openai.next_result = _RawResponse('{"label":"observed","count":2}')
+    assert _model().min_call_interval_seconds == 0
+    model = FoundryStructuredSemanticModel(
+        model_id="FW-GLM-5.2",
+        endpoint="https://kairos-openai-1.openai.azure.com/openai/v1",
+        api_key="synthetic-test-key",
+        min_call_interval_seconds=5,
+    )
+    clock = {"now": 100.0}
+    events: list[tuple[str, float]] = []
+    original_invoke = fake_chat_openai.invoke
+
+    def fake_monotonic() -> float:
+        return clock["now"]
+
+    def fake_sleep(seconds: float) -> None:
+        events.append(("sleep", seconds))
+        clock["now"] += seconds
+
+    def observing_invoke(
+        self: _FakeChatOpenAI, messages: list[_Message]
+    ) -> _RawResponse:
+        events.append(("invoke", clock["now"]))
+        return original_invoke(self, messages)
+
+    monkeypatch.setattr(time, "monotonic", fake_monotonic)
+    monkeypatch.setattr(time, "sleep", fake_sleep)
+    monkeypatch.setattr(fake_chat_openai, "invoke", observing_invoke)
+
+    assert _complete(model, stage="semantic-run-0/user-populations-0000") == {
+        "label": "observed",
+        "count": 2,
+    }
+    assert events == [("invoke", 100.0)]
+
+    clock["now"] += 2
+    assert _complete(model, stage="semantic-run-0/user-populations-0001") == {
+        "label": "observed",
+        "count": 2,
+    }
+    assert events == [
+        ("invoke", 100.0),
+        ("sleep", 3.0),
+        ("invoke", 105.0),
+    ]
+
+    assert len(fake_chat_openai.instances) == 2
+    assert all(
+        client.kwargs["max_retries"] == 0 for client in fake_chat_openai.instances
+    )
+    lineage = model.lineage()
+    assert lineage["attempted_call_count"] == 2
+    assert lineage["successful_call_count"] == 2
+    assert lineage["budget"]["reserved_usd"] == 0.3
+    assert lineage["min_call_interval_seconds"] == 5
 
 
 def test_openai_v1_json_object_wire_includes_requested_schema_and_accounts_usage(

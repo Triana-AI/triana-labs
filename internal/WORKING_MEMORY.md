@@ -1286,3 +1286,26 @@ calls. JSON/Markdown/HTML SHA-256 values are respectively
 `1d46a9905c046e01ad6acff4bc3ef698dbddf39c7d5ae1f6711ce6eefb6187bb`,
 `c6b9c03748b9a3596908c78af065bb2c523595f6bc63c0146719b1d8165c02f8`,
 and `f7bfaa3712f9b3a554d216dce657396886d5db9d260b26212d066d75dbcdab03`.
+
+Full Blitz DEVELOPMENT Behavior Map (2026-08-08): corrected canonical private
+artifact is report
+`sha256:9c98854dba09a188600b5de7a6f20e71a86ea01791d61556e31f40f16fd1f021`
+under
+`/private/tmp/triana-blitz-full-development-corrected-final-20260808/report`,
+served locally at `http://127.0.0.1:8910/behavior-map.html`. All 374 visible
+conversations extracted successfully; 125 calibration and 125 holdout remain
+sealed. The map retains 378 episodes across 230 conversations, 80 directly
+supported populations, 61 directly supported agent patterns, 212 unique
+population assignments, 953 occurrences, 2,052 evidence records, and 142
+review questions. Terra produced 141 supported, 6 uncertain, 2 split, and 1
+unsupported rulings; 47 further pattern audits are typed missing and none is
+published. The report is useful but partial: grounded-conversation coverage is
+61.5% and episode assignment is 56.1%, with visible semantic fragmentation.
+Luna uses 4k general, 8k extraction, 8k consolidation, and 20-second pacing;
+retry/fallback remain none. Conservative cumulative reservation is USD
+69.868/70, actual provider billing unknown. JSON/Markdown/HTML SHA-256 values
+are `9821a041d391843bae8885010c6180a58a38646f3bd33d56382e5f18a3a8f0f1`,
+`7733ccfb3ea73f20043b00464f2dbc8a8c5df92f91a2d509d058e233b40d72b6`,
+and `5e83984622aae54c49c53b6355b3865816f4fac021ccf8a7ff2b694897a26377`.
+Independent verdict PASS; full verifier 757 passed at
+`/private/tmp/triana-labs-verify.sQKjH2`.

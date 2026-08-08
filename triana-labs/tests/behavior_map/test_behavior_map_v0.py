@@ -2311,6 +2311,20 @@ class _FullBoundModel(_SemanticModel):
         }
 
 
+class _CampaignLineageModel(_FullBoundModel):
+    def lineage(self) -> dict[str, Any]:
+        lineage = super().lineage()
+        lineage["min_call_interval_seconds"] = 20
+        lineage["budget"].update(
+            {
+                "max_output_tokens_per_call": 4_000,
+                "extraction_max_output_tokens_per_call": 8_000,
+                "consolidation_max_output_tokens_per_call": 8_000,
+            }
+        )
+        return lineage
+
+
 def _full_models(
     *, primary_overrides: dict[str, Any] | None = None
 ) -> tuple[_FullBoundModel, _FullBoundModel]:
@@ -2400,6 +2414,79 @@ def test_report_samples_provider_lineage_and_budget_after_semantic_calls(
     assert report["budget"]["audit_reserved_usd"] == round(
         auditor.provider_calls * auditor.reservation_usd_per_call, 2
     )
+
+
+def test_explicit_campaign_budget_is_authoritative_without_losing_safe_lineage(
+    tmp_path: Path,
+) -> None:
+    manifest = _authorize_full_bindings(_write_manifest(tmp_path))
+
+    def set_campaign_budget(value: dict[str, Any]) -> None:
+        value["semantic_budget"] = {
+            "cumulative_limit_usd": 70.0,
+            "prior_reserved_usd": 53.74,
+            "run_max_reserved_usd": 16.128,
+            "post_reservation_total_usd": 69.868,
+            "remaining_reserve_usd": 0.132,
+            "primary_max_reserved_usd": 0.108,
+            "audit_max_reserved_usd": 16.02,
+        }
+
+    _rewrite_manifest(manifest, set_campaign_budget)
+    primary = _CampaignLineageModel(
+        "terra-test-v0",
+        provider="SYNTHETIC_TEST_BOUNDARY",
+        endpoint_origin="https://terra.example",
+        deployment_version="terra-v1",
+        sku="GlobalStandard",
+        capacity=20,
+        credential_boundary_id="credential-boundary-terra",
+        max_calls=20,
+        reservation_usd_per_call=0.15,
+    )
+    auditor = _CampaignLineageModel(
+        "luna-test-v0",
+        provider="SYNTHETIC_TEST_BOUNDARY",
+        endpoint_origin="https://luna.example",
+        deployment_version="luna-v2",
+        sku="GlobalStandard",
+        capacity=10,
+        credential_boundary_id="credential-boundary-luna",
+        max_calls=10,
+        reservation_usd_per_call=0.10,
+    )
+
+    report = run_behavior_map(
+        manifest,
+        tmp_path / "output",
+        primary_model=primary,
+        audit_model=auditor,
+        agent_context="A retail agent helps users manage orders and products.",
+    )
+
+    assert primary.provider_calls > 0 and auditor.provider_calls > 0
+    assert report["budget"] == {
+        **report["budget"],
+        "cumulative_limit_usd": 70.0,
+        "prior_reserved_usd": 53.74,
+        "run_max_reserved_usd": 16.128,
+        "post_reservation_total_usd": 69.868,
+        "remaining_reserve_usd": 0.132,
+        "primary_reserved_usd": 0.108,
+        "audit_reserved_usd": 16.02,
+        "total_reserved_usd": 69.868,
+    }
+    assert report["budget"]["total_reserved_usd"] != round(
+        53.74
+        + primary.provider_calls * primary.reservation_usd_per_call
+        + auditor.provider_calls * auditor.reservation_usd_per_call,
+        2,
+    )
+    for lineage in report["provider_lineage"].values():
+        assert lineage["min_call_interval_seconds"] == 20
+        assert lineage["budget"]["max_output_tokens_per_call"] == 4_000
+        assert lineage["budget"]["extraction_max_output_tokens_per_call"] == 8_000
+        assert lineage["budget"]["consolidation_max_output_tokens_per_call"] == 8_000
 
 
 def test_cumulative_preflight_reserves_both_complete_configured_run_maxima(

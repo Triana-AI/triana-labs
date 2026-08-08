@@ -1264,3 +1264,127 @@ two eligible occurrences. Current production incorrectly retains all four and
 publishes the support-three-to-one boundary instead of the existing typed
 insufficient-support path. Ruff, formatting, and diff checks pass. The
 test-owned file is now immutable; implementation may read but not edit it.
+
+## BEHAVIOR-MAP-V0-EXTRACTION-OUTPUT-CEILING — 2026-08-08
+
+Status: **COMPLETE — INDEPENDENT FINAL VERDICT PASS**
+
+Canonical base: `d8eef7d` on `codex/selfserve-v0`. Outcome: eliminate the
+observed systematic Luna extraction truncation before continuing the authorized
+374-conversation Blitz DEVELOPMENT run. Calibration and holdout remain sealed.
+
+Observed failure: with the general 2,000-token output ceiling, 29 of the first
+123 completed extraction attempts became content-free failed tombstones. Two
+bounded diagnostics reproduced `LengthFinishReasonError`. Raising the same
+conversation to 4,000 produced valid strict output at 2,517 tokens; a distinct
+conversation still truncated at 4,000 and produced valid strict output at
+8,000 with 7 episodes, 12 behaviors, and 4,112 output tokens. The maximum full
+extraction request in the sanitized DEVELOPMENT scope is 27,607 bytes. Under
+the frozen Luna ceilings of USD 1/M input and USD 6/M output, pessimistically
+treating every byte as a token plus 8,000 output tokens remains below USD 0.076
+per extraction call.
+
+Single hypothesis: applying a general 2,000-token ceiling caused the dominant
+full-corpus failures, and an extraction-specific 8,000-token ceiling eliminates
+those truncations without weakening output, schema, citation, privacy, or
+budget validation. Falsifiers: the exact extraction wire does not send 8,000;
+non-extraction stages stop using their configured ceiling; invalid JSON/schema
+becomes accepted; provider retry/fallback appears; or corrected live extraction
+still truncates at 8,000.
+
+Contract: `FoundryStructuredSemanticModel` owns a visible
+`extraction_max_output_tokens_per_call` defaulting to 8,000. Only stages with
+prefix `demand-episodes-and-agent-behaviors-` use it; every other stage uses
+existing `max_output_tokens_per_call`. Lineage exposes both ceilings. Callers
+remain responsible for a conservative reservation covering their input/output
+ceilings. The client retains `max_retries=0`, no temperature, JSON-object mode,
+strict local schema validation, and content-free provider failures.
+
+Privacy/execution: fixtures are local and make no provider call. Later live
+recovery may reuse only exact successful checkpoints in a new private
+directory, preserving all failed/interrupted history in the old directory.
+Owner-authorized diagnostics and prior attempts count toward the same USD 50
+independent ceiling. No sealed trace, retry loop, fallback, raw provider
+response persistence, deployment, or infrastructure change.
+
+Change budget: independent test author owns only
+`triana-labs/tests/trace_to_eval/test_foundry_json_object_compatibility.py`;
+implementation author owns only
+`triana-labs/src/triana_labs/trace_to_eval/semantic.py`; orchestrator owns this
+packet, `internal/DECISION_LOG.md`, `internal/WORKING_MEMORY.md`,
+`triana-labs/CHARTER.md`, and ignored decision memory. No dependency, prompt,
+schema, behavior-map projection, renderer, adapter, redaction, or unrelated
+change. Acceptance: independent wire regression for exact extraction and
+non-extraction ceilings, all existing invalid-output/no-temperature controls,
+focused suite, full verifier, bounded live canary, and independent verdict.
+
+Live evidence update: the stage-scoped extraction fix completed all 374
+DEVELOPMENT-visible conversations without an extraction failure. The same run
+then completed `user-populations-0000` through `user-populations-0004` and
+failed content-free at `user-populations-0005` under the general 4,000-token
+ceiling. Deterministic refusal correctly emitted no partial population map and
+made no Terra audit call. The slice therefore widens, without adding files, to
+an explicit `consolidation_max_output_tokens_per_call` ceiling of 8,000 for
+checkpoint-qualified `user-populations-*` and `agent-behavior-patterns-*`
+stages. Extraction remains 8,000; unrelated stages retain the configured
+general ceiling. The added falsifiers are incorrect stage routing, hidden
+retry/fallback, weakened validation, or a repeated content-length failure at
+8,000. Recovery must copy only the 379 validated checkpoints into a new
+private attempt root, exclude the failed consolidation tombstone, reserve all
+new primary and Terra calls under the same cumulative USD 50 cap, and stop on
+any new content-length failure. Test ownership returns to the independent test
+author before implementation changes.
+
+Second live evidence update: after cooldown, the exact previously failed
+`user-populations-0011` request succeeded at 8,000, then failure moved to
+`user-populations-0016` after five rapid successful consolidation calls. The
+successful calls used only 4,009 output tokens in aggregate. This falsifies a
+bad-payload or remaining output-ceiling hypothesis and is consistent with the
+capacity-10 Luna deployment throttling short calls that no longer have
+extraction latency as natural pacing. The slice therefore adds a configurable,
+deterministic `min_call_interval_seconds` (default zero) to the same model
+adapter and lineage. It may delay a new provider attempt until the configured
+interval since the prior attempt start has elapsed; it may not retry a failed
+call, change call/budget accounting, hide a failure, or select a fallback.
+Independent fixtures own the clock/sleeper contract before implementation.
+The live recovery will use explicit pacing and copy only the 390 successful
+checkpoints into a new attempt root; the new `0016` failure remains immutable
+in its source root.
+
+Third deterministic closeout update: the final provider run completed 462 Luna
+author checkpoints and 150 Terra audit checkpoints under manifest cap USD
+69.868, producing 80 retained populations, 61 retained patterns, and 47 typed
+missing pattern audits. Independent final review withheld publication because
+the rendered report double-counts copied checkpoint history in
+`budget.total_reserved_usd` (USD 130.82) and `_safe_lineage` strips the new
+extraction/consolidation ceilings and pacing scalar. No provider evidence is
+invalid and no provider rerun is authorized or needed. The slice widens to a
+deterministic artifact-only correction: report budget must use the manifest's
+explicit cumulative prior/run/post reservation fields when present, must not
+add checkpoint-derived provider reservations again, and must visibly preserve
+all three output ceilings plus pacing in safe provider lineage. Legacy
+manifests without the explicit cumulative fields retain the existing derived
+behavior. Independent test author may additionally own
+`triana-labs/tests/behavior_map/test_behavior_map_v0.py`; implementation author
+may additionally own `triana-labs/src/triana_labs/behavior_map/__init__.py`.
+No semantic prompt, decision, membership, support, audit, checkpoint, provider,
+redaction, renderer layout, or dependency change is allowed. Acceptance is a
+frozen RED, artifact-only replay with provider traps, exact analysis content,
+correct USD 69.868 cap, visible 8k/8k/4k ceilings and 20-second pacing, full
+gate, and independent re-verdict.
+
+Final closeout: corrected artifact
+`/private/tmp/triana-blitz-full-development-corrected-final-20260808/report`
+passes independent re-verdict. All 374 DEVELOPMENT-visible conversations were
+analyzed while 125 calibration and 125 holdout conversations remained sealed.
+The report retains 378 grounded episodes across 230 conversations, 80 supported
+user populations, 61 supported agent-behavior patterns, and 212 uniquely
+population-assigned episodes; 47 unaudited pattern subjects remain typed
+missing and unpublished. A provider-disabled replay reproduces all 613
+checkpoint artifacts and byte-identical JSON, Markdown, and HTML. The report
+records USD 53.74 prior reservation, USD 16.128 current-run maximum, and USD
+69.868 total under the approved USD 70 cap, plus Luna pacing 20 seconds and
+general/extraction/consolidation ceilings 4,000/8,000/8,000. The full gate
+passes 757 tests plus formatting, Ruff, strict mypy, governance, build, and
+clean-wheel installation at `/private/tmp/triana-labs-verify.sQKjH2`. Actual
+provider billing remains unknown; reservation is not actual cost.

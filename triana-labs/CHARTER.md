@@ -419,3 +419,19 @@ storage or promotion work proceeds.
 V1 (`docs/PRODUCT.md`) is suspended, not deleted. Its incident→ProtectedCase
 loop survives inside Labs as the must-check promotion path. Resuming V1 or
 merging it with Labs requires an explicit decision-log entry.
+
+## Full-corpus Behavior Map evidence (2026-08-08)
+
+The bounded Blitz DEVELOPMENT proof supports the Phase 1 claim at full
+visible-corpus scale: 374 authorized conversations can be extracted into
+grounded demand episodes, consolidated into proposed user populations and
+agent-behavior patterns, independently audited, and rendered from immutable
+checkpoints without opening the 125 calibration or 125 holdout conversations.
+The corrected private report retains 80 supported populations and 61 supported
+patterns; 47 unaudited pattern subjects remain typed missing and unpublished.
+This is a proposed, evidence-linked behavior map—not accepted truth, complete
+taxonomy, correctness, outcome attribution, comparison, or eval generation.
+Provider adapters may expose stage-specific output ceilings and deterministic
+request pacing, but still use no automatic retry or fallback. Complete explicit
+campaign reservation fields are authoritative for cumulative report budgeting
+and must not be double-counted from copied checkpoint history.

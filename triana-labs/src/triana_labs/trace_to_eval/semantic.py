@@ -11,9 +11,10 @@ import hashlib
 import json
 import os
 import tempfile
+import time
 from collections import Counter, defaultdict
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Protocol, cast
 from urllib.parse import urlsplit
@@ -250,6 +251,9 @@ class FoundryStructuredSemanticModel:
     max_calls: int = 160
     max_request_bytes: int = 400_000
     max_output_tokens_per_call: int = 2_000
+    extraction_max_output_tokens_per_call: int = 8_000
+    consolidation_max_output_tokens_per_call: int = 8_000
+    min_call_interval_seconds: float = 0
     max_reserved_usd: float = 25.0
     reservation_usd_per_call: float = 0.15
     last_failure_code: str | None = None
@@ -257,6 +261,7 @@ class FoundryStructuredSemanticModel:
     sku: str | None = None
     capacity: int | None = None
     credential_boundary_id: str | None = None
+    _last_attempt_started_at: float | None = field(default=None, init=False, repr=False)
 
     @classmethod
     def from_environment(
@@ -318,12 +323,19 @@ class FoundryStructuredSemanticModel:
         ):
             raise ValueError("SEMANTIC_BUDGET_EXCEEDED")
         self.attempted_call_count += 1
+        stage_name = stage.rsplit("/", maxsplit=1)[-1]
+        if stage_name.startswith("demand-episodes-and-agent-behaviors-"):
+            max_completion_tokens = self.extraction_max_output_tokens_per_call
+        elif stage_name.startswith(("user-populations-", "agent-behavior-patterns-")):
+            max_completion_tokens = self.consolidation_max_output_tokens_per_call
+        else:
+            max_completion_tokens = self.max_output_tokens_per_call
         model = ChatOpenAI(
             model=self.model_id,
             api_key=SecretStr(self.api_key),
             base_url=self.endpoint,
             max_retries=0,
-            max_completion_tokens=self.max_output_tokens_per_call,
+            max_completion_tokens=max_completion_tokens,
             timeout=self.timeout_seconds,
         )
         requested_schema = json.dumps(
@@ -333,6 +345,15 @@ class FoundryStructuredSemanticModel:
             sort_keys=True,
         )
         instruction = f"{system}\nRequested JSON schema:\n{requested_schema}"
+        now = time.monotonic()
+        if self._last_attempt_started_at is not None:
+            remaining = self.min_call_interval_seconds - (
+                now - self._last_attempt_started_at
+            )
+            if remaining > 0:
+                time.sleep(remaining)
+                now = time.monotonic()
+        self._last_attempt_started_at = now
         try:
             raw = model.bind(response_format={"type": "json_object"}).invoke(
                 [
@@ -380,12 +401,19 @@ class FoundryStructuredSemanticModel:
             "successful_call_count": self.call_count,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
+            "min_call_interval_seconds": self.min_call_interval_seconds,
             "cost_usd": None,
             "actual_cost_state": "UNKNOWN_PROVIDER_PRICING",
             "budget": {
                 "max_calls": self.max_calls,
                 "max_request_bytes_per_call": self.max_request_bytes,
                 "max_output_tokens_per_call": self.max_output_tokens_per_call,
+                "extraction_max_output_tokens_per_call": (
+                    self.extraction_max_output_tokens_per_call
+                ),
+                "consolidation_max_output_tokens_per_call": (
+                    self.consolidation_max_output_tokens_per_call
+                ),
                 "max_reserved_usd": self.max_reserved_usd,
                 "reservation_usd_per_call": self.reservation_usd_per_call,
                 "reserved_usd": round(
