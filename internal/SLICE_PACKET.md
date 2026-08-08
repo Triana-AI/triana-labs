@@ -1388,3 +1388,616 @@ general/extraction/consolidation ceilings 4,000/8,000/8,000. The full gate
 passes 757 tests plus formatting, Ruff, strict mypy, governance, build, and
 clean-wheel installation at `/private/tmp/triana-labs-verify.sQKjH2`. Actual
 provider billing remains unknown; reservation is not actual cost.
+
+## BEHAVIOR-MAP-V0-COVERAGE-CONSERVATION-REPAIR — 2026-08-08
+
+Status: **ACTIVE — ENTRY GATE FROZEN; TEST AUTHOR AUTHORIZED**
+
+Canonical base: commit `68741dab5824709932335d23405b95d754107fce`,
+annotated locally as `best-version-yet-blitz-20260808`. Active authority is
+the Phase 1 Behavior Map boundary in `triana-labs/CHARTER.md`. The outcome is
+to repair two independently reproduced, corpus-independent coverage defects
+without weakening exact evidence, privacy, audit authority, or explicit
+unknown states: mixed-validity demand citations currently reject a complete
+episode, and first-level population batches currently omit episodes before
+global consolidation can compare them.
+
+The immutable successful predecessor is private report
+`sha256:9c98854dba09a188600b5de7a6f20e71a86ea01791d61556e31f40f16fd1f021`
+under
+`/private/tmp/triana-blitz-full-development-corrected-final-20260808/report`.
+Its JSON, Markdown, and HTML hashes are respectively
+`9821a041d391843bae8885010c6180a58a38646f3bd33d56382e5f18a3a8f0f1`,
+`7733ccfb3ea73f20043b00464f2dbc8a8c5df92f91a2d509d058e233b40d72b6`,
+and `5e83984622aae54c49c53b6355b3865816f4fac021ccf8a7ff2b694897a26377`.
+The aggregate relative-path checkpoint-tree hash is
+`fd5668300d3cdf55c0011a56bb34a60c3b075ad899b79250b8c629859323ae7c`.
+No worker may write under that root. A content-free repository manifest will
+record the predecessor boundary; it will contain no Blitz IDs, quotes, raw
+traces, checkpoint content, or customer identifiers.
+
+### Contracts and authority
+
+Input is one authorized `PreviewTrace` corpus plus the existing provider and
+budget manifest. Output is a versioned proposed Behavior Map with individually
+validated demand citations, field-scoped grounding declarations, inspectable
+excluded citation history, exhaustive population-stage dispositions, bounded
+leftover matching/regrouping, and deterministic support/identity/lineage/audit
+projection. A separate deterministic comparison consumes the predecessor and
+repaired reports and emits private Markdown and HTML; it labels mechanical
+movement separately from human-validated semantic improvement.
+
+The semantic author may propose demand fields, field-to-citation bindings,
+population membership, one existing-population match, no match, ambiguity,
+and new leftover groups. Deterministic code owns source-conversation binding,
+event role/sequence/exact-quote validation, excluded-citation reasons,
+field-binding completeness, every episode disposition, supplied-ID checks,
+unique membership, support, denominators, identity, predecessor lineage,
+batch/hierarchy conservation, audit projection, artifact identity, and
+comparison arithmetic. Exact citation existence is not semantic entailment.
+All recovered meaning remains `PROPOSED`; human labels and rulings alone can
+establish semantic benchmark truth or accepted taxonomy.
+
+Demand support may cite only `USER_MESSAGE`. Assistant and tool evidence stays
+in agent behavior or typed excluded/context evidence. Mandatory goal,
+requested action, and subject must each declare at least one surviving exact
+customer citation. Every retained constraint and fallback must do the same;
+an unsupported optional item is removed with visible typed uncertainty. No
+valid customer citation or unsupported mandatory grounding rejects the
+episode precisely. An invalid extra citation never supports an episode and
+does not by itself reject independently grounded fields.
+
+Every population-stage input receives exactly one deterministic disposition:
+assigned, intentionally unassigned, ambiguous, audit-disputed, or a typed
+model-omission state carried into the next bounded stage. An unsupplied ID is
+never membership and creates an exact gap. Duplicate or conflicting membership
+is refused. Leftovers first receive one bounded match/no-match opportunity
+against existing candidate definitions and representative evidence, then a
+stable cross-origin rebatch gives remaining leftovers an opportunity to form
+new candidates. No assignment is forced and exhaustive quadratic comparison
+is not claimed. Any membership change creates a new identity and explicit
+predecessor lineage; no old audit silently governs new membership.
+
+### Separate falsifiable hypotheses
+
+Defect A observed failure: 71 Blitz DEVELOPMENT conversations contain 97 raw
+episode proposals but no surviving episode. Hypothesis A: proposal-wide
+boolean citation validation causes structurally valid customer grounding to
+be discarded when any extra citation is invalid. Falsifiers: individual
+validation cannot reproduce the rejection; retained mandatory or optional
+fields lack permitted bindings; assistant-derived facts survive; or negative
+fixtures become demands. One implementation intervention is allowed before
+focused GREEN: versioned field-scoped episode grounding plus typed citation
+projection. No population implementation begins until A is independently
+GREEN.
+
+Defect B observed failure: 348 eligible episodes enter 29 first-level batches;
+28 batches omit at least one input, 114 valid IDs reach no first-level output
+or hierarchy, and three unsupplied IDs are returned. Hypothesis B: conservation
+starts only after candidate creation, so first-level omission permanently
+removes comparison opportunity. Falsifiers: any omitted ID already reaches a
+later comparison, exhaustive dispositions do not close the loss, or the
+repair requires forced membership. One implementation intervention is allowed
+after A: versioned dispositions plus deterministic carry-forward, bounded
+existing-candidate matching, and cross-origin leftover rebatching.
+
+### Privacy, execution, and live authorization
+
+Automated tests use synthetic fixtures and fake semantic models only. Raw
+Blitz evidence, private checkpoints, review labels, and generated reports stay
+under private temporary custody. The 144-conversation and 114-episode frontier
+may produce only a private hash-addressed review queue with empty human labels;
+no semantic benchmark passage is claimed until a human supplies them.
+
+After offline GREEN and predecessor verification, Akarsh authorizes exactly
+one new private Blitz DEVELOPMENT campaign over the same 374 visible
+conversations, with the same 125 calibration and 125 holdout conversations
+sealed. Luna is primary author and Terra is independent judge. The new
+campaign has a conservative reservation ceiling of USD 70, no retry, no
+fallback, no locked-holdout access, no benchmark download, no deployment, and
+no publication. Any additional live attempt or spend requires new owner
+authorization. Reservation is reported separately from actual provider
+billing. The repaired artifact must use a new root, identity, and explicit
+predecessor lineage.
+
+### Frozen change budget
+
+Independent test-author ownership:
+
+- `triana-labs/tests/behavior_map/test_behavior_map_coverage_repair.py`;
+- `triana-labs/tests/behavior_map/test_behavior_map_comparison.py`;
+- synthetic fixtures only under
+  `triana-labs/tests/behavior_map/fixtures/coverage_repair/` if necessary.
+
+Implementation-author ownership after RED freeze:
+
+- `triana-labs/src/triana_labs/behavior_map/contracts.py`;
+- `triana-labs/src/triana_labs/behavior_map/__init__.py`;
+- `triana-labs/src/triana_labs/behavior_map/render.py` only if required to
+  expose excluded evidence/dispositions;
+- new bounded modules
+  `triana-labs/src/triana_labs/behavior_map/comparison.py` and
+  `triana-labs/src/triana_labs/behavior_map/benchmark.py` only if the frozen
+  black-box contract requires them.
+
+Orchestrator ownership:
+
+- this packet;
+- `triana-labs/CHARTER.md`, `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`,
+  `internal/DECISION_LOG.md`, and a new content-free baseline manifest;
+- ignored local decision memory and private `/private/tmp` run/comparison/
+  review artifacts.
+
+Explicitly untouched: the predecessor report/checkpoints; existing adapters,
+redaction/privacy logic, provider transport, pricing, retry/fallback policy,
+locked splits, auth/UI/backend/deployment/infrastructure, Agentagon/Kairos/HRAI
+sources, raw corpora, and the pre-existing unrelated
+`internal/WORKING_MEMORY.md` modification. No dependency is allowed. Maximum
+scope expansion is one additional existing Behavior Map test file or one
+renderer field needed by the frozen contract; any other expansion stops for
+orchestrator review.
+
+### Acceptance and execution order
+
+The independent test author freezes black-box RED for all user-specified
+positive/negative citation and cross-batch cases, unsupplied IDs, duplicate
+membership, support equality, scoped audit rejection, disputed-support
+exclusion, repeated byte identity, batch-boundary permutations, comparison
+arithmetic, and provider traps. The orchestrator records exact test hashes and
+RED commands. Defect A production then runs focused and adjacent GREEN before
+Defect B production begins. The implementation author may not edit frozen
+tests.
+
+Final local gates are the complete Behavior Map and Trace-to-Eval suites,
+format, Ruff, strict mypy, governance, build/install, repeated deterministic
+projection, provider-disabled predecessor verification, and change-budget
+reconciliation. The live run begins only afterward. The separate before/after
+report must compare exact corpus/split identities, report recovered/rejected/
+uncertain/still-unassigned counts, identity and lineage movement, gaps, audits,
+cost, and all requested semantic benchmark metrics as `HUMAN_LABELS_MISSING`
+where labels do not exist. Higher coverage alone is never a pass.
+
+Independent RED freeze: the test-author-owned files are frozen at SHA-256
+`00fa8de6fe1c2d74bd2645c693b9c32d0f0ab4a3c578f76ac354091abc8234dc`
+for `test_behavior_map_coverage_repair.py` and
+`d46a338fac824a3888f716bb6a4df176868436c36c5e7c2653cc691db06241e9`
+for `test_behavior_map_comparison.py`. The orchestrator reproduced 20 cases:
+18 intended behavioral RED failures and two controls passing. The RED failures
+cover missing field-scoped citation salvage/refusal, actual tool-result role
+rejection, excluded history, optional-field uncertainty, exhaustive population
+dispositions, batch omission carry-forward, unsupplied IDs, duplicate/unique/
+ambiguous behavior, audit-scoped support, the private unlabeled benchmark, and
+the same-selection predecessor comparison. Ruff format/check and five adjacent
+legacy citation/audit controls pass. These two files are immutable for the
+implementation author.
+
+### Bounded test-budget expansion — 2026-08-08
+
+The orchestrator exercised the frozen allowance for one additional existing
+Behavior Map test file. The independent test author may edit only
+`triana-labs/tests/behavior_map/test_behavior_map_v0.py` so the existing
+checkpoint-tamper test selects a successful checkpoint without assuming typed
+FAILED attempt artifacts contain a `result` member. Production must continue
+to preserve FAILED attempts; deleting, suppressing, or accepting their invalid
+semantic output is forbidden. No other test behavior or file budget changed.
+
+### Superseding final repair test freeze — 2026-08-08
+
+The final independent test-author bytes supersede only the earlier hashes in
+this slice:
+
+- coverage/benchmark SHA-256
+  `e82fb706544b4d9da9e0cffe4bf29c1b5a5508786819219260897af886c6bfe8`;
+- comparison SHA-256
+  `4622e81f6d9f60f570f14ff6738e9c85efffa4d920877e20cff14ecb491dc24a`;
+- legacy Behavior Map V0 SHA-256
+  `be35bfb66d61d0431b9a670d88d7fcd6d57c6f45c958806c6aad8c743846b64f`.
+
+The orchestrator reproduced 114/114 Behavior Map tests, Ruff, and strict mypy.
+A provider-disabled predecessor replay emitted exact predecessor and 374-item
+selection lineage with zero attempted provider calls. The private unlabeled
+benchmark replay produced exactly 144 no-surviving conversations and 114
+explicit `UNASSIGNED_DEMAND` episodes; all semantic metrics remain
+`HUMAN_LABELS_MISSING`.
+
+### Coverage-repair execution and acceptance — 2026-08-08
+
+Independent RED/GREEN iterations were kept falsifiable and provider-free except
+for the single owner-authorized private campaign. Frozen regression hashes were:
+
+- population-batch failure isolation:
+  `8bc8e91093404c06084ec9cb780a75003da39f15e7f1c31df0f872a0883a0cd7`;
+- pattern-batch failure isolation:
+  `28b62ac70a3bdf703e13033c4ff71d890b7edc1a4e557ac388d3c83abd2b8a0d`;
+- audit subject-class continuation:
+  `7c07037263bc021519db27d7e7ac7b239e032d2eca3f0df720782a827195b9f0`;
+- legacy comparison selection:
+  `ac22b379547bd5fbd032d71bfadf2c70534a19a6c244a5fcdd8b463aa59bc499`;
+- strict audit-scope projection:
+  `ac18ccae61ec42e7150bf421213bf793f6a60cd7b3720ba39367598d6ae15c0e`;
+- post-relevance field-grounding projection:
+  `413cfe308fbd699b273a4ad697e73b02461ad43b070f43cb1857357506a62970`;
+- observed lane-budget truth:
+  `8ddddf9317e858f1491872674b9a402134a3e7973c4ecac556a96e72df5ba21f`;
+- comparison membership-edge conservation:
+  `1d13683ccec88e9fe4dd273917bfc1fe3d3bed470ab87e515ab259591d9cbf67`;
+- final historical-projection authority, replacement-edge, candidate-audit,
+  dual-lineage, and exact legacy-budget contract:
+  `627d7eed43032f5bfb3e9c16d6de03ef2af0837f223253939159171b4c5fe1b9`.
+
+The first live continuation path was incorrectly reused after being declared
+immutable. Its original failed report remains hash-preserved in
+`/private/tmp/triana-blitz-coverage-repair-failed-snapshot-20260808`; the reused
+root and every subsequent rejected v2-v4 projection remain typed historical
+failed evidence and are not acceptance artifacts. No accepted baseline bytes
+changed.
+
+The final independently accepted bounded artifact is
+`/private/tmp/triana-blitz-coverage-repair-historical-projection-final-v5-20260808/behavior_map_historical_projection.json`,
+projection ID
+`sha256:4a31e882651e533254a71fb43bf2aafe87b026297dea056c0c377aa4c1729f6e`,
+file SHA-256
+`e4e3af9eb8d24f12e7932a9c020a9469b4ab317449cd606fc194cd3f705e3934`.
+The repeated v5 projection is byte-identical and used zero providers. It
+contains 405 grounded episodes, 74 supported populations/210 active
+assignments, three unpublished candidates/eight re-audit-required memberships,
+24 supported patterns, 765 active occurrences, and five excluded occurrences.
+The accepted full Blitz baseline remains unchanged and best accepted.
+
+Historical campaign accounting is explicit: 455 Luna attempts; 115 Terra
+attempts against an 89-call Terra cap; USD 20.70 observed audit reservation
+against USD 16.02 declared; USD 69.912 total reservation within USD 70; actual
+cost unknown. The Terra lane is typed
+`SEMANTIC_LANE_BUDGET_CONTRACT_EXCEEDED`; overall-ceiling compliance does not
+erase that violation. Human semantic benchmark metrics remain blocked on the
+private label panel, and a separately authorized fresh run is required before
+claiming global reconsolidation or Defect-B semantic benchmark passage.
+
+### Final-review superseding RED freeze — 2026-08-08
+
+Independent final review invalidated the immediately preceding GREEN claim by
+reproducing release-blocking contract holes before the first live campaign
+could complete. That campaign was stopped after 97 Luna attempts; its partial
+private checkpoints are evidence only and are not a repaired report. The test
+freeze now supersedes the earlier hashes and status:
+
+- coverage/benchmark SHA-256
+  `a9e1b42df8a94a501f2f4dc386863b8867219a81b0b1284c8f77ea5b898f552e`;
+- comparison SHA-256
+  `9d7081cfee0a8c492bfa9b55539ff3140c8d2b098dfd9a2a196d92d86247de56`;
+- legacy Behavior Map V0 SHA-256 remains
+  `be35bfb66d61d0431b9a670d88d7fcd6d57c6f45c958806c6aad8c743846b64f`.
+
+The orchestrator accepts RED as five focused coverage failures plus three
+focused comparison failures. They cover mandatory versioned field grounding
+and visible proposal authority, contradictory population dispositions,
+representative match evidence, unlabeled benchmark-control semantics, private
+runtime predecessor validation and exact lineage, ID-level predecessor claim
+conservation, and `NO_CHANGE` classification. The true cross-batch permutation
+fixture already passes and must remain GREEN. Production implementation is
+reauthorized only against these frozen bytes. No live continuation is allowed
+until the superseding gate and independent audit are GREEN.
+
+### Final-review GREEN and checkpoint-migration expansion — 2026-08-08
+
+The superseding final-review contract is GREEN at:
+
+- coverage/benchmark SHA-256
+  `a9e1b42df8a94a501f2f4dc386863b8867219a81b0b1284c8f77ea5b898f552e`;
+- comparison SHA-256
+  `9d7081cfee0a8c492bfa9b55539ff3140c8d2b098dfd9a2a196d92d86247de56`;
+- legacy Behavior Map V0 SHA-256
+  `0b08864dbab5bc3b21284d08829ff296e03d9ebba7caf5769cb6c96e7c0656f7`.
+
+The orchestrator and independent auditor reproduced 28/28 focused and 119/119
+full Behavior Map tests, Ruff, strict mypy, and unchanged predecessor hashes.
+Fresh extraction now requires the versioned field-grounding schema; therefore
+pre-repair checkpoint identity cannot be silently reused. The interrupted
+owner-authorized campaign consumed 97 Luna attempts before review stopped it.
+To continue without retrying those attempts or exceeding the same USD 70
+campaign ceiling, the change budget expands once to a bounded versioned
+checkpoint migration module and one synthetic test file:
+
+- test author may add only
+  `triana-labs/tests/behavior_map/test_behavior_map_checkpoint_migration.py`;
+- implementation author may add only
+  `triana-labs/src/triana_labs/behavior_map/migration.py` and the smallest
+  call seam in the already-authorized Behavior Map files.
+
+The independent test freeze names the bounded module
+`triana-labs/src/triana_labs/behavior_map/checkpoint_migration.py`; that exact
+path supersedes `migration.py` above without expanding file count or behavior.
+The test file SHA-256 is
+`f743a3f410ecf22689ae06bc53ccfc32a8f831a16479d22262566bac7658e656`,
+with five expected missing-module RED cases and Ruff GREEN.
+
+Independent integration audit supersedes that preliminary migration freeze
+with SHA-256
+`89c63635d56a50ca452a299d6b707e6f1e34ad2361d2165380cc83f2b1b72f4f`.
+Against the isolated draft it produces four substantive RED and four control
+passes: the migrated path/identity must equal the real current `_call_plan`, a
+mixed four-conversation `run_behavior_map` continuation must make zero calls
+for grounded/refused/FAILED/IN_FLIGHT predecessor units, 97 prior attempts and
+their reservation remain charged, and empty/out-of-range grounding bindings
+must refuse migration. This hash is the implementation authority.
+
+The final migration safety freeze supersedes that hash with SHA-256
+`affd714d221cd1fcaecb782eb3ea6aea910ba33c4b1f9a791b684207096c9085`.
+It adds only whole-unit refusal for non-empty constraints or fallbacks whose
+aligned binding is missing or out of range. Against the paused draft it yields
+eight expected RED and four controls passing; Ruff is GREEN. This is the final
+implementation authority.
+
+The integration fixture was corrected to derive stages from the runtime's
+sorted conversation order. SHA-256
+`8aafc186d14168f40f9f4f7188412691ec1b9143dda73dabca08bf7b30ace302`
+supersedes the preceding migration hash. It yields eleven controls GREEN and
+one substantive RED: the runtime must consume the validated migration refusal
+sidecar and skip the exact refused unit inside the existing enumerated loop,
+without compacting stage indexes or changing denominators.
+
+Independent code audit found that a stale valid destination sidecar could be
+trusted without manifest authority. Migration test SHA-256
+`01bd050edaaedc30d7b27cde4db24e4f141dcdbc517393efd5669ebf8f4f225a`
+supersedes the preceding hash, with nine expected RED and eleven controls
+passing. A sidecar now requires exact manifest binding for migration identity,
+predecessor report, source and selected-list hashes, primary model and provider
+binding, predecessor attempt count, and prior reservation. Missing or mismatched
+binding fails closed before egress as `MIGRATION_BINDING_INVALID`; paths remain
+private and absent from report/provider payloads.
+
+Migration may project only immutable extraction checkpoints whose every episode
+already contains explicit field bindings. It adds the contract-version marker,
+validates the complete new schema, writes a new identity plus predecessor hash
+sidecar, and never edits the source. Missing grounding, FAILED, or IN_FLIGHT
+legacy attempts become new typed non-callable refusals and cannot be retried.
+Migration is enabled only by an explicit private manifest path and predecessor
+identity, remains outside provider payloads/reports, is byte-repeatable, and
+must prove zero provider calls. No population/audit checkpoint migration,
+semantic reinterpretation, dependency, or additional live campaign is allowed.
+
+### Interrupted-campaign authority correction — 2026-08-08
+
+The real stopped campaign contains an immutable manifest plus 97 extraction
+checkpoint/attempt artifacts but no completed `behavior_map_report_v0`.
+Manufacturing a completed predecessor report would falsely elevate partial
+execution evidence. The migration source contract therefore expands only to a
+typed, content-free `behavior_map_partial_campaign_v0` ledger that binds the
+exact manifest hash, source and selected-list hashes, primary provider
+identity, complete checkpoint-ID set, attempted-call count, prior reservation,
+and cumulative ceiling. The existing migration production file remains the
+sole implementation surface; no provider behavior or dependency changes.
+
+Independent test author owns only
+`triana-labs/tests/behavior_map/test_behavior_map_partial_campaign_migration.py`.
+Its frozen SHA-256 is
+`fb4e3f130d3aacf1641828e04f1949b5427c13658eea8eb1066d2a050bf23e1d`.
+The frozen RED is 11 failures at the absent partial-campaign API with Ruff
+GREEN. Acceptance requires exact checkpoint conservation, immutable inputs,
+no forged report, no path leakage, and refusal of every missing, extra, or
+tampered authority field before any provider execution.
+
+Independent audit supersedes that preliminary partial-campaign freeze with
+SHA-256
+`3738c34ebaca02f216dcc19542a8d7013c8636ec210f6e226d41d08333389c12`.
+The orchestrator reproduces 30 expected RED with the existing 20 checkpoint-
+migration controls GREEN and Ruff GREEN. The complete contract additionally
+binds an exact 97-entry artifact inventory and tree hash; validates file,
+identity, payload/descriptor, result, provider, scope, sealed-count, budget,
+retry/fallback, and contiguous-stage integrity; keeps baseline predecessor and
+resume lineage distinct; projects 87 migratable and 10 nonretryable units;
+requires zero calls for stages 0–96 and next stage 97; carries USD 69.912 once
+with prior external reservation zero and actual cost unknown; and requires
+path-free, byte-stable ledger, migration, and successor-lineage output. The
+implementation author may edit only the existing
+`triana-labs/src/triana_labs/behavior_map/checkpoint_migration.py` and the
+smallest already-budgeted runtime seam in `behavior_map/__init__.py`.
+
+Metadata-only replay against the real stopped campaign falsified one fixture-
+specific assumption: the 97 attempted extraction stages are a prefix of 374
+DEVELOPMENT conversations, not the full corpus denominator. The smallest
+reproduction failed at an equality check between inventory count and
+development count. The speculative inequality edit was reverted before the
+independent test freeze. SHA-256
+`609d30c407cafbe1b732e8a8017489114bee6f9528f7e11f3a1eeed874d9266b`
+supersedes the partial-campaign test hash. The orchestrator reproduces 30
+controls GREEN and two focused RED: 97 contiguous attempts within 374 selected
+DEVELOPMENT conversations must preserve both numbers, while 97 attempts within
+only 96 DEVELOPMENT conversations must refuse as
+`PARTIAL_CAMPAIGN_INVENTORY_INVALID`. No other contract or file budget changes.
+
+The first denominator-frontier test freeze assigned contradictory error codes
+to the same 97-attempt/96-DEVELOPMENT mutation. The test author removed that
+mutation from the generic binding table so the dedicated conservation test
+alone owns `PARTIAL_CAMPAIGN_INVENTORY_INVALID`. SHA-256
+`745539585457fe7c90a51867f4e324439c23c9dc766c0fb7bce8765d065d9ef5`
+supersedes the preceding hash; the orchestrator reproduces 29 controls GREEN
+and the same two substantive RED without contradictory caller-dependent
+behavior.
+
+### Pre-live partial-resume accounting and authority correction — 2026-08-08
+
+The actual provider-free artifact audit passed inventory and migration
+integrity but reproduced two live-blocking artifact-contract defects before
+egress. First, runtime treated the full USD 69.912 campaign reservation as
+prior spend and added the same configured primary/audit plan again. Second, a
+completed successor would inherit the interrupted ledger's top-level
+`NOT_EVALUATED` state. The ledger and migration remain NOT_EVALUATED; the
+successor remains private, proposed, and partial under existing object-level
+statuses, audits, and gaps, with predecessor campaign state expressed only as
+lineage.
+
+Independent test SHA-256
+`76b5beaf1c54ffe86fc115e4cfa7044ea677fa30995922f3a9eebce13043c248`
+supersedes the partial-campaign hash. The orchestrator reproduces 31 controls
+GREEN and two focused RED: the resumed campaign must authorize and report USD
+69.912 exactly once under the USD 70 ceiling with prior external reservation
+zero and actual cost unknown; and a successor with one fresh semantic call
+must not inherit the ledger-only `semantic_evaluation_state=NOT_EVALUATED`.
+Baseline predecessor and resume-campaign lineage remain explicit. No provider
+call is authorized until both are independently GREEN.
+
+### Exact legacy predecessor compatibility — 2026-08-08
+
+The first successor command exited before egress with zero Luna and zero Terra
+attempts. The observed `PREDECESSOR_REPORT_MISMATCH` is isolated to the accepted
+baseline report predating source-level `selected_list_sha256` and
+`development_count`; its report ID recomputes exactly and its source hash,
+semantic denominator, sealed counts, and manifest selection agree. Independent
+comparison-test SHA-256
+`e541c8cd535d450b0b93db10d183e31ba436ebc99097a49b57ba164803eea415`
+freezes 14 controls GREEN and one RED for that exact legacy shape. Report-ID,
+content-identity, source, semantic-count, sealed-count, and manifest-selection
+tampering remain rejected before egress, and the newer strict predecessor path
+remains unchanged. Implementation author may edit only the existing predecessor
+loader in `behavior_map/__init__.py`; no provider, migration, comparison,
+dependency, or private-artifact change.
+
+The first exact-legacy fixture stored its selection hash at the newer test
+fixture's top-level semantic scope, while the real accepted manifest stores it
+under `semantic_scope.selection`. The second successor command again exited
+with zero provider attempts. SHA-256
+`c4e09298d70f99e5ae2fdc3238007b064696a86a69f9a2d0c89c3d34f746bec2`
+supersedes the comparison freeze with 15 controls GREEN and one nested-shape
+RED. Tampered nested selection hash or nested development count still rejects
+pre-egress; the strict newer path and top-level compatibility controls remain
+unchanged. Implementation remains a loader-only normalization in
+`behavior_map/__init__.py`.
+
+Independent review found two stale assertions in that freeze: zero calls apply
+only to reused/refused extraction stages 0–96, not later successor
+consolidation/audit, and `prior_reserved_usd` means external prior reservation,
+not the resumed campaign reservation. SHA-256
+`bb9b40be5502651b0c7f8b1193b6c5f5162c16a14143f4c17de28f6e1c2ff54d`
+supersedes the preceding partial test hash. Schema-valid fake continuations now
+prove 32 controls GREEN; the sole RED is migration handoff reporting USD
+69.912 as prior instead of external prior USD 0. The campaign reservation
+remains separately USD 69.912 and total reservation remains USD 69.912 once.
+The implementation scope expands back to the already-authorized single line in
+`checkpoint_migration.py` plus the current `__init__.py` fix; no other surface
+changes.
+
+### Live population-batch failure isolation — 2026-08-08
+
+The single owner-authorized successor campaign completed extraction and then
+reproduced a third deterministic orchestration defect. The immutable failed
+successor artifact is
+`/private/tmp/triana-blitz-coverage-repair-continuation-final-20260808`
+(`sha256:0daea358863c5bd0cffe4654250f3575f7363ae29e2184da04f7ac0478ea54ca`).
+It contains 406 surviving episodes across 263 conversations, but one Luna
+provider failure at first-level population batch 15 escaped the batch boundary;
+the outer pipeline catch consequently discarded 15 preceding valid population
+batch results and emitted zero populations or patterns. This artifact is typed
+failed evidence, not an accepted successor and not a replacement for baseline
+`sha256:9c98854dba09a188600b5de7a6f20e71a86ea01791d61556e31f40f16fd1f021`.
+
+Observed failure: one content-free `behavior_map_attempt_v0` with stage
+`user-populations-0015` and state `FAILED`; stages 0000–0014 are schema-valid
+checkpoints. Smallest reproduction: a fake model with valid population output
+before and after one deterministic batch failure. Falsifiable hypothesis: if
+first-level population batching isolates `_call` failures using the same typed
+carry-forward discipline already used by leftover matching, the failed batch's
+input episodes remain explicitly unassigned/unknown, earlier candidates
+survive, later batches execute, and replay refuses the recorded failed attempt
+without a provider retry. Falsifying evidence would be loss of any supplied
+episode, loss of an earlier candidate, a skipped later batch, acceptance of an
+unsupplied ID, or any second call for the failed batch.
+
+The frozen change budget expands only within existing authorized files:
+
+- independent test author: the existing bounded Behavior Map coverage test
+  surface under `triana-labs/tests/behavior_map/`;
+- implementation author: only
+  `triana-labs/src/triana_labs/behavior_map/__init__.py`;
+- orchestrator: this append-only slice entry and later accepted canonical
+  documentation/decision records already budgeted by the parent slice.
+
+No prompt, schema, citation, audit, retry, fallback, dependency, deployment,
+baseline, or private-artifact mutation is allowed. Provider continuation may
+use only the unconsumed calls inside the existing USD 69.912 campaign ceiling;
+the failed batch itself is nonretryable. No new reservation is authorized.
+
+Independent test SHA-256
+`8bc8e91093404c06084ec9cb780a75003da39f15e7f1c31df0f872a0883a0cd7`
+froze two RED cases. The independent implementation author and orchestrator
+then reproduced 22/22 coverage-repair and 182/182 Behavior Map tests GREEN,
+plus Ruff, format, strict mypy, and diff checks. The live continuation proved
+the repair: batch 15 remained a single immutable FAILED attempt, batches 16–31
+executed, and the next private report retained 406 episodes, 299 unique
+assignments, and 114 population proposals.
+
+### Live agent-pattern batch failure isolation — 2026-08-08
+
+The population-valid continuation report
+`sha256:4a19880a08ba42e2e164e3a6d8f22167775288414694b60f26fcc4f6119e766a`
+is preserved read-only at
+`/private/tmp/triana-blitz-coverage-repair-populations-only-snapshot-20260808`.
+It is not an accepted successor because one Luna provider failure at
+`agent-behavior-patterns-0011` escaped the first-level pattern batch boundary;
+the outer catch discarded 11 earlier valid pattern-batch results and emitted
+zero patterns and zero audits.
+
+Observed failure: one content-free FAILED attempt at pattern batch 11 after 11
+schema-valid pattern checkpoints. Smallest reproduction: a fake pattern model
+with valid output before and after one deterministic batch failure. Falsifiable
+hypothesis: applying the already-accepted batch-failure isolation contract to
+first-level pattern grouping preserves earlier and later candidate patterns,
+types the failed occurrences as excluded/unknown evidence, and makes replay
+byte-stable without retrying the failed batch. Falsifying evidence is any lost
+supplied occurrence, accepted failed occurrence support, skipped later batch,
+mutated/retried attempt, or changed replay identity.
+
+Change budget remains the same existing coverage test file for the independent
+test author and only `behavior_map/__init__.py` for the implementation author.
+No prompt, schema, support threshold, citation/audit rule, dependency, retry,
+fallback, or artifact mutation is allowed. Exactly 428/499 Luna campaign
+attempts now exist; a continuation may use no more than the remaining 71 Luna
+calls plus the original unused 89 Terra audits under the same USD 69.912 cap.
+
+### Provider-disabled post-grounding semantic projection — 2026-08-08
+
+The independent artifact audit proved that three otherwise completed live
+episodes retained out-of-range field-grounding indexes after subject-relevance
+citation detachment. Frozen test SHA-256
+`413cfe308fbd699b273a4ad697e73b02461ad43b070f43cb1857357506a62970`
+is GREEN: one mandatory-ungrounded episode is now rejected, while two episodes
+with unsupported optional fields are projected to new grounded identities with
+visible uncertainty. A provider-disabled extraction replay therefore contains
+405 episodes: 403 exact live identities, two explicit replacements, and one
+rejection. Because that identity correction changes size-bounded grouping
+payloads, later semantic checkpoints cannot be replayed as if their inputs were
+unchanged. No further provider reservation remains under the owner USD 70
+ceiling.
+
+Falsifiable hypothesis: the already completed semantic result can be projected
+onto the corrected episode frontier without inventing semantic authority if and
+only if exact unchanged subjects retain their own evidence/audit; changed
+population membership or pattern occurrence-membership is recomputed with new
+identity and predecessor lineage but remains unpublished with current audit
+MISSING; optional-grounding replacements receive episode predecessor lineage
+but no automatic population assignment; the mandatory-invalid episode and all
+derived occurrences are detached from support and preserved as excluded
+history. Every denominator, disposition, support value, and before/after edge
+must conserve exactly. The output is a new private proposed partial historical
+projection, never a fresh full reanalysis, Defect-B benchmark pass, or baseline
+replacement.
+
+Frozen expansion budget:
+
+- independent test author: only a new bounded provider-disabled projection
+  test under `triana-labs/tests/behavior_map/`;
+- implementation author: only a new projection module under
+  `triana-labs/src/triana_labs/behavior_map/` plus the smallest export seam if
+  needed;
+- orchestrator: a fresh `/private/tmp` output root, comparison artifact, and
+  already-budgeted canonical documentation/decision append;
+- dependencies, prompts, provider adapters, retry/fallback, thresholds,
+  baseline artifacts, existing live/snapshot roots, and customer publication
+  remain untouched.
+
+Acceptance requires zero provider calls; exact source/selection/predecessor
+binding; 100% valid final grounding; one disposition per corrected episode;
+unique membership/support; no rejected episode or occurrence in support;
+unmodified successful baseline hashes; byte-identical repeated projection; and
+an independent artifact verdict. Human semantic benchmark metrics remain typed
+`HUMAN_LABELS_MISSING`.

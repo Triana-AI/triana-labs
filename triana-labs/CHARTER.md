@@ -435,3 +435,26 @@ Provider adapters may expose stage-specific output ceilings and deterministic
 request pacing, but still use no automatic retry or fallback. Complete explicit
 campaign reservation fields are authoritative for cumulative report budgeting
 and must not be double-counted from copied checkpoint history.
+
+The coverage-conservation repair keeps that successful report immutable and
+does not replace it. A provider-disabled projection may reuse only exact
+unchanged semantic subjects from a completed private predecessor. Citation
+repair is field-scoped: invalid extra evidence is excluded individually, a
+demand survives only while its goal, requested action, and subject retain exact
+customer-message grounding, and unsupported optional fields are removed with
+visible uncertainty. Every population-stage input receives an explicit
+disposition; omitted, ambiguous, failed-batch, or unsupplied IDs cannot silently
+become membership or disappear across batches.
+
+Historical projection never creates fresh semantic authority. A changed
+population membership or pattern occurrence set receives a new identity and
+predecessor lineage, remains unpublished with audit `MISSING`, and contributes
+no active assignment or support until re-audited. Rejected and grounding-
+replacement evidence remains inspectable excluded history. The accepted
+private projection `sha256:4a31e882651e533254a71fb43bf2aafe87b026297dea056c0c377aa4c1729f6e`
+contains 405 grounded episodes, 74 currently supported populations with 210
+active assignments, three unpublished candidate populations with eight
+`REAUDIT_REQUIRED` memberships, and 24 supported patterns. It is only a
+private, proposed, partial historical semantic projection—not a fresh full
+analysis, accepted taxonomy, benchmark pass, or replacement for the immutable
+baseline.

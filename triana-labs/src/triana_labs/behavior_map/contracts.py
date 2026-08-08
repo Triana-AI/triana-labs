@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, NotRequired, TypedDict
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class EvidenceCitationProposal(BaseModel):
@@ -25,6 +25,18 @@ class EvidenceCitationProposal(BaseModel):
         return value
 
 
+class EpisodeFieldGroundingProposal(BaseModel):
+    """Citation-index bindings for each independently retained demand field."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    goal: list[int]
+    requested_action: list[int]
+    subject: list[int]
+    constraints: list[list[int]]
+    fallbacks: list[list[int]]
+
+
 class EpisodeProposal(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -38,7 +50,23 @@ class EpisodeProposal(BaseModel):
     start_turn_ordinal: int
     end_turn_ordinal: int
     citations: list[EvidenceCitationProposal]
+    grounding_contract_version: Literal[1]
+    field_grounding: EpisodeFieldGroundingProposal
     status: Literal["PROPOSED", "UNKNOWN", "UNSUPPORTED"]
+
+    @model_validator(mode="before")
+    @classmethod
+    def bind_current_grounding_version(cls, value: Any) -> Any:
+        """Version explicit field bindings produced by current-schema callers."""
+
+        if (
+            isinstance(value, dict)
+            and "field_grounding" in value
+            and "grounding_contract_version" not in value
+        ):
+            value = dict(value)
+            value["grounding_contract_version"] = 1
+        return value
 
 
 class BehaviorProposal(BaseModel):
@@ -75,6 +103,22 @@ class PopulationBatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     populations: list[PopulationProposal]
+    unassigned_episode_ids: list[str] = Field(default_factory=list)
+    ambiguous_episode_ids: list[str] = Field(default_factory=list)
+
+
+class PopulationMatchProposal(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    episode_id: str
+    disposition: Literal["MATCH", "NO_MATCH", "AMBIGUOUS"]
+    population_id: str | None
+
+
+class PopulationMatchBatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    matches: list[PopulationMatchProposal]
 
 
 class PatternProposal(BaseModel):
@@ -177,6 +221,9 @@ class DemandEpisodeV0(TypedDict):
     citations: list[EvidenceCitationV0]
     status: Literal["PROPOSED", "UNKNOWN", "UNSUPPORTED"]
     method: str
+    field_grounding: NotRequired[dict[str, Any]]
+    excluded_citations: NotRequired[list[dict[str, Any]]]
+    field_uncertainties: NotRequired[list[dict[str, Any]]]
 
 
 class UserPopulationV0(TypedDict):
@@ -190,6 +237,19 @@ class UserPopulationV0(TypedDict):
     representative_evidence_ids: list[str]
     method: str
     audit_state: str
+    predecessor_population_ids: NotRequired[list[str]]
+
+
+class PopulationDispositionV0(TypedDict):
+    episode_id: str
+    disposition: Literal[
+        "ASSIGNED",
+        "INTENTIONALLY_UNASSIGNED",
+        "AMBIGUOUS",
+        "AUDIT_DISPUTED",
+    ]
+    population_id: NotRequired[str]
+    reason: str
 
 
 class AgentBehaviorOccurrenceV0(TypedDict):
@@ -229,7 +289,9 @@ class BehaviorMapReportV0(TypedDict):
     accounting: dict[str, Any]
     agent_context: dict[str, Any]
     episodes: list[DemandEpisodeV0]
+    excluded_episode_citations: list[dict[str, Any]]
     populations: list[UserPopulationV0]
+    population_dispositions: list[PopulationDispositionV0]
     behavior_occurrences: list[AgentBehaviorOccurrenceV0]
     behavior_patterns: list[AgentBehaviorPatternV0]
     emerging_unknown: list[dict[str, Any]]

@@ -30,6 +30,23 @@ representations live in `triana-backend/src/triana_backend/api/` and the frozen
 black-box acceptance contract is
 `triana-backend/tests/acceptance/test_trace_to_eval_self_serve.py`.
 
+### Behavior Map historical projection
+
+`behavior_map_historical_projection_v0` is a private internal artifact, not a
+new public Slice 0A document kind. It MUST bind the immediate semantic
+predecessor, accepted baseline predecessor, corrected extraction hash, source
+hash, DEVELOPMENT selection hash, privacy class, and provider-disabled state.
+Every corrected episode has exactly one disposition. Only populations with a
+current `SUPPORTED` audit own active assignment/support; changed populations
+remain visible candidates with `MISSING` audit and unpublished visibility, and
+their members are intentionally unassigned with `REAUDIT_REQUIRED`. Rejected or
+grounding-replacement memberships and occurrences remain typed excluded
+history and contribute zero active support. Edge conservation MUST classify
+every predecessor edge with zero unexplained loss, or publication refuses.
+Historical provider attempts and lane-cap violations remain historical facts;
+projection attempts are separately zero and actual cost remains unknown unless
+an authoritative cost record exists.
+
 ## Normative language
 
 `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `SHALL NOT`, `SHOULD`, and `MAY` are

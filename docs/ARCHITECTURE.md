@@ -67,6 +67,20 @@ egress; the default self-serve bridge uses `semantic_model=None`. A human owns
 reward mapping when no authoritative outcome exists, proposal acceptance or
 editing, and review rulings. Absence of any lane is a typed gap, never a pass.
 
+Behavior Map recovery has two distinct execution forms. A fresh semantic run
+may propose demand episodes, population membership, behavior occurrences, and
+patterns under explicit provider authority. A provider-disabled historical
+projection may instead repair deterministic grounding and conservation defects
+using a completed private predecessor, but it may retain authority only for
+byte-identical semantic subjects and their exact audits. Changed episode
+grounding creates explicit predecessor lineage; changed population or pattern
+membership is a new unaudited candidate, remains unpublished, and cannot
+contribute active assignment or support. The projection binds the failed
+semantic predecessor and accepted baseline separately, preserves rejected
+evidence as excluded history, reports zero projection calls, and carries any
+historical lane-budget violation without converting it into an overall-budget
+pass.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text

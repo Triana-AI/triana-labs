@@ -264,9 +264,24 @@ def _citation(conversation_id: str, turn_ordinal: int, quote: str) -> dict[str, 
     }
 
 
+def _with_explicit_grounding(row: dict[str, Any]) -> dict[str, Any]:
+    """Make a synthetic valid episode satisfy the current authoring contract."""
+
+    grounded = deepcopy(row)
+    grounded["grounding_contract_version"] = 1
+    grounded["field_grounding"] = {
+        "goal": [0],
+        "requested_action": [0],
+        "subject": [0],
+        "constraints": [[0] for _ in grounded["constraints"]],
+        "fallbacks": [[0] for _ in grounded["fallbacks"]],
+    }
+    return grounded
+
+
 def _episode_rows() -> dict[str, list[dict[str, Any]]]:
     shared = "Cancel order alpha and return the blue jacket from order beta."
-    return {
+    rows = {
         "multi-goal": [
             {
                 "local_id": "cancel-alpha",
@@ -410,6 +425,10 @@ def _episode_rows() -> dict[str, list[dict[str, Any]]]:
                 "status": "UNKNOWN",
             }
         ],
+    }
+    return {
+        conversation_id: [_with_explicit_grounding(row) for row in episodes]
+        for conversation_id, episodes in rows.items()
     }
 
 
@@ -1028,8 +1047,17 @@ def test_one_conversation_and_episode_can_carry_multiple_agent_behaviors(
 def test_semantic_citations_are_exact_or_the_row_abstains(tmp_path: Path) -> None:
     primary = _SemanticModel("terra-test-v0", invalid_quote=True)
     report, _, _, _ = _run(tmp_path, primary=primary)
-    assert "This quote does not occur in the trace." not in _canonical(report).decode()
-    assert {"SEMANTIC_CITATION_INVALID", "UNGROUNDED_SEMANTIC_OUTPUT"} & _codes(report)
+    assert all(
+        citation["quote"] != "This quote does not occur in the trace."
+        for episode in report["episodes"]
+        for citation in episode["citations"]
+    )
+    assert any(
+        row["citation"]["quote"] == "This quote does not occur in the trace."
+        and row["support_status"] == "EXCLUDED"
+        for row in report["excluded_episode_citations"]
+    )
+    assert "SEMANTIC_EPISODE_CITATION_EXCLUDED" in _codes(report)
 
 
 def test_deterministic_event_facts_remain_distinct_from_semantic_behavior(
@@ -1366,19 +1394,21 @@ class _ScaleSemanticModel:
                 )
                 local_id = f"episode-{conversation_id}"
                 episodes.append(
-                    {
-                        "local_id": local_id,
-                        "goal": f"Resolve {user}",
-                        "requested_action": "HANDLE_REQUEST",
-                        "subject": f"request {conversation_id}",
-                        "constraints": [],
-                        "fallbacks": [],
-                        "supersedes_local_id": None,
-                        "start_turn_ordinal": 0,
-                        "end_turn_ordinal": 1,
-                        "citations": [_citation(conversation_id, 0, user)],
-                        "status": "PROPOSED",
-                    }
+                    _with_explicit_grounding(
+                        {
+                            "local_id": local_id,
+                            "goal": f"Resolve {user}",
+                            "requested_action": "HANDLE_REQUEST",
+                            "subject": f"request {conversation_id}",
+                            "constraints": [],
+                            "fallbacks": [],
+                            "supersedes_local_id": None,
+                            "start_turn_ordinal": 0,
+                            "end_turn_ordinal": 1,
+                            "citations": [_citation(conversation_id, 0, user)],
+                            "status": "PROPOSED",
+                        }
+                    )
                 )
                 behaviors.append(
                     {
@@ -1546,19 +1576,21 @@ class _StatusSemanticModel(_SemanticModel):
                 "I will confirm both requests before changing either order."
             )
             episodes = [
-                {
-                    "local_id": f"episode-{status.casefold()}",
-                    "goal": f"{status.title()} demand",
-                    "requested_action": "CANCEL_ORDER",
-                    "subject": f"{status.casefold()} subject",
-                    "constraints": [],
-                    "fallbacks": [],
-                    "supersedes_local_id": None,
-                    "start_turn_ordinal": 0,
-                    "end_turn_ordinal": 1,
-                    "citations": [_citation(conversation_id, 0, user_quote)],
-                    "status": status,
-                }
+                _with_explicit_grounding(
+                    {
+                        "local_id": f"episode-{status.casefold()}",
+                        "goal": f"{status.title()} demand",
+                        "requested_action": "CANCEL_ORDER",
+                        "subject": f"{status.casefold()} subject",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 0,
+                        "end_turn_ordinal": 1,
+                        "citations": [_citation(conversation_id, 0, user_quote)],
+                        "status": status,
+                    }
+                )
                 for status in ("PROPOSED", "UNKNOWN", "UNSUPPORTED")
             ]
             behaviors = [
@@ -1913,7 +1945,7 @@ def test_cumulative_budget_is_reserved_before_any_semantic_egress(
 def test_cross_conversation_episode_citations_are_rejected(tmp_path: Path) -> None:
     primary = _CrossConversationCitationModel("terra-test-v0")
     report, _, _, _ = _run(tmp_path, primary=primary)
-    assert "SEMANTIC_CITATION_INVALID" in _codes(report)
+    assert "SEMANTIC_EPISODE_CITATION_EXCLUDED" in _codes(report)
     assert all(
         {citation["conversation_id"] for citation in row["citations"]}
         == {row["conversation_id"]}
@@ -2529,7 +2561,7 @@ def test_structurally_valid_checkpoint_result_tamper_refuses_before_egress(
     path = next(
         candidate
         for candidate in (output / "behavior-map-checkpoints").glob("*.json")
-        if json.loads(candidate.read_bytes())["result"].get("episodes")
+        if json.loads(candidate.read_bytes()).get("result", {}).get("episodes")
     )
     tampered = json.loads(path.read_bytes())
     tampered["result"]["episodes"][0]["goal"] = "Schema-valid tampered goal"
@@ -2697,19 +2729,21 @@ class _WrappedSemanticModel(_SemanticModel):
 
         return {
             "episodes": [
-                {
-                    "local_id": "wrapped-demand",
-                    "goal": "Check a wrapped response",
-                    "requested_action": "GET_INFORMATION",
-                    "subject": "wrapped response",
-                    "constraints": [],
-                    "fallbacks": [],
-                    "supersedes_local_id": None,
-                    "start_turn_ordinal": 1,
-                    "end_turn_ordinal": 4,
-                    "citations": [cite(1, "Check the wrapped response.")],
-                    "status": "PROPOSED",
-                }
+                _with_explicit_grounding(
+                    {
+                        "local_id": "wrapped-demand",
+                        "goal": "Check a wrapped response",
+                        "requested_action": "GET_INFORMATION",
+                        "subject": "wrapped response",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 1,
+                        "end_turn_ordinal": 4,
+                        "citations": [cite(1, "Check the wrapped response.")],
+                        "status": "PROPOSED",
+                    }
+                )
             ],
             "behaviors": [
                 {
@@ -3000,21 +3034,25 @@ class _ToolFloodSemanticModel(_SemanticModel):
         self.provider_calls += 1
         return {
             "episodes": [
-                {
-                    "local_id": "look-up-all-records",
-                    "goal": "Look up every synthetic record",
-                    "requested_action": "LOOKUP_RECORDS",
-                    "subject": "all synthetic records",
-                    "constraints": [],
-                    "fallbacks": [],
-                    "supersedes_local_id": None,
-                    "start_turn_ordinal": 0,
-                    "end_turn_ordinal": 101,
-                    "citations": [
-                        _citation("tool-flood", 0, "Look up every synthetic record.")
-                    ],
-                    "status": "PROPOSED",
-                }
+                _with_explicit_grounding(
+                    {
+                        "local_id": "look-up-all-records",
+                        "goal": "Look up every synthetic record",
+                        "requested_action": "LOOKUP_RECORDS",
+                        "subject": "all synthetic records",
+                        "constraints": [],
+                        "fallbacks": [],
+                        "supersedes_local_id": None,
+                        "start_turn_ordinal": 0,
+                        "end_turn_ordinal": 101,
+                        "citations": [
+                            _citation(
+                                "tool-flood", 0, "Look up every synthetic record."
+                            )
+                        ],
+                        "status": "PROPOSED",
+                    }
+                )
             ],
             "behaviors": [],
         }
@@ -3300,7 +3338,9 @@ def test_episode_audit_scope_detaches_only_disputed_members_and_reprojects(
     assert original_population_ids <= set(audits)
     assert all(audits[item_id] == "SUPPORTED" for item_id in original_population_ids)
     assert all(audits[item_id] == "UNSUPPORTED" for item_id in disputed_ids)
-    assert not report["gaps"]
+    assert not [
+        gap for gap in report["gaps"] if gap["stage"] in {"POPULATIONS", "AUDIT"}
+    ]
     assert {
         f"Does the population ‘{row['label']}’ describe one distinct user demand?"
         for row in report["populations"]
@@ -4048,42 +4088,48 @@ class _ReadableEvidenceSemanticModel(_SemanticModel):
             self.provider_calls += 1
             return {
                 "episodes": [
-                    {
-                        "local_id": "find-order",
-                        "goal": "Find an order",
-                        "requested_action": "GET_INFORMATION",
-                        "subject": "blue fragile order",
-                        "constraints": [],
-                        "fallbacks": [],
-                        "supersedes_local_id": None,
-                        "start_turn_ordinal": 0,
-                        "end_turn_ordinal": 3,
-                        "citations": [
-                            _citation(
-                                "readable-evidence",
-                                0,
-                                'Find the <blue> & "fragile" order.',
-                            )
-                        ],
-                        "status": "PROPOSED",
-                    },
-                    {
-                        "local_id": "cancel-order",
-                        "goal": "Cancel an order",
-                        "requested_action": "CANCEL_ORDER",
-                        "subject": "order B",
-                        "constraints": ["urgent"],
-                        "fallbacks": ["leave it unchanged"],
-                        "supersedes_local_id": None,
-                        "start_turn_ordinal": 4,
-                        "end_turn_ordinal": 7,
-                        "citations": [
-                            _citation(
-                                "readable-evidence", 4, 'Cancel order B as "urgent".'
-                            )
-                        ],
-                        "status": "PROPOSED",
-                    },
+                    _with_explicit_grounding(
+                        {
+                            "local_id": "find-order",
+                            "goal": "Find an order",
+                            "requested_action": "GET_INFORMATION",
+                            "subject": "blue fragile order",
+                            "constraints": [],
+                            "fallbacks": [],
+                            "supersedes_local_id": None,
+                            "start_turn_ordinal": 0,
+                            "end_turn_ordinal": 3,
+                            "citations": [
+                                _citation(
+                                    "readable-evidence",
+                                    0,
+                                    'Find the <blue> & "fragile" order.',
+                                )
+                            ],
+                            "status": "PROPOSED",
+                        }
+                    ),
+                    _with_explicit_grounding(
+                        {
+                            "local_id": "cancel-order",
+                            "goal": "Cancel an order",
+                            "requested_action": "CANCEL_ORDER",
+                            "subject": "order B",
+                            "constraints": ["urgent"],
+                            "fallbacks": [],
+                            "supersedes_local_id": None,
+                            "start_turn_ordinal": 4,
+                            "end_turn_ordinal": 7,
+                            "citations": [
+                                _citation(
+                                    "readable-evidence",
+                                    4,
+                                    'Cancel order B as "urgent".',
+                                )
+                            ],
+                            "status": "PROPOSED",
+                        }
+                    ),
                 ],
                 "behaviors": [],
             }
