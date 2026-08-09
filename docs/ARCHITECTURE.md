@@ -81,6 +81,25 @@ evidence as excluded history, reports zero projection calls, and carries any
 historical lane-budget violation without converting it into an overall-budget
 pass.
 
+Fresh Behavior Map pattern consolidation has a deterministic conservation
+projection around the semantic proposer. Every eligible occurrence receives
+one terminal disposition, and each model response is restricted to the exact
+members supplied to that first-level or hierarchy batch. Supported patterns
+are the only active-support subjects; missing-audit and non-supported patterns
+remain stable unpublished candidates/disputes. Report accounting separates
+candidate, audited, supported, disputed, and missing states plus active and
+unpublished membership. Before artifact identity is finalized, a deterministic
+gate refuses duplicate occurrence membership, duplicate population membership
+or dispositions, support mismatch, population-edge mismatch, and any mismatch
+between active population members and `ASSIGNED` dispositions.
+
+Historical projection treats a predecessor `AUDIT_DISPUTED` disposition as
+persistent authority. It removes that episode before recomputing population
+identity/support, records the excluded predecessor edge, and cannot restore
+assignment without a current explicit supported ruling. Any co-member whose
+population identity changes becomes re-audit-required rather than inheriting
+the predecessor audit.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text

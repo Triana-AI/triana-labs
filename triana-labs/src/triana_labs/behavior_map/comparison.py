@@ -570,6 +570,42 @@ def compare_behavior_maps(
         )
         for label, (collection, identity_key, predecessor_key) in identity_specs.items()
     }
+    pattern_lineage = identity_internal["patterns"]
+    before_pattern_count = len(_rows(before, "behavior_patterns"))
+    after_pattern_count = len(_rows(after, "behavior_patterns"))
+    pattern_lineage_count = int(pattern_lineage["preserved_count"]) + int(
+        pattern_lineage["superseded_count"]
+    )
+    pattern_subject_noncomparable = (
+        before_pattern_count > 0
+        and after_pattern_count > 0
+        and pattern_lineage_count == 0
+    )
+    semantic_subject_movement: JsonObject = {
+        "patterns": {
+            "state": (
+                "NONCOMPARABLE_ZERO_SUBJECT_LINEAGE"
+                if pattern_subject_noncomparable
+                else "COMPARABLE_SUBJECT_LINEAGE"
+            ),
+            "before_raw_count": before_pattern_count,
+            "after_raw_count": after_pattern_count,
+            "preserved_count": pattern_lineage["preserved_count"],
+            "superseded_count": pattern_lineage["superseded_count"],
+            "comparable_loss_count": (
+                None
+                if pattern_subject_noncomparable
+                else pattern_lineage["unmapped_before_count"]
+            ),
+            "delta": (
+                None
+                if pattern_subject_noncomparable
+                else after_pattern_count - before_pattern_count
+            ),
+        }
+    }
+    if pattern_subject_noncomparable:
+        gaps.append({"code": "COMPARISON_PATTERN_SUBJECT_LINEAGE_MISSING"})
     before_disputed_ids = {
         cast(str, row["episode_id"])
         for row in _rows(before, "population_dispositions")
@@ -603,6 +639,8 @@ def compare_behavior_maps(
     claim_superseded: set[str] = set()
     claim_losses: set[str] = set()
     for label, lineage in identity_internal.items():
+        if label == "patterns" and pattern_subject_noncomparable:
+            continue
         excluded = before_disputed_ids if label == "episodes" else set()
         claim_preserved.update(set(lineage["_preserved_ids"]) - excluded)
         claim_superseded.update(set(lineage["_superseded_before_ids"]) - excluded)
@@ -658,6 +696,7 @@ def compare_behavior_maps(
         "gap_movement": gap_movement,
         "cost_movement": cost_movement,
         "identity_lineage": identity_lineage,
+        "semantic_subject_movement": semantic_subject_movement,
         "membership_edge_lineage": membership_edge_lineage,
         "id_level_movement": id_level_movement,
         "baseline_claims": baseline_claims,
@@ -701,6 +740,8 @@ def compare_behavior_maps(
             "",
             f"Population membership edges: `{json.dumps(membership_edge_lineage, sort_keys=True)}`",
             "",
+            f"Semantic subject movement: `{json.dumps(semantic_subject_movement, sort_keys=True)}`",
+            "",
             "## Gaps and audits",
             "",
             f"Gap movement: `{json.dumps(gap_movement, sort_keys=True)}`",
@@ -736,6 +777,7 @@ def compare_behavior_maps(
         f"<pre>{html.escape(json.dumps(baseline_claims, sort_keys=True))}</pre>"
         f"<pre>{html.escape(json.dumps(id_level_movement, sort_keys=True))}</pre>"
         f"<pre>{html.escape(json.dumps(membership_edge_lineage, sort_keys=True))}</pre>"
+        f"<pre>{html.escape(json.dumps(semantic_subject_movement, sort_keys=True))}</pre>"
         "<h2>Gaps and audits</h2>"
         f"<pre>{html.escape(json.dumps(gap_movement, sort_keys=True))}</pre>"
         "<h2>Cost and reservation</h2>"

@@ -24,6 +24,7 @@ from .contracts import (
     EvidenceCitationV0,
     ExtractionBatch,
     PatternBatch,
+    PatternOccurrenceDispositionV0,
     PopulationBatch,
     PopulationMatchBatch,
     UserPopulationV0,
@@ -95,6 +96,15 @@ class SemanticModel(Protocol):
         payload: JsonObject,
         schema: type[BaseModel],
     ) -> JsonObject: ...
+
+
+class BehaviorMapConservationError(ValueError):
+    """Typed deterministic refusal for inconsistent published membership."""
+
+    def __init__(self, code: str, details: JsonObject) -> None:
+        super().__init__(code)
+        self.code = code
+        self.details = details
 
 
 def _canonical(value: Any, *, lf: bool = False) -> bytes:
@@ -1097,11 +1107,12 @@ def _recursive_hierarchy(
             )
         next_level: list[JsonObject] = []
         for index, payload in enumerate(batches):
+            hierarchy_stage = f"{stage_prefix}-{level:04d}-{index:04d}"
             try:
                 result, checkpoint = _call(
                     model,
                     directory,
-                    stage=f"{stage_prefix}-{level:04d}-{index:04d}",
+                    stage=hierarchy_stage,
                     system=system,
                     payload=payload,
                     schema=schema,
@@ -1127,7 +1138,39 @@ def _recursive_hierarchy(
                 )
                 return current
             checkpoint_ids.append(checkpoint)
-            next_level.extend(cast(list[JsonObject], result[result_key]))
+            returned_rows = cast(list[JsonObject], result[result_key])
+            if result_key == "patterns":
+                supplied_members = {
+                    member
+                    for row in cast(list[JsonObject], payload[candidate_key])
+                    for member in cast(list[str], row.get(member_key, []))
+                }
+                returned_members = {
+                    member
+                    for row in returned_rows
+                    for member in cast(list[str], row.get(member_key, []))
+                }
+                foreign_members = sorted(returned_members - supplied_members)
+                if foreign_members:
+                    gaps.append(
+                        {
+                            "code": "UNSUPPLIED_PATTERN_OCCURRENCE_ID",
+                            "stage": "PATTERNS_HIERARCHY",
+                            "source_stage": hierarchy_stage,
+                            "occurrence_ids": foreign_members,
+                        }
+                    )
+                returned_rows = [
+                    {
+                        **row,
+                        member_key: sorted(
+                            set(cast(list[str], row.get(member_key, [])))
+                            & supplied_members
+                        ),
+                    }
+                    for row in returned_rows
+                ]
+            next_level.extend(returned_rows)
         if not next_level:
             gaps.append(
                 {"code": "SEMANTIC_HIERARCHY_EMPTY", "stage": stage_prefix.upper()}
@@ -2789,6 +2832,7 @@ def _population_dispositions(
     population_by_episode = {
         episode_id: cast(str, population["population_id"])
         for population in populations
+        if population.get("audit_state") == "SUPPORTED"
         for episode_id in cast(list[str], population["episode_ids"])
     }
     rows: list[JsonObject] = []
@@ -2841,6 +2885,151 @@ def _population_dispositions(
                 }
             )
     return rows
+
+
+def validate_behavior_map_conservation(report: Mapping[str, Any]) -> JsonObject:
+    """Require active population membership to equal assigned dispositions."""
+
+    raw_populations = report.get("populations")
+    raw_dispositions = report.get("population_dispositions")
+    if not isinstance(raw_populations, list) or not isinstance(raw_dispositions, list):
+        raise BehaviorMapConservationError(
+            "POPULATION_MEMBERSHIP_DISPOSITION_MISMATCH",
+            {
+                "active_population_member_count": 0,
+                "assigned_disposition_count": 0,
+                "active_not_assigned_episode_ids": [],
+                "assigned_not_active_episode_ids": [],
+                "disputed_active_episode_ids": [],
+            },
+        )
+    populations = cast(list[JsonObject], raw_populations)
+    dispositions = cast(list[JsonObject], raw_dispositions)
+    disposition_row_counts: dict[str, int] = {}
+    for disposition in dispositions:
+        episode_id = disposition.get("episode_id")
+        if isinstance(episode_id, str):
+            disposition_row_counts[episode_id] = (
+                disposition_row_counts.get(episode_id, 0) + 1
+            )
+    duplicate_disposition_episode_ids = sorted(
+        episode_id for episode_id, count in disposition_row_counts.items() if count > 1
+    )
+    if duplicate_disposition_episode_ids:
+        raise BehaviorMapConservationError(
+            "POPULATION_DISPOSITION_DUPLICATE",
+            {
+                "episode_ids": duplicate_disposition_episode_ids,
+                "row_counts_by_episode": {
+                    episode_id: disposition_row_counts[episode_id]
+                    for episode_id in duplicate_disposition_episode_ids
+                },
+            },
+        )
+    active_populations = [
+        population
+        for population in populations
+        if population.get("audit_state") == "SUPPORTED"
+    ]
+    active_population_ids_by_episode: dict[str, list[str]] = {}
+    for population in active_populations:
+        population_id = cast(str, population.get("population_id"))
+        for episode_id in cast(list[str], population.get("episode_ids", [])):
+            if isinstance(episode_id, str):
+                active_population_ids_by_episode.setdefault(episode_id, []).append(
+                    population_id
+                )
+    duplicate_active_episode_ids = sorted(
+        episode_id
+        for episode_id, population_ids in active_population_ids_by_episode.items()
+        if len(population_ids) > 1
+    )
+    if duplicate_active_episode_ids:
+        raise BehaviorMapConservationError(
+            "POPULATION_DUPLICATE_ACTIVE_MEMBERSHIP",
+            {
+                "episode_ids": duplicate_active_episode_ids,
+                "population_ids_by_episode": {
+                    episode_id: sorted(active_population_ids_by_episode[episode_id])
+                    for episode_id in duplicate_active_episode_ids
+                },
+            },
+        )
+    support_mismatches = [
+        {
+            "population_id": population.get("population_id"),
+            "declared_support": population.get("support"),
+            "unique_member_count": len(
+                set(cast(list[str], population.get("episode_ids", [])))
+            ),
+        }
+        for population in active_populations
+        if population.get("support")
+        != len(set(cast(list[str], population.get("episode_ids", []))))
+    ]
+    if support_mismatches:
+        raise BehaviorMapConservationError(
+            "POPULATION_SUPPORT_MISMATCH",
+            {"populations": support_mismatches},
+        )
+    assignment_edge_mismatches = [
+        {
+            "episode_id": cast(str, disposition["episode_id"]),
+            "expected_population_id": active_population_ids_by_episode[
+                cast(str, disposition["episode_id"])
+            ][0],
+            "assigned_population_id": disposition.get("population_id"),
+        }
+        for disposition in dispositions
+        if disposition.get("disposition") == "ASSIGNED"
+        and isinstance(disposition.get("episode_id"), str)
+        and disposition["episode_id"] in active_population_ids_by_episode
+        and disposition.get("population_id")
+        != active_population_ids_by_episode[cast(str, disposition["episode_id"])][0]
+    ]
+    if assignment_edge_mismatches:
+        raise BehaviorMapConservationError(
+            "POPULATION_ASSIGNMENT_EDGE_MISMATCH",
+            {"mismatches": assignment_edge_mismatches},
+        )
+    active_episode_ids = {
+        episode_id
+        for population in active_populations
+        for episode_id in cast(list[str], population.get("episode_ids", []))
+        if isinstance(episode_id, str)
+    }
+    assigned_episode_ids = {
+        cast(str, disposition["episode_id"])
+        for disposition in dispositions
+        if disposition.get("disposition") == "ASSIGNED"
+        and isinstance(disposition.get("episode_id"), str)
+    }
+    disputed_episode_ids = {
+        cast(str, disposition["episode_id"])
+        for disposition in dispositions
+        if disposition.get("disposition") == "AUDIT_DISPUTED"
+        and isinstance(disposition.get("episode_id"), str)
+    }
+    active_not_assigned = active_episode_ids - assigned_episode_ids
+    assigned_not_active = assigned_episode_ids - active_episode_ids
+    disputed_active = disputed_episode_ids & active_episode_ids
+    if active_not_assigned or assigned_not_active or disputed_active:
+        raise BehaviorMapConservationError(
+            "POPULATION_MEMBERSHIP_DISPOSITION_MISMATCH",
+            {
+                "active_population_member_count": len(active_episode_ids),
+                "assigned_disposition_count": len(assigned_episode_ids),
+                "active_not_assigned_episode_ids": sorted(active_not_assigned),
+                "assigned_not_active_episode_ids": sorted(assigned_not_active),
+                "disputed_active_episode_ids": sorted(disputed_active),
+            },
+        )
+    return {
+        "active_population_member_count": len(active_episode_ids),
+        "assigned_disposition_count": len(assigned_episode_ids),
+        "disputed_episode_count": len(disputed_episode_ids),
+        "state": "CONSERVED",
+    }
 
 
 def _reproject_population_after_episode_audit(
@@ -3059,6 +3248,153 @@ def _patterns(
             {"pattern_id": _digest("behavior-map-pattern-v0", identity), **identity}
         )
     return rows, gaps
+
+
+def _pattern_occurrence_projection(
+    eligible_occurrences: list[JsonObject],
+    patterns: list[JsonObject],
+    *,
+    omitted_occurrence_ids: set[str],
+    failed_occurrence_ids: set[str],
+    foreign_occurrence_ids: set[str],
+) -> tuple[list[PatternOccurrenceDispositionV0], JsonObject]:
+    eligible_ids = {
+        cast(str, occurrence["occurrence_id"]) for occurrence in eligible_occurrences
+    }
+    pattern_ids_by_occurrence: dict[str, list[str]] = {}
+    for pattern in patterns:
+        pattern_id = cast(str, pattern["pattern_id"])
+        for occurrence_id in cast(list[str], pattern["occurrence_ids"]):
+            if occurrence_id in eligible_ids:
+                pattern_ids_by_occurrence.setdefault(occurrence_id, []).append(
+                    pattern_id
+                )
+    duplicate_occurrence_ids = sorted(
+        occurrence_id
+        for occurrence_id, pattern_ids in pattern_ids_by_occurrence.items()
+        if len(pattern_ids) > 1
+    )
+    if duplicate_occurrence_ids:
+        raise BehaviorMapConservationError(
+            "PATTERN_OCCURRENCE_MEMBERSHIP_DUPLICATE",
+            {
+                "occurrence_ids": duplicate_occurrence_ids,
+                "pattern_ids_by_occurrence": {
+                    occurrence_id: sorted(pattern_ids_by_occurrence[occurrence_id])
+                    for occurrence_id in duplicate_occurrence_ids
+                },
+            },
+        )
+    active_patterns = [
+        pattern for pattern in patterns if pattern.get("audit_state") == "SUPPORTED"
+    ]
+    disputed_patterns = [
+        pattern
+        for pattern in patterns
+        if pattern.get("audit_state") in {"MERGE", "SPLIT", "UNSUPPORTED", "UNCERTAIN"}
+    ]
+    candidate_patterns = [
+        pattern for pattern in patterns if pattern.get("audit_state") != "SUPPORTED"
+    ]
+    active_by_occurrence = {
+        occurrence_id: cast(str, pattern["pattern_id"])
+        for pattern in active_patterns
+        for occurrence_id in cast(list[str], pattern["occurrence_ids"])
+        if occurrence_id in eligible_ids
+    }
+    candidate_by_occurrence = {
+        occurrence_id: cast(str, pattern["pattern_id"])
+        for pattern in candidate_patterns
+        for occurrence_id in cast(list[str], pattern["occurrence_ids"])
+        if occurrence_id in eligible_ids
+    }
+    disputed_by_occurrence = {
+        occurrence_id: cast(str, pattern["pattern_id"])
+        for pattern in disputed_patterns
+        for occurrence_id in cast(list[str], pattern["occurrence_ids"])
+        if occurrence_id in eligible_ids
+    }
+    rows: list[PatternOccurrenceDispositionV0] = []
+    for occurrence_id in sorted(eligible_ids):
+        if occurrence_id in active_by_occurrence:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "ASSIGNED",
+                    "reason": "PATTERN_MEMBERSHIP",
+                    "pattern_id": active_by_occurrence[occurrence_id],
+                }
+            )
+        elif occurrence_id in disputed_by_occurrence:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "AUDIT_DISPUTED",
+                    "reason": "AUDIT_DISAGREEMENT",
+                    "candidate_pattern_id": disputed_by_occurrence[occurrence_id],
+                }
+            )
+        elif occurrence_id in candidate_by_occurrence:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "INTENTIONALLY_UNASSIGNED",
+                    "reason": "REAUDIT_REQUIRED",
+                    "candidate_pattern_id": candidate_by_occurrence[occurrence_id],
+                }
+            )
+        elif occurrence_id in failed_occurrence_ids:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "INTENTIONALLY_UNASSIGNED",
+                    "reason": "PATTERN_BATCH_FAILED",
+                }
+            )
+        elif occurrence_id in omitted_occurrence_ids:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "INTENTIONALLY_UNASSIGNED",
+                    "reason": "MODEL_OMITTED_OCCURRENCE",
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "occurrence_id": occurrence_id,
+                    "disposition": "INTENTIONALLY_UNASSIGNED",
+                    "reason": "UNASSIGNED_BEHAVIOR",
+                }
+            )
+    accounting: JsonObject = {
+        "eligible_occurrence_count": len(eligible_ids),
+        "terminal_disposition_count": len(rows),
+        "candidate_pattern_count": len(patterns),
+        "audited_pattern_count": sum(
+            pattern.get("audit_state") not in {"PENDING", "MISSING"}
+            for pattern in patterns
+        ),
+        "supported_pattern_count": len(active_patterns),
+        "disputed_pattern_count": len(disputed_patterns),
+        "audit_missing_pattern_count": sum(
+            pattern.get("audit_state") == "MISSING" for pattern in patterns
+        ),
+        "active_pattern_membership_count": sum(
+            len(cast(list[str], pattern["occurrence_ids"]))
+            for pattern in active_patterns
+        ),
+        "unpublished_candidate_pattern_membership_count": sum(
+            len(cast(list[str], pattern["occurrence_ids"]))
+            for pattern in candidate_patterns
+        ),
+        "published_pattern_support": sum(
+            cast(int, pattern["support"]) for pattern in active_patterns
+        ),
+    }
+    if foreign_occurrence_ids:
+        accounting["foreign_occurrence_id_count"] = len(foreign_occurrence_ids)
+    return rows, accounting
 
 
 def _questions(
@@ -3340,6 +3676,10 @@ def run_behavior_map(
     failed_population_batch_episode_ids: set[str] = set()
     explicit_episode_audit_disputed_ids: set[str] = set()
     patterns: list[JsonObject] = []
+    pattern_inputs: list[JsonObject] = []
+    failed_pattern_occurrence_ids: set[str] = set()
+    omitted_pattern_occurrence_ids: set[str] = set()
+    foreign_pattern_occurrence_ids: set[str] = set()
     emerging_unknown: list[JsonObject] = []
     audits: list[JsonObject] = []
     evidence: list[JsonObject] = []
@@ -3824,7 +4164,7 @@ def run_behavior_map(
             if oversized_pattern_items:
                 gaps.append({"code": "SEMANTIC_REQUEST_TOO_LARGE", "stage": "PATTERNS"})
             pattern_proposals: list[JsonObject] = []
-            failed_pattern_occurrence_ids: set[str] = set()
+            failed_pattern_occurrence_ids = set()
             for index, payload in enumerate(pattern_batches):
                 supplied_occurrence_ids = {
                     cast(str, row["occurrence_id"])
@@ -3852,8 +4192,29 @@ def run_behavior_map(
                     )
                     continue
                 checkpoint_ids.append(checkpoint)
+                returned_patterns = cast(list[JsonObject], pattern_result["patterns"])
+                returned_occurrence_ids = {
+                    occurrence_id
+                    for proposal in returned_patterns
+                    for occurrence_id in cast(
+                        list[str], proposal.get("occurrence_ids", [])
+                    )
+                }
+                foreign_pattern_occurrence_ids.update(
+                    returned_occurrence_ids - supplied_occurrence_ids
+                )
+                omitted_pattern_occurrence_ids.update(
+                    supplied_occurrence_ids - returned_occurrence_ids
+                )
                 pattern_proposals.extend(
-                    cast(list[JsonObject], pattern_result["patterns"])
+                    {
+                        **proposal,
+                        "occurrence_ids": sorted(
+                            set(cast(list[str], proposal["occurrence_ids"]))
+                            & supplied_occurrence_ids
+                        ),
+                    }
+                    for proposal in returned_patterns
                 )
             if len(pattern_batches) > 1:
                 pattern_proposals = _recursive_hierarchy(
@@ -3868,6 +4229,41 @@ def run_behavior_map(
                     checkpoint_ids=checkpoint_ids,
                     gaps=gaps,
                 )
+            foreign_pattern_occurrence_ids.update(
+                occurrence_id
+                for gap in gaps
+                if gap.get("code") == "UNSUPPLIED_PATTERN_OCCURRENCE_ID"
+                for occurrence_id in cast(list[str], gap.get("occurrence_ids", []))
+            )
+            eligible_pattern_occurrence_ids = {
+                cast(str, row["occurrence_id"]) for row in pattern_inputs
+            }
+            hierarchy_occurrence_ids = {
+                occurrence_id
+                for proposal in pattern_proposals
+                for occurrence_id in cast(list[str], proposal.get("occurrence_ids", []))
+            }
+            foreign_pattern_occurrence_ids.update(
+                hierarchy_occurrence_ids - eligible_pattern_occurrence_ids
+            )
+            if foreign_pattern_occurrence_ids:
+                gaps.append(
+                    {
+                        "code": "UNSUPPLIED_PATTERN_OCCURRENCE_ID",
+                        "stage": "PATTERNS",
+                        "occurrence_ids": sorted(foreign_pattern_occurrence_ids),
+                    }
+                )
+            pattern_proposals = [
+                {
+                    **proposal,
+                    "occurrence_ids": sorted(
+                        set(cast(list[str], proposal["occurrence_ids"]))
+                        & eligible_pattern_occurrence_ids
+                    ),
+                }
+                for proposal in pattern_proposals
+            ]
             merged_pattern_proposals: dict[tuple[str, str], JsonObject] = {}
             for proposal in pattern_proposals:
                 key = (cast(str, proposal["label"]), cast(str, proposal["definition"]))
@@ -3949,6 +4345,28 @@ def run_behavior_map(
                                 "description": "The semantic behavior occurrence was not attached to a publishable pattern.",
                             }
                         )
+            existing_unknowns = {
+                (cast(str, row["episode_id"]), cast(str, row["reason"]))
+                for row in emerging_unknown
+            }
+            for occurrence_id in sorted(
+                eligible_pattern_occurrence_ids
+                - published_pattern_occurrence_ids
+                - failed_pattern_occurrence_ids
+            ):
+                occurrence = occurrence_by_id_for_unknown[occurrence_id]
+                for episode_id in cast(list[str], occurrence["episode_ids"]):
+                    key = (episode_id, "UNASSIGNED_BEHAVIOR")
+                    if key in existing_unknowns:
+                        continue
+                    emerging_unknown.append(
+                        {
+                            "episode_id": episode_id,
+                            "reason": "UNASSIGNED_BEHAVIOR",
+                            "description": "The semantic behavior occurrence was not attached to a publishable pattern.",
+                        }
+                    )
+                    existing_unknowns.add(key)
             if audit_model is None:
                 gaps.append({"code": "SEMANTIC_AUDIT_UNAVAILABLE", "stage": "AUDIT"})
             else:
@@ -4175,6 +4593,10 @@ def run_behavior_map(
                     audits.append(audit)
                     item = known_items[item_id]
                     item["audit_state"] = audit["decision"]
+                    if "pattern_id" in item and audit["decision"] == "SUPPORTED":
+                        item["visibility"] = "SUPPORTED_PATTERN"
+                    elif "pattern_id" in item:
+                        item["visibility"] = "UNPUBLISHED_AUDIT_DISPUTED"
                     if audit["decision"] != "SUPPORTED":
                         episode_id = (
                             item_id
@@ -4201,7 +4623,11 @@ def run_behavior_map(
                         }
                     )
                     item = known_items[item_id]
-                    item["audit_state"] = "UNCERTAIN"
+                    if "pattern_id" in item:
+                        item["audit_state"] = "MISSING"
+                        item["visibility"] = "UNPUBLISHED_AUDIT_MISSING"
+                    else:
+                        item["audit_state"] = "UNCERTAIN"
                     episode_ids = (
                         [item_id]
                         if "episode_id" in item
@@ -4228,11 +4654,6 @@ def run_behavior_map(
                     row
                     for row in populations
                     if row["population_id"] not in missing_item_id_set
-                ]
-                patterns = [
-                    row
-                    for row in patterns
-                    if row["pattern_id"] not in missing_item_id_set
                 ]
                 disputed_ids = {
                     cast(str, audit["item_id"])
@@ -4267,9 +4688,6 @@ def run_behavior_map(
                 ]
                 populations = [
                     row for row in reprojected_populations if row is not None
-                ]
-                patterns = [
-                    row for row in patterns if row["pattern_id"] not in disputed_ids
                 ]
                 patterns, post_audit_pattern_gaps, post_audit_pattern_unknown = (
                     _reproject_patterns_after_episode_audit(
@@ -4323,6 +4741,15 @@ def run_behavior_map(
         explicit_ambiguous_episode_ids,
         explicit_episode_audit_disputed_ids,
         failed_population_batch_episode_ids,
+    )
+    pattern_occurrence_dispositions, pattern_accounting = (
+        _pattern_occurrence_projection(
+            pattern_inputs,
+            patterns,
+            omitted_occurrence_ids=omitted_pattern_occurrence_ids,
+            failed_occurrence_ids=failed_pattern_occurrence_ids,
+            foreign_occurrence_ids=foreign_pattern_occurrence_ids,
+        )
     )
     if predecessor_report is not None:
         _project_semantic_predecessors(
@@ -4508,7 +4935,12 @@ def run_behavior_map(
         "populations": populations,
         "population_dispositions": population_dispositions,
         "behavior_occurrences": occurrences,
+        "eligible_behavior_occurrences": sorted(
+            cast(str, row["occurrence_id"]) for row in pattern_inputs
+        ),
         "behavior_patterns": patterns,
+        "pattern_occurrence_dispositions": pattern_occurrence_dispositions,
+        "pattern_accounting": pattern_accounting,
         "emerging_unknown": sorted(
             emerging_unknown, key=lambda row: (row["episode_id"], row["reason"])
         ),
@@ -4543,6 +4975,7 @@ def run_behavior_map(
             "retry_allowed": False,
         },
     }
+    validate_behavior_map_conservation(report)
     predecessor_report_id = manifest.get("predecessor_report_id")
     if isinstance(predecessor_report_id, str):
         report["predecessor_report_id"] = predecessor_report_id

@@ -2048,8 +2048,47 @@ def test_pattern_audit_rejection_never_changes_episode_population_assignment(
         if row["decision"] == "UNSUPPORTED"
     }
     assert rejected_pattern_ids
-    assert rejected_pattern_ids.isdisjoint(
-        {row["pattern_id"] for row in first["behavior_patterns"]}
+    rejected_patterns = [
+        row
+        for row in first["behavior_patterns"]
+        if row["pattern_id"] in rejected_pattern_ids
+    ]
+    assert {row["pattern_id"] for row in rejected_patterns} == rejected_pattern_ids
+    assert all(
+        row["audit_state"] == "UNSUPPORTED"
+        and row["visibility"] == "UNPUBLISHED_AUDIT_DISPUTED"
+        for row in rejected_patterns
+    )
+    rejected_occurrence_ids = {
+        occurrence_id
+        for pattern in rejected_patterns
+        for occurrence_id in pattern["occurrence_ids"]
+    }
+    rejected_occurrence_dispositions = [
+        row
+        for row in first["pattern_occurrence_dispositions"]
+        if row["occurrence_id"] in rejected_occurrence_ids
+    ]
+    assert {
+        row["occurrence_id"] for row in rejected_occurrence_dispositions
+    } == rejected_occurrence_ids
+    assert all(
+        row["disposition"] == "AUDIT_DISPUTED"
+        and row["reason"] == "AUDIT_DISAGREEMENT"
+        and row["candidate_pattern_id"] in rejected_pattern_ids
+        for row in rejected_occurrence_dispositions
+    )
+    supported_patterns = [
+        row for row in first["behavior_patterns"] if row["audit_state"] == "SUPPORTED"
+    ]
+    assert first["pattern_accounting"]["supported_pattern_count"] == len(
+        supported_patterns
+    )
+    assert first["pattern_accounting"]["published_pattern_support"] == sum(
+        row["support"] for row in supported_patterns
+    )
+    assert first["pattern_accounting"]["active_pattern_membership_count"] == sum(
+        len(row["occurrence_ids"]) for row in supported_patterns
     )
     unique_population_members = {
         episode_id

@@ -83,6 +83,18 @@ pattern's membership and support. Any surviving pattern is deterministically
 reidentified and linked to its pre-projection audit subject; a pattern-level
 ruling continues to govern the whole pattern.
 
+Pattern-stage custody is exhaustive. Every eligible behavior occurrence has
+one deterministic terminal disposition; successful-batch omissions, failed
+batches, insufficient support, audit-missing candidates, and audited disputes
+remain distinct. A semantic response may contribute only occurrence IDs from
+its exact batch or hierarchy input. Missing-audit and disputed patterns retain
+stable identity, membership, evidence lineage, and unpublished visibility but
+contribute zero active support. Candidate, audited, supported, disputed, and
+missing counts are separate. Population publication likewise requires unique
+membership, support equal to unique members, one disposition per episode, and
+exact equality between active episode-to-population edges and `ASSIGNED`
+disposition edges.
+
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
 primary author and Terra as independent auditor, with no retry or fallback and
@@ -458,3 +470,20 @@ active assignments, three unpublished candidate populations with eight
 private, proposed, partial historical semantic projection—not a fresh full
 analysis, accepted taxonomy, benchmark pass, or replacement for the immutable
 baseline.
+
+The 2026-08-09 conservation repair leaves that accepted baseline and projection
+inspectable. It rejects pattern IDs absent from the exact batch or hierarchy
+input, retains audit-missing and disputed patterns as unpublished custody, and
+refuses duplicate or inconsistent pattern/population accounting. Historical
+projection now also preserves every predecessor `AUDIT_DISPUTED` disposition;
+population support cannot restore it. Provider-disabled projection
+`sha256:9ee02d4d5160b55d47e96e141dbb90f2b735007b98162ca28f94e8da8b0ade33`
+therefore has 73 supported populations with 208 assignments, four unpublished
+candidate populations with nine re-audit-required memberships, 25 preserved
+disputed dispositions, one explicitly excluded active disputed edge, and zero
+unexplained loss. The original eight re-audit memberships, two grounding
+replacements, and one grounding rejection remain; one additional co-member
+requires re-audit because removing the disputed member changes its population
+identity. Its 24 historical supported patterns and support 75 are unchanged
+because this projection does not invent a fresh semantic pattern run. It is
+private repair evidence, not baseline promotion or a semantic-quality claim.

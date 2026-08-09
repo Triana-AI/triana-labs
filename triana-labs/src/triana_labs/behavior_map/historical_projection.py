@@ -263,6 +263,7 @@ def _edge_conservation(
     member_key: str,
     excluded_rejected_members: set[str],
     excluded_grounding_replacement_members: set[str],
+    excluded_audit_disputed_members: set[str] | None = None,
 ) -> JsonObject:
     before_edges = {
         (cast(str, row[identity_key]), member)
@@ -283,12 +284,15 @@ def _edge_conservation(
     superseded = 0
     excluded_rejected = 0
     excluded_grounding_replacement = 0
+    excluded_audit_disputed = 0
     unexplained = 0
     for subject_id, member_id in before_edges:
         if member_id in excluded_rejected_members:
             excluded_rejected += 1
         elif member_id in excluded_grounding_replacement_members:
             excluded_grounding_replacement += 1
+        elif member_id in (excluded_audit_disputed_members or set()):
+            excluded_audit_disputed += 1
         elif (subject_id, member_id) in after_edges:
             exact += 1
         elif (
@@ -298,7 +302,7 @@ def _edge_conservation(
             superseded += 1
         else:
             unexplained += 1
-    return {
+    result: JsonObject = {
         "before": len(before_edges),
         "exact_preserved": exact,
         "explicitly_superseded": superseded,
@@ -306,6 +310,9 @@ def _edge_conservation(
         "excluded_grounding_replacement": excluded_grounding_replacement,
         "unexplained": unexplained,
     }
+    if excluded_audit_disputed:
+        result["excluded_audit_disputed"] = excluded_audit_disputed
+    return result
 
 
 def _write_once(path: Path, payload: bytes) -> None:
@@ -419,6 +426,16 @@ def project_grounded_behavior_map(
             rejected_rows, key=lambda item: item["predecessor_episode_id"]
         )
     ]
+    old_dispositions = {
+        cast(str, row["episode_id"]): row
+        for row in _rows(predecessor, "population_dispositions")
+    }
+    predecessor_audit_disputed_ids = {
+        episode_id
+        for episode_id, disposition in old_dispositions.items()
+        if disposition.get("disposition") == "AUDIT_DISPUTED"
+        and episode_id in exact_episode_ids
+    }
     predecessor_populations = _rows(predecessor, "populations")
     populations: list[JsonObject] = []
     excluded_population_memberships: list[JsonObject] = []
@@ -430,7 +447,9 @@ def project_grounded_behavior_map(
         members = sorted(
             member
             for member in old_members
-            if member in exact_episode_ids and member not in rejected_episode_ids
+            if member in exact_episode_ids
+            and member not in rejected_episode_ids
+            and member not in predecessor_audit_disputed_ids
         )
         affected = sorted(set(old_members) - set(members))
         excluded_population_memberships.extend(
@@ -450,6 +469,15 @@ def project_grounded_behavior_map(
                 "status": "EXCLUDED_HISTORY",
             }
             for episode_id in sorted(set(old_members) & rejected_episode_ids)
+        )
+        excluded_population_memberships.extend(
+            {
+                "episode_id": episode_id,
+                "predecessor_population_id": predecessor_population["population_id"],
+                "reason": "PREDECESSOR_AUDIT_DISPUTED",
+                "status": "EXCLUDED_HISTORY",
+            }
+            for episode_id in sorted(set(old_members) & predecessor_audit_disputed_ids)
         )
         if members == sorted(set(old_members)):
             population = dict(predecessor_population)
@@ -494,13 +522,17 @@ def project_grounded_behavior_map(
         for population in candidate_populations
         for episode_id in cast(list[str], population["episode_ids"])
     }
-    old_dispositions = {
-        cast(str, row["episode_id"]): row
-        for row in _rows(predecessor, "population_dispositions")
-    }
     dispositions: list[JsonObject] = []
     for episode_id in sorted(episode_by_id):
-        if episode_id in population_by_episode:
+        if episode_id in predecessor_audit_disputed_ids:
+            dispositions.append(
+                {
+                    "episode_id": episode_id,
+                    "disposition": "AUDIT_DISPUTED",
+                    "reason": "PREDECESSOR_AUDIT_DISPUTE_PRESERVED",
+                }
+            )
+        elif episode_id in population_by_episode:
             dispositions.append(
                 {
                     "episode_id": episode_id,
@@ -626,6 +658,7 @@ def project_grounded_behavior_map(
         member_key="episode_ids",
         excluded_rejected_members=rejected_episode_ids,
         excluded_grounding_replacement_members=set(replacement_by_predecessor),
+        excluded_audit_disputed_members=predecessor_audit_disputed_ids,
     )
     pattern_edges = _edge_conservation(
         predecessor_patterns,

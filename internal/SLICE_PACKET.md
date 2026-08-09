@@ -2001,3 +2001,298 @@ unique membership/support; no rejected episode or occurrence in support;
 unmodified successful baseline hashes; byte-identical repeated projection; and
 an independent artifact verdict. Human semantic benchmark metrics remain typed
 `HUMAN_LABELS_MISSING`.
+
+## BEHAVIOR-MAP-V0-PATTERN-AND-DISPOSITION-CONSERVATION — 2026-08-09
+
+### Entry gate and active outcome
+
+This slice advances the active Labs Phase 1 outcome only by making the existing
+private, proposed Behavior Map mechanically conservative and attributable. It
+does not change semantic prompts, grouping thresholds, accepted taxonomy,
+provider behavior, or launch claims. Canonical base is
+`992422f36292e4b40b56ede690182819fdb6749d`; the pre-existing user edit to
+`internal/WORKING_MEMORY.md` is outside this slice and must remain untouched.
+
+The accepted Blitz report at
+`/private/tmp/triana-blitz-full-development-corrected-final-20260808/report`,
+baseline record `internal/BEHAVIOR_MAP_BLITZ_BASELINE_2026-08-08.md`, and tag
+`best-version-yet-blitz-20260808` (peeled commit
+`68741dab5824709932335d23405b95d754107fce`) are immutable inputs. Their JSON,
+Markdown, and HTML hashes remain respectively
+`9821a041d391843bae8885010c6180a58a38646f3bd33d56382e5f18a3a8f0f1`,
+`7733ccfb3ea73f20043b00464f2dbc8a8c5df92f91a2d509d058e233b40d72b6`,
+and `5e83984622aae54c49c53b6355b3865816f4fac021ccf8a7ff2b694897a26377`.
+The historical projection and continuation named by the owner are read-only
+evidence. Any replay output must use a fresh private path and explicit
+predecessor lineage.
+
+### Frozen contract and authority
+
+Input is synthetic fixtures or existing provider-disabled report/checkpoint
+artifacts. Output is a new `behavior_map_report_v0`, historical projection, or
+comparison whose pattern-occurrence and population membership accounting is
+complete and whose missing authority remains typed. Deterministic code owns
+occurrence dispositions, supplied-ID validation, candidate identity and
+membership, support, audit visibility, population membership/disposition
+equality, denominators, comparison comparability, and predecessor lineage. An
+LLM may only propose semantic membership or no match; it makes no calls in this
+slice. A human remains the sole authority for accepted taxonomy or baseline
+promotion.
+
+Every eligible pattern occurrence must have exactly one terminal disposition.
+Successful-batch omissions and foreign IDs remain visible typed evidence;
+foreign IDs never become support. Audit-missing pattern candidates retain
+stable candidate identity, membership, label, definition, evidence lineage,
+and missing/unpublished state while contributing zero published support.
+Reports distinguish eligible occurrences, terminal dispositions, candidate,
+audited, supported, disputed and audit-missing patterns, and active versus
+unpublished memberships. Population active membership must equal exactly the
+episodes disposed `ASSIGNED`; disputed or rejected subjects contribute zero
+support. Historical projection cannot restore a predecessor
+`AUDIT_DISPUTED` episode without a current explicit supported ruling.
+Zero-lineage pattern counts are raw non-comparable counts, never direct loss,
+reduction, or regression.
+
+Privacy and execution remain `LOCAL_PRIVATE`. Provider calls, network egress,
+new spend, retry/fallback, customer-data publication, accepted-artifact
+mutation, and private checkpoint content in committed fixtures are forbidden.
+Unknown, ambiguous, failed, omitted, insufficient, and missing-audit states
+fail visibly and cannot become support.
+
+### Single-hypothesis debugging ledger
+
+1. Observed B1/B2/B3/B10: successful pattern responses omit supplied IDs,
+   return foreign IDs, and leave ordinary unassigned reporting coupled to the
+   generic-label branch. Hypothesis: first-level output is merged without an
+   exact supplied-input disposition projection. Falsified if per-batch
+   reconciliation already conserves all supplied IDs and types all foreign
+   edges. One attempted production change may add only that reconciliation and
+   ordinary unassigned projection after independent RED.
+2. Observed B4/B5: audit scheduling stops before all candidates and final code
+   filters missing IDs from `patterns`. Hypothesis: supported publication and
+   candidate retention share one collection. Falsified if missing candidates
+   already survive with zero active support. One attempted change may separate
+   candidate retention/audit state from published support and accounting.
+3. Observed B6: 61 baseline and 24 successor patterns have zero preserved or
+   superseded pattern lineage yet comparison classifies aggregate movement.
+   Hypothesis: object-count delta is allowed to drive regression without
+   subject-level lineage comparability. Falsified if pattern semantic movement
+   is already explicitly non-comparable. One attempted change may add only the
+   lineage-scoped refusal and rendering.
+4. Observed B7/B8: continuation has 221 active population members but 220
+   `ASSIGNED` dispositions, including one supported member disposed
+   `AUDIT_DISPUTED`. Hypothesis: population support and dispositions are
+   finalized from different active sets. Falsified if the publication gate
+   already enforces exact set equality and disputed exclusion. One attempted
+   change may centralize projection/validation without changing thresholds.
+5. Observed B9: historical projection derives `ASSIGNED` from supported
+   population membership before consulting predecessor disposition.
+   Hypothesis: predecessor dispute authority is ignored on exact membership.
+   Falsified if a current explicit supported ruling is required. One attempted
+   change may preserve dispute absent that ruling.
+
+Suspected S1–S6 are investigation-only. Each receives the smallest synthetic
+or artifact-metadata reproduction and a falsifiable result. No production
+change is allowed unless independent RED promotes it to a separately confirmed
+mechanical defect within this exact change budget; semantic count or quality
+movement alone cannot do so.
+
+### Frozen change budget and role ownership
+
+- Independent test author only:
+  `triana-labs/tests/behavior_map/test_behavior_map_pattern_conservation.py`,
+  `triana-labs/tests/behavior_map/test_behavior_map_comparison.py`, and
+  `triana-labs/tests/behavior_map/test_behavior_map_historical_projection.py`.
+  It may not edit production, canonical docs, or artifacts.
+- Independent implementation author only:
+  `triana-labs/src/triana_labs/behavior_map/contracts.py`,
+  `triana-labs/src/triana_labs/behavior_map/__init__.py`,
+  `triana-labs/src/triana_labs/behavior_map/comparison.py`,
+  `triana-labs/src/triana_labs/behavior_map/historical_projection.py`, and the
+  smallest necessary report projection in
+  `triana-labs/src/triana_labs/behavior_map/render.py`. It may not edit tests.
+- Orchestrator only: this slice packet; the smallest accepted updates to
+  `docs/CONTRACTS.md`, `docs/ARCHITECTURE.md`, `triana-labs/CHARTER.md`, and an
+  append-only `internal/DECISION_LOG.md` entry; ignored decision memory; a new
+  content-free comparison handoff under `internal/`; and fresh private outputs
+  under `/private/tmp/triana-blitz-pattern-conservation-repair-20260809-*`.
+- Final verifier is read-only and may not repair tests or production.
+
+No dependency, prompt, schema-provider, adapter, retry/fallback, grouping
+threshold, UI/backend, deployment, provenance, accepted baseline record,
+accepted private artifact, or `internal/WORKING_MEMORY.md` edit is allowed.
+Workers stop before any unbudgeted file or policy change. Maximum scope
+expansion is zero without a new owner-approved packet amendment.
+
+### Independent acceptance contract
+
+The test author must freeze black-box RED for owner cases A–K: omitted supplied
+occurrence; rejected/typed foreign occurrence; ordinary unassigned reporting;
+audit-budget candidate retention; candidate identity stability across resume;
+zero-lineage comparison refusal; disputed-member exclusion; membership versus
+disposition integrity failure; historical dispute preservation; the historical
+221/220 inconsistency; and unchanged 8 re-audit-required, 2 grounding
+replacement, 1 grounding rejection, 0 unexplained projection edges. Tests use
+only synthetic fixtures and content-free immutable metadata. Provider methods
+must fail if invoked.
+
+The orchestrator freezes exact test hashes and reproduces RED before production
+handoff. GREEN requires all owner acceptance gates, byte-identical repeated
+deterministic projection, unchanged accepted hashes/tag, focused tests, full
+Behavior Map tests, full repository verification, Ruff check, Ruff format
+check, strict mypy, governance checks, and diff/change-budget reconciliation.
+No unrun command may be reported as passing. Final artifact verdict remains
+private proposed partial and baseline promotion remains human-blocked.
+
+### Independent RED freeze
+
+The independent test author froze these exact test bytes:
+
+- `test_behavior_map_pattern_conservation.py`:
+  `c6dc52ba7318b11af83b7e7b0bf7e38aa5ad318829f7d8f652b29928bac9503c`;
+- `test_behavior_map_comparison.py`:
+  `1a5218e6e065a1ef990dbd5d92ca0fba7f68b44c88b7b47879d800e5e52eefc7`;
+- `test_behavior_map_historical_projection.py`:
+  `14d0067299ad518992c9c8e3cfea753922197e64f0cf773510e2579fd1c590c6`.
+
+The test author observed four focused pattern RED (missing occurrence
+dispositions, deleted missing-audit candidates, and absent exact
+population/disposition conservation validation), one comparison RED (zero
+pattern lineage still lacks subject-level non-comparability), and one
+historical-projection RED (an exact predecessor `AUDIT_DISPUTED` episode is
+restored to `ASSIGNED`). Eighteen comparison and seventeen projection controls
+remain GREEN. The exact projection control preserves 8 re-audit-required
+memberships, 2 grounding replacements, 1 grounding rejection, and zero
+unexplained edges. Existing hierarchy-abort preservation and subject-scoped
+audit controls are GREEN; S3 is not promoted. S1/S2 reproduce only the already
+confirmed missing disposition and missing-candidate custody defects. S4–S6
+remain human-label-blocked semantic hypotheses.
+
+The orchestrator then reproduced 41/41 frozen checks GREEN and 215/217 full
+Behavior Map checks GREEN. The two failures are direct contradictions in
+`test_behavior_map_v0.py`: one conflates exclusive user-population disposition
+with non-exclusive agent-behavior uncertainty; the other requires missing-
+audit pattern candidates to be absent rather than retained unpublished. The
+test-author budget expands only to those two assertions in
+`triana-labs/tests/behavior_map/test_behavior_map_v0.py`. The independent test
+author must preserve the original population exclusivity guarantee using
+`population_dispositions`, assert behavior uncertainty independently, and
+replace absence with explicit `MISSING` plus `UNPUBLISHED_AUDIT_MISSING` and
+zero active support. No other assertion, fixture, production file, or scope is
+authorized by this reconciliation amendment.
+
+Independent code review then exposed four additional owner-gate holes in the
+first GREEN implementation: audited-disputed patterns were still deleted,
+duplicate pattern membership could be overwritten by the one-row disposition
+map, duplicate active population membership was reduced to a set, and declared
+population support was not checked against unique membership. The corrected
+superseding test freeze is:
+
+- `test_behavior_map_v0.py`:
+  `eda0ef70d67fcca1f3a6458432783b798f9255055cea6df4d4881d5df4915fc8`;
+- `test_behavior_map_pattern_conservation.py`:
+  `4e692daeb9547a08bffeea8722e7c61f2ed6cc78264d54aaf6159a3b84f5c3f7`;
+- comparison and historical-projection hashes remain
+  `1a5218e6e065a1ef990dbd5d92ca0fba7f68b44c88b7b47879d800e5e52eefc7`
+  and
+  `14d0067299ad518992c9c8e3cfea753922197e64f0cf773510e2579fd1c590c6`.
+
+The independently reconciled full Behavior Map result is 217 GREEN and four
+expected RED, exactly for disputed-pattern retention, duplicate pattern
+membership, duplicate active population membership, and population support
+mismatch. Missing-population policy is explicitly unchanged; B4 remains
+pattern-only.
+
+After disputed retention became GREEN, one stale whole-pattern audit assertion
+was reconciled from record deletion to unpublished disputed custody. The final
+frozen `test_behavior_map_v0.py` SHA-256 is
+`243cf7f57292ca5a208651d91c1ad6e1d0622bbae590e108a131154dbedbd735`.
+Its remaining RED is a production precedence defect: one occurrence retained
+in an audited `UNSUPPORTED` pattern still carries the earlier
+`MODEL_OMITTED_OCCURRENCE` terminal state while the other retained members are
+`AUDIT_DISPUTED`. Retained audited subject authority must win terminal
+disposition; omission history may remain visible separately.
+
+Making disputed-pattern custody GREEN exposes one final stale assertion in
+`test_behavior_map_coverage_repair.py`: it equates subject-scoped pattern audit
+rejection with record absence. The test-author budget expands only to that
+assertion. It must preserve the original proof that pattern audit rejection
+does not alter episode population assignment, while asserting the rejected
+pattern remains `UNSUPPORTED` and `UNPUBLISHED_AUDIT_DISPUTED` with zero active
+pattern support. No other coverage-repair assertion or fixture may change.
+
+The independent reconciliation changes only that assertion and freezes
+`test_behavior_map_coverage_repair.py` at SHA-256
+`422a6a5ad7bd86e357f6952d63e00a5fcadcefa1cf458afb351a62b2524a1b69`.
+Focused coverage is GREEN and the independent full Behavior Map suite is
+221/221 GREEN; all population assignment/support and byte-identical replay
+controls remain intact.
+
+Orchestrator review then proved the exact-input B2 contract was still incomplete
+inside pattern hierarchy: an occurrence omitted from first-level candidates
+could be reintroduced later because hierarchy output was checked against the
+global eligible set rather than the exact candidate members supplied to that
+hierarchy batch. The independent hierarchy-boundary RED freezes
+`test_behavior_map_pattern_conservation.py` at
+`3a60e916c25defe6a6af145096a03aaaf2db038fff95a94af68d7b69e4f04bc1`
+and the reconciled V0 assertion at
+`d886ec868cf4f2958ae77d06d2c5ccd48c4c492c2bd684bc2b7200714a715690`.
+The exact omitted member must remain `MODEL_OMITTED_OCCURRENCE`; hierarchy must
+type and reject its reintroduction before support or later audit projection.
+
+Read-only final verification then reproduced two additional exact-accounting
+defects: explicit `UNCERTAIN` is disputed but omitted from audited-pattern
+count, and set-only population validation accepts duplicate disposition rows or
+an `ASSIGNED` row naming the wrong population. The superseding pattern-test
+SHA-256 is
+`c9907bd564c26e32e63f24b4ef0c100720b94ac289b82aabff70fbcfab8ac026`.
+Three independent RED require one explicit uncertain ruling to count as both
+audited and disputed (never missing), duplicate disposition rows to refuse as
+`POPULATION_DISPOSITION_DUPLICATE`, and wrong episode-to-population assignment
+edges to refuse as `POPULATION_ASSIGNMENT_EDGE_MISMATCH`.
+
+Final read-only review confirmed hierarchy foreign membership was rejected and
+typed but required its summary count to cover the same boundary. The
+superseding pattern-test SHA-256 is
+`ed245c687f4674f8afbef08b4ff0f7de1cb80c2c2778a0ffc57ac9be8b20ec79`;
+the hierarchy fixture is GREEN with one rejected hierarchy-only ID and
+`pattern_accounting.foreign_occurrence_id_count == 1`.
+
+### Final verification and change-budget reconciliation
+
+The final provider-disabled repository gate ran with `UV_OFFLINE=1` and
+`PIP_NO_INDEX=1` so its clean-wheel installation could not use network egress.
+It completed 891 tests plus governance, Ruff, formatting, strict mypy, build,
+clean-wheel installation, deterministic replay, and source/installed-command
+parity. The evidence root is `/private/tmp/triana-labs-verify.ci4fqv`; the
+captured log is
+`/private/tmp/triana-pattern-conservation-final-verify-offline.log`.
+
+The final test hashes are:
+
+- pattern conservation:
+  `ed245c687f4674f8afbef08b4ff0f7de1cb80c2c2778a0ffc57ac9be8b20ec79`;
+- V0:
+  `d886ec868cf4f2958ae77d06d2c5ccd48c4c492c2bd684bc2b7200714a715690`;
+- comparison:
+  `1a5218e6e065a1ef990dbd5d92ca0fba7f68b44c88b7b47879d800e5e52eefc7`;
+- historical projection:
+  `14d0067299ad518992c9c8e3cfea753922197e64f0cf773510e2579fd1c590c6`;
+- coverage repair:
+  `422a6a5ad7bd86e357f6952d63e00a5fcadcefa1cf458afb351a62b2524a1b69`.
+
+Two provider-disabled projection runs are byte-identical at SHA-256
+`5918a71382294c466ea8b096f3b8071b0240d688336dc3967a5201d521cb7b63`
+under
+`/private/tmp/triana-blitz-pattern-conservation-repair-20260809-projection-v1`
+and the corresponding `-v2` directory. They made zero provider calls. The
+accepted report hashes and `best-version-yet-blitz-20260808` tag remain
+unchanged.
+
+Actual production changes stayed within the four authorized Behavior Map
+files; `render.py` was untouched. Test changes stayed within the independently
+amended five-file test budget. Canonical and handoff changes stayed within the
+orchestrator budget. No dependency, prompt, provider adapter, retry/fallback,
+threshold, UI, deployment, provenance, accepted baseline, or accepted private
+artifact changed. The existing `internal/WORKING_MEMORY.md` modification is a
+preserved pre-slice user change and is excluded from this slice.

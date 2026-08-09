@@ -1099,13 +1099,9 @@ def test_every_eligible_episode_is_accounted_for_once_or_unknown(
 ) -> None:
     report, _, _, _ = _run(tmp_path)
     eligible = {row["episode_id"] for row in report["episodes"]}
-    dispositions = [
-        episode_id
-        for population in report["populations"]
-        for episode_id in population["episode_ids"]
-    ] + [row["episode_id"] for row in report["emerging_unknown"]]
-    assert set(dispositions) == eligible
-    assert len(dispositions) == len(set(dispositions))
+    dispositions = report["population_dispositions"]
+    assert {row["episode_id"] for row in dispositions} == eligible
+    assert len(dispositions) == len(eligible)
     assert _episode(report, "unknown-request", 0)["episode_id"] in {
         row["episode_id"] for row in report["emerging_unknown"]
     }
@@ -1970,28 +1966,58 @@ def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
         for row in report["gaps"]
         if row["code"] == "SEMANTIC_AUDIT_MISSING"
     }
-    published_item_ids = {
-        str(row[key])
+    audited_items = {
+        _first_id(item): item
+        for request in auditor.requests
+        for item in request["payload"].get("items", [])
+    }
+    missing_population_ids = {
+        item_id
+        for item_id in missing_item_ids
+        if "population_id" in audited_items.get(item_id, {})
+    }
+    missing_pattern_ids = {
+        item_id
+        for item_id in missing_item_ids
+        if "pattern_id" in audited_items.get(item_id, {})
+    }
+    candidate_items = {
+        str(row[key]): row
         for key, rows in (
             ("population_id", report["populations"]),
             ("pattern_id", report["behavior_patterns"]),
         )
         for row in rows
     }
-    still_published = missing_item_ids & published_item_ids
-    if still_published:
+    missing_pattern_candidates = {
+        item_id: candidate_items[item_id]
+        for item_id in missing_pattern_ids
+        if item_id in candidate_items
+    }
+    if set(missing_pattern_candidates) != missing_pattern_ids or any(
+        row.get("audit_state") != "MISSING"
+        or row.get("visibility") != "UNPUBLISHED_AUDIT_MISSING"
+        for row in missing_pattern_candidates.values()
+    ):
         violations.append(
-            "missing-audit populations/patterns remained public: "
-            + ", ".join(sorted(still_published))
+            "missing-audit patterns were not retained as unpublished candidates"
         )
+    if missing_population_ids & set(candidate_items):
+        violations.append("missing-audit populations remained published")
+    if (
+        missing_population_ids
+        and report["accounting"]["population_assigned_episode_count"] != 0
+    ):
+        violations.append("missing-audit populations retained active assignments")
+    if missing_pattern_ids and (
+        report["pattern_accounting"]["supported_pattern_count"] != 0
+        or report["pattern_accounting"]["published_pattern_support"] != 0
+        or report["pattern_accounting"]["active_pattern_membership_count"] != 0
+    ):
+        violations.append("missing-audit patterns contributed active support")
     affected_episode_ids: set[str] = set()
     occurrence_by_id = {
         str(row["occurrence_id"]): row for row in report["behavior_occurrences"]
-    }
-    audited_items = {
-        _first_id(item): item
-        for request in auditor.requests
-        for item in request["payload"].get("items", [])
     }
     for item_id in missing_item_ids:
         item = audited_items.get(item_id, {})
@@ -3624,7 +3650,11 @@ def test_pattern_audit_projection_still_rejects_the_whole_pattern(
         if item.get("label") == label
     )
 
-    assert label not in {str(row["label"]) for row in report["behavior_patterns"]}
+    rejected_pattern = next(
+        row for row in report["behavior_patterns"] if str(row["label"]) == label
+    )
+    assert rejected_pattern["audit_state"] == "UNSUPPORTED"
+    assert rejected_pattern["visibility"] == "UNPUBLISHED_AUDIT_DISPUTED"
     assert unaffected_label in {
         str(row["label"]) for row in report["behavior_patterns"]
     }
@@ -3632,9 +3662,40 @@ def test_pattern_audit_projection_still_rejects_the_whole_pattern(
         row["item_id"] == original["pattern_id"] and row["decision"] == "UNSUPPORTED"
         for row in report["semantic_audit"]["items"]
     )
+    disputed_occurrence_ids = {
+        str(occurrence_id) for occurrence_id in rejected_pattern["occurrence_ids"]
+    }
+    disposition_by_occurrence_id = {
+        str(row["occurrence_id"]): row
+        for row in report["pattern_occurrence_dispositions"]
+    }
+    omitted_occurrence_ids = {
+        occurrence_id
+        for occurrence_id, row in disposition_by_occurrence_id.items()
+        if row["reason"] == "MODEL_OMITTED_OCCURRENCE"
+    }
+    assert disputed_occurrence_ids.isdisjoint(omitted_occurrence_ids)
+    disputed_dispositions = [
+        disposition_by_occurrence_id[occurrence_id]
+        for occurrence_id in disputed_occurrence_ids
+    ]
+    assert {str(row["occurrence_id"]) for row in disputed_dispositions} == (
+        disputed_occurrence_ids
+    )
     assert all(
-        "audit_disputed_episode_ids" not in occurrence
-        for occurrence in report["behavior_occurrences"]
+        row["disposition"] == "AUDIT_DISPUTED"
+        and row["reason"] == "AUDIT_DISAGREEMENT"
+        and row["candidate_pattern_id"] == rejected_pattern["pattern_id"]
+        for row in disputed_dispositions
+    ), disputed_dispositions
+    supported_patterns = [
+        row for row in report["behavior_patterns"] if row["audit_state"] == "SUPPORTED"
+    ]
+    assert report["pattern_accounting"]["supported_pattern_count"] == len(
+        supported_patterns
+    )
+    assert report["pattern_accounting"]["published_pattern_support"] == sum(
+        int(row["support"]) for row in supported_patterns
     )
     assert report["accounting"]["population_assigned_episode_count"] == 8
 

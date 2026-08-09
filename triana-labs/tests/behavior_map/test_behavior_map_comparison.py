@@ -1451,3 +1451,85 @@ def test_comparison_uses_no_change_not_semantic_pass_for_identical_integrity(
     )
     assert result["deterministic_classification"] == "NO_CHANGE"
     assert result["semantic_conclusion"] == "HUMAN_LABELS_MISSING"
+
+
+def test_zero_lineage_pattern_counts_are_noncomparable_not_regression(
+    tmp_path: Path,
+) -> None:
+    comparison_module = importlib.import_module("triana_labs.behavior_map.comparison")
+    compare_behavior_maps = comparison_module.compare_behavior_maps
+    before = _report("sha256:" + "1" * 64, episodes=0, assigned=0, populations=0)
+    after = _report(
+        "sha256:" + "2" * 64,
+        episodes=0,
+        assigned=0,
+        populations=0,
+        predecessor=before["report_id"],
+    )
+    before["behavior_patterns"] = [
+        {
+            "pattern_id": f"before-pattern-{index:02d}",
+            "label": f"Before candidate {index:02d}",
+            "definition": "Content-free historical pattern.",
+            "occurrence_ids": [f"before-occurrence-{index:02d}"],
+            "support": 1,
+            "audit_state": "SUPPORTED",
+        }
+        for index in range(61)
+    ]
+    after["behavior_patterns"] = [
+        {
+            "pattern_id": f"after-pattern-{index:02d}",
+            "label": f"After candidate {index:02d}",
+            "definition": "Content-free successor pattern.",
+            "occurrence_ids": [f"after-occurrence-{index:02d}"],
+            "support": 1,
+            "audit_state": "SUPPORTED",
+        }
+        for index in range(24)
+    ]
+    before_path = tmp_path / "before.json"
+    after_path = tmp_path / "after.json"
+    before_path.write_bytes(_canonical(before, lf=True))
+    after_path.write_bytes(_canonical(after, lf=True))
+
+    first = compare_behavior_maps(before_path, after_path, tmp_path / "first")
+    second = compare_behavior_maps(before_path, after_path, tmp_path / "second")
+
+    assert first == second
+    assert first["semantic_subject_movement"]["patterns"] == {
+        "state": "NONCOMPARABLE_ZERO_SUBJECT_LINEAGE",
+        "before_raw_count": 61,
+        "after_raw_count": 24,
+        "preserved_count": 0,
+        "superseded_count": 0,
+        "comparable_loss_count": None,
+        "delta": None,
+    }
+    assert first["deterministic_classification"] == "NO_CHANGE"
+    assert first["baseline_claims"]["unexplained_loss_count"] == 0
+    assert first["semantic_conclusion"] == "HUMAN_LABELS_MISSING"
+    assert all(
+        row["state"] == "HUMAN_LABELS_MISSING" and row["value"] is None
+        for row in first["semantic_benchmark"].values()
+    )
+    assert any(
+        gap["code"] == "COMPARISON_PATTERN_SUBJECT_LINEAGE_MISSING"
+        for gap in first["gaps"]
+    )
+    assert (
+        "REGRESSED"
+        not in (tmp_path / "first" / "behavior-map-comparison.md").read_text()
+    )
+    assert (
+        "NONCOMPARABLE_ZERO_SUBJECT_LINEAGE"
+        in (tmp_path / "first" / "behavior-map-comparison.md").read_text()
+    )
+    for filename in (
+        "behavior-map-comparison.json",
+        "behavior-map-comparison.md",
+        "behavior-map-comparison.html",
+    ):
+        assert (tmp_path / "first" / filename).read_bytes() == (
+            tmp_path / "second" / filename
+        ).read_bytes()

@@ -47,6 +47,36 @@ Historical provider attempts and lane-cap violations remain historical facts;
 projection attempts are separately zero and actual cost remains unknown unless
 an authoritative cost record exists.
 
+### Behavior Map pattern conservation
+
+`behavior_map_report_v0` MUST expose the exact eligible behavior-occurrence
+IDs, one `pattern_occurrence_dispositions` row per eligible ID, and
+`pattern_accounting`. A disposition is active assignment, intentional
+unassignment with a typed reason, or audit dispute; no eligible ID may disappear
+or receive multiple terminal rows. Semantic membership IDs absent from the
+exact first-level or hierarchy input MUST be rejected, typed, counted, and
+contribute zero support. Ordinary unassigned behavior is reported independently
+of vague or generic-label rejection.
+
+`behavior_patterns` is a custody collection, not an active-only list. A
+`SUPPORTED` pattern may contribute active membership/support. A pattern with
+audit `MISSING` remains `UNPUBLISHED_AUDIT_MISSING`; a non-supported audit
+ruling remains `UNPUBLISHED_AUDIT_DISPUTED`. Both retain deterministic identity,
+label, definition, occurrence membership, and evidence lineage while
+contributing zero active support. `pattern_accounting` separately reports
+eligible occurrences, terminal dispositions, candidate patterns, audited
+patterns, supported patterns, disputed patterns, audit-missing patterns, active
+memberships, unpublished memberships, and published support. `UNCERTAIN` is an
+explicit audited-disputed state, not missing evidence.
+
+Active population publication MUST reject duplicate membership, declared
+support unequal to unique membership, duplicate disposition rows, an
+`ASSIGNED` row whose population edge differs from active membership, or any
+inequality between active member IDs and assigned disposition IDs. A
+predecessor `AUDIT_DISPUTED` disposition persists through historical projection
+unless a current explicit supported ruling authorizes reassignment; population
+membership alone is insufficient authority.
+
 ## Normative language
 
 `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `SHALL NOT`, `SHOULD`, and `MAY` are

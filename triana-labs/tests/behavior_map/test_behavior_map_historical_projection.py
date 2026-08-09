@@ -107,6 +107,12 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
         "episode-keep-3",
         "episode-stable-1",
         "episode-stable-2",
+        "episode-stable-3",
+        "episode-stable-4",
+        "episode-stable-5",
+        "episode-stable-6",
+        "episode-stable-7",
+        "episode-stable-8",
     ]
     optional_episode_ids = ["episode-optional-a", "episode-optional-b"]
     rejected_episode_id = "episode-mandatory-invalid"
@@ -122,7 +128,7 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     changed_occurrence_ids = [
         f"occurrence-{episode_id}"
         for episode_id in exact_episode_ids[3:]
-        + [rejected_episode_id, "episode-optional-a"]
+        + [rejected_episode_id, *optional_episode_ids]
     ]
     predecessor: dict[str, Any] = {
         "artifact_kind": "behavior_map_report_v0",
@@ -131,16 +137,16 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
         "source": {
             "source_sha256": source_sha256,
             "selected_list_sha256": selection_sha256,
-            "development_count": 8,
+            "development_count": 14,
         },
         "accounting": {
-            "accepted_conversation_count": 8,
-            "semantic_conversation_count": 8,
-            "surviving_episode_count": 8,
-            "population_assigned_episode_count": 7,
+            "accepted_conversation_count": 14,
+            "semantic_conversation_count": 14,
+            "surviving_episode_count": 14,
+            "population_assigned_episode_count": 14,
             "supported_population_count": 2,
             "supported_agent_pattern_count": 2,
-            "behavior_occurrence_count": 7,
+            "behavior_occurrence_count": 14,
         },
         "episodes": predecessor_episodes,
         "population_dispositions": [
@@ -156,13 +162,8 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
                     "reason": "POPULATION_MEMBERSHIP",
                 }
                 for episode_id in exact_episode_ids
-                + [rejected_episode_id, "episode-optional-a"]
+                + [rejected_episode_id, *optional_episode_ids]
             ],
-            {
-                "episode_id": "episode-optional-b",
-                "disposition": "INTENTIONALLY_UNASSIGNED",
-                "reason": "UNASSIGNED_DEMAND",
-            },
         ],
         "populations": [
             _population(
@@ -170,7 +171,7 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
             ),
             _population(
                 "population-change",
-                exact_episode_ids[3:] + [rejected_episode_id, "episode-optional-a"],
+                exact_episode_ids[3:] + [rejected_episode_id, *optional_episode_ids],
                 label="Changed demand",
             ),
         ],
@@ -185,7 +186,8 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
                 _occurrence(occurrence_id, episode_id)
                 for occurrence_id, episode_id in zip(
                     changed_occurrence_ids,
-                    exact_episode_ids[3:] + [rejected_episode_id, "episode-optional-a"],
+                    exact_episode_ids[3:]
+                    + [rejected_episode_id, *optional_episode_ids],
                     strict=True,
                 )
             ],
@@ -252,7 +254,11 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     predecessor_bytes = _canonical(predecessor, newline=True)
     predecessor_path.write_bytes(predecessor_bytes)
 
-    corrected_episodes = [deepcopy(row) for row in predecessor_episodes[:5]]
+    corrected_episodes = [
+        deepcopy(row)
+        for row in predecessor_episodes
+        if row["episode_id"] in exact_episode_ids
+    ]
     for suffix, predecessor_episode_id in (
         ("a", "episode-optional-a"),
         ("b", "episode-optional-b"),
@@ -291,7 +297,7 @@ def _write_projection_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
             }
         ],
         "grounding_validation": {
-            "valid_episode_count": 7,
+            "valid_episode_count": 13,
             "rejected_episode_count": 1,
             "all_final_grounding_valid": True,
         },
@@ -342,6 +348,18 @@ def _rewrite_bound_predecessor(
         predecessor["budget"]["primary_actual_cost_usd"] = 1.0
     elif mutation == "NON_NULL_AUDIT_ACTUAL_COST":
         predecessor["budget"]["audit_actual_cost_usd"] = 1.0
+    elif mutation == "PREDECESSOR_EPISODE_AUDIT_DISPUTED":
+        for disposition in predecessor["population_dispositions"]:
+            if disposition["episode_id"] == "episode-keep-1":
+                disposition.clear()
+                disposition.update(
+                    {
+                        "episode_id": "episode-keep-1",
+                        "disposition": "AUDIT_DISPUTED",
+                        "reason": "AUDIT_DISAGREEMENT",
+                    }
+                )
+                break
     else:  # pragma: no cover - test setup guard
         raise AssertionError(mutation)
     predecessor["report_id"] = _identity(
@@ -420,13 +438,12 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     }
 
     episodes = _by_id(first["episodes"], "episode_id")
-    assert len(episodes) == 7
+    assert len(episodes) == 13
     for episode_id in (
         "episode-keep-1",
         "episode-keep-2",
         "episode-keep-3",
-        "episode-stable-1",
-        "episode-stable-2",
+        *(f"episode-stable-{index}" for index in range(1, 9)),
     ):
         assert "predecessor_episode_id" not in episodes[episode_id]
     assert episodes["episode-optional-a-grounded"]["predecessor_episode_id"] == (
@@ -446,6 +463,12 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     }
     assert excluded_memberships["episode-optional-a"] == {
         "episode_id": "episode-optional-a",
+        "population_id": "population-change",
+        "reason": "GROUNDING_REPLACEMENT_REQUIRES_SEMANTIC_REVIEW",
+        "status": "EXCLUDED_HISTORY",
+    }
+    assert excluded_memberships["episode-optional-b"] == {
+        "episode_id": "episode-optional-b",
         "population_id": "population-change",
         "reason": "GROUNDING_REPLACEMENT_REQUIRES_SEMANTIC_REVIEW",
         "status": "EXCLUDED_HISTORY",
@@ -476,7 +499,7 @@ def test_projection_preserves_only_semantically_unchanged_authority(
         "disposition": "INTENTIONALLY_UNASSIGNED",
         "reason": "GROUNDING_REPLACEMENT_REQUIRES_SEMANTIC_REVIEW",
     }
-    for episode_id in ("episode-stable-1", "episode-stable-2"):
+    for episode_id in (f"episode-stable-{index}" for index in range(1, 9)):
         assert dispositions[episode_id] == {
             "episode_id": episode_id,
             "disposition": "INTENTIONALLY_UNASSIGNED",
@@ -513,10 +536,9 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     changed_population = changed_populations[0]
     assert changed_population["population_id"] != "population-change"
     assert changed_population["episode_ids"] == [
-        "episode-stable-1",
-        "episode-stable-2",
+        f"episode-stable-{index}" for index in range(1, 9)
     ]
-    assert changed_population["support"] == 2
+    assert changed_population["support"] == 8
     assert changed_population["audit_state"] == "MISSING"
     assert changed_population["visibility"] == "UNPUBLISHED_AUDIT_MISSING"
     assert changed_population["predecessor_lineage"] == {
@@ -524,9 +546,10 @@ def test_projection_preserves_only_semantically_unchanged_authority(
         "affected_episode_ids": [
             "episode-mandatory-invalid",
             "episode-optional-a",
+            "episode-optional-b",
         ],
-        "before_support": 4,
-        "after_support": 2,
+        "before_support": 11,
+        "after_support": 8,
     }
     occurrences = _by_id(first["behavior_occurrences"], "occurrence_id")
     assert "occurrence-episode-mandatory-invalid" not in occurrences
@@ -542,6 +565,12 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     assert excluded_occurrences["occurrence-episode-optional-a"] == {
         "occurrence_id": "occurrence-episode-optional-a",
         "episode_ids": ["episode-optional-a"],
+        "reason": "GROUNDING_REPLACEMENT_REQUIRES_SEMANTIC_REVIEW",
+        "status": "EXCLUDED_HISTORY",
+    }
+    assert excluded_occurrences["occurrence-episode-optional-b"] == {
+        "occurrence_id": "occurrence-episode-optional-b",
+        "episode_ids": ["episode-optional-b"],
         "reason": "GROUNDING_REPLACEMENT_REQUIRES_SEMANTIC_REVIEW",
         "status": "EXCLUDED_HISTORY",
     }
@@ -561,10 +590,9 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     changed_pattern = changed_patterns[0]
     assert changed_pattern["pattern_id"] != "pattern-change"
     assert changed_pattern["occurrence_ids"] == [
-        "occurrence-episode-stable-1",
-        "occurrence-episode-stable-2",
+        f"occurrence-episode-stable-{index}" for index in range(1, 9)
     ]
-    assert changed_pattern["support"] == 2
+    assert changed_pattern["support"] == 8
     assert changed_pattern["audit_state"] == "MISSING"
     assert changed_pattern["visibility"] == "UNPUBLISHED_AUDIT_MISSING"
     assert changed_pattern["predecessor_lineage"] == {
@@ -572,9 +600,10 @@ def test_projection_preserves_only_semantically_unchanged_authority(
         "affected_occurrence_ids": [
             "occurrence-episode-mandatory-invalid",
             "occurrence-episode-optional-a",
+            "occurrence-episode-optional-b",
         ],
-        "before_support": 4,
-        "after_support": 2,
+        "before_support": 11,
+        "after_support": 8,
     }
 
     audits = _by_id(first["semantic_audit"]["current_items"], "audit_id")
@@ -594,37 +623,37 @@ def test_projection_preserves_only_semantically_unchanged_authority(
     )
 
     assert first["accounting"] == {
-        "predecessor_episode_count": 8,
-        "corrected_episode_count": 7,
-        "exact_unchanged_episode_count": 5,
+        "predecessor_episode_count": 14,
+        "corrected_episode_count": 13,
+        "exact_unchanged_episode_count": 11,
         "replacement_episode_count": 2,
         "rejected_episode_count": 1,
         "assigned_episode_count": 3,
-        "unassigned_episode_count": 4,
+        "unassigned_episode_count": 10,
         "population_count": 2,
         "supported_population_count": 1,
         "supported_population_support": 3,
         "unpublished_candidate_population_count": 1,
-        "unpublished_candidate_population_membership_count": 2,
-        "behavior_occurrence_count": 5,
-        "excluded_behavior_occurrence_count": 2,
+        "unpublished_candidate_population_membership_count": 8,
+        "behavior_occurrence_count": 11,
+        "excluded_behavior_occurrence_count": 3,
         "pattern_count": 2,
-        "pattern_support": 5,
+        "pattern_support": 11,
     }
     assert first["population_membership_edge_conservation"] == {
-        "before": 7,
+        "before": 14,
         "exact_preserved": 3,
-        "explicitly_superseded": 2,
+        "explicitly_superseded": 8,
         "excluded_rejected": 1,
-        "excluded_grounding_replacement": 1,
+        "excluded_grounding_replacement": 2,
         "unexplained": 0,
     }
     assert first["pattern_occurrence_edge_conservation"] == {
-        "before": 7,
+        "before": 14,
         "exact_preserved": 3,
-        "explicitly_superseded": 2,
+        "explicitly_superseded": 8,
         "excluded_rejected": 1,
-        "excluded_grounding_replacement": 1,
+        "excluded_grounding_replacement": 2,
         "unexplained": 0,
     }
     assert first["budget"] == {
@@ -748,3 +777,54 @@ def test_projection_refuses_invalid_legacy_budget_lineage_before_publication(
 
     assert exc_info.value.code == "HISTORICAL_PROJECTION_BUDGET_LINEAGE_INVALID"
     assert not output_dir.exists()
+
+
+def test_projection_never_restores_predecessor_dispute_without_current_support(
+    tmp_path: Path,
+) -> None:
+    module = importlib.import_module("triana_labs.behavior_map.historical_projection")
+    project = module.project_grounded_behavior_map
+    predecessor_path, corrected_path, binding_path = _write_projection_fixture(tmp_path)
+    _rewrite_bound_predecessor(
+        predecessor_path,
+        corrected_path,
+        binding_path,
+        "PREDECESSOR_EPISODE_AUDIT_DISPUTED",
+    )
+
+    report = project(
+        predecessor_report_path=predecessor_path,
+        corrected_extraction_path=corrected_path,
+        binding_path=binding_path,
+        output_dir=tmp_path / "dispute-preserved",
+    )
+
+    disposition = next(
+        row
+        for row in report["population_dispositions"]
+        if row["episode_id"] == "episode-keep-1"
+    )
+    assert disposition == {
+        "episode_id": "episode-keep-1",
+        "disposition": "AUDIT_DISPUTED",
+        "reason": "PREDECESSOR_AUDIT_DISPUTE_PRESERVED",
+    }
+    assert all(
+        "episode-keep-1" not in population["episode_ids"]
+        for population in report["populations"]
+    )
+    assert any(
+        row
+        == {
+            "episode_id": "episode-keep-1",
+            "predecessor_population_id": "population-keep",
+            "reason": "PREDECESSOR_AUDIT_DISPUTED",
+            "status": "EXCLUDED_HISTORY",
+        }
+        for row in report["excluded_population_memberships"]
+    )
+    assert (
+        report["population_membership_edge_conservation"]["excluded_audit_disputed"]
+        == 1
+    )
+    assert report["population_membership_edge_conservation"]["unexplained"] == 0

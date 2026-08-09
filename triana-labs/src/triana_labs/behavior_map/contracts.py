@@ -280,6 +280,21 @@ class AgentBehaviorPatternV0(TypedDict):
     support: int
     method: str
     audit_state: str
+    visibility: NotRequired[
+        Literal[
+            "SUPPORTED_PATTERN",
+            "UNPUBLISHED_AUDIT_MISSING",
+            "UNPUBLISHED_AUDIT_DISPUTED",
+        ]
+    ]
+
+
+class PatternOccurrenceDispositionV0(TypedDict):
+    occurrence_id: str
+    disposition: Literal["ASSIGNED", "INTENTIONALLY_UNASSIGNED", "AUDIT_DISPUTED"]
+    reason: str
+    pattern_id: NotRequired[str]
+    candidate_pattern_id: NotRequired[str]
 
 
 class BehaviorMapReportV0(TypedDict):
@@ -293,7 +308,10 @@ class BehaviorMapReportV0(TypedDict):
     populations: list[UserPopulationV0]
     population_dispositions: list[PopulationDispositionV0]
     behavior_occurrences: list[AgentBehaviorOccurrenceV0]
+    eligible_behavior_occurrences: list[str]
     behavior_patterns: list[AgentBehaviorPatternV0]
+    pattern_occurrence_dispositions: list[PatternOccurrenceDispositionV0]
+    pattern_accounting: dict[str, Any]
     emerging_unknown: list[dict[str, Any]]
     evidence: list[EvidenceItemV0]
     questions: list[str]
