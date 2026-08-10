@@ -1,0 +1,1 @@
+{"contract_kind":"preview_trace","schema_version":1,"privacy_class":"CUSTOMER_AUTHORIZED_TRACE_DATA","trace_id":"synthetic-invalid-role","source_trace_id":"fixture/invalid-role","events":[{"sequence":0,"role":"human","content":"This role must not be invented"},{"sequence":1,"event_kind":"TERMINAL","terminal_state":"SUCCESS"}]}

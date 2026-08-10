@@ -116,6 +116,17 @@ telemetry, arbitrary adapters, a UI, or a stable SDK promise, and authorizes no
 registry publication or deployment. Those actions require a later owner
 decision after the local pilot.
 
+The owner subsequently authorized a public-sourceable onboarding package
+without opening the private engine. `triana-skills/` contains one canonical
+Codex/Claude Code skill, a deterministic PreviewTrace validator, a bounded
+coding-agent adapter scaffold, and a digest-pinned Docker command constructor.
+It may help a coding agent implement a customer-local mapping, but unfamiliar
+schemas remain explicitly `IMPLEMENTATION_REQUIRED`; no generic adapter or
+semantic inference is claimed. The package may be published only after its
+privacy, contract-parity, and metadata gates pass. Image publication, registry
+access, provider execution, hosted upload, telemetry, UI, deployment, and the
+Behavior Map implementation remain private and separately authorized.
+
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
 primary author and Terra as independent auditor, with no retry or fallback and

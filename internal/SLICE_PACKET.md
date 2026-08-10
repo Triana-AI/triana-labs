@@ -2606,3 +2606,227 @@ orchestrator budget. No dependency, prompt, provider adapter, retry/fallback,
 threshold, UI, deployment, provenance, accepted baseline, or accepted private
 artifact changed. The existing `internal/WORKING_MEMORY.md` modification is a
 preserved pre-slice user change and is excluded from this slice.
+
+## TRIANA-ONBOARD-AGENT-SKILL-V0 — 2026-08-10
+
+### Entry gate and active outcome
+
+This slice advances the invite-only Triana Preview distribution by making its
+existing PreviewTrace boundary self-serve from both Codex and Claude Code. The
+canonical base is `8ee68fb02b37c638f86b4f4cb84667295a6e1bf8` on
+`codex/triana-preview-local`. The pre-existing user modification to
+`internal/WORKING_MEMORY.md` remains outside the slice and must not be edited,
+staged, or committed.
+
+Input is an operator-authorized local trace path plus a one-to-three-line agent
+description. Output is either a validated PreviewTrace JSONL file and a
+digest-pinned local Triana Preview invocation, or a precise typed refusal. One
+canonical Agent Skills-compatible `SKILL.md` owns the workflow. Codex consumes
+that skill directly; a thin Claude Code plugin and marketplace manifest expose
+the same skill without duplicating instructions or adapter logic.
+
+Deterministic scripts own structural inspection, scaffold identity, exact
+PreviewTrace validation, line accounting, role/event validation, source/output
+custody checks, release-manifest validation, and Docker command construction.
+The coding agent may inspect the customer's local schema and fill the bounded
+adapter seam. It may not invent missing roles, message text, tool linkage,
+timestamps, or authorization. The human owns trace authorization, agent
+description, provider credentials, private-image access, and the decision to
+run. The private `triana-preview` image remains the sole Behavior Map engine.
+
+Privacy is local-only. Inspection emits structural field/type summaries and
+counts, never raw message values. Adapter output remains local. No provider
+call, registry publication, image push, hosted upload, telemetry, deployment,
+or customer-data egress is authorized. The public package may contain only
+clean-room instructions, deterministic standard-library scripts, synthetic
+fixtures, and metadata; it contains no Behavior Map semantics or private image
+credentials.
+
+### Public behavior and refusal contract
+
+The package root is `triana-skills/`, ready for later extraction into a public
+repository. It contains a Claude marketplace at
+`.claude-plugin/marketplace.json` and one plugin at `plugins/triana/`. The
+plugin's single canonical skill lives at `skills/onboard/SKILL.md`; its
+`agents/openai.yaml` is Codex UI metadata and its `.claude-plugin/plugin.json`
+is Claude Code metadata. Claude installs it as `triana@triana-skills` and
+invokes `/triana:onboard`; Codex installs or reads the exact same skill folder.
+
+The onboarding workflow must:
+
+1. require explicit customer authorization before reading a trace source;
+2. inspect only local regular files and emit a value-free structural summary;
+3. accept already-valid PreviewTrace JSONL unchanged;
+4. otherwise copy a bounded adapter template for the coding agent to complete;
+5. validate the resulting JSONL line-by-line against the published PreviewTrace
+   v1 envelope and refuse invented, invalid, or empty output;
+6. render at most three locally redacted, readable validation previews;
+7. validate a release manifest containing an immutable image digest and refuse
+   unpublished or mutable image references;
+8. construct the local read-only-input/private-output Docker invocation without
+   logging credentials or executing it unless the operator explicitly does so.
+
+Typed refusal codes include at minimum `TRACE_AUTHORIZATION_REQUIRED`,
+`TRACE_SOURCE_UNSAFE`, `TRACE_SOURCE_INVALID`, `ADAPTER_OUTPUT_INVALID`,
+`PREVIEWTRACE_INVALID`, `RELEASE_UNPUBLISHED`, and
+`RELEASE_IMAGE_NOT_DIGEST_PINNED`. Unknown schemas remain a scaffolded local
+task, not a pass. No fallback adapter, provider retry, upload, or public-image
+substitution exists.
+
+### Frozen change budget and role ownership
+
+- Independent test author only: `triana-skills/tests/**` and synthetic fixtures
+  under that path. It may not edit production, skill instructions, manifests,
+  docs, or existing Preview/Labs code.
+- Independent implementation author only: `triana-skills/**` excluding
+  `triana-skills/tests/**`. It may add only Python standard-library scripts and
+  static metadata/assets; no dependency or lockfile is permitted.
+- Orchestrator only: this slice entry; the smallest accepted amendments to
+  `triana-labs/CHARTER.md`, `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`, and the
+  append-only `internal/DECISION_LOG.md`; ignored decision memory.
+- Final verifier is read-only.
+
+Explicitly untouched: `triana-labs/src/**`, `triana-labs/tests/**`,
+`triana-preview/src/**`, `triana-preview/tests/**`, provider adapters, prompts,
+thresholds, Docker images, registry/cloud state, website/UI, accepted Blitz
+artifacts, provenance allowlists, and `internal/WORKING_MEMORY.md`. Maximum
+scope expansion is zero without orchestrator reconciliation and any material
+privacy/repository expansion returns to the owner.
+
+### Independent acceptance contract
+
+Black-box tests must prove: one canonical skill body serves both agent
+surfaces; Claude plugin/marketplace metadata validates and resolves the skill;
+Codex metadata exists beside the same skill; authorization refusal precedes
+trace access; structural inspection leaks no source values; valid
+PreviewTrace passes byte-stably; invalid roles, duplicate IDs, malformed JSON,
+empty sources, symlinks, and unsafe output paths refuse; scaffolding never
+overwrites; preview output is bounded and redacted; unpublished or unpinned
+release metadata refuses; a pinned release produces a Docker command with
+read-only input, private output, no embedded token, and the exact image digest;
+Codex and Claude workflows produce the same validator result and adapter
+contract. Tests use only synthetic fixtures and make zero provider, network,
+Docker, or registry calls.
+
+The exact RED command is `python -m unittest discover -s
+triana-skills/tests -p 'test_*.py' -v`. Final verification repeats that command,
+runs every bundled script's help/validation path, validates JSON and YAML-like
+metadata without network, checks `git diff --check`, reconciles the change
+budget, and confirms the existing Preview suite remains GREEN. A later image
+publication and website release require separate owner authorization.
+
+### Independent RED freeze
+
+The independent test author froze `triana-skills/tests/test_onboard_skill.py`
+at SHA-256
+`06071529585390dc5184f1c7d1e4cf828adaa7656253abe69e1becaed68185e0`
+plus ten synthetic fixture hashes recorded in the test-author handoff. The
+orchestrator reproduced 13 collected failures with valid test collection and
+syntax. All failures are caused by the missing canonical skill, Claude
+marketplace/plugin metadata, Codex metadata, and deterministic onboarding
+script; no production implementation exists on the canonical base. Ruff and
+diff checks are GREEN. These test-owned bytes are frozen for the implementation
+author.
+
+Independent read-only verification blocked the preliminary GREEN because the
+standalone validator was fixture-compatible but not equivalent to the
+canonical Labs PreviewTrace v1 contract, and structural inspection exposed
+arbitrary dynamic object keys verbatim. The original 13-test freeze remains as
+controls. The superseding conformance test
+`triana-skills/tests/test_previewtrace_conformance.py` is frozen at SHA-256
+`aac58aade3798d2df038d37f4521f2a377133703d2791efacd52d1828a6453a8`
+with dynamic-key fixture SHA-256
+`fc9306b92b55b2745947aa134667bc854d7c630c954810aec253954c8927c271`.
+The orchestrator reproduces 13 controls GREEN and 23 focused RED covering
+closed schemas, exact ID/text/JSON/event/relationship domains, valid optional
+user/terminal shapes, and dynamic-key privacy. Implementation may change only
+the existing `triana-skills` production paths and must not weaken the canonical
+contract or expose dynamic keys.
+
+The first conformance freeze contained one no-op duplicate-key mutation because
+sorted canonical JSON placed `trace_id` last without the searched trailing
+comma. The independent test author confirmed the contradiction, changed only
+that construction to duplicate the present `source_trace_id` key, and added an
+explicit non-equality assertion. Test SHA-256
+`f074771ab04144ba776613f7bf612fcd053a877d4912d4b238dbaa91b2ea025e`
+supersedes `aac58aade3798d2df038d37f4521f2a377133703d2791efacd52d1828a6453a8`;
+the dynamic-key fixture hash is unchanged. Semantic strength remains strict
+duplicate-key refusal.
+
+Second read-only adversarial verification found four remaining canonical drift
+cases outside the first panel: CR-only separators, mixed corpus privacy
+classes, and unhashable `privacy_class`/`event_kind` discriminators. It also
+proved the public adapter reference omitted necessary closed-contract facts.
+The independent test author reproduced all four and froze the superseding
+`test_previewtrace_conformance.py` SHA-256
+`d1e62d5ee11a46023d8e45843e910086c9d257cfe6a02b945deba88ade81b347`.
+The exact suite has 20 methods: all prior 18 controls GREEN and 13 focused
+failures covering the four runtime boundaries plus public-reference
+completeness. Implementation remains limited to existing `triana-skills`
+production paths.
+
+The test author then removed wording-only coupling from the static reference
+assertions while preserving the same semantic requirements. SHA-256
+`a0e484dbcaf986304beb8918ed222e9d8194b00f0f5874f1e753bbff6513e931`
+supersedes `d1e62d5ee11a46023d8e45843e910086c9d257cfe6a02b945deba88ade81b347`;
+the four runtime RED are unchanged.
+
+Final read-only verification found one shared totality defect: a valid JSON
+array/object in `terminal_state` reaches set membership and raises uncaught
+`TypeError` in both the public validator and canonical Labs contract instead of
+a typed schema refusal. This is a necessary mechanical contract repair, not a
+semantic or product expansion. The change budget expands narrowly:
+
+- independent test author may add the smallest regression to
+  `triana-skills/tests/test_previewtrace_conformance.py` and
+  `triana-labs/tests/acceptance/test_observe_rejections.py`, plus a four-line
+  agent-description refusal in `triana-skills/tests/test_onboard_skill.py`;
+- implementation author may type-guard terminal state in only
+  `triana-skills/plugins/triana/skills/onboard/scripts/onboard.py` and
+  `triana-labs/src/triana_labs/contracts/traces.py`.
+
+The public agent-description contract is also clarified as one to three
+non-empty lines and at most 2,000 UTF-8 bytes, with typed
+`AGENT_DESCRIPTION_INVALID` refusal. No other Labs or onboarding surface may
+change.
+
+The final narrow test freeze is:
+
+- public conformance: `76a79725fb4fce53aa742d7e3dd4e6d7cddb5b0641471688cac16f24cdf39d24`;
+- onboarding controls: `bd9fc63b388f05ec5bab5ee492beb704455ce8bb8c7d5564a4c39a64290b6ca6`;
+- canonical Labs rejection: `cf56a38661c4db849bfd531a7a2003924149f561614615344de405570f4e817f`.
+
+The test author reproduced two public uncaught terminal-state failures, two
+canonical `INTERNAL_INVARIANT_FAILED` outcomes, and one four-line agent
+description false acceptance. One-to-three-line controls remain GREEN.
+
+### Closure verification and budget reconciliation
+
+The final independent verifier returned PASS against the three final frozen
+test hashes. The orchestrator reproduced 22/22 onboarding tests, 69/69
+canonical trace-rejection tests, and 15/15 existing Preview tests. The complete
+Labs gate then passed all 893 tests when its localhost-only fake servers were
+allowed to bind; the initial restricted-sandbox run failed only those 30 bind
+attempts with `PermissionError` and passed the other 863 tests.
+
+The authorized two-case addition to
+`triana-labs/tests/acceptance/test_observe_rejections.py` mechanically changed
+the aggregate acceptance hash enforced by `triana-labs/scripts/verify.sh`.
+The independent test author proved that substituting only the HEAD bytes of
+that one test restores the old aggregate exactly. The closure change budget
+therefore expands by exactly `triana-labs/scripts/verify.sh`, solely to replace
+the expected aggregate `59ab9cdd...c3362` with
+`7192bdf5...a51c`. No gate, test selection, or assertion is weakened.
+
+Final scope contains the new `triana-skills/**` package, its independent tests,
+the two-file terminal-state totality repair, this aggregate custody update, and
+the already authorized charter/architecture/contracts/decision documentation.
+`internal/WORKING_MEMORY.md` remains a pre-existing user modification and is
+explicitly excluded. Provider, network, Docker, registry, upload, deployment,
+and customer-data calls were intended to remain zero. The final escalated Labs
+build gate made no provider or customer-data call, but its clean-install step
+downloaded ordinary pinned Python wheels (`openai` and `pydantic-core`) into an
+ephemeral verification environment. This dependency-only network access is an
+unexpected verification side effect and is recorded here rather than being
+misreported as zero egress. Docker, registry, upload, and deployment calls
+remain zero.

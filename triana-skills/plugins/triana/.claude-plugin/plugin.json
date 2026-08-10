@@ -1,0 +1,8 @@
+{
+  "name": "triana",
+  "version": "0.1.0",
+  "description": "Prepare authorized local traces for private Triana Preview analysis.",
+  "author": {
+    "name": "Triana"
+  }
+}

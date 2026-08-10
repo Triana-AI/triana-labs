@@ -1,0 +1,12 @@
+{
+  "name": "triana-skills",
+  "owner": {
+    "name": "Triana"
+  },
+  "plugins": [
+    {
+      "name": "triana",
+      "source": "./plugins/triana"
+    }
+  ]
+}

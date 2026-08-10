@@ -30,6 +30,32 @@ representations live in `triana-backend/src/triana_backend/api/` and the frozen
 black-box acceptance contract is
 `triana-backend/tests/acceptance/test_trace_to_eval_self_serve.py`.
 
+### Triana onboarding skill boundary
+
+The distributable onboarding package has one canonical skill body and one
+deterministic CLI surface. Codex metadata and the Claude Code plugin/marketplace
+are wrappers over that same skill; they MUST NOT duplicate or specialize the
+adapter contract. Every operation that reads a trace source requires explicit
+`--confirm-authorized-traces` first.
+
+`inspect` accepts only a local regular file and emits physical-line counts,
+root JSON types, known structural field/type shapes, and an exact redacted-key
+count. It MUST NOT emit paths, source values, or unknown/dynamic object keys.
+`validate` implements the current closed PreviewTrace v1 and Observer corpus
+boundary, preserves valid bytes exactly, rejects invalid or mixed-privacy
+corpora with typed reasons, and never overwrites an output. `scaffold` creates
+only a bounded `IMPLEMENTATION_REQUIRED` adapter seam and content-free
+contract; it is not an inferred mapping or acceptance. `preview` validates
+first and emits at most three redacted event-shape examples.
+
+`docker-command` accepts only a separately published release manifest whose
+image is pinned as `<registry>/<image>@sha256:<64 lowercase hex>`. It returns an
+argv array and MUST NOT execute Docker. The trace file mount is read-only, the
+output is a local directory, credentials never enter argv or artifacts, and an
+unpublished or mutable image reference is a refusal. The public onboarding
+package contains no Behavior Map engine, provider adapter, image credential,
+retry, fallback, upload, telemetry, or deployment authority.
+
 ### Behavior Map historical projection
 
 `behavior_map_historical_projection_v0` is a private internal artifact, not a

@@ -409,7 +409,9 @@ def _validate_terminal(event: JsonObject, pointer: str) -> None:
     # SUCCESS carries no reason; ERROR and ABORTED require a safe reason code. This is
     # structural evidence only and does not interpret whether the outcome was good.
     state = event.get("terminal_state")
-    if state == "SUCCESS":
+    if not isinstance(state, str):
+        valid = False
+    elif state == "SUCCESS":
         valid = set(event) == {"sequence", "event_kind", "terminal_state"}
     elif state in {"ERROR", "ABORTED"}:
         valid = set(event) == {

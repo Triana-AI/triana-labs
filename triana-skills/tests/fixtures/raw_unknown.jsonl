@@ -1,0 +1,2 @@
+{"session_id":"synthetic-session-alpha","messages":[{"role":"user","content":"Track order ORD-SYNTH01 for private-customer@example.invalid"},{"role":"assistant","content":"I will inspect the synthetic order"}],"metadata":{"tenant":"synthetic-private-tenant","priority":2}}
+{"session_id":"synthetic-session-beta","messages":[{"role":"user","content":"Cancel order ORD-SYNTH02"}],"metadata":{"tenant":"synthetic-private-tenant","priority":1}}

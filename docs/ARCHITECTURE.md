@@ -125,6 +125,24 @@ copies only, a read-only input mount contract, and no hosted telemetry or
 upload boundary. Image-registry publication and external deployment are not
 part of this architecture checkpoint.
 
+`triana-skills/` is the public-sourceable onboarding layer above that private
+facade, not another engine. One canonical Agent Skills-compatible
+`plugins/triana/skills/onboard/SKILL.md` is consumed directly by Codex and is
+also exposed by a thin Claude Code plugin/marketplace manifest. Its
+standard-library tooling may inspect authorized local JSONL structurally,
+scaffold a bounded customer adapter, validate the exact PreviewTrace v1
+mechanical contract, show at most three redacted previews, and construct an
+immutable-digest Docker argv. It never executes Docker, publishes an image,
+contains credentials, uploads traces, or owns Behavior Map semantics.
+
+Unknown or dynamic source keys are not emitted verbatim by structural
+inspection; only a closed set of known schema names is visible and other keys
+collapse to a non-reversible redacted token with a count. An unfamiliar schema
+therefore becomes an explicit local adapter task reviewed by the operator and
+coding agent. It cannot silently become valid PreviewTrace. Codex and Claude
+Code share the same script, adapter template, reference, and conformance tests
+so agent packaging cannot change deterministic meaning.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text
