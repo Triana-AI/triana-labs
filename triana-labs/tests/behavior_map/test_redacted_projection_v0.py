@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from triana_labs.behavior_map import redact_preview_traces
+from triana_labs.behavior_map import RedactionFailure, redact_preview_traces
 from triana_labs.behavior_map import redaction as redaction_module
 from triana_labs.contracts.traces import validate_trace
 
@@ -271,6 +271,56 @@ def test_redacts_every_event_string_surface_with_stable_placeholders(
     audit_text = runs[0][1].read_text()
     assert all(value not in audit_text for value in DIRECT_VALUES)
     assert "complete pii removal" not in audit_text.casefold()
+
+
+def test_numeric_external_identities_are_stably_pseudonymized_before_scan(
+    tmp_path: Path,
+) -> None:
+    first_identity = "100000000000001"
+    second_identity = "415-555-0123"
+    source = tmp_path / "numeric-identities.jsonl"
+    source_bytes = _write_jsonl(
+        source,
+        [
+            _trace(
+                first_identity,
+                second_identity,
+                [_event(0, "USER_MESSAGE", content="Where is my delivery?")],
+            ),
+            _trace(
+                second_identity,
+                first_identity,
+                [_event(0, "USER_MESSAGE", content="Please check my delivery.")],
+            ),
+        ],
+    )
+    runs = [
+        (tmp_path / "first.jsonl", tmp_path / "first.audit.json"),
+        (tmp_path / "second.jsonl", tmp_path / "second.audit.json"),
+    ]
+
+    for output, audit_path in runs:
+        try:
+            audit = redact_preview_traces(source, output, audit_path)
+        except RedactionFailure as error:
+            pytest.fail(f"unexpected typed refusal: {error.reason_code}")
+        assert audit["category_counts"]["LONG_NUMBER"] == 2
+        assert audit["category_counts"]["PHONE"] == 2
+        assert "mapping" not in audit
+        assert "tokens" not in audit
+
+    assert source.read_bytes() == source_bytes
+    assert runs[0][0].read_bytes() == runs[1][0].read_bytes()
+    assert runs[0][1].read_bytes() == runs[1][1].read_bytes()
+    projected = _read_jsonl(runs[0][0])
+    assert projected[0]["trace_id"] == projected[1]["source_trace_id"]
+    assert projected[0]["source_trace_id"] == projected[1]["trace_id"]
+    assert projected[0]["trace_id"] != projected[0]["source_trace_id"]
+    assert all(validate_trace(row).value == row for row in projected)
+
+    published = runs[0][0].read_bytes() + runs[0][1].read_bytes()
+    assert first_identity.encode() not in published
+    assert second_identity.encode() not in published
 
 
 @pytest.mark.parametrize(

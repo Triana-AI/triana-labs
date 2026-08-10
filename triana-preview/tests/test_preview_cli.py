@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import stat
+import subprocess
 import threading
 from pathlib import Path
 
@@ -18,7 +19,6 @@ from conftest import (
     provider_disabled_environment,
     run_preview,
 )
-
 from triana_preview import cli as preview_cli
 
 
@@ -107,6 +107,92 @@ def test_partial_provider_configuration_refuses_before_child_engine(
     assert not output.exists()
 
 
+def test_provider_egress_preserves_exact_semantic_endpoint_binding(
+    tmp_path: Path,
+    synthetic_trace: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    primary_endpoint = "https://semantic.example.invalid/openai/v1"
+    audit_endpoint = "https://audit.example.invalid/openai/v1"
+    configuration = {
+        "TRIANA_BEHAVIOR_MAP_PROVIDER": "MICROSOFT_FOUNDRY_OPENAI_V1",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_ENDPOINT": primary_endpoint + "/",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_ENDPOINT": audit_endpoint + "/",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_MODEL_ID": "synthetic-primary",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_MODEL_ID": "synthetic-auditor",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_API_KEY": "synthetic-primary-key",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_API_KEY": "synthetic-audit-key",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_DEPLOYMENT_VERSION": "synthetic-v1",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_DEPLOYMENT_VERSION": "synthetic-v1",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_SKU": "synthetic-sku",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_SKU": "synthetic-sku",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_CAPACITY": "1",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_CAPACITY": "1",
+        "TRIANA_BEHAVIOR_MAP_PRIMARY_CREDENTIAL_BOUNDARY_ID": "synthetic-primary-boundary",
+        "TRIANA_BEHAVIOR_MAP_AUDIT_CREDENTIAL_BOUNDARY_ID": "synthetic-audit-boundary",
+    }
+    for key in tuple(os.environ):
+        if key.startswith("TRIANA_BEHAVIOR_MAP_"):
+            monkeypatch.delenv(key)
+    for key, value in configuration.items():
+        monkeypatch.setenv(key, value)
+
+    captured_manifest: dict[str, object] = {}
+
+    def fake_engine(
+        command: list[str],
+        *,
+        check: bool,
+        capture_output: bool,
+        text: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        assert check is False and capture_output is True and text is True
+        manifest_path = Path(command[command.index("--manifest") + 1])
+        output_dir = Path(command[command.index("--output-dir") + 1])
+        captured_manifest.update(json.loads(manifest_path.read_bytes()))
+        report = {
+            "report_id": "sha256:" + "0" * 64,
+            "gaps": [{"code": "SYNTHETIC_ENGINE_NOT_CALLED"}],
+            "provider_lineage": {
+                "primary": {
+                    "endpoint_origin": primary_endpoint,
+                    "attempted_call_count": 0,
+                },
+                "auditor": {
+                    "endpoint_origin": audit_endpoint,
+                    "attempted_call_count": 0,
+                },
+            },
+        }
+        (output_dir / "behavior-map.json").write_text(
+            json.dumps(report, separators=(",", ":"), sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess(command, 10, "", "")
+
+    monkeypatch.setattr(preview_cli.subprocess, "run", fake_engine)
+    output = tmp_path / "result"
+
+    exit_code = preview_cli.main(analyze_arguments(synthetic_trace, output))
+
+    assert exit_code == 10
+    receipt = json.loads(capfd.readouterr().out.splitlines()[-1])
+    assert receipt["provider_calls"] == 0
+    egress = captured_manifest["privacy"]["provider_egress"]
+    report = json.loads((output / "behavior-map.json").read_bytes())
+    assert egress["endpoint_origin"] == primary_endpoint
+    assert egress["audit_endpoint_origin"] == audit_endpoint
+    assert (
+        egress["endpoint_origin"]
+        == report["provider_lineage"]["primary"]["endpoint_origin"]
+    )
+    assert (
+        egress["audit_endpoint_origin"]
+        == report["provider_lineage"]["auditor"]["endpoint_origin"]
+    )
+
+
 def test_valid_no_provider_run_uses_labs_and_preserves_local_custody(
     tmp_path: Path, synthetic_trace: Path
 ) -> None:
@@ -147,6 +233,92 @@ def test_valid_no_provider_run_uses_labs_and_preserves_local_custody(
     assert b"ORD-TEST01" not in combined
     assert b"must-never-enter-artifacts" not in combined
     assert b"TRIANA_BEHAVIOR_MAP_PRIMARY_API_KEY" not in combined
+
+
+def test_numeric_external_identity_run_reaches_provider_disabled_product(
+    tmp_path: Path,
+) -> None:
+    first_identity = "100000000000001"
+    second_identity = "415-555-0123"
+    rows = [
+        {
+            "contract_kind": "preview_trace",
+            "schema_version": 1,
+            "privacy_class": "CUSTOMER_AUTHORIZED_TRACE_DATA",
+            "trace_id": first_identity,
+            "source_trace_id": second_identity,
+            "events": [
+                {
+                    "sequence": 0,
+                    "event_kind": "USER_MESSAGE",
+                    "content": "Where is my delivery?",
+                }
+            ],
+        },
+        {
+            "contract_kind": "preview_trace",
+            "schema_version": 1,
+            "privacy_class": "CUSTOMER_AUTHORIZED_TRACE_DATA",
+            "trace_id": second_identity,
+            "source_trace_id": first_identity,
+            "events": [
+                {
+                    "sequence": 0,
+                    "event_kind": "USER_MESSAGE",
+                    "content": "Please check my delivery.",
+                }
+            ],
+        },
+    ]
+    source = tmp_path / "numeric-identities.jsonl"
+    source.write_text(
+        "".join(
+            json.dumps(row, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+            + "\n"
+            for row in rows
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "result"
+
+    completed = run_preview(*analyze_arguments(source, output))
+
+    assert completed.returncode == 10, completed.stderr
+    receipt = machine_json(completed)
+    assert receipt["provider_calls"] == 0
+    published = b"\n".join(path.read_bytes() for path in _all_files(output))
+    assert first_identity.encode() not in published
+    assert second_identity.encode() not in published
+
+
+def test_residual_identifier_refusal_remains_actionable_and_content_free(
+    tmp_path: Path,
+    synthetic_trace: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    def refuse_residual(_source: Path, _output: Path, _audit: Path) -> object:
+        raise preview_cli.RedactionFailure("REDACTION_RESIDUAL_IDENTIFIER")
+
+    monkeypatch.setattr(preview_cli, "redact_preview_traces", refuse_residual)
+    for key in tuple(os.environ):
+        if key.startswith("TRIANA_BEHAVIOR_MAP_"):
+            monkeypatch.delenv(key)
+    output = tmp_path / "result"
+
+    exit_code = preview_cli.main(analyze_arguments(synthetic_trace, output))
+
+    receipt = json.loads(capfd.readouterr().out.splitlines()[-1])
+    assert exit_code == 2
+    assert receipt == {
+        "command": "triana-preview.analyze",
+        "outcome": "REJECTED",
+        "reason_code": "PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER",
+    }
+    serialized = json.dumps(receipt)
+    assert "preview-customer@example.invalid" not in serialized
+    assert "ORD-TEST01" not in serialized
+    assert not (output / "behavior-map.json").exists()
 
 
 def test_run_manifest_binds_redacted_input_and_report_accounting(

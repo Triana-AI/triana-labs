@@ -2875,3 +2875,136 @@ Hub/GHCR and downloaded missing pinned Python wheels. Runtime analysis had
 network disabled. No image push, registry mutation, deployment, provider call,
 or customer data was involved. Remote and multi-platform customer execution
 remain unverified until a separately authorized image release.
+
+### P0 customer identity redaction closure — 2026-08-10
+
+The first independent Agentagon customer journey selected 200 authorized ABCD
+conversations, converted and validated all 200 deterministically, reconciled
+4,377 source events into 3,659 message events plus 718 explicitly omitted
+unlinked action events, and matched the local image identity. Docker then
+refused before report publication with `PREVIEW_TRACE_REDACTION_REFUSED`.
+Content-free local diagnosis reproduced the canonical underlying reason as
+`REDACTION_RESIDUAL_IDENTIFIER`: 30 `LONG_NUMBER` residuals, exclusively 15
+`trace_id` plus the corresponding 15 `source_trace_id` occurrences; projected
+message/event residuals were zero.
+
+Falsifiable hypothesis: the redactor currently preserves every top-level
+identity and scans unfamiliar numeric identities as free text. Deterministically
+pseudonymizing only identity values that would otherwise trigger the existing
+identity residual policy will preserve same/distinct relationships, ordinary
+safe and explicitly structured identity behavior, schema validity, and repeated
+output while removing raw customer IDs from published custody. A remaining
+residual refusal can safely expose a specific content-free public code instead
+of the generic redaction refusal.
+
+The independent test author owns only
+`triana-labs/tests/behavior_map/test_redacted_projection_v0.py` and
+`triana-preview/tests/test_preview_cli.py`; final hashes are respectively
+`ce6753371bdc851303a6e0b472ee86dace6bab3e74de1571a0a6225651ff886a` and
+`313dac12a5a51aed0b9cc0d4d40f656def1b300ac8ed8fcf1a91ad90cfade36d`.
+The implementation budget adds only
+`triana-labs/src/triana_labs/behavior_map/redaction.py` and
+`triana-preview/src/triana_preview/cli.py`. The orchestrator may update this
+packet, the minimal canonical contract/architecture description, and append one
+accepted decision. Adapter behavior, event omission policy, semantic prompts,
+providers, thresholds, private Agentagon files, and `internal/WORKING_MEMORY.md`
+remain untouched.
+
+Focused RED proves the numeric/phone-like identity corpus is currently refused
+and the Preview facade collapses a known content-free residual reason. The
+acceptance contract requires deterministic same-to-same/distinct-to-distinct
+pseudonyms, byte-identical replay, valid projected traces, residual category
+counts without a raw mapping, zero raw-ID publication, zero provider calls, and
+`PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER` only when a residual genuinely
+remains.
+
+The hypothesis was confirmed. The implementation author changed only the two
+frozen production files. Labs now projects only unfamiliar external identities
+whose positive detections are a subset of `PHONE`, `POSTAL_CODE`, and
+`LONG_NUMBER` through the existing stable redactor registry before the
+unchanged residual scan. The Preview facade preserves generic handling for all
+other redaction failures and exposes the exact remaining residual reason.
+During the first implementation attempt, zero-valued `Counter` entries made
+the category predicate falsely fail; the author removed that falsified
+condition and retained only positive detections.
+
+Focused and adjacent verification is GREEN: all 20 Labs redaction tests and all
+17 Preview CLI tests pass; Ruff, formatting, strict mypy, frozen test hashes,
+and diff checks pass. The rebuilt local image
+`triana-preview:customer-e2e` is
+`sha256:0c6995f351f9e5665bc3302325b8c6263970a3913f8784c5279f40cf173b1a95`.
+The exact independent Agentagon corpus then completed under `--network none`:
+200 conversations were accepted, none rejected, provider calls remained zero,
+and report
+`sha256:3f7aa39b436c41c8a07b26d8606c23dfa3a821a928dc92f166b171d373396b8b`
+published seven private local artifacts. Its only analysis gap is the expected
+`SEMANTIC_ANALYSIS_UNAVAILABLE` because this proof intentionally supplied no
+provider. The image build read registry metadata and downloaded missing pinned
+wheels; it did not push, deploy, mutate a registry, or call a model provider.
+The 718 source action events that the customer adapter intentionally omitted
+remain a separate adapter-richness question and were not altered by this P0.
+
+### P0 Preview semantic-egress binding closure — 2026-08-10
+
+The first owner-requested network-enabled customer execution supplied the
+complete published Preview provider environment for Luna primary and Terra
+auditor. Preview wrote `privacy.provider_egress.authorized: true` and both
+model identities, but the engine made zero calls and emitted
+`SEMANTIC_PROVIDER_BINDING_UNAUTHORIZED` for `PRIMARY`. The evidence manifest
+recorded `https://kairos-memory.openai.azure.com` while the model lineage
+recorded `https://kairos-memory.openai.azure.com/openai/v1`; Preview had
+discarded the required OpenAI-v1 base path when deriving the authorization
+binding. Report
+`sha256:415665fece297c02547729bf2a90d155d7ddf16f664a6c1a6c35ebeebc9eb3a1`
+preserves that zero-call refusal at
+`/Users/akarshgajbhiye/agentagon/.triana-onboard/private-output-semantic-20260810/report`.
+
+Falsifiable hypothesis: binding the exact normalized configured base URL,
+including its path, into `provider_egress` will make Preview authorization and
+the semantic client's lineage identical and permit a provider attempt, while
+continuing to reject a changed host, path, model, deployment, SKU, capacity, or
+credential boundary. The repair MUST NOT add a semantic flag, fallback, retry,
+credential inference, or authorization default.
+
+The independent test author may edit only
+`triana-preview/tests/test_preview_cli.py` and, if needed, one bounded fixture
+under `triana-preview/tests/`. The implementation author may edit only
+`triana-preview/src/triana_preview/cli.py`, `triana-preview/README.md`,
+`triana-preview/.env.example`, and the provider-enabled guidance in
+`triana-skills/plugins/triana/skills/onboard/SKILL.md`. The orchestrator owns
+this packet, minimal canonical contract/architecture updates, and one durable
+decision entry. Labs semantics, prompts, thresholds, adapters, raw Agentagon
+files, provider code, dependencies, lockfiles, deployment, public registry,
+and `internal/WORKING_MEMORY.md` remain untouched. Acceptance requires a
+focused deterministic binding regression, the existing Preview suite, a
+rebuilt local image, one bounded real Luna-primary/Terra-auditor execution with
+nonzero attempted primary calls, no fallback/retry, private artifacts, and an
+honest typed outcome. The live execution retains the engine's current maximum
+USD 22.968 conservative reservation ceiling.
+
+The independent test author froze the exact endpoint-path regression at
+SHA-256
+`9677223d700d29d6c0ee344d3d6f5e8e863b440e6d8536737bffd9447abbeb71`.
+It proved RED without providers: `/openai/v1` was absent from the manifest while
+present in synthetic model lineage. The implementation author changed the four
+authorized Preview/guidance files. Preview now trims only trailing `/` and
+binds the complete configured base URL for both roles. The focused regression
+passes, the complete Preview suite passes 19 with one opt-in Docker skip, Ruff
+and strict mypy pass, and the shared onboarding skill validates. No provider
+call, retry, fallback, flag, dependency, or Labs semantic change occurred in
+the implementation-author turn.
+
+The orchestrator rebuilt `triana-preview:customer-e2e` as non-root image
+`sha256:102337e9ea012c6b6720793e8445b17dafcf5cf1e6df36a0b4ce838fa8a2f76e`
+and ran one provider-enabled synthetic smoke at
+`/private/tmp/triana-semantic-egress-smoke-20260810-v1/report`. Report
+`sha256:55e40bccd1d4c4aa6dc298b8d7e955381945c7123cf85a3e73271fc5c063d39d`
+completed with zero gaps: Luna primary attempted and completed 8 calls; Terra
+auditor attempted and completed 7; retry and fallback remained `NONE`; four
+conversations yielded four surviving episodes, three supported populations,
+four behavior occurrences, one supported pattern, and eight evidence records.
+The conservative reservations were USD 1.44 primary and USD 0.504 auditor;
+actual provider cost remains unknown. All seven root report artifacts are mode
+`0600`. The build downloaded missing pinned wheels and read base-image metadata;
+the runtime used provider network egress only. No image push, deployment,
+customer corpus rerun, registry mutation, or customer-data egress occurred.

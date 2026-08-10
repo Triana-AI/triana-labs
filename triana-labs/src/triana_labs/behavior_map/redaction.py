@@ -116,6 +116,11 @@ _TRIANA_LANGSMITH_TRACE_ID = re.compile(
 )
 _STRUCTURAL_EVENT_FIELDS = {"event_kind", "result_state", "terminal_state"}
 _STRUCTURAL_EVENT_IDENTITY_FIELDS = {"call_id"}
+_PSEUDONYMIZED_EXTERNAL_IDENTITY_CATEGORIES = {
+    "LONG_NUMBER",
+    "PHONE",
+    "POSTAL_CODE",
+}
 
 
 @dataclass(frozen=True)
@@ -277,22 +282,7 @@ def _residual_counts(traces: list[JsonObject]) -> dict[str, int]:
             )
         for identity_key in ("trace_id", "source_trace_id"):
             identity = cast(str, trace[identity_key])
-            excluded_identity_categories = {
-                "ADDRESS",
-                "BLITZ_IDENTIFIER",
-                "ORDER_ID",
-            }
-            if (
-                identity.startswith(_LANGSMITH_SESSION_PREFIX)
-                and len(identity) > len(_LANGSMITH_SESSION_PREFIX)
-            ) or _TRIANA_LANGSMITH_TRACE_ID.fullmatch(identity):
-                excluded_identity_categories.update({"POSTAL_CODE", "LONG_NUMBER"})
-            identity_patterns = tuple(
-                pattern
-                for pattern in _PATTERNS
-                if pattern[0] not in excluded_identity_categories
-            )
-            _count_residuals(identity, identity_patterns, counts)
+            _count_residuals(identity, _identity_patterns(identity), counts)
     return dict(sorted((key, count) for key, count in counts.items() if count))
 
 
@@ -306,8 +296,35 @@ def _count_residuals(
         counts[category] += len(tuple(pattern.finditer(candidate)))
 
 
+def _identity_patterns(
+    identity: str,
+) -> tuple[tuple[str, re.Pattern[str], int | None], ...]:
+    excluded_categories = {"ADDRESS", "BLITZ_IDENTIFIER", "ORDER_ID"}
+    if (
+        identity.startswith(_LANGSMITH_SESSION_PREFIX)
+        and len(identity) > len(_LANGSMITH_SESSION_PREFIX)
+    ) or _TRIANA_LANGSMITH_TRACE_ID.fullmatch(identity):
+        excluded_categories.update({"POSTAL_CODE", "LONG_NUMBER"})
+    return tuple(
+        pattern for pattern in _PATTERNS if pattern[0] not in excluded_categories
+    )
+
+
+def _project_external_identity(identity: str, redactor: _Redactor) -> str:
+    residuals: Counter[str] = Counter()
+    _count_residuals(identity, _identity_patterns(identity), residuals)
+    detected = {category for category, count in residuals.items() if count}
+    if detected and detected <= _PSEUDONYMIZED_EXTERNAL_IDENTITY_CATEGORIES:
+        return redactor.text(identity)
+    return identity
+
+
 def _project_trace(trace: JsonObject, redactor: _Redactor) -> JsonObject:
     projected = cast(JsonObject, dict(trace))
+    for identity_key in ("trace_id", "source_trace_id"):
+        projected[identity_key] = _project_external_identity(
+            cast(str, trace[identity_key]), redactor
+        )
     projected_events: list[JsonObject] = []
     for raw_event in cast(list[JsonObject], trace["events"]):
         event: JsonObject = {}

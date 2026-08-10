@@ -125,6 +125,26 @@ copies only, a read-only input mount contract, and no hosted telemetry or
 upload boundary. Image-registry publication and external deployment are not
 part of this architecture checkpoint.
 
+PreviewTrace structural validity does not by itself authorize a customer
+identity for publication. The Labs redaction boundary preserves ordinary safe
+identities and explicitly recognized structured identities, but projects an
+unfamiliar `trace_id` or `source_trace_id` through the existing stable redactor
+token registry when its residual detections are exclusively numeric identity
+categories. Equal source identities remain equal within the projection,
+distinct identities remain distinct, and the audit exposes category totals
+without raw values or a reversible mapping. A remaining identifier residual
+still refuses before analysis and is exposed by Preview as a content-free typed
+reason.
+
+Provider-enabled Preview is the same local command with one additional custody
+input: a complete explicit Triana provider environment. Preview binds the exact
+normalized OpenAI-v1 base URLs, including their paths, plus model, deployment,
+SKU, capacity, and credential-boundary identities into the evidence manifest.
+The Labs engine compares that manifest to live model lineage before the first
+call. Omitting the provider environment is the deterministic no-egress mode;
+partial configuration, inferred application variables, or a mismatched binding
+cannot authorize semantic work.
+
 `triana-skills/` is the public-sourceable onboarding layer above that private
 facade, not another engine. One canonical Agent Skills-compatible
 `plugins/triana/skills/onboard/SKILL.md` is consumed directly by Codex and is

@@ -60,6 +60,18 @@ or authorization.
 8. Show the operator the generated argv and ask them whether to execute it.
    Do not add credentials, provider fallback, uploads, or mutable image tags.
 
+9. Start with a deterministic, no-network run: omit all
+   `TRIANA_BEHAVIOR_MAP_*` provider variables and do not add `--env-file`.
+   Treat unavailable semantic analysis as a typed gap.
+
+10. Enable semantic analysis only after the operator explicitly chooses it.
+    Have the operator create a private environment file from Triana Preview's
+    `.env.example`, fill every field, and pass that exact file with
+    `--env-file`. A complete explicit configuration authorizes provider egress.
+    Preserve each full OpenAI-v1 base URL, including its path such as
+    `/openai/v1`. Never infer credentials or provider settings, and never add
+    fallback or retry behavior.
+
 Read [references/previewtrace-v1.md](references/previewtrace-v1.md) before
 implementing an adapter. Use [assets/adapter.py.template](assets/adapter.py.template)
 only through the deterministic scaffold command.

@@ -48,6 +48,27 @@ only a bounded `IMPLEMENTATION_REQUIRED` adapter seam and content-free
 contract; it is not an inferred mapping or acceptance. `preview` validates
 first and emits at most three redacted event-shape examples.
 
+Structural validity is distinct from publication custody. Safe external
+identities and explicitly recognized structured identities remain unchanged.
+Before residual scanning, an unfamiliar `trace_id` or `source_trace_id` whose
+positive detections are exclusively `PHONE`, `POSTAL_CODE`, or `LONG_NUMBER`
+MUST be replaced through the stable redactor token registry. The projection
+MUST preserve equality and distinctness, remain byte-identical for repeated
+identical input, validate as PreviewTrace v1, and expose only aggregate
+category counts without raw values, tokens, or mappings. Any other residual
+identifier category MUST continue to refuse. Preview MUST translate that
+remaining refusal to the content-free public reason
+`PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER`.
+
+Provider-enabled Preview MUST require every named
+`TRIANA_BEHAVIOR_MAP_*` provider field. Its `endpoint_origin` and
+`audit_endpoint_origin` compatibility fields MUST contain the exact configured
+base URLs after trimming only trailing `/`; the OpenAI-v1 path is authorization
+evidence and MUST NOT be reduced to scheme and authority. Missing, partial, or
+application-specific Azure/OpenAI variables do not authorize egress. Provider
+absence remains the typed deterministic mode, and neither mode permits retry or
+fallback.
+
 `docker-command` accepts only a separately published release manifest whose
 image is pinned as `<registry>/<image>@sha256:<64 lowercase hex>`. It returns an
 argv array and MUST NOT execute Docker. The trace file mount is read-only, the

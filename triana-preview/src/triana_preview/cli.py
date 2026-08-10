@@ -143,8 +143,8 @@ def _provider_binding() -> JsonObject:
         "audit_model_id": configured["TRIANA_BEHAVIOR_MAP_AUDIT_MODEL_ID"],
         "provider": provider,
         "audit_provider": provider,
-        "endpoint_origin": f"{primary_url.scheme}://{primary_url.netloc}",
-        "audit_endpoint_origin": f"{audit_url.scheme}://{audit_url.netloc}",
+        "endpoint_origin": primary_endpoint,
+        "audit_endpoint_origin": audit_endpoint,
         "deployment_version": configured[
             "TRIANA_BEHAVIOR_MAP_PRIMARY_DEPLOYMENT_VERSION"
         ],
@@ -293,11 +293,12 @@ def _analyze(arguments: argparse.Namespace) -> int:
         try:
             redact_preview_traces(source, redacted_path, audit_path)
         except RedactionFailure as error:
-            reason = (
-                "PREVIEW_TRACE_INPUT_INVALID"
-                if error.reason_code == "REDACTION_INPUT_INVALID"
-                else "PREVIEW_TRACE_REDACTION_REFUSED"
-            )
+            reason = {
+                "REDACTION_INPUT_INVALID": "PREVIEW_TRACE_INPUT_INVALID",
+                "REDACTION_RESIDUAL_IDENTIFIER": (
+                    "PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER"
+                ),
+            }.get(error.reason_code, "PREVIEW_TRACE_REDACTION_REFUSED")
             raise PreviewRefusal(reason) from error
         if not _source_unchanged(source, descriptor, opened, source_digest):
             redacted_path.unlink(missing_ok=True)
