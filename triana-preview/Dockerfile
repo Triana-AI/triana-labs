@@ -6,7 +6,7 @@ COPY triana-labs/pyproject.toml triana-labs/uv.lock ./triana-labs/
 COPY triana-labs/src ./triana-labs/src
 COPY triana-preview/pyproject.toml triana-preview/uv.lock ./triana-preview/
 COPY triana-preview/src ./triana-preview/src
-RUN cd triana-preview && UV_PROJECT_ENVIRONMENT=/opt/triana-preview uv sync --locked --no-dev
+RUN cd triana-preview && UV_PROJECT_ENVIRONMENT=/opt/triana-preview uv sync --locked --no-dev --no-editable
 
 FROM python:3.13.14-slim-bookworm@sha256:9d7f287598e1a5a978c015ee176d8216435aaf335ed69ac3c38dd1bbb10e8d64
 RUN useradd --create-home --uid 10001 preview

@@ -2830,3 +2830,48 @@ ephemeral verification environment. This dependency-only network access is an
 unexpected verification side effect and is recorded here rather than being
 misreported as zero egress. Docker, registry, upload, and deployment calls
 remain zero.
+
+### Customer Docker runtime closure — 2026-08-10
+
+Owner authorization to build and exercise the local customer image exposed a
+new falsifiable defect after the prior source/package gates were complete. The
+image `triana-preview:customer-e2e` built successfully as
+`sha256:25b5b33444c6f1a0fd7b909f441e2104bdfd3e79814e8342383eaa0459eebf25`,
+but its first provider-disabled synthetic run failed before product execution:
+the console script raised `ModuleNotFoundError: triana_preview`. Inspection
+showed an editable `triana_preview.pth` pointing at the build-stage source path,
+which is not copied into the final image.
+
+Falsifiable hypothesis: installing the paired packages non-editably into the
+copied runtime environment removes the build-path dependency and makes the
+final non-root image importable without changing product behavior. The narrow
+change budget adds only `triana-preview/Dockerfile` for implementation and
+`triana-preview/tests/test_docker_runtime.py` for the independent acceptance
+contract; this slice record remains orchestrator-owned. No provider, registry,
+deployment, semantic, adapter, prompt, or threshold change is allowed.
+
+The independent test author froze the new test at SHA-256
+`5722ac6219b2a71fc9a756e85e52a962d314c365a1bb41f7253ec4d02cf7dd93`.
+Its static guard requires `uv sync --locked --no-dev --no-editable`; its opt-in
+black-box lane runs the freshly built image with `--network none`, proves the
+package import and help path, then requires the synthetic provider-disabled run
+to exit with the existing typed-gap status, zero provider calls, and a real
+report artifact. Both assertions are RED on the initial image for the exact
+packaging failure above.
+
+The implementation author changed only the frozen Dockerfile sync command to
+add `--no-editable`. The freshly rebuilt local image is
+`triana-preview:customer-e2e` with image ID
+`sha256:848b3d845c391deea54fe6907278c9e7a490d903d01676183b088e42a8d242eb`.
+The orchestrator reproduced the exact opt-in Docker test: 2/2 PASS. The final
+image runs as user `preview`, imports its installed package, exposes the CLI,
+and completes a synthetic run under `--network none` with the expected exit 10
+typed-gap outcome, `provider_calls: 0`, and JSON/Markdown/HTML plus custody
+manifests in a private temporary output. The report ID is
+`sha256:68f3d61a1db3a4561d58a9e22ddaaf1f623dfdbfbc876ebef8b044d1a5dc8d69`.
+
+The owner-authorized image build read pinned base-image metadata from Docker
+Hub/GHCR and downloaded missing pinned Python wheels. Runtime analysis had
+network disabled. No image push, registry mutation, deployment, provider call,
+or customer data was involved. Remote and multi-platform customer execution
+remain unverified until a separately authorized image release.
