@@ -335,3 +335,53 @@ def test_specific_content_free_failure_survives_outer_generic_recording(
     assert lineage["budget"]["reserved_usd"] == 0.15
     assert lineage["last_failure_code"] == failure_code
     assert "synthetic transport detail" not in json.dumps(lineage)
+
+
+def test_local_budget_refusal_is_not_recorded_as_a_provider_attempt() -> None:
+    model = FoundryStructuredSemanticModel(
+        model_id="FW-GLM-5.2",
+        endpoint="https://kairos-openai-1.openai.azure.com/openai/v1",
+        api_key="synthetic-test-key",
+        max_calls=0,
+        max_reserved_usd=0.0,
+    )
+
+    with pytest.raises(ValueError, match="^SEMANTIC_BUDGET_EXCEEDED$"):
+        _complete(model)
+
+    lineage = model.lineage()
+    assert lineage["attempted_call_count"] == 0
+    assert lineage["successful_call_count"] == 0
+    assert lineage["budget"]["reserved_usd"] == 0.0
+    assert lineage["budget"]["reserved_usd"] <= lineage["budget"]["max_reserved_usd"]
+    assert model.failure_diagnostic() == {
+        "code": "SEMANTIC_BUDGET_EXCEEDED",
+        "phase": "LOCAL_BUDGET_PREFLIGHT",
+        "http_category": None,
+        "http_status": None,
+        "finish_reason": None,
+        "schema_path": None,
+        "truncation_state": "NOT_APPLICABLE",
+        "response_sha256": None,
+        "retryable": False,
+        "provider_attempted": False,
+    }
+
+
+def test_schema_failure_path_never_persists_provider_chosen_field_name(
+    fake_chat_openai: type[_FakeChatOpenAI],
+) -> None:
+    provider_field = "customer_secret_field_name_must_not_persist"
+    fake_chat_openai.next_result = _RawResponse(
+        json.dumps({"label": "observed", "count": 2, provider_field: "private"})
+    )
+    model = _model()
+
+    with pytest.raises(ValueError, match="^SEMANTIC_SCHEMA_INVALID$"):
+        _complete(model)
+
+    diagnostic = model.failure_diagnostic()
+    assert diagnostic is not None
+    assert diagnostic["schema_path"] == "SCHEMA_ROOT/EXTRA_FIELD"
+    assert provider_field not in json.dumps(diagnostic, sort_keys=True)
+    assert "private" not in json.dumps(diagnostic, sort_keys=True)

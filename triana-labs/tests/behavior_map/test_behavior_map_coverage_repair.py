@@ -180,6 +180,45 @@ class _Author:
             {"stage": stage, "payload": deepcopy(payload), "system": system}
         )
         fields = set(schema.model_fields)
+        if stage.startswith("semantic-preflight-"):
+            if "episodes" in fields:
+                conversation = payload["conversations"][0]
+                conversation_id = conversation["conversation_id"]
+                quote = conversation["events"][0]["content"]
+                return {
+                    "episodes": [
+                        _episode(
+                            conversation_id,
+                            quote,
+                            citations=[_citation(conversation_id, 0, quote)],
+                        )
+                    ],
+                    "behaviors": [],
+                }
+            if "populations" in fields:
+                episode_id = payload["episodes"][0]["episode_id"]
+                return {
+                    "populations": [
+                        {
+                            "label": "Synthetic contract checks",
+                            "definition": "Synthetic requests used only for contract validation.",
+                            "episode_ids": [episode_id],
+                        }
+                    ],
+                    "unassigned_episode_ids": [],
+                    "ambiguous_episode_ids": [],
+                }
+            if "patterns" in fields:
+                occurrence_id = payload["behavior_occurrences"][0]["occurrence_id"]
+                return {
+                    "patterns": [
+                        {
+                            "label": "Checks a synthetic request",
+                            "definition": "The agent checks a synthetic request before responding.",
+                            "occurrence_ids": [occurrence_id],
+                        }
+                    ]
+                }
         if "episodes" in fields and "behaviors" in fields:
             conversation_id = payload["conversations"][0]["conversation_id"]
             rows = deepcopy(self.episodes.get(conversation_id, []))
@@ -290,6 +329,10 @@ class _OmittingBatchAuthor(_Author):
     def complete_json(
         self, *, stage: str, system: str, payload: dict[str, Any], schema: Any
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(schema.model_fields)
         self.requests.append(
             {"stage": stage, "payload": deepcopy(payload), "system": system}
@@ -377,7 +420,11 @@ class _UnsuppliedIdAuthor(_Author):
         result = super().complete_json(
             stage=stage, system=system, payload=payload, schema=schema
         )
-        if "populations" in schema.model_fields and result["populations"]:
+        if (
+            not stage.startswith("semantic-preflight-")
+            and "populations" in schema.model_fields
+            and result["populations"]
+        ):
             result["populations"][0]["episode_ids"].append("sha256:" + "f" * 64)
         return result
 
@@ -425,6 +472,10 @@ class _FailingPatternBatchAuthor(_Author):
     def complete_json(
         self, *, stage: str, system: str, payload: dict[str, Any], schema: Any
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(schema.model_fields)
         if "episodes" in fields and "behaviors" in fields:
             result = super().complete_json(
@@ -517,6 +568,10 @@ class _AuditPlanningAuthor(_FailingPatternBatchAuthor):
     def complete_json(
         self, *, stage: str, system: str, payload: dict[str, Any], schema: Any
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(schema.model_fields)
         if (
             "populations" in fields
@@ -1358,7 +1413,7 @@ def test_failed_population_batch_is_scoped_and_later_batches_continue(
         (
             "SEMANTIC_POPULATION_BATCH_FAILED",
             "POPULATIONS_BATCH_0001",
-            "SEMANTIC_ATTEMPT_FAILED",
+            "SEMANTIC_PROVIDER_CALL_FAILED",
             tuple(sorted(failed_episode_ids)),
             len(failed_episode_ids),
         )
@@ -1493,7 +1548,7 @@ def test_failed_pattern_batch_is_scoped_and_later_batches_continue(
         (
             "SEMANTIC_PATTERN_BATCH_FAILED",
             "PATTERNS_BATCH_0001",
-            "SEMANTIC_ATTEMPT_FAILED",
+            "SEMANTIC_PROVIDER_CALL_FAILED",
             tuple(sorted(failed_occurrence_ids)),
             len(failed_occurrence_ids),
         )
@@ -1620,7 +1675,7 @@ def test_failed_pattern_hierarchy_preserves_candidates_and_replays_stably(
         (
             "SEMANTIC_PATTERN_HIERARCHY_FAILED",
             "PATTERNS_HIERARCHY",
-            "SEMANTIC_ATTEMPT_FAILED",
+            "SEMANTIC_PROVIDER_CALL_FAILED",
             tuple(sorted(first_level_occurrence_ids)),
             len(first_level_occurrence_ids),
         )

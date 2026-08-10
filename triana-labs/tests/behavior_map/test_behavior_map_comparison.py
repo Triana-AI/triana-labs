@@ -178,6 +178,9 @@ class _ExactLineageModel:
         )
         fields = set(schema.model_fields)
         if "episodes" in fields and "behaviors" in fields:
+            conversation = payload["conversations"][0]
+            conversation_id = conversation["conversation_id"]
+            quote = conversation["events"][0]["content"]
             proposal = {
                 "local_id": "demand",
                 "goal": "Locate an order",
@@ -190,9 +193,9 @@ class _ExactLineageModel:
                 "end_turn_ordinal": 1,
                 "citations": [
                     {
-                        "conversation_id": "selected-a",
+                        "conversation_id": conversation_id,
                         "event_sequence": 0,
-                        "quote": "Synthetic request.",
+                        "quote": quote,
                     }
                 ],
                 "field_grounding": {
@@ -209,7 +212,8 @@ class _ExactLineageModel:
                 proposal["grounding_contract_version"] = 1
             return {
                 "episodes": [proposal]
-                if payload["conversations"][0]["conversation_id"] == "selected-a"
+                if stage.startswith("semantic-preflight-")
+                or conversation_id == "selected-a"
                 else [],
                 "behaviors": (
                     [
@@ -232,7 +236,7 @@ class _ExactLineageModel:
                             "status": "PROPOSED",
                         }
                     ]
-                    if payload["conversations"][0]["conversation_id"] == "selected-a"
+                    if conversation_id == "selected-a"
                     else []
                 ),
             }

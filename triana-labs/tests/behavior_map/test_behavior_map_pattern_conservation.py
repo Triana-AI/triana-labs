@@ -278,6 +278,16 @@ class _PatternAuthor:
             occurrence_ids = sorted(
                 row["occurrence_id"] for row in payload["behavior_occurrences"]
             )
+            if stage.startswith("semantic-preflight-"):
+                return {
+                    "patterns": [
+                        {
+                            "label": "Verifies a synthetic request",
+                            "definition": "The agent verifies a synthetic request before acting.",
+                            "occurrence_ids": occurrence_ids,
+                        }
+                    ]
+                }
             self.initial_pattern_inputs[stage] = occurrence_ids
             selected = occurrence_ids[:-1] if self.omit_last else occurrence_ids
             if self.one_pattern_per_occurrence:
@@ -409,6 +419,10 @@ class _DuplicatePatternMembershipAuthor(_PatternAuthor):
     def complete_json(
         self, *, stage: str, system: str, payload: dict[str, Any], schema: Any
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         if "patterns" in schema.model_fields and isinstance(
             payload.get("behavior_occurrences"), list
         ):
@@ -443,6 +457,10 @@ class _HierarchyReintroducesOmittedOccurrenceAuthor(_PatternAuthor):
     def complete_json(
         self, *, stage: str, system: str, payload: dict[str, Any], schema: Any
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         if "patterns" in schema.model_fields and isinstance(
             payload.get("behavior_occurrences"), list
         ):

@@ -333,9 +333,34 @@ class _PlannedModel(_ProviderTrap):
 
 class _OneFreshExtractionModel(_PlannedModel):
     def complete_json(
-        self, *, stage: str, payload: dict[str, Any], **_: Any
+        self, *, stage: str, payload: dict[str, Any], schema: Any, **_: Any
     ) -> dict[str, Any]:
         self.calls.append(stage)
+        if stage == "semantic-preflight-population":
+            return {
+                "populations": [
+                    {
+                        "label": "Synthetic contract checks",
+                        "definition": "Synthetic requests used only for contract validation.",
+                        "episode_ids": [payload["episodes"][0]["episode_id"]],
+                    }
+                ],
+                "unassigned_episode_ids": [],
+                "ambiguous_episode_ids": [],
+            }
+        if stage == "semantic-preflight-pattern":
+            return {
+                "patterns": [
+                    {
+                        "label": "Checks a synthetic request",
+                        "definition": "The agent checks a synthetic request before responding.",
+                        "occurrence_ids": [
+                            payload["behavior_occurrences"][0]["occurrence_id"]
+                        ],
+                    }
+                ]
+            }
+        assert "episodes" in schema.model_fields
         conversation_id = payload["conversations"][0]["conversation_id"]
         return {
             "episodes": [
@@ -775,7 +800,13 @@ def test_fresh_successor_semantic_call_does_not_inherit_not_evaluated(
         agent_context="Synthetic support agent.",
     )
 
-    assert len(primary.calls) == 1
+    assert primary.calls[:3] == [
+        "semantic-preflight-extraction",
+        "semantic-preflight-population",
+        "semantic-preflight-pattern",
+    ]
+    assert len(primary.calls) == 4
+    assert primary.calls[3].startswith("demand-episodes-and-agent-behaviors-")
     assert "semantic_evaluation_state" not in report
     assert report["baseline_predecessor_report_id"] == "sha256:" + "6" * 64
     assert report["predecessor_campaign_id"] == ledger["campaign_id"]

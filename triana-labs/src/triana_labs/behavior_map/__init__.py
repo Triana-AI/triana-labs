@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
@@ -771,17 +772,20 @@ def _validate_checkpoint_directory(directory: Path) -> None:
         value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
         if value.get("artifact_kind") == "behavior_map_attempt_v0":
             identity = value.get("identity")
+            expected_keys = {
+                "artifact_kind",
+                "schema_version",
+                "identity",
+                "state",
+                "failure_code",
+                "payload",
+                "payload_descriptor_sha256",
+            }
+            if value.get("state") == "FAILED" and "failure" in value:
+                expected_keys.add("failure")
+            failure = value.get("failure")
             if (
-                set(value)
-                != {
-                    "artifact_kind",
-                    "schema_version",
-                    "identity",
-                    "state",
-                    "failure_code",
-                    "payload",
-                    "payload_descriptor_sha256",
-                }
+                set(value) != expected_keys
                 or value.get("schema_version") != 0
                 or value.get("state") not in {"IN_FLIGHT", "FAILED"}
                 or (
@@ -791,6 +795,19 @@ def _validate_checkpoint_directory(directory: Path) -> None:
                 or (
                     value.get("state") == "FAILED"
                     and value.get("failure_code") != "FAILURE"
+                )
+                or (
+                    value.get("state") == "FAILED"
+                    and "failure" in value
+                    and (
+                        not isinstance(failure, dict)
+                        or set(failure) != _FAILURE_DIAGNOSTIC_KEYS
+                        or _safe_failure_diagnostic(
+                            _PersistedFailureDiagnostic(failure),
+                            "SEMANTIC_ATTEMPT_FAILED",
+                        )
+                        != failure
+                    )
                 )
                 or not _valid_checkpoint_identity(identity)
                 or not _valid_attempt_payload(value.get("payload"))
@@ -905,8 +922,124 @@ def _attempt_payload(payload: JsonObject) -> JsonObject:
     return descriptor
 
 
+_FAILURE_DIAGNOSTIC_KEYS = {
+    "code",
+    "phase",
+    "http_category",
+    "http_status",
+    "finish_reason",
+    "schema_path",
+    "truncation_state",
+    "response_sha256",
+    "retryable",
+    "provider_attempted",
+}
+_SAFE_DIAGNOSTIC_TOKEN = re.compile(r"^[A-Z][A-Z0-9_]{0,79}$")
+_SAFE_SCHEMA_PATHS = {"SCHEMA_ROOT/EXTRA_FIELD"}
+
+
+class _PersistedFailureDiagnostic:
+    """Minimal adapter for validating an already persisted diagnostic."""
+
+    model_id = "persisted-failure-diagnostic-v0"
+
+    def __init__(self, value: JsonObject) -> None:
+        self.value = value
+
+    def failure_diagnostic(self) -> JsonObject:
+        return self.value
+
+
+class _SemanticAttemptError(ValueError):
+    """Content-free semantic failure with its safe diagnostic envelope."""
+
+    def __init__(self, failure: JsonObject) -> None:
+        super().__init__(cast(str, failure["code"]))
+        self.failure = failure
+
+
+def _failure_for_gap(error: BaseException) -> JsonObject | None:
+    return dict(error.failure) if isinstance(error, _SemanticAttemptError) else None
+
+
+def _safe_failure_diagnostic(model: Any, fallback_code: str) -> JsonObject:
+    """Project a model failure to the fixed content-free persistence envelope."""
+
+    method = getattr(model, "failure_diagnostic", None)
+    raw = method() if callable(method) else None
+    raw = raw if isinstance(raw, dict) else {}
+    raw_code = raw.get("code")
+    code = (
+        raw_code
+        if isinstance(raw_code, str) and _SAFE_DIAGNOSTIC_TOKEN.fullmatch(raw_code)
+        else fallback_code
+        if _SAFE_DIAGNOSTIC_TOKEN.fullmatch(fallback_code)
+        else "SEMANTIC_ANALYSIS_FAILED"
+    )
+    raw_phase = raw.get("phase")
+    phase = (
+        raw_phase
+        if isinstance(raw_phase, str) and _SAFE_DIAGNOSTIC_TOKEN.fullmatch(raw_phase)
+        else "LOCAL_BUDGET_PREFLIGHT"
+        if code == "SEMANTIC_BUDGET_EXCEEDED"
+        else "PROVIDER_CALL"
+    )
+    categorical: dict[str, set[str]] = {
+        "http_category": {
+            "SUCCESS_RESPONSE",
+            "HTTP_ERROR_RESPONSE",
+            "TRANSPORT_ERROR",
+        },
+        "finish_reason": {"stop", "length", "content_filter", "tool_calls"},
+        "truncation_state": {
+            "NOT_APPLICABLE",
+            "NOT_OBSERVED",
+            "OUTPUT_TRUNCATED",
+        },
+    }
+    projected: JsonObject = {"code": code, "phase": phase}
+    for key in ("http_category", "finish_reason", "truncation_state"):
+        value = raw.get(key)
+        projected[key] = value if value in categorical[key] else None
+    if projected["truncation_state"] is None:
+        projected["truncation_state"] = "NOT_APPLICABLE"
+    status = raw.get("http_status")
+    projected["http_status"] = (
+        status
+        if isinstance(status, int)
+        and not isinstance(status, bool)
+        and 100 <= status <= 599
+        else None
+    )
+    schema_path = raw.get("schema_path")
+    projected["schema_path"] = (
+        schema_path
+        if isinstance(schema_path, str) and schema_path in _SAFE_SCHEMA_PATHS
+        else None
+    )
+    response_sha256 = raw.get("response_sha256")
+    projected["response_sha256"] = (
+        response_sha256
+        if isinstance(response_sha256, str)
+        and re.fullmatch(r"sha256:[0-9a-f]{64}", response_sha256)
+        else None
+    )
+    projected["retryable"] = raw.get("retryable") is True
+    projected["provider_attempted"] = (
+        raw.get("provider_attempted") is True
+        if raw
+        else code != "SEMANTIC_BUDGET_EXCEEDED"
+    )
+    return {key: projected[key] for key in _FAILURE_DIAGNOSTIC_KEYS}
+
+
 def _write_attempt(
-    path: Path, *, identity: JsonObject, payload: JsonObject, state: str
+    path: Path,
+    *,
+    identity: JsonObject,
+    payload: JsonObject,
+    state: str,
+    failure: JsonObject | None = None,
 ) -> None:
     descriptor = _attempt_payload(payload)
     value: JsonObject = {
@@ -915,6 +1048,7 @@ def _write_attempt(
         "identity": identity,
         "state": state,
         "failure_code": "FAILURE" if state == "FAILED" else None,
+        **({"failure": failure} if failure is not None else {}),
         "payload": descriptor,
         "payload_descriptor_sha256": _digest(
             "behavior-map-attempt-descriptor-v0", descriptor
@@ -1022,7 +1156,18 @@ def _call(
                 raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
             state = value.get("state")
             if state == "FAILED":
-                raise ValueError("SEMANTIC_ATTEMPT_FAILED")
+                failure = value.get("failure")
+                if (
+                    not isinstance(failure, dict)
+                    or set(failure) != _FAILURE_DIAGNOSTIC_KEYS
+                ):
+                    raise ValueError("SEMANTIC_ATTEMPT_FAILED")
+                safe_failure = _safe_failure_diagnostic(
+                    _PersistedFailureDiagnostic(failure), "SEMANTIC_ATTEMPT_FAILED"
+                )
+                if safe_failure != failure:
+                    raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
+                raise _SemanticAttemptError(cast(JsonObject, failure))
             if state == "IN_FLIGHT":
                 raise ValueError("SEMANTIC_ATTEMPT_IN_FLIGHT")
             raise ValueError("SEMANTIC_CHECKPOINT_INVALID")
@@ -1068,9 +1213,16 @@ def _call(
             result=validated,
             provider_binding=provider_binding,
         )
-    except Exception:
-        _write_attempt(path, identity=identity, payload=payload, state="FAILED")
-        raise
+    except Exception as error:  # noqa: BLE001 - persist only the safe envelope.
+        diagnostic = _safe_failure_diagnostic(model, str(error))
+        _write_attempt(
+            path,
+            identity=identity,
+            payload=payload,
+            state="FAILED",
+            failure=diagnostic,
+        )
+        raise _SemanticAttemptError(diagnostic) from None
     return validated, checkpoint
 
 
@@ -1117,7 +1269,7 @@ def _recursive_hierarchy(
                     payload=payload,
                     schema=schema,
                 )
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as error:
                 item_name = "population" if result_key == "populations" else "pattern"
                 member_name = "episode" if result_key == "populations" else "occurrence"
                 current_members = sorted(
@@ -1131,7 +1283,12 @@ def _recursive_hierarchy(
                     {
                         "code": f"SEMANTIC_{item_name.upper()}_HIERARCHY_FAILED",
                         "stage": f"{item_name.upper()}S_HIERARCHY",
-                        "failure_code": "SEMANTIC_ATTEMPT_FAILED",
+                        "failure_code": str(error),
+                        **(
+                            {"failure": _failure_for_gap(error)}
+                            if _failure_for_gap(error) is not None
+                            else {}
+                        ),
                         f"{member_name}_ids": current_members,
                         f"{member_name}_count": len(current_members),
                     }
@@ -2460,13 +2617,18 @@ def _population_proposals_with_conservation(
                 payload=payload,
                 schema=PopulationBatch,
             )
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as error:
             failed_batch_episode_ids.update(supplied)
             gaps.append(
                 {
                     "code": "SEMANTIC_POPULATION_BATCH_FAILED",
                     "stage": stage,
-                    "failure_code": "SEMANTIC_ATTEMPT_FAILED",
+                    "failure_code": str(error),
+                    **(
+                        {"failure": _failure_for_gap(error)}
+                        if _failure_for_gap(error) is not None
+                        else {}
+                    ),
                     "episode_ids": sorted(supplied),
                     "episode_count": len(supplied),
                 }
@@ -3490,8 +3652,8 @@ def _numeric_lineage_value(
     return None
 
 
-def _historical_attempt_counts(directory: Path) -> dict[str, tuple[int, int]]:
-    counts: dict[str, tuple[int, int]] = {}
+def _historical_attempt_counts(directory: Path) -> dict[str, tuple[int, int, bool]]:
+    counts: dict[str, tuple[int, int, bool]] = {}
     for path in sorted(directory.glob("*.json")):
         value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
         identity = value.get("identity")
@@ -3500,27 +3662,40 @@ def _historical_attempt_counts(directory: Path) -> dict[str, tuple[int, int]]:
         ):
             raise TypeError("SEMANTIC_CHECKPOINT_INVALID")
         model_id = cast(str, identity["model_id"])
-        attempted, successful = counts.get(model_id, (0, 0))
+        attempted, successful, accounting_unknown = counts.get(model_id, (0, 0, False))
+        is_checkpoint = value.get("artifact_kind") == "behavior_map_checkpoint_v0"
+        failure = value.get("failure")
+        legacy_failed_attempt = value.get("state") == "FAILED" and not isinstance(
+            failure, dict
+        )
+        provider_attempted = (
+            is_checkpoint
+            or value.get("state") == "IN_FLIGHT"
+            or (isinstance(failure, dict) and failure.get("provider_attempted") is True)
+        )
         counts[model_id] = (
-            attempted + 1,
-            successful
-            + (1 if value.get("artifact_kind") == "behavior_map_checkpoint_v0" else 0),
+            attempted + (1 if provider_attempted else 0),
+            successful + (1 if is_checkpoint else 0),
+            accounting_unknown or legacy_failed_attempt,
         )
     return counts
 
 
 def _lineage_with_history(
-    lineage: JsonObject | None, historical: tuple[int, int]
+    lineage: JsonObject | None, historical: tuple[int, int, bool]
 ) -> JsonObject | None:
     if lineage is None:
         return None
-    attempted, successful = historical
+    attempted, successful, accounting_unknown = historical
     enriched = dict(lineage)
     current_attempted = max(
         int(_numeric_lineage_value(lineage, None, "attempted_call_count") or 0),
         int(_numeric_lineage_value(lineage, None, "provider_calls") or 0),
     )
     enriched["attempted_call_count"] = max(current_attempted, attempted)
+    enriched["attempted_call_count_state"] = (
+        "LOWER_BOUND" if accounting_unknown else "EXACT"
+    )
     if "provider_calls" in lineage:
         enriched["provider_calls"] = enriched["attempted_call_count"]
     current_successful = int(
@@ -3563,6 +3738,185 @@ def _write_artifact(path: Path, payload: bytes) -> None:
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
+
+
+def _run_primary_model_contract_preflights(
+    model: SemanticModel,
+    directory: Path,
+    checkpoint_ids: list[str],
+    gaps: list[JsonObject],
+) -> None:
+    """Exercise each primary semantic output contract before customer batches."""
+
+    conversation_id = "synthetic-contract-check"
+    episode_id = "synthetic-contract-episode"
+    occurrence_id = "synthetic-contract-occurrence"
+    calls: tuple[tuple[str, str, JsonObject, type[BaseModel], str], ...] = (
+        (
+            "semantic-preflight-extraction",
+            _EXTRACT_SYSTEM,
+            {
+                "agent_context": "Synthetic contract-check support agent.",
+                "conversations": [
+                    {
+                        "conversation_id": conversation_id,
+                        "events": [
+                            {
+                                "event_sequence": 0,
+                                "event_kind": "USER_MESSAGE",
+                                "content": "Please check this synthetic request.",
+                            },
+                            {
+                                "event_sequence": 1,
+                                "event_kind": "ASSISTANT_MESSAGE",
+                                "content": "I will check the synthetic request.",
+                            },
+                        ],
+                    }
+                ],
+            },
+            ExtractionBatch,
+            "EXTRACTION",
+        ),
+        (
+            "semantic-preflight-population",
+            _POPULATION_SYSTEM,
+            {
+                "episodes": [
+                    {
+                        "episode_id": episode_id,
+                        "conversation_id": conversation_id,
+                        "goal": "Check a synthetic request",
+                        "requested_action": "CHECK_REQUEST",
+                        "subject": "synthetic request",
+                        "constraints": [],
+                        "fallbacks": [],
+                    }
+                ]
+            },
+            PopulationBatch,
+            "POPULATION",
+        ),
+        (
+            "semantic-preflight-pattern",
+            _PATTERN_SYSTEM,
+            {
+                "behavior_occurrences": [
+                    {
+                        "occurrence_id": occurrence_id,
+                        "conversation_id": conversation_id,
+                        "lane": "SEMANTIC",
+                        "action": "CHECKED",
+                        "object": "synthetic request",
+                        "condition": "after a synthetic request",
+                        "observed_effect": None,
+                        "episode_ids": [episode_id],
+                        "evidence_ids": [],
+                        "status": "PROPOSED",
+                    }
+                ]
+            },
+            PatternBatch,
+            "PATTERN",
+        ),
+    )
+    for stage, system, payload, schema, subject in calls:
+        try:
+            result, checkpoint = _call(
+                model,
+                directory,
+                stage=stage,
+                system=system,
+                payload=payload,
+                schema=schema,
+            )
+            if subject == "EXTRACTION" and not cast(
+                list[JsonObject], result["episodes"]
+            ):
+                raise ValueError("SEMANTIC_PREFLIGHT_CONTRACT_INVALID")
+            if subject == "POPULATION":
+                supplied_episode_ids = {
+                    cast(str, row["episode_id"])
+                    for row in cast(list[JsonObject], payload["episodes"])
+                }
+                returned_episode_ids = (
+                    {
+                        episode_id
+                        for population in cast(list[JsonObject], result["populations"])
+                        for episode_id in cast(
+                            list[str], population.get("episode_ids", [])
+                        )
+                    }
+                    | set(cast(list[str], result.get("unassigned_episode_ids", [])))
+                    | set(cast(list[str], result.get("ambiguous_episode_ids", [])))
+                )
+                if returned_episode_ids != supplied_episode_ids:
+                    raise ValueError("SEMANTIC_PREFLIGHT_CONTRACT_INVALID")
+            # PatternBatch permits an empty list: a contract preflight proves
+            # schema compatibility, not the semantic presence of recurrence.
+        except (TypeError, ValueError) as error:
+            code = f"SEMANTIC_PREFLIGHT_{subject}_FAILED"
+            failure_code = str(error)
+            gaps.append(
+                {
+                    "code": code,
+                    "stage": f"{subject}_PREFLIGHT",
+                    "failure_code": failure_code,
+                    **(
+                        {"failure": _failure_for_gap(error)}
+                        if _failure_for_gap(error) is not None
+                        else {}
+                    ),
+                }
+            )
+            if failure_code == "SEMANTIC_BUDGET_EXCEEDED":
+                gaps.append(
+                    {
+                        "code": failure_code,
+                        "stage": f"{subject}_PREFLIGHT",
+                    }
+                )
+            raise ValueError(code) from None
+        checkpoint_ids.append(checkpoint)
+
+
+def _migration_requires_primary_preflight(
+    model: SemanticModel,
+    directory: Path,
+    projection: list[JsonObject],
+    agent_context: str,
+    refused_conversation_ids: set[str],
+) -> bool:
+    """Avoid provider calls for a migration that can only replay inert evidence."""
+
+    for index, conversation in enumerate(projection):
+        conversation_id = cast(str, conversation["conversation_id"])
+        if conversation_id in refused_conversation_ids:
+            continue
+        payload = {"agent_context": agent_context, "conversations": [conversation]}
+        _identity, path, _binding = _call_plan(
+            model,
+            directory,
+            stage=f"demand-episodes-and-agent-behaviors-{index:04d}",
+            system=_EXTRACT_SYSTEM,
+            payload=payload,
+            schema=ExtractionBatch,
+        )
+        if not path.exists():
+            return True
+        value = _read_object(path, "SEMANTIC_CHECKPOINT_INVALID")
+        if value.get("artifact_kind") != "behavior_map_checkpoint_v0":
+            continue
+        result = value.get("result")
+        if not isinstance(result, dict):
+            raise TypeError("SEMANTIC_CHECKPOINT_INVALID")
+        semantic_rows = [
+            *cast(list[JsonObject], result.get("episodes", [])),
+            *cast(list[JsonObject], result.get("behaviors", [])),
+        ]
+        if any(row.get("status") in {"PROPOSED", "OBSERVED"} for row in semantic_rows):
+            return True
+    return False
 
 
 def run_behavior_map(
@@ -3893,6 +4247,16 @@ def run_behavior_map(
         try:
             _validate_checkpoint_directory(checkpoints_dir)
             projection = _projection(semantic_traces)
+            if not migration_handoff or _migration_requires_primary_preflight(
+                primary_model,
+                checkpoints_dir,
+                projection,
+                cast(str, context["text"]),
+                migration_refused_conversation_ids,
+            ):
+                _run_primary_model_contract_preflights(
+                    primary_model, checkpoints_dir, checkpoint_ids, gaps
+                )
             if not agent_context:
                 context_batches, context_oversized = _bounded_batches(
                     projection,
@@ -4020,6 +4384,8 @@ def run_behavior_map(
                     allowed = {
                         "SEMANTIC_BUDGET_EXCEEDED",
                         "SEMANTIC_PROVIDER_CALL_FAILED",
+                        "SEMANTIC_RESPONSE_CONTENT_MISSING",
+                        "SEMANTIC_RESPONSE_JSON_INVALID",
                         "SEMANTIC_SCHEMA_INVALID",
                         "SEMANTIC_CHECKPOINT_INVALID",
                         "SEMANTIC_ATTEMPT_FAILED",
@@ -4036,6 +4402,11 @@ def run_behavior_map(
                             "conversation_id": cast(
                                 list[JsonObject], payload["conversations"]
                             )[0]["conversation_id"],
+                            **(
+                                {"failure": _failure_for_gap(error)}
+                                if _failure_for_gap(error) is not None
+                                else {}
+                            ),
                         }
                     )
                     failed_conversation_id = cast(
@@ -4179,13 +4550,18 @@ def run_behavior_map(
                         payload=payload,
                         schema=PatternBatch,
                     )
-                except (TypeError, ValueError):
+                except (TypeError, ValueError) as error:
                     failed_pattern_occurrence_ids.update(supplied_occurrence_ids)
                     gaps.append(
                         {
                             "code": "SEMANTIC_PATTERN_BATCH_FAILED",
                             "stage": f"PATTERNS_BATCH_{index:04d}",
-                            "failure_code": "SEMANTIC_ATTEMPT_FAILED",
+                            "failure_code": str(error),
+                            **(
+                                {"failure": _failure_for_gap(error)}
+                                if _failure_for_gap(error) is not None
+                                else {}
+                            ),
                             "occurrence_ids": sorted(supplied_occurrence_ids),
                             "occurrence_count": len(supplied_occurrence_ids),
                         }
@@ -4564,12 +4940,16 @@ def run_behavior_map(
                                 "stage": "AUDIT",
                                 "item_id": audit_item_id,
                                 "provider_failure_code": code,
+                                **(
+                                    {"failure": _failure_for_gap(error)}
+                                    if _failure_for_gap(error) is not None
+                                    else {}
+                                ),
                             }
                         )
-                        if code in {
-                            "SEMANTIC_BUDGET_EXCEEDED",
-                            "SEMANTIC_CHECKPOINT_INVALID",
-                        }:
+                        if code == "SEMANTIC_CHECKPOINT_INVALID" or (
+                            code == "SEMANTIC_BUDGET_EXCEEDED" and is_new_call
+                        ):
                             break
                         continue
                     checkpoint_ids.append(checkpoint)
@@ -4721,20 +5101,25 @@ def run_behavior_map(
                 )
         except (TypeError, ValueError) as error:
             code = str(error)
+            if code.startswith("SEMANTIC_PREFLIGHT_"):
+                code = ""
             allowed = {
                 "SEMANTIC_BUDGET_EXCEEDED",
                 "SEMANTIC_PROVIDER_CALL_FAILED",
+                "SEMANTIC_RESPONSE_CONTENT_MISSING",
+                "SEMANTIC_RESPONSE_JSON_INVALID",
                 "SEMANTIC_SCHEMA_INVALID",
                 "SEMANTIC_CHECKPOINT_INVALID",
                 "SEMANTIC_ATTEMPT_FAILED",
                 "SEMANTIC_ATTEMPT_IN_FLIGHT",
             }
-            gaps.append(
-                {
-                    "code": code if code in allowed else "SEMANTIC_SCHEMA_INVALID",
-                    "stage": "SEMANTIC_PIPELINE",
-                }
-            )
+            if code:
+                gaps.append(
+                    {
+                        "code": code if code in allowed else "SEMANTIC_SCHEMA_INVALID",
+                        "stage": "SEMANTIC_PIPELINE",
+                    }
+                )
     population_dispositions = _population_dispositions(
         episodes,
         populations,
@@ -4772,16 +5157,33 @@ def run_behavior_map(
     primary_lineage = _safe_lineage(primary_model)
     audit_lineage = _safe_lineage(audit_model)
     historical_attempts = _historical_attempt_counts(checkpoints_dir)
+    models_with_unknown_attempt_accounting = {
+        model_id
+        for model_id, (
+            _attempted,
+            _successful,
+            accounting_unknown,
+        ) in historical_attempts.items()
+        if accounting_unknown
+    }
+    if models_with_unknown_attempt_accounting:
+        gaps.append(
+            {
+                "code": "SEMANTIC_ATTEMPT_ACCOUNTING_UNKNOWN",
+                "stage": "ACCOUNTING",
+                "model_count": len(models_with_unknown_attempt_accounting),
+            }
+        )
     primary_lineage = _lineage_with_history(
         primary_lineage,
         historical_attempts.get(
-            primary_model.model_id if primary_model is not None else "", (0, 0)
+            primary_model.model_id if primary_model is not None else "", (0, 0, False)
         ),
     )
     audit_lineage = _lineage_with_history(
         audit_lineage,
         historical_attempts.get(
-            audit_model.model_id if audit_model is not None else "", (0, 0)
+            audit_model.model_id if audit_model is not None else "", (0, 0, False)
         ),
     )
     migration_attempt_floor = int(
@@ -4939,6 +5341,28 @@ def run_behavior_map(
             cast(str, row["occurrence_id"]) for row in pattern_inputs
         ),
         "behavior_patterns": patterns,
+        "pattern_analysis": {
+            "status": (
+                "PATTERN_ANALYSIS_UNAVAILABLE"
+                if primary_model is None or not semantic_authorized
+                else "PATTERN_ANALYSIS_FAILED"
+                if any(
+                    gap.get("code")
+                    in {
+                        "SEMANTIC_PATTERN_BATCH_FAILED",
+                        "SEMANTIC_PATTERN_HIERARCHY_FAILED",
+                    }
+                    or str(gap.get("code", "")).startswith("SEMANTIC_PREFLIGHT_")
+                    for gap in gaps
+                )
+                else "PATTERNS_OBSERVED"
+                if any(
+                    pattern.get("visibility") == "SUPPORTED_PATTERN"
+                    for pattern in patterns
+                )
+                else "NO_RECURRING_PATTERN_OBSERVED"
+            )
+        },
         "pattern_occurrence_dispositions": pattern_occurrence_dispositions,
         "pattern_accounting": pattern_accounting,
         "emerging_unknown": sorted(

@@ -300,6 +300,8 @@ def render_markdown(report: JsonObject) -> str:
             "",
             f"## {_SECTIONS[2]}",
             "",
+            f"Pattern analysis status: `{_text(report['pattern_analysis']['status'])}`",
+            "",
             "| Behavior | Meaning | Occurrences | Source | Supporting material |",
             "|---|---|---:|---|---|",
         ]
@@ -319,9 +321,13 @@ def render_markdown(report: JsonObject) -> str:
             f"{lanes} | {evidence} |"
         )
     if not report["behavior_patterns"]:
-        lines.append(
-            "| No supported recurring patterns | — | 0 | UNKNOWN | Unavailable |"
-        )
+        status = _text(report["pattern_analysis"]["status"])
+        if status == "NO_RECURRING_PATTERN_OBSERVED":
+            lines.append(
+                "| No supported recurring patterns | — | 0 | UNKNOWN | Unavailable |"
+            )
+        else:
+            lines.append(f"| {status} | — | — | UNKNOWN | Unavailable |")
     lines.extend(["", "### Occurrences and attachments", ""])
     tool_summary, detailed_occurrences = _deterministic_tool_summary(
         report["behavior_occurrences"]
@@ -479,6 +485,11 @@ def render_html(report: JsonObject) -> str:
             "</tbody></table>",
             f"<h2>{_SECTIONS[2]}</h2>",
             (
+                "<p>Pattern analysis status: <code>"
+                f"{html.escape(_text(report['pattern_analysis']['status']))}"
+                "</code></p>"
+            ),
+            (
                 "<table><thead><tr><th>Behavior</th><th>Meaning</th><th>Occurrences</th>"
                 "<th>Source</th><th>Supporting material</th></tr></thead><tbody>"
             ),
@@ -505,9 +516,16 @@ def render_html(report: JsonObject) -> str:
             f"<td>{row['support']}</td><td>{html.escape(lanes)}</td><td>{evidence}</td></tr>"
         )
     if not report["behavior_patterns"]:
-        parts.append(
-            "<tr><td>No supported recurring patterns</td><td>—</td><td>0</td><td>UNKNOWN</td><td>Unavailable</td></tr>"
-        )
+        status = _text(report["pattern_analysis"]["status"])
+        if status == "NO_RECURRING_PATTERN_OBSERVED":
+            parts.append(
+                "<tr><td>No supported recurring patterns</td><td>—</td><td>0</td><td>UNKNOWN</td><td>Unavailable</td></tr>"
+            )
+        else:
+            parts.append(
+                f"<tr><td>{html.escape(status)}</td><td>—</td><td>—</td>"
+                "<td>UNKNOWN</td><td>Unavailable</td></tr>"
+            )
     parts.extend(["</tbody></table>", "<h3>Occurrences and attachments</h3><ul>"])
     tool_summary, detailed_occurrences = _deterministic_tool_summary(
         report["behavior_occurrences"]

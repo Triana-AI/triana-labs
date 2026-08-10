@@ -69,6 +69,33 @@ application-specific Azure/OpenAI variables do not authorize egress. Provider
 absence remains the typed deterministic mode, and neither mode permits retry or
 fallback.
 
+A fresh provider-enabled Behavior Map run MUST complete bounded synthetic
+model-contract preflights for extraction, population consolidation, and pattern
+consolidation before sending corpus evidence. A successful preflight consumes
+one ordinary provider attempt but contributes no episode, population,
+occurrence, pattern, evidence, or audit subject. A failed preflight MUST stop
+fresh corpus semantic work and emit a stage-specific typed gap. A fully
+checkpointed provider-disabled replay MUST NOT call a provider merely to add
+preflight artifacts.
+
+Failed call custody MUST store only: failure code and phase, safe HTTP
+category/status when present, finish reason, a closed structural schema
+location, truncation state, response SHA-256, retriability, and whether provider
+egress began. Exception text, response bodies, prompts, credentials, headers,
+and provider-chosen field names MUST NOT persist. The only extra-field schema
+location is the constant `SCHEMA_ROOT/EXTRA_FIELD`; unsupported paths become
+absent. A local budget refusal has `provider_attempted=false` and contributes
+zero attempted calls and zero reservation. A legacy failed artifact without
+this evidence MUST produce `SEMANTIC_ATTEMPT_ACCOUNTING_UNKNOWN` and mark the
+reported attempt count `LOWER_BOUND`; it MUST NOT invent an exact historical
+count.
+
+`pattern_analysis.status` distinguishes `PATTERNS_OBSERVED`,
+`NO_RECURRING_PATTERN_OBSERVED`, `PATTERN_ANALYSIS_FAILED`, and
+`PATTERN_ANALYSIS_UNAVAILABLE`. The substantive no-recurring-pattern state is
+valid only after eligible pattern analysis completed without a blocking
+semantic-stage failure.
+
 `docker-command` accepts only a separately published release manifest whose
 image is pinned as `<registry>/<image>@sha256:<64 lowercase hex>`. It returns an
 argv array and MUST NOT execute Docker. The trace file mount is read-only, the

@@ -3008,3 +3008,135 @@ actual provider cost remains unknown. All seven root report artifacts are mode
 `0600`. The build downloaded missing pinned wheels and read base-image metadata;
 the runtime used provider network egress only. No image push, deployment,
 customer corpus rerun, registry mutation, or customer-data egress occurred.
+
+### Semantic failure transparency and attempt custody — 2026-08-10
+
+The fresh independent ABCD customer run proved transport and model access but
+not usable full-corpus analysis. Its private report
+`sha256:89adbb88e762cde0b3510b8f11ce354cc3fea7be7c0532acc142a3a15ed9bd1b`
+accepted 200 conversations, retained 113 episodes and 209 pattern-eligible
+occurrences, but published zero populations and zero patterns. Luna completed
+80 calls and had 20 visible extraction schema failures; all 10 population and
+18 pattern batches were represented only as generic failed attempts. The
+report exposed 129 primary `attempted_call_count` and USD 23.22 reserved against
+a declared 100-call/USD 18 lane, even though the model object stops before a
+provider call when its lane limit is reached. Failed-attempt artifacts currently
+conflate pre-provider local refusal with actual provider attempts, and later
+checkpoint replay collapses the original safe failure cause into
+`SEMANTIC_ATTEMPT_FAILED`.
+
+Debugging iteration A hypothesis: attempt checkpoints do not retain a safe,
+typed failure envelope or whether provider egress began; historical accounting
+therefore counts local budget refusals as provider attempts and cannot explain
+aggregation failures. Preserve only content-free diagnostic fields: failure
+code and phase, HTTP status/category when present, finish reason, schema path,
+truncation state, response SHA-256, provider-attempted state, and retriability.
+Never persist exception messages, response bodies, prompts, credentials, or
+provider headers. Replayed failures MUST retain the same safe cause and
+provider-attempt accounting MUST not exceed the declared lane.
+
+Debugging iteration B hypothesis: the first full-corpus request is currently
+the first contract check for each semantic stage. Add bounded synthetic
+model-contract preflights for primary extraction, population consolidation, and
+pattern consolidation before customer batches. A failed stage preflight MUST
+stop semantic corpus work with a typed stage-specific gap; a successful
+preflight consumes and records a normal provider attempt and does not contribute
+semantic evidence. No retry or fallback is authorized.
+
+Debugging iteration C hypothesis: rendering derives empty recurring behavior
+from an empty supported-pattern list without considering failed or unexecuted
+pattern stages. Reports MUST distinguish `NO_RECURRING_PATTERN_OBSERVED` only
+after completed eligible analysis from `PATTERN_ANALYSIS_FAILED` or
+`PATTERN_ANALYSIS_UNAVAILABLE`; failed analysis cannot receive a substantive
+zero finding or quality rating.
+
+Frozen change budget: the independent test author may edit only bounded files
+under `triana-labs/tests/behavior_map/` and
+`triana-labs/tests/trace_to_eval/`; the implementation author may edit only
+`triana-labs/src/triana_labs/trace_to_eval/semantic.py`,
+`triana-labs/src/triana_labs/behavior_map/__init__.py`, and
+`triana-labs/src/triana_labs/behavior_map/render.py`, plus one small contract
+module under those existing packages only if required for a typed failure
+object. The orchestrator owns this packet, minimal canonical docs, and an
+append-only durable decision. No prompt wording, schema/grouping threshold,
+adapter, PreviewTrace envelope, provider choice, default budget increase,
+retry/fallback, raw ABCD data, deployment, dependency, lockfile,
+`internal/WORKING_MEMORY.md`, or accepted baseline may change. Acceptance uses
+fake models and synthetic fixtures, then one small non-ABCD live smoke only;
+the full ABCD corpus MUST NOT rerun.
+
+The onboarding unknown-key visibility tradeoff, missing finalized adapter
+validation manifest, and inability to represent 718 unlinked ABCD action
+observations are real follow-on product questions, but they do not explain the
+semantic aggregation failure. They remain explicitly excluded from this repair
+because changing local inspection privacy or the PreviewTrace envelope requires
+separate contracts and evidence.
+
+#### Exit reconciliation
+
+The independent RED contract ultimately covered safe failure persistence and
+replay, local budget refusal accounting, all three preflights, preflight output
+exclusion, stage-aware pattern reporting, upstream failure propagation,
+provider-chosen schema-field privacy, schema-valid empty pattern preflight,
+legacy accounting uncertainty, and exact safe-sentinel checkpoint custody.
+Test-only compatibility changes teach existing fake semantic models to answer
+the new synthetic preflight stages; they do not change corpus expectations.
+
+Implementation changed only the three frozen production files. The structured
+Foundry boundary now records the fixed content-free failure envelope and never
+stores exception text or provider content. Behavior Map checkpoints retain and
+replay that envelope, count only known or conservatively possible provider
+attempts, exclude proved local refusals, and label legacy unknown failure
+history `LOWER_BOUND` with `SEMANTIC_ATTEMPT_ACCOUNTING_UNKNOWN`. Fresh semantic
+work executes extraction, population, and pattern preflights before corpus
+calls; fully satisfied offline replays remain zero-call. Reports distinguish
+`PATTERNS_OBSERVED`, completed `NO_RECURRING_PATTERN_OBSERVED`,
+`PATTERN_ANALYSIS_FAILED`, and `PATTERN_ANALYSIS_UNAVAILABLE`.
+
+Final source SHA-256 values are:
+
+- `behavior_map/__init__.py`:
+  `8c4edc93685223dcbdae3e4f260e155403a23e4dcdb27166480dbcaf7afc88c1`;
+- `behavior_map/render.py`:
+  `4ae7193f1824d9a31fc92448f9e21dcdbde3adb4eeaeefe77ccf624a286b6fa4`;
+- `trace_to_eval/semantic.py`:
+  `15f227bc3081fb7dd803a0f03df3d38abc4609d1174e23795293c98ffd19ca5f`.
+
+The final independently owned Behavior Map/Foundry regression hashes are
+recorded in the orchestrator handoff; full Behavior Map verification passes
+235 tests, the combined independent adjacent verification passes 247 tests,
+and the complete Labs repository gate passes 905 tests including build and
+clean-wheel verification. Preview verification passes 19 tests with its one
+opt-in Docker test skipped.
+
+One four-conversation synthetic, non-ABCD source-package smoke produced report
+`sha256:4036b297658189090bb1fcabf15a38e93d5cd9c55d3dea4aac95e9862dc8f932`
+with 16 successful provider calls, all three preflights, four episodes, three
+populations, one supported pattern, no gaps, exact attempt state, no retry, and
+no fallback. The initial source attempt is retained separately but is not
+accepted as repair evidence because Preview's environment still contained the
+prior non-editable Labs installation; the orchestrator detected that mismatch,
+reinstalled the exact source hash, and reran to the accepted artifact above.
+
+Docker's GHCR helper stalled while resolving the pinned `uv` build stage even
+though public registry HTTP was reachable. Without changing the repository
+Dockerfile, the orchestrator preserved the prior local image, built the exact
+verified Labs wheel, and created a no-network local overlay image
+`triana-preview:customer-e2e` at
+`sha256:ada1b52ece533d5ecfb80f3c4d863736549936a747c6ea6a5000e0906f9e9b04`.
+The installed Behavior Map source hash exactly matches the repository source.
+That image completed a second four-conversation Luna-primary/Terra-auditor
+smoke as report
+`sha256:d8e85fe74829b90e811d666a593b8fe86866ac4ac82288269ed3b4e7857883bc`:
+9/9 primary attempts, 7/7 audit attempts, four episodes, three populations, one
+supported pattern, zero gaps, exact accounting, no retry, and no fallback. All
+seven published artifacts are mode `0600`.
+
+Across the three bounded synthetic live executions, 45 provider calls were
+made and conservative reservation totaled USD 5.82; actual provider cost is
+unknown. No ABCD conversation was rerun, no customer corpus entered these
+smokes, and no prompt, threshold, provider role, adapter, PreviewTrace envelope,
+retry, fallback, dependency, lockfile, deployment, or accepted baseline changed.
+The standard clean Dockerfile rebuild remains unverified only because its
+pinned GHCR metadata helper stalled; the current local customer image itself is
+verified and ready for retest.

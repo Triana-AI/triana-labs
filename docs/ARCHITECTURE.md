@@ -145,6 +145,23 @@ call. Omitting the provider environment is the deterministic no-egress mode;
 partial configuration, inferred application variables, or a mismatched binding
 cannot authorize semantic work.
 
+Before fresh corpus work, the semantic engine performs one bounded synthetic
+contract preflight for extraction, population consolidation, and pattern
+consolidation. Preflight results never become customer evidence. Any failed
+preflight stops fresh semantic corpus work and becomes a stage-specific typed
+gap; a fully satisfied checkpoint replay remains provider-disabled and does not
+manufacture live preflights. Provider failures persist only a fixed,
+content-free diagnostic envelope, and provider-attempt accounting excludes
+local budget refusals. Legacy failed checkpoints whose egress state cannot be
+proven expose a lower-bound count plus typed accounting uncertainty rather than
+an exact count.
+
+Report interpretation is stage-aware. `NO_RECURRING_PATTERN_OBSERVED` is
+available only after eligible pattern analysis completed successfully. A
+failed or unavailable upstream semantic stage yields
+`PATTERN_ANALYSIS_FAILED` or `PATTERN_ANALYSIS_UNAVAILABLE`; an empty or failed
+analysis cannot be rendered as a substantive finding.
+
 `triana-skills/` is the public-sourceable onboarding layer above that private
 facade, not another engine. One canonical Agent Skills-compatible
 `plugins/triana/skills/onboard/SKILL.md` is consumed directly by Codex and is

@@ -557,6 +557,19 @@ class _SemanticModel:
         fields = set(getattr(schema, "model_fields", {}))
         lowered = stage.casefold()
 
+        if stage == "semantic-preflight-population":
+            return {
+                "populations": [
+                    {
+                        "label": "Synthetic contract checks",
+                        "definition": "Synthetic requests used only for contract validation.",
+                        "episode_ids": [payload["episodes"][0]["episode_id"]],
+                    }
+                ],
+                "unassigned_episode_ids": [],
+                "ambiguous_episode_ids": [],
+            }
+
         if "audit" in lowered or "audits" in fields:
             items = _objects_with_key(
                 payload, ("population_id", "pattern_id", "episode_id")
@@ -710,6 +723,10 @@ class _AuditScopeSemanticModel(_SemanticModel):
         payload: dict[str, Any],
         schema: Any,
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(getattr(schema, "model_fields", {}))
         if "audits" in fields:
             self.requests.append(
@@ -2111,6 +2128,8 @@ def test_missing_and_unknown_audit_items_become_visible_typed_uncertainty(
             result = super().complete_json(
                 stage=stage, system=system, payload=payload, schema=schema
             )
+            if stage.startswith("semantic-preflight-"):
+                return result
             if "patterns" not in set(getattr(schema, "model_fields", {})):
                 return result
             candidates = payload.get("candidate_patterns")
@@ -4141,6 +4160,10 @@ class _ReadableEvidenceSemanticModel(_SemanticModel):
         payload: dict[str, Any],
         schema: Any,
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(getattr(schema, "model_fields", {}))
         if "episodes" in fields:
             self.requests.append(
@@ -4718,6 +4741,10 @@ class _SiblingToolEvidenceSemanticModel(_SemanticModel):
         payload: dict[str, Any],
         schema: Any,
     ) -> dict[str, Any]:
+        if stage.startswith("semantic-preflight-"):
+            return super().complete_json(
+                stage=stage, system=system, payload=payload, schema=schema
+            )
         fields = set(getattr(schema, "model_fields", {}))
         if "episodes" in fields:
             self.provider_calls += 1
@@ -4999,6 +5026,48 @@ def test_failed_attempt_tombstone_is_durable_and_restart_never_reissues(
     )
     assert restarted["method"]["retry_policy"] == "NONE"
     assert restarted["method"]["fallback_policy"] == "NONE"
+
+
+def test_legacy_failed_attempt_exposes_attempt_accounting_as_lower_bound(
+    tmp_path: Path,
+) -> None:
+    failed_conversation_id = "scale-01"
+    manifest = _write_scale_manifest(tmp_path, 3)
+    output = tmp_path / "output"
+    run_behavior_map(
+        manifest,
+        output,
+        primary_model=_DurableAttemptModel(failed_conversation_id),
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+    failed_attempts = _attempts_for_conversation(
+        _semantic_attempt_artifacts(output), failed_conversation_id
+    )
+    assert len(failed_attempts) == 1
+    path, attempt = next(iter(failed_attempts.items()))
+    assert attempt["state"] == "FAILED" and "failure" in attempt
+    attempt.pop("failure")
+    path.write_bytes(_canonical(attempt, lf=True))
+
+    replay = run_behavior_map(
+        manifest,
+        output,
+        primary_model=_RecoveryAttemptModel(),
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert any(
+        gap["code"] == "SEMANTIC_ATTEMPT_ACCOUNTING_UNKNOWN"
+        and gap["stage"] == "ACCOUNTING"
+        for gap in replay["gaps"]
+    )
+    assert (
+        replay["provider_lineage"]["primary"]["attempted_call_count_state"]
+        == "LOWER_BOUND"
+    )
+    assert "SEMANTIC_ATTEMPT_FAILED" in _codes(replay)
 
 
 def test_interrupted_attempt_becomes_in_flight_tombstone_and_visible_gap(
@@ -5362,3 +5431,305 @@ def test_attempt_file_and_directory_fsync_bracket_provider_and_final_replace(
         event["kind"] == "DIRECTORY_FSYNC" and "SUCCEEDED" in event["states"]
         for event in after_provider
     )
+
+
+class _DiagnosticFailureModel:
+    model_id = "diagnostic-failure-test-v0"
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self._failure = {
+            "code": "SEMANTIC_SCHEMA_INVALID",
+            "phase": "RESPONSE_SCHEMA_VALIDATION",
+            "http_category": "SUCCESS_RESPONSE",
+            "http_status": 200,
+            "finish_reason": "length",
+            "schema_path": "SCHEMA_ROOT/EXTRA_FIELD",
+            "truncation_state": "OUTPUT_TRUNCATED",
+            "response_sha256": "sha256:" + "a" * 64,
+            "retryable": False,
+            "provider_attempted": True,
+        }
+
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        self.calls += 1
+        raise ValueError(
+            f"SEMANTIC_SCHEMA_INVALID {SECRET} {RAW_PROVIDER_PAYLOAD} authorization: bearer-secret"
+        )
+
+    def failure_diagnostic(self) -> dict[str, Any]:
+        return deepcopy(self._failure)
+
+    def lineage(self) -> dict[str, Any]:
+        return {
+            "provider": "SYNTHETIC_TEST_BOUNDARY",
+            "model_id": self.model_id,
+            "attempted_call_count": self.calls,
+            "successful_call_count": 0,
+            "retry_policy": "NONE",
+            "fallback_policy": "NONE",
+        }
+
+
+def test_failed_attempt_persists_only_safe_exact_diagnostic_and_replays_cause(
+    tmp_path: Path,
+) -> None:
+    model = _DiagnosticFailureModel()
+    checkpoints = tmp_path / "checkpoints"
+    checkpoints.mkdir()
+    payload = {"conversations": [{"conversation_id": "synthetic-conversation"}]}
+    schema = behavior_map_module.AgentContextBatch
+    call = {
+        "stage": "agent-context-0000",
+        "system": "Synthetic system contract.",
+        "payload": payload,
+        "schema": schema,
+    }
+
+    with pytest.raises(ValueError):
+        behavior_map_module._call(model, checkpoints, **call)
+
+    artifacts = sorted(checkpoints.glob("*.json"))
+    assert len(artifacts) == 1
+    failed = json.loads(artifacts[0].read_bytes())
+    assert failed["state"] == "FAILED"
+    assert failed["failure"] == model.failure_diagnostic()
+    assert failed["failure"]["schema_path"] == "SCHEMA_ROOT/EXTRA_FIELD"
+    serialized = json.dumps(failed, sort_keys=True)
+    assert SECRET not in serialized
+    assert RAW_PROVIDER_PAYLOAD not in serialized
+    assert "bearer-secret" not in serialized
+    assert "authorization" not in serialized.casefold()
+    assert set(failed["failure"]) == {
+        "code",
+        "phase",
+        "http_category",
+        "http_status",
+        "finish_reason",
+        "schema_path",
+        "truncation_state",
+        "response_sha256",
+        "retryable",
+        "provider_attempted",
+    }
+
+    replay_model = _DiagnosticFailureModel()
+    with pytest.raises(ValueError, match="^SEMANTIC_SCHEMA_INVALID$"):
+        behavior_map_module._call(replay_model, checkpoints, **call)
+    assert replay_model.calls == 0
+    assert json.loads(artifacts[0].read_bytes()) == failed
+
+
+class _PatternPreflightFailureModel(_ScaleSemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "preflight" in stage.casefold() and "patterns" in set(
+            getattr(schema, "model_fields", {})
+        ):
+            self.provider_calls += 1
+            self.requests.append({"stage": stage, "payload": deepcopy(payload)})
+            raise ValueError("SEMANTIC_SCHEMA_INVALID")
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def test_three_primary_preflights_precede_corpus_and_failed_stage_stops_work(
+    tmp_path: Path,
+) -> None:
+    model = _PatternPreflightFailureModel()
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 3),
+        tmp_path / "output",
+        primary_model=model,
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    preflights = [
+        request
+        for request in model.requests
+        if "preflight" in request["stage"].casefold()
+    ]
+    corpus_calls = [request for request in model.requests if request not in preflights]
+    assert len(preflights) == 3
+    assert any("episodes" in request["payload"] for request in preflights)
+    assert any("behavior_occurrences" in request["payload"] for request in preflights)
+    assert corpus_calls == []
+    assert report["episodes"] == []
+    assert report["behavior_occurrences"] == []
+    assert any(
+        "PREFLIGHT" in str(gap["code"]) and "PATTERN" in f"{gap['code']} {gap['stage']}"
+        for gap in report["gaps"]
+    )
+
+
+def test_successful_preflight_outputs_never_enter_report_evidence(
+    tmp_path: Path,
+) -> None:
+    model = _ScaleSemanticModel()
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 3),
+        tmp_path / "output",
+        primary_model=model,
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    preflights = [
+        request
+        for request in model.requests
+        if "preflight" in request["stage"].casefold()
+    ]
+    assert len(preflights) == 3
+    visible = json.dumps(
+        {
+            "episodes": report["episodes"],
+            "populations": report["populations"],
+            "behavior_occurrences": report["behavior_occurrences"],
+            "behavior_patterns": report["behavior_patterns"],
+            "evidence": report["evidence"],
+        },
+        sort_keys=True,
+    )
+    assert "semantic-preflight" not in visible.casefold()
+
+
+class _PatternAnalysisFailureModel(_ScaleSemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if "preflight" not in stage.casefold() and "patterns" in set(
+            getattr(schema, "model_fields", {})
+        ):
+            self.provider_calls += 1
+            raise ValueError("SEMANTIC_SCHEMA_INVALID")
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+class _ExtractionPreflightFailureModel(_ScaleSemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if stage == "semantic-preflight-extraction":
+            self.provider_calls += 1
+            raise ValueError("SEMANTIC_SCHEMA_INVALID")
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def test_extraction_preflight_failure_cannot_claim_no_recurring_pattern(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "output"
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 1),
+        output,
+        primary_model=_ExtractionPreflightFailureModel(),
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    status = report["pattern_analysis"]["status"]
+    assert status in {"PATTERN_ANALYSIS_FAILED", "PATTERN_ANALYSIS_UNAVAILABLE"}
+    assert status != "NO_RECURRING_PATTERN_OBSERVED"
+    assert status in (output / "behavior-map.md").read_text()
+    assert status in (output / "behavior-map.html").read_text()
+
+
+class _EmptyPatternPreflightModel(_ScaleSemanticModel):
+    def complete_json(
+        self,
+        *,
+        stage: str,
+        system: str,
+        payload: dict[str, Any],
+        schema: Any,
+    ) -> dict[str, Any]:
+        if stage == "semantic-preflight-pattern":
+            self.provider_calls += 1
+            self.requests.append({"stage": stage, "payload": deepcopy(payload)})
+            return {"patterns": []}
+        return super().complete_json(
+            stage=stage, system=system, payload=payload, schema=schema
+        )
+
+
+def test_schema_valid_empty_pattern_preflight_allows_corpus_processing(
+    tmp_path: Path,
+) -> None:
+    model = _EmptyPatternPreflightModel()
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 1),
+        tmp_path / "output",
+        primary_model=model,
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert (
+        len([request for request in model.requests if "preflight" in request["stage"]])
+        == 3
+    )
+    assert not any(
+        gap["code"] == "SEMANTIC_PREFLIGHT_PATTERN_FAILED" for gap in report["gaps"]
+    )
+    assert report["episodes"]
+
+
+@pytest.mark.parametrize(
+    ("primary", "expected"),
+    [
+        (None, "PATTERN_ANALYSIS_UNAVAILABLE"),
+        (_PatternAnalysisFailureModel(), "PATTERN_ANALYSIS_FAILED"),
+        (_ScaleSemanticModel(), "NO_RECURRING_PATTERN_OBSERVED"),
+    ],
+)
+def test_json_markdown_and_html_distinguish_pattern_analysis_state(
+    tmp_path: Path,
+    primary: _ScaleSemanticModel | None,
+    expected: str,
+) -> None:
+    output = tmp_path / expected.casefold()
+    report = run_behavior_map(
+        _write_scale_manifest(tmp_path, 1),
+        output,
+        primary_model=primary,
+        audit_model=None,
+        agent_context="A synthetic scale-test support agent.",
+    )
+
+    assert report["pattern_analysis"]["status"] == expected
+    assert expected in (output / "behavior-map.md").read_text()
+    assert expected in (output / "behavior-map.html").read_text()
+    if expected != "NO_RECURRING_PATTERN_OBSERVED":
+        assert (
+            "No supported recurring patterns"
+            not in (output / "behavior-map.md").read_text()
+        )
