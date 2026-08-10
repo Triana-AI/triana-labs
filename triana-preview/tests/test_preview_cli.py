@@ -326,8 +326,8 @@ def test_container_contract_is_private_nonroot_and_data_free() -> None:
     assert "tests" not in dockerfile
 
 
-def test_repository_root_docker_context_is_an_explicit_source_allowlist() -> None:
-    dockerignore = REPOSITORY_ROOT / ".dockerignore"
+def test_preview_dockerfile_has_an_isolated_explicit_source_allowlist() -> None:
+    dockerignore = PREVIEW_ROOT / "Dockerfile.dockerignore"
     assert dockerignore.is_file()
     rules = [
         line.strip()
@@ -335,8 +335,8 @@ def test_repository_root_docker_context_is_an_explicit_source_allowlist() -> Non
         if line.strip() and not line.lstrip().startswith("#")
     ]
 
-    # The documented build runs from repository root. Exclude that entire context
-    # first, then reopen only the exact package inputs copied by the Dockerfile.
+    # Docker gives this file precedence only for `triana-preview/Dockerfile`.
+    # Exclude its root context first, then reopen its exact copied package inputs.
     assert rules[0] == "**"
     assert set(rules[1:]) == {
         "!triana-labs/",
@@ -364,6 +364,16 @@ def test_repository_root_docker_context_is_an_explicit_source_allowlist() -> Non
             "!triana-preview/**",
         )
     )
+
+    root_ignore = REPOSITORY_ROOT / ".dockerignore"
+    if root_ignore.is_file():
+        root_rules = [
+            line.strip()
+            for line in root_ignore.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        assert "**" not in root_rules
+        assert not any(rule.startswith("!triana-preview/") for rule in root_rules)
 
 
 def test_output_contains_no_network_telemetry_or_hosted_upload_contract(

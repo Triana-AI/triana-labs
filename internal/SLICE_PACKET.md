@@ -241,6 +241,41 @@ Final independent result (2026-08-10):
   unverified, and no registry login, image push, provider call, or deployment
   occurred.
 
+Debugging iteration 3 (post-commit CI, 2026-08-10):
+
+- Observed failure: GitHub `arm64-images` could load the new root
+  `.dockerignore` but the existing backend Dockerfile then failed because
+  `triana-backend/pyproject.toml`, `uv.lock`, `src`, `alembic.ini`, and
+  `migrations` were absent from its build context.
+- Smallest reproduction: run the existing root-context backend build under the
+  Preview root allowlist; its required inputs are intentionally excluded.
+- Falsifiable hypothesis: Docker's file-specific
+  `triana-preview/Dockerfile.dockerignore` can own the exact Preview allowlist
+  when `-f triana-preview/Dockerfile` is used, while removing the restrictive
+  root policy restores all pre-existing image contexts.
+- Falsifier: independent tests must prove the file-specific policy is
+  default-deny and exact, the root restrictive policy is absent, and existing
+  root-context Docker input paths remain eligible.
+- Scope: replace the one root ignore file with one Preview Dockerfile-specific
+  ignore file; no application, Dockerfile, semantic, provider, or deployment
+  behavior changes.
+
+CI-regression freeze transition and result:
+
+- `tests/test_preview_cli.py` changed from
+  `af87aa3191425b07b1b2a3069f7c8887fe641b74b498d6760ad5afde6f25cafd`
+  to
+  `9030479d190bd9502ac5b0e3dd1d0d5ad7c3eac6c4d4026c4b866aaade14f357`;
+  the corrected test was valid RED because the Dockerfile-specific ignore was
+  absent and the restrictive root policy remained.
+- The exact default-deny allowlist now lives at
+  `triana-preview/Dockerfile.dockerignore`, which Docker applies only to the
+  Preview Dockerfile. The root policy was removed, all fifteen Preview tests
+  pass, and existing backend Docker inputs are again eligible for their sibling
+  root-context build.
+- This supersedes only the earlier root-location choice; the accepted privacy
+  requirement and exact allowlist are unchanged.
+
 Final verification:
 
 ```text
