@@ -13,11 +13,14 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from triana_labs.contracts.traces import LineRejection, parse_and_validate_line
+
 JsonValue = None | bool | int | str | list["JsonValue"] | dict[str, "JsonValue"]
 
 _EVIDENCE_CLASS = "SYNTHETIC_EXISTING_TRACE_CORPUS"
 _SCHEMA_VERSION = "normalized-trace-v2"
 _COMPILER_VERSION = "labs08-hrai-accounting-v1"
+_PREVIEW_COMPILER_VERSION = "preview-trace-structural-v1"
 _ALLOWED_STATUSES = frozenset({"COMPLETED", "HARNESS_ERROR"})
 
 
@@ -196,6 +199,133 @@ def compile_hrai_normalized_trace_v2(
         rejected_evidence=tuple(rejected),
         result_hash=hashlib.sha256(_canonical(preimage)).hexdigest(),
     )
+
+
+def compile_preview_trace_v1(
+    source_bytes: bytes,
+    *,
+    evidence_class: str,
+    expected_sha256: str | None = None,
+) -> CompiledAnalysis:
+    """Compile PreviewTrace records into content-free structural groups."""
+
+    if evidence_class != _EVIDENCE_CLASS:
+        raise ReportCompilationError("UNSUPPORTED_EVIDENCE_CLASS")
+    source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+    if expected_sha256 is not None and source_sha256 != expected_sha256:
+        raise ReportCompilationError("SOURCE_HASH_MISMATCH")
+    lines = source_bytes.split(b"\n")
+    if lines and lines[-1] == b"":
+        lines.pop()
+    if not lines:
+        raise ReportCompilationError("EMPTY_CORPUS")
+
+    seen_trace_ids: set[str] = set()
+    seen_source_ids: set[str] = set()
+    members: dict[str, list[str]] = {}
+    for line_number, raw_line in enumerate(lines, start=1):
+        try:
+            validated = parse_and_validate_line(raw_line, first_line=line_number == 1)
+        except LineRejection as error:
+            raise ReportCompilationError(error.code, line_number=line_number) from error
+        trace = validated.value
+        if trace["privacy_class"] != "SYNTHETIC":
+            raise ReportCompilationError(
+                "UNSUPPORTED_PRIVACY_CLASS", line_number=line_number
+            )
+        trace_id = str(trace["trace_id"])
+        source_trace_id = str(trace["source_trace_id"])
+        if trace_id in seen_trace_ids:
+            raise ReportCompilationError(
+                "SOURCE_RECORD_ID_DUPLICATE", line_number=line_number
+            )
+        if source_trace_id in seen_source_ids:
+            raise ReportCompilationError(
+                "SOURCE_TRACE_ID_DUPLICATE", line_number=line_number
+            )
+        seen_trace_ids.add(trace_id)
+        seen_source_ids.add(source_trace_id)
+        pattern = " > ".join(
+            (
+                f"TOOL_CALL:{event['tool_name']}"
+                if event["event_kind"] == "TOOL_CALL"
+                else str(event["event_kind"])
+            )
+            for event in trace["events"]
+        )
+        members.setdefault(pattern, []).append(trace_id)
+
+    group_rows: list[dict[str, JsonValue]] = []
+    ordered_patterns = sorted(
+        members,
+        key=lambda value: hashlib.sha256(value.encode("utf-8")).hexdigest(),
+    )
+    shares = _basis_point_shares(
+        [len(members[pattern]) for pattern in ordered_patterns], len(lines)
+    )
+    for index, (pattern, share) in enumerate(
+        zip(ordered_patterns, shares, strict=True), start=1
+    ):
+        group_id = f"group_{hashlib.sha256(pattern.encode('utf-8')).hexdigest()[:24]}"
+        evidence_ids = sorted(members[pattern])
+        group: dict[str, JsonValue] = {
+            "group_id": group_id,
+            "label": f"Observed structure {index}",
+            "summary": f"Observed ordered event structure: {pattern}.",
+            "support_count": len(evidence_ids),
+            "share_basis_points": share,
+            "structural_pattern": pattern,
+            "source_evidence_ids": list(evidence_ids),
+        }
+        group_rows.append(group)
+    group_rows.sort(key=lambda row: str(row["group_id"]))
+
+    values: tuple[tuple[str, JsonValue], ...] = (
+        ("physical_record_count", len(lines)),
+        ("accepted_record_count", len(lines)),
+        ("rejected_record_count", 0),
+        ("usable_conversation_count", len(lines)),
+        ("source_status_counts", {"ACCEPTED": len(lines)}),
+        ("rejection_summary", {}),
+        ("behavior_groups", list(group_rows)),
+    )
+    facts = tuple(
+        AnalysisFact(
+            fact_id=_fact_id(source_sha256, kind, value),
+            fact_kind=kind,
+            value=value,
+        )
+        for kind, value in values
+    )
+    preimage: dict[str, JsonValue] = {
+        "artifact_kind": "labs_analysis_facts",
+        "compiler_version": _PREVIEW_COMPILER_VERSION,
+        "evidence_class": evidence_class,
+        "facts": [fact.to_mapping() for fact in facts],
+        "rejected_evidence": [],
+        "schema_version": 1,
+        "source_sha256": source_sha256,
+    }
+    return CompiledAnalysis(
+        source_sha256=source_sha256,
+        evidence_class=evidence_class,
+        facts=facts,
+        rejected_evidence=(),
+        result_hash=hashlib.sha256(_canonical(preimage)).hexdigest(),
+        compiler_version=_PREVIEW_COMPILER_VERSION,
+    )
+
+
+def _basis_point_shares(support: list[int], denominator: int) -> list[int]:
+    floors = [count * 10_000 // denominator for count in support]
+    remaining = 10_000 - sum(floors)
+    priority = sorted(
+        range(len(support)),
+        key=lambda index: (-(support[index] * 10_000 % denominator), index),
+    )
+    for index in priority[:remaining]:
+        floors[index] += 1
+    return floors
 
 
 def _parse_record(raw_line: bytes, *, line_number: int) -> dict[str, Any]:

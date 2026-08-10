@@ -1,0 +1,40 @@
+{
+  "artifact_kind": "behavior_map_conservation_comparison_v0",
+  "schema_version": 0,
+  "claim_boundary": "PRIVATE_MECHANICAL_COMPARISON_HUMAN_LABELS_MISSING",
+  "accepted_baseline_report_id": "sha256:9c98854dba09a188600b5de7a6f20e71a86ea01791d61556e31f40f16fd1f021",
+  "before_projection_id": "sha256:4a31e882651e533254a71fb43bf2aafe87b026297dea056c0c377aa4c1729f6e",
+  "after_projection_id": "sha256:9ee02d4d5160b55d47e96e141dbb90f2b735007b98162ca28f94e8da8b0ade33",
+  "after_artifact_sha256": "5918a71382294c466ea8b096f3b8071b0240d688336dc3967a5201d521cb7b63",
+  "provider_calls": 0,
+  "byte_identical_replay": true,
+  "before": {
+    "assigned_episode_count": 210,
+    "supported_population_count": 74,
+    "candidate_population_count": 3,
+    "candidate_membership_count": 8,
+    "audit_disputed_disposition_count": 0,
+    "supported_pattern_count": 24,
+    "pattern_support": 75
+  },
+  "after": {
+    "assigned_episode_count": 208,
+    "supported_population_count": 73,
+    "candidate_population_count": 4,
+    "candidate_membership_count": 9,
+    "audit_disputed_disposition_count": 25,
+    "supported_pattern_count": 24,
+    "pattern_support": 75
+  },
+  "population_edge_conservation": {
+    "before": 221,
+    "exact_preserved": 208,
+    "explicitly_superseded": 9,
+    "excluded_grounding_replacement": 2,
+    "excluded_grounding_rejection": 1,
+    "excluded_audit_disputed": 1,
+    "unexplained": 0
+  },
+  "semantic_conclusion": "HUMAN_LABELS_MISSING",
+  "baseline_promoted": false
+}

@@ -6,7 +6,7 @@ Infrastructure adapters retain ownership of SQL sessions and S3 streams.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Protocol
@@ -95,3 +95,106 @@ class ImportCommandPort(Protocol):
 
 class RunCommandPort(Protocol):
     def start_or_get_run(self, request: RunStart) -> JsonObject: ...
+
+
+class TraceToEvalPort(Protocol):
+    """Local operator projection over canonical engine artifacts."""
+
+    def run(
+        self,
+        manifest_path: str | None = None,
+        *,
+        source_path: str | None = None,
+        source_kind: str | None = None,
+    ) -> JsonObject: ...
+
+    def get_report(self, report_id: str) -> JsonObject: ...
+
+    def get_review_state(self, report_id: str) -> JsonObject: ...
+
+    def append_ruling(
+        self, report_id: str, ruling: Mapping[str, Any]
+    ) -> JsonObject: ...
+
+    def get_conversation(self, report_id: str, trace_id: str) -> JsonObject: ...
+
+
+class SelfServeAnalysisPort(Protocol):
+    """Authenticated owner-scoped analysis commands and projections."""
+
+    def start_analysis_for_import(
+        self, owner_subject: str, agent_id: str, import_id: str
+    ) -> JsonObject: ...
+
+    def list_agent_analysis_runs(
+        self, owner_subject: str, agent_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_owned_report(self, owner_subject: str, report_id: str) -> JsonObject: ...
+
+    def get_owned_review_state(
+        self, owner_subject: str, report_id: str
+    ) -> JsonObject: ...
+
+    def append_owned_ruling(
+        self, owner_subject: str, report_id: str, ruling: Mapping[str, Any]
+    ) -> JsonObject: ...
+
+    def get_owned_conversation(
+        self, owner_subject: str, report_id: str, trace_id: str
+    ) -> JsonObject: ...
+
+
+Authenticator = Callable[[str | None], str | None]
+
+
+class SelfServePort(Protocol):
+    """Owner-scoped commands and projections for the hosted trace viewer."""
+
+    def get_or_create_me(self, owner_subject: str) -> JsonObject: ...
+
+    def create_agent(self, owner_subject: str, display_name: str) -> JsonObject: ...
+
+    def list_agents(self, owner_subject: str) -> Sequence[JsonObject]: ...
+
+    def get_agent(self, owner_subject: str, agent_id: str) -> JsonObject: ...
+
+    def create_import(
+        self,
+        owner_subject: str,
+        agent_id: str,
+        *,
+        filename: str,
+        content_type: str,
+        payload: bytes,
+        owner_attested: bool,
+        idempotency_key: str,
+    ) -> JsonObject: ...
+
+    def list_agent_imports(
+        self, owner_subject: str, agent_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_import(self, owner_subject: str, import_id: str) -> JsonObject: ...
+
+    def list_import_conversations(
+        self, owner_subject: str, import_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def list_import_rejections(
+        self, owner_subject: str, import_id: str
+    ) -> Sequence[JsonObject]: ...
+
+    def get_conversation(
+        self, owner_subject: str, conversation_id: str
+    ) -> JsonObject: ...
+
+
+class FeatureEntitlementPort(Protocol):
+    """Backend-owned feature catalog and access-request boundary."""
+
+    def list_features(self, owner_subject: str) -> Sequence[JsonObject]: ...
+
+    def request_feature_access(
+        self, owner_subject: str, feature_key: str
+    ) -> JsonObject: ...

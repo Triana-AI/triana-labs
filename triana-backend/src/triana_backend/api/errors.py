@@ -11,6 +11,8 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from triana_backend.application.self_serve import SelfServeRefusal
+
 from .contracts import (
     AnalysisNotReady,
     IntegrityConflict,
@@ -75,3 +77,13 @@ async def analysis_not_ready_handler(
     if correlation_id is not None:
         body["correlation_id"] = correlation_id
     return JSONResponse(status_code=503, content=body)
+
+
+async def self_serve_refusal_handler(
+    request: Request, error: SelfServeRefusal
+) -> JSONResponse:
+    body: dict[str, Any] = {"code": error.code, "detail": error.safe_message}
+    correlation_id = _correlation_id(request)
+    if correlation_id is not None:
+        body["correlation_id"] = correlation_id
+    return JSONResponse(status_code=error.status_code, content=body)

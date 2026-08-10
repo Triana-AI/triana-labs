@@ -1,12 +1,14 @@
-"""Production composition for the private RDS/S3 LABS-08 vertical slice."""
+"""Production PostgreSQL/S3 composition for legacy and self-serve surfaces."""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, BinaryIO, cast
 
 import boto3
@@ -16,6 +18,7 @@ from sqlalchemy import Engine, create_engine, func, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 from triana_labs.report import compile_hrai_normalized_trace_v2
+from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel
 
 from triana_backend.api import create_app
 from triana_backend.api.contracts import (
@@ -29,9 +32,18 @@ from triana_backend.api.contracts import (
     ResourceUnavailable,
     RunCommandPort,
     RunStart,
+    SelfServeAnalysisPort,
+    TraceToEvalPort,
 )
-from triana_backend.application.imports import ImportService, RegisterS3Import
+from triana_backend.application.entitlements import FeatureEntitlementService
+from triana_backend.application.imports import (
+    ImportService,
+    RegisterS3Import,
+    compile_registered_source,
+)
+from triana_backend.application.self_serve import SelfServeService
 from triana_backend.artifacts.s3 import S3ArtifactStore
+from triana_backend.auth import OidcJwtAuthenticator
 from triana_backend.config import BackendSettings
 from triana_backend.domain.models import (
     ArtifactAvailability,
@@ -56,12 +68,17 @@ from triana_backend.persistence.models import (
     Workspace,
 )
 from triana_backend.persistence.repositories import SqlAlchemyImportRepository
+from triana_backend.persistence.self_serve import SqlAlchemySelfServeRepository
 from triana_backend.services.report_projection import (
     PersistedLabsFact,
     ReportProjectionInput,
     canonical_report_bytes,
     project_labs_report,
 )
+from triana_backend.services.self_serve_trace_to_eval import (
+    PersistentSelfServeTraceToEvalService,
+)
+from triana_backend.services.trace_to_eval import LocalTraceToEvalService
 from triana_backend.workflows import DBOSForegroundExecutor, configure_workflow_services
 from triana_backend.workflows.contracts import ImportRunRequest, WorkflowServices
 from triana_backend.workflows.identity import workflow_id_for
@@ -374,11 +391,19 @@ class PostgresWorkflowServices(WorkflowServices):
             source_bytes = source.read()
         finally:
             source.close()
-        compiled = compile_hrai_normalized_trace_v2(
-            source_bytes,
-            evidence_class=evidence_class,
-            expected_sha256=expected_sha256,
-        )
+        if imported.parser_version == HRAI_NORMALIZED_TRACE_V2:
+            compiled = compile_hrai_normalized_trace_v2(
+                source_bytes,
+                evidence_class=evidence_class,
+                expected_sha256=expected_sha256,
+            )
+        else:
+            compiled, _ = compile_registered_source(
+                source_bytes,
+                evidence_class=evidence_class,
+                expected_sha256=expected_sha256,
+                parser_version=imported.parser_version,
+            )
         payload = canonical_json(cast(dict[str, Any], compiled.to_mapping()))
         ref = self._artifacts.publish_bytes(
             payload=payload,
@@ -418,17 +443,7 @@ class PostgresWorkflowServices(WorkflowServices):
             or not isinstance(result_hash, str)
         ):
             raise IntegrityConflict("analysis_result", artifact_id)
-        rejection_count = len(rejected)
-        rows = [
-            *facts,
-            _supplemental_fact("rejected_evidence", rejected, result_hash),
-            _supplemental_fact("rejected_record_count", rejection_count, result_hash),
-            _supplemental_fact(
-                "rejection_summary",
-                {"SOURCE_EXECUTION_INCOMPLETE": rejection_count},
-                result_hash,
-            ),
-        ]
+        rows = _facts_with_supplements(facts, rejected, result_hash)
         with self._sessions() as session, session.begin():
             for value in rows:
                 if not isinstance(value, dict):
@@ -697,18 +712,51 @@ def compose_backend(
         artifact_bucket=settings.artifact_bucket,
         kms_key_id=settings.kms_key_id,
     )
-    services = PostgresWorkflowServices(sessions=sessions, artifacts=artifacts)
-    configure_workflow_services(services)
-    dbos_config: DBOSConfig = {
-        "name": "triana-backend",
-        "system_database_url": settings.dbos_system_database_url,
-        "application_database_url": settings.database_url,
-        "application_version": settings.labs_version,
-    }
-    DBOS(config=dbos_config)
-    if launch_dbos:
-        DBOS.launch()
+    if settings.oidc_issuer is None:
+        if settings.dbos_system_database_url is None:
+            raise ValueError("DBOS system database is required for the legacy runtime")
+        services = PostgresWorkflowServices(sessions=sessions, artifacts=artifacts)
+        configure_workflow_services(services)
+        dbos_config: DBOSConfig = {
+            "name": "triana-backend",
+            "system_database_url": settings.dbos_system_database_url,
+            "application_database_url": settings.database_url,
+            "application_version": settings.labs_version,
+        }
+        DBOS(config=dbos_config)
+        if launch_dbos:
+            DBOS.launch()
     reads = PostgresS3Reads(sessions=sessions, artifacts=artifacts)
+    self_serve = None
+    feature_entitlements = None
+    authenticate = None
+    if settings.oidc_issuer is not None:
+        if settings.oidc_audience is None or settings.oidc_jwks_url is None:
+            raise ValueError("OIDC settings must be configured together")
+        self_serve = SelfServeService(
+            repository=SqlAlchemySelfServeRepository(sessions), storage=artifacts
+        )
+        feature_entitlements = FeatureEntitlementService(
+            SqlAlchemySelfServeRepository(sessions)
+        )
+        authenticate = OidcJwtAuthenticator(
+            issuer=settings.oidc_issuer,
+            audience=settings.oidc_audience,
+            jwks_url=settings.oidc_jwks_url,
+        )
+    trace_to_eval: TraceToEvalPort | SelfServeAnalysisPort | None = (
+        PersistentSelfServeTraceToEvalService(sessions=sessions, artifacts=artifacts)
+        if settings.oidc_issuer is not None
+        else None
+    )
+    if trace_to_eval is None and (
+        os.environ.get("TRIANA_TRACE_TO_EVAL_LOCAL") == "1"
+        and settings.host == "127.0.0.1"
+    ):
+        trace_to_eval = LocalTraceToEvalService(
+            Path(os.environ.get("TRIANA_TRACE_TO_EVAL_ROOT", ".triana-trace-to-eval")),
+            semantic_model=FoundryStructuredSemanticModel.from_environment(),
+        )
     return BackendRuntime(
         app=create_app(
             reads=reads,
@@ -720,6 +768,10 @@ def compose_backend(
                 config_identity=settings.labs_config_identity,
             ),
             readiness=reads.ready,
+            self_serve=self_serve,
+            authenticate=authenticate,
+            feature_entitlements=feature_entitlements,
+            trace_to_eval=trace_to_eval,
         ),
         engine=engine,
     )
@@ -741,7 +793,7 @@ def _persist_artifact(session: Session, ref: ArtifactRef) -> None:
             checksum_sha256_b64=ref.checksum_sha256_b64,
             availability="AVAILABLE",
         )
-        .on_conflict_do_nothing(index_elements=["artifact_kind", "content_sha256"])
+        .on_conflict_do_nothing()
     )
 
 
@@ -803,6 +855,36 @@ def _supplemental_fact(kind: str, value: Any, result_hash: str) -> dict[str, Any
         "authority": "DETERMINISTIC",
         "schema_version": 1,
     }
+
+
+def _facts_with_supplements(
+    facts: list[Any], rejected: list[Any], result_hash: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    fact_kinds: set[str] = set()
+    for value in facts:
+        if not isinstance(value, dict):
+            raise IntegrityConflict("analysis_result", result_hash)
+        fact_kind = value.get("fact_kind")
+        if not isinstance(fact_kind, str) or not fact_kind or fact_kind in fact_kinds:
+            raise IntegrityConflict("analysis_result", result_hash)
+        fact_kinds.add(fact_kind)
+        rows.append(value)
+
+    rejection_count = len(rejected)
+    supplements = (
+        ("rejected_evidence", rejected),
+        ("rejected_record_count", rejection_count),
+        (
+            "rejection_summary",
+            {"SOURCE_EXECUTION_INCOMPLETE": rejection_count},
+        ),
+    )
+    for fact_kind, value in supplements:
+        if fact_kind not in fact_kinds:
+            rows.append(_supplemental_fact(fact_kind, value, result_hash))
+            fact_kinds.add(fact_kind)
+    return rows
 
 
 def _sqlalchemy_url(value: str) -> str:

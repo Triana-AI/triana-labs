@@ -110,3 +110,54 @@ test("Labs UI explicitly accepts both report modes and rejects invented modes", 
     report: null,
   });
 });
+
+test("behavior UI renders deterministic structural descriptions without model authority", async () => {
+  const behaviorSource = read(join(ROOT, "app", "behavior", "page.tsx"));
+  const loaderSource = read(LOADER);
+  assert.match(loaderSource, /semantic_summary_authority:[^;]*"DETERMINISTIC"/s);
+  assert.match(loaderSource, /STRUCTURALLY_OBSERVED_DETERMINISTIC_DESCRIPTION/);
+  assert.match(behaviorSource, /Deterministic description/);
+  assert.doesNotMatch(behaviorSource, /Summary model-written|model-proposed summaries/i);
+
+  const report = JSON.parse(read(CANONICAL_REPORT));
+  report.report_id = "rpt_tau57_structural";
+  report.setup.understanding = {
+    physical_record_count: 57,
+    accepted_record_count: 57,
+    rejected_record_count: 0,
+    usable_conversation_count: 57,
+    source_status_counts: { ACCEPTED: 57 },
+    rejection_reasons: [],
+    unassessed_semantics: ["No population or accepted-behavior claim was established."],
+  };
+  report.behavior = {
+    derivation_kind: "STRUCTURAL_GROUPING",
+    membership_authority: "DETERMINISTIC",
+    semantic_summary_authority: "DETERMINISTIC",
+    population_claim: "NOT_ESTABLISHED",
+    groups: [{
+      group_id: "group_tau57",
+      label: "Observed structure 1",
+      summary: "User message followed by an agent response.",
+      support_count: 57,
+      share_basis_points: 10000,
+      structural_pattern: "USER_MESSAGE > ASSISTANT_MESSAGE",
+      fidelity_label: "STRUCTURALLY_OBSERVED_DETERMINISTIC_DESCRIPTION",
+      source_evidence_ids: ["trace-01"],
+    }],
+  };
+
+  const { loadLabsReport } = await import(`${pathToFileURL(LOADER).href}?tau57`);
+  const loaded = await loadLabsReport({
+    apiOrigin: "http://127.0.0.1:8000",
+    reportId: report.report_id,
+    fetchImpl: async () => new Response(JSON.stringify(report), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  });
+  assert.equal(loaded.availability, "AVAILABLE");
+  assert.equal(loaded.report.behavior.groups.length, 1);
+  assert.equal(loaded.report.behavior.semantic_summary_authority, "DETERMINISTIC");
+  assert.equal(loaded.report.behavior.population_claim, "NOT_ESTABLISHED");
+});

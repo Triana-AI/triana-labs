@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { LogoutButton } from "@/components/self-serve/LogoutButton";
+import { selfServeApi } from "@/lib/self-serve/api";
+import type { AgentSummary } from "@/lib/self-serve/types";
 
 const NAV_ITEMS = [
+  { href: "/agents", label: "Agents" },
   { href: "/results", label: "Overview" },
   { href: "/behavior", label: "User behavior" },
+  { href: "/analysis", label: "Trace analysis" },
   { href: "/cases", label: "Cases" },
   { href: "/run", label: "Runs" },
   { href: "/review", label: "Review" },
@@ -58,11 +63,21 @@ export function AppNav({
   onToggleCollapsed: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const activeHref = pathname.startsWith("/conversations/") ? "/run" : pathname;
+  const [agents, setAgents] = useState<AgentSummary[]>([]);
+  const selectedAgentId = pathname.match(/^\/agents\/([^/]+)/)?.[1] ?? "";
+  useEffect(() => {
+    if (pathname.startsWith("/agents")) {
+      selfServeApi.listAgents().then(setAgents).catch(() => setAgents([]));
+    }
+  }, [pathname]);
+  const activeHref = pathname.startsWith("/agents/") ? "/agents" : pathname.startsWith("/conversations/") ? "/run" : pathname;
   const section = pathname === "/setup"
     ? "Report source"
-    : pathname.startsWith("/conversations/")
+      : pathname.startsWith("/agents")
+        ? "Self-serve"
+      : pathname.startsWith("/conversations/")
       ? "Conversation"
       : NAV_ITEMS.find(({ href }) => href === activeHref)?.label ?? "Labs";
 
@@ -80,7 +95,7 @@ export function AppNav({
           </button>
           <strong>{section}</strong>
         </div>
-        <small>Labs · Backend report · Read only</small>
+        <small>Labs · Trace workspace</small>
       </header>
       <button
         type="button"
@@ -98,7 +113,7 @@ export function AppNav({
 
       <aside className={`app-sidebar${open ? " is-open" : ""}${collapsed ? " is-collapsed" : ""}`}>
         <div className="app-brand">
-          <Link href="/results" className="app-brand-link" aria-label="Triana Labs">
+          <Link href="/agents" className="app-brand-link" aria-label="Triana Labs">
             <span className="app-brand-mark" aria-hidden="true">
               <img src="/brand/triana-lazo-favicon-master.svg" alt="" />
             </span>
@@ -116,8 +131,11 @@ export function AppNav({
 
         <div className="app-agent">
           <span className="app-nav-copy">
-            <span className="mono-label">Report artifact</span>
-            <strong>Configured backend</strong>
+            <span className="mono-label">Workspace</span>
+            {pathname.startsWith("/agents") && agents.length ? <select aria-label="Switch agent" value={selectedAgentId} onChange={(event) => {
+              if (event.target.value === "__add__") router.push("/agents");
+              else router.push(`/agents/${event.target.value}`);
+            }}><option value="">All agents</option>{agents.map((agent) => <option value={agent.agent_id} key={agent.agent_id}>{agent.display_name}</option>)}<option value="__add__">+ Add agent</option></select> : <strong>Self-serve preview</strong>}
           </span>
         </div>
 
@@ -136,10 +154,12 @@ export function AppNav({
         </nav>
 
         <div className="app-connections app-nav-copy">
-          <div><span>Mode</span><strong>Read only</strong></div>
-          <div><span>Source</span><strong>Backend report</strong></div>
-          <div><span>Access</span><strong>Private tunnel</strong></div>
+          <div><span>Imports</span><strong>Owner scoped</strong></div>
+          <div><span>Egress</span><strong>None</strong></div>
+          <div><span>Format</span><strong>PreviewTrace</strong></div>
         </div>
+
+        <div className="app-nav-copy"><LogoutButton /></div>
 
         <Link href="/setup" className="app-switch-link app-nav-copy">
           Report source

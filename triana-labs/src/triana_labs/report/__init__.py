@@ -6,6 +6,7 @@ from triana_labs.report.compiler import (
     RejectedEvidence,
     ReportCompilationError,
     compile_hrai_normalized_trace_v2,
+    compile_preview_trace_v1,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "RejectedEvidence",
     "ReportCompilationError",
     "compile_hrai_normalized_trace_v2",
+    "compile_preview_trace_v1",
 ]

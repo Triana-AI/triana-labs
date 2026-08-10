@@ -6,6 +6,50 @@ Canonical planning base: `b963b85`
 Owner: Akarsh
 Execution orchestrator: primary coding agent operating under `AGENTS.md`
 
+## 2026-08-06 self-serve trace-viewer amendment
+
+The immediate implementation sequence is superseded by the bounded
+`SELF-SERVE-V0-TRACE-INGESTION` checkpoint in `internal/SLICE_PACKET.md`:
+
+```text
+managed login -> personal workspace -> add agent -> upload PreviewTrace JSONL
+-> exact accepted/rejected accounting -> reusable conversation viewer
+```
+
+This checkpoint newly permits private hosted customer trace ingestion under
+the explicit `CUSTOMER_AUTHORIZED_TRACE_DATA` class and owner attestation. It
+does not authorize analysis, generated cases, simulation, model/provider
+egress, HRAI-specific ingestion, teams, billing, adapters, or broader SaaS
+claims. Backend authorization must scope every object operation. The minimal
+launch reuses the current 16 MiB / 1,000-line / 1 MiB-line Observer limits and
+uses synchronous multipart ingestion; queues and resumable uploads wait for
+observed need.
+
+### Magic-link and staged-feature amendment
+
+The login implementation uses Supabase passwordless email magic links with
+open user creation and no approval waitlist. The existing backend OIDC/JWKS
+boundary remains authoritative. Workspace feature entitlements are distinct
+from the V0 `OWNER` membership role: trace ingestion and conversation viewing
+are available by default; analysis, simulation, team collaboration, and API
+access remain locked and may be requested. Requests are idempotent records, not
+automatic grants. Exact contracts and change budgets are in the active slice
+packet.
+
+### TAU57 non-auth analysis-core canary
+
+Akarsh authorized one immediate private dry run that is separate from the
+authenticated self-serve surface. The exact verified 57-task TAU² Discovery
+archive may be adapted deterministically into synthetic PreviewTrace JSONL,
+grouped only by observable event-kind and ordered tool-name structure, and
+processed through the existing private S3/RDS/DBOS runtime into the canonical
+User Behavior report. The canary may update only the existing digest-addressed
+deployment and private evidence rows/artifacts. It adds no provider call,
+semantic population inference, accepted behavior, verdict, new infrastructure,
+public endpoint, entitlement grant, or self-serve analysis route. The exact
+input, authority, change budget, independent worker order, and live gate are in
+`internal/SLICE_PACKET.md`.
+
 ## 2026-08-01 launch-sequence amendment
 
 The owner accepted a narrower 36-hour first-launch sequence. This amendment

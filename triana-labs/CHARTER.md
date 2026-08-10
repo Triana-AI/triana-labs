@@ -24,6 +24,108 @@ frozen boundary. Precedence for Labs work: this charter → the append-only
 
 ## Immediate launch cut (owner-frozen, 2026-08-01)
 
+### Self-serve trace-viewer checkpoint (owner-frozen, 2026-08-06)
+
+Akarsh superseded the prior immediate deferral of hosted ingestion and accounts
+for one deliberately narrow beta checkpoint. Its entire value loop is:
+authenticate, create one agent, upload one prescribed PreviewTrace JSONL file,
+inspect deterministic accepted/rejected accounting, and browse accepted
+conversations in a reusable transcript/tool viewer. It does not run analysis,
+simulation, reports, models, providers, targets, or HRAI ingestion and makes no
+behavioral, regression, release, or accepted-truth claim.
+
+The backend, not the browser, owns authentication verification and workspace
+authorization. One authenticated owner receives one personal workspace; teams,
+invites, roles, billing, SSO, API keys, and public sharing remain deferred.
+Uploaded traces use the explicit `CUSTOMER_AUTHORIZED_TRACE_DATA` privacy class,
+require human authorization attestation, remain private, and have no model or
+provider egress. Deterministic code owns source hashing, identity, line
+accounting, validation, status, ordering, linkage, pagination, and isolation.
+The exact implementation boundary and minimal acceptance gate are frozen in
+`internal/SLICE_PACKET.md`.
+
+The owner subsequently selected open email magic-link signup for this
+checkpoint: authentication itself has no approval waitlist. Supabase Auth owns
+email delivery and session issuance while the Triana backend continues to
+verify JWTs and own authorization. Gradual feature rollout uses workspace
+entitlements rather than overloading membership roles. Trace ingestion and the
+conversation viewer are available by default; analysis, simulation, team
+collaboration, and API access are locked and expose an idempotent request-access
+action. A request is not a grant, and this checkpoint adds no analysis,
+simulation, team, billing, or admin-approval implementation.
+
+The owner then authorized one private non-auth dry run of the analysis core on
+the existing LABS-08 AWS runtime. The exact verified 57-task TAU² Discovery
+archive may be deterministically adapted to synthetic PreviewTrace records and
+grouped only by observable event/tool structure through real S3/RDS/DBOS. This
+proves neither semantic user populations nor the authenticated analysis bridge;
+no model/provider call, new infrastructure, entitlement grant, or persistent
+ruling is authorized by that canary.
+
+On 2026-08-07 Akarsh superseded the immediate analysis value surface with
+Phase 1 Behavior Map: one authorized conversational-trace corpus produces a
+proposed User Demand Map over multi-goal episodes, a multi-label Agent Behavior
+Map, emerging/unknown observations, exact readable evidence, and unresolved
+human questions. Comparison/diff, eval generation, existing-eval integration,
+outcome judgment, L4, simulation, and accepted taxonomy remain later phases.
+Semantic output is proposed evidence, never correctness or policy truth;
+deterministic code owns trace/sample identity, sealed splits, evidence
+coordinates, support, lineage, budget, artifact integrity, and typed gaps.
+Independent semantic audit authority is subject-scoped: an episode ruling may
+detach only that episode from a population, while a population ruling governs
+the population. Any surviving membership is deterministically reprojected so
+support, visibility, identity, assignments, denominators, and typed uncertainty
+remain consistent; an unsupported member and its audit evidence remain visible.
+The same episode ruling propagates to every agent-behavior occurrence derived
+from that episode. Disputed occurrences remain visible as excluded evidence,
+but only independently eligible occurrences contribute to a published
+pattern's membership and support. Any surviving pattern is deterministically
+reidentified and linked to its pre-projection audit subject; a pattern-level
+ruling continues to govern the whole pattern.
+
+Pattern-stage custody is exhaustive. Every eligible behavior occurrence has
+one deterministic terminal disposition; successful-batch omissions, failed
+batches, insufficient support, audit-missing candidates, and audited disputes
+remain distinct. A semantic response may contribute only occurrence IDs from
+its exact batch or hierarchy input. Missing-audit and disputed patterns retain
+stable identity, membership, evidence lineage, and unpublished visibility but
+contribute zero active support. Candidate, audited, supported, disputed, and
+missing counts are separate. Population publication likewise requires unique
+membership, support equal to unique members, one disposition per episode, and
+exact equality between active episode-to-population edges and `ASSIGNED`
+disposition edges.
+
+### Invite-only local Preview distribution (owner-frozen, 2026-08-10)
+
+The first distributable Behavior Map surface is an invite-only local package
+and container named **Triana Preview**. Its single command accepts one
+authorized PreviewTrace JSONL source, a short agent description, an empty
+private output directory, and an explicit trace-authorization acknowledgement.
+It redacts and binds the evidence locally, then invokes the same installed
+`triana-labs` Behavior Map engine that repository development uses. The facade
+owns custody and invocation only: it contains no episode, taxonomy, grouping,
+audit, support, identity, or report implementation. Engine improvements reach
+Preview by updating that one same-commit dependency and passing the Preview
+verification gate, rather than by copying code.
+
+Raw traces remain on the operator's device, the input mount is read-only, and
+the output remains private. Provider absence produces the engine's existing
+typed semantic gaps; partial provider configuration refuses before execution.
+This distribution is not public or open source, does not add hosted upload,
+telemetry, arbitrary adapters, a UI, or a stable SDK promise, and authorizes no
+registry publication or deployment. Those actions require a later owner
+decision after the local pilot.
+
+The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
+and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
+primary author and Terra as independent auditor, with no retry or fallback and
+a cumulative USD 100 conservative reservation ceiling. That role choice is a
+named run configuration, not a claim that either model is globally better.
+The completed Blitz run produced a useful partial map; the HRAI run produced a
+truthful zero-semantic typed-gap report after every Luna extraction request
+failed at the provider boundary. Neither result is accepted behavior or a
+complete taxonomy.
+
 For the first public developer preview, the value moment is narrower and
 supersedes the immediate baseline/candidate sequence above without erasing the
 longer-term comparison product:
@@ -350,3 +452,59 @@ storage or promotion work proceeds.
 V1 (`docs/PRODUCT.md`) is suspended, not deleted. Its incident→ProtectedCase
 loop survives inside Labs as the must-check promotion path. Resuming V1 or
 merging it with Labs requires an explicit decision-log entry.
+
+## Full-corpus Behavior Map evidence (2026-08-08)
+
+The bounded Blitz DEVELOPMENT proof supports the Phase 1 claim at full
+visible-corpus scale: 374 authorized conversations can be extracted into
+grounded demand episodes, consolidated into proposed user populations and
+agent-behavior patterns, independently audited, and rendered from immutable
+checkpoints without opening the 125 calibration or 125 holdout conversations.
+The corrected private report retains 80 supported populations and 61 supported
+patterns; 47 unaudited pattern subjects remain typed missing and unpublished.
+This is a proposed, evidence-linked behavior map—not accepted truth, complete
+taxonomy, correctness, outcome attribution, comparison, or eval generation.
+Provider adapters may expose stage-specific output ceilings and deterministic
+request pacing, but still use no automatic retry or fallback. Complete explicit
+campaign reservation fields are authoritative for cumulative report budgeting
+and must not be double-counted from copied checkpoint history.
+
+The coverage-conservation repair keeps that successful report immutable and
+does not replace it. A provider-disabled projection may reuse only exact
+unchanged semantic subjects from a completed private predecessor. Citation
+repair is field-scoped: invalid extra evidence is excluded individually, a
+demand survives only while its goal, requested action, and subject retain exact
+customer-message grounding, and unsupported optional fields are removed with
+visible uncertainty. Every population-stage input receives an explicit
+disposition; omitted, ambiguous, failed-batch, or unsupplied IDs cannot silently
+become membership or disappear across batches.
+
+Historical projection never creates fresh semantic authority. A changed
+population membership or pattern occurrence set receives a new identity and
+predecessor lineage, remains unpublished with audit `MISSING`, and contributes
+no active assignment or support until re-audited. Rejected and grounding-
+replacement evidence remains inspectable excluded history. The accepted
+private projection `sha256:4a31e882651e533254a71fb43bf2aafe87b026297dea056c0c377aa4c1729f6e`
+contains 405 grounded episodes, 74 currently supported populations with 210
+active assignments, three unpublished candidate populations with eight
+`REAUDIT_REQUIRED` memberships, and 24 supported patterns. It is only a
+private, proposed, partial historical semantic projection—not a fresh full
+analysis, accepted taxonomy, benchmark pass, or replacement for the immutable
+baseline.
+
+The 2026-08-09 conservation repair leaves that accepted baseline and projection
+inspectable. It rejects pattern IDs absent from the exact batch or hierarchy
+input, retains audit-missing and disputed patterns as unpublished custody, and
+refuses duplicate or inconsistent pattern/population accounting. Historical
+projection now also preserves every predecessor `AUDIT_DISPUTED` disposition;
+population support cannot restore it. Provider-disabled projection
+`sha256:9ee02d4d5160b55d47e96e141dbb90f2b735007b98162ca28f94e8da8b0ade33`
+therefore has 73 supported populations with 208 assignments, four unpublished
+candidate populations with nine re-audit-required memberships, 25 preserved
+disputed dispositions, one explicitly excluded active disputed edge, and zero
+unexplained loss. The original eight re-audit memberships, two grounding
+replacements, and one grounding rejection remain; one additional co-member
+requires re-audit because removing the disputed member changes its population
+identity. Its 24 historical supported patterns and support 75 are unchanged
+because this projection does not invent a fresh semantic pattern run. It is
+private repair evidence, not baseline promotion or a semantic-quality claim.

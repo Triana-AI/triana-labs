@@ -10,6 +10,73 @@ No Pydantic model, generated JSON Schema, fixture, CLI behavior, or UI type may
 disagree with this document. A semantic change requires an append-only decision
 and a schema-version decision before tests or implementation change.
 
+## Active Labs self-serve service boundary
+
+The Slice 0A document registry below remains unchanged. Active Labs adds a
+service contract, not another Slice 0A public document kind: an authenticated
+PreviewTrace upload response always includes
+`analysis: {feature_state, run}`. `run` is null while `ANALYSIS` is `LOCKED` or
+`REQUESTED`; only `AVAILABLE` may start a run. A completed run binds one
+`agent_id`, `import_id`, `run_id`, and `report_id` and is retrievable only by
+the owning workspace.
+
+The same owner scope applies to agent analysis history, report, review state,
+append-only ruling, and report-bound conversation evidence. A ruling requires
+the current review `item_hash`; stale or foreign identities fail without
+mutating the ledger. A report may contain zero populations, eval proposals,
+outcomes, or review items, but it must expose the corresponding typed gap or
+unavailable state and may not infer a pass or reward. Exact endpoint and model
+representations live in `triana-backend/src/triana_backend/api/` and the frozen
+black-box acceptance contract is
+`triana-backend/tests/acceptance/test_trace_to_eval_self_serve.py`.
+
+### Behavior Map historical projection
+
+`behavior_map_historical_projection_v0` is a private internal artifact, not a
+new public Slice 0A document kind. It MUST bind the immediate semantic
+predecessor, accepted baseline predecessor, corrected extraction hash, source
+hash, DEVELOPMENT selection hash, privacy class, and provider-disabled state.
+Every corrected episode has exactly one disposition. Only populations with a
+current `SUPPORTED` audit own active assignment/support; changed populations
+remain visible candidates with `MISSING` audit and unpublished visibility, and
+their members are intentionally unassigned with `REAUDIT_REQUIRED`. Rejected or
+grounding-replacement memberships and occurrences remain typed excluded
+history and contribute zero active support. Edge conservation MUST classify
+every predecessor edge with zero unexplained loss, or publication refuses.
+Historical provider attempts and lane-cap violations remain historical facts;
+projection attempts are separately zero and actual cost remains unknown unless
+an authoritative cost record exists.
+
+### Behavior Map pattern conservation
+
+`behavior_map_report_v0` MUST expose the exact eligible behavior-occurrence
+IDs, one `pattern_occurrence_dispositions` row per eligible ID, and
+`pattern_accounting`. A disposition is active assignment, intentional
+unassignment with a typed reason, or audit dispute; no eligible ID may disappear
+or receive multiple terminal rows. Semantic membership IDs absent from the
+exact first-level or hierarchy input MUST be rejected, typed, counted, and
+contribute zero support. Ordinary unassigned behavior is reported independently
+of vague or generic-label rejection.
+
+`behavior_patterns` is a custody collection, not an active-only list. A
+`SUPPORTED` pattern may contribute active membership/support. A pattern with
+audit `MISSING` remains `UNPUBLISHED_AUDIT_MISSING`; a non-supported audit
+ruling remains `UNPUBLISHED_AUDIT_DISPUTED`. Both retain deterministic identity,
+label, definition, occurrence membership, and evidence lineage while
+contributing zero active support. `pattern_accounting` separately reports
+eligible occurrences, terminal dispositions, candidate patterns, audited
+patterns, supported patterns, disputed patterns, audit-missing patterns, active
+memberships, unpublished memberships, and published support. `UNCERTAIN` is an
+explicit audited-disputed state, not missing evidence.
+
+Active population publication MUST reject duplicate membership, declared
+support unequal to unique membership, duplicate disposition rows, an
+`ASSIGNED` row whose population edge differs from active membership, or any
+inequality between active member IDs and assigned disposition IDs. A
+predecessor `AUDIT_DISPUTED` disposition persists through historical projection
+unless a current explicit supported ruling authorizes reassignment; population
+membership alone is insufficient authority.
+
 ## Normative language
 
 `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `SHALL NOT`, `SHOULD`, and `MAY` are

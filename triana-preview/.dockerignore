@@ -1,0 +1,7 @@
+.env
+.env.*
+*.jsonl
+tests/
+.venv/
+dist/
+__pycache__/

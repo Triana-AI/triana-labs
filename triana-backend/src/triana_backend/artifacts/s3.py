@@ -161,6 +161,120 @@ class S3ArtifactStore:
             checksum_sha256_b64=checksum,
         )
 
+    def publish_owner_trace(
+        self, *, workspace_id: str, payload: bytes, content_type: str
+    ) -> dict[str, Any]:
+        """Publish customer bytes under an immutable workspace-scoped key."""
+        digest = hashlib.sha256(payload).hexdigest()
+        checksum = _checksum_b64(digest)
+        kind = ArtifactKind.SOURCE_TRACE_JSONL
+        key = f"workspaces/{workspace_id}/objects/sha256/{digest[:2]}/{digest}"
+        self._put_immutable(
+            key=key,
+            payload=payload,
+            content_type=content_type,
+            checksum=checksum,
+            digest=digest,
+            kind=kind,
+        )
+        head = self._head_object(self._artifact_bucket, key)
+        self._verify_published_head(
+            head,
+            expected_sha256=digest,
+            expected_checksum=checksum,
+            expected_size=len(payload),
+            expected_kind=kind,
+            expected_kms_key=self._kms_key_id,
+        )
+        return {
+            "artifact_id": deterministic_id(
+                "art",
+                {"workspace_id": workspace_id, "kind": kind.value, "sha256": digest},
+            ),
+            "storage_bucket": self._artifact_bucket,
+            "storage_key": key,
+            "kms_key_id": str(head["SSEKMSKeyId"]),
+            "checksum_sha256_b64": checksum,
+            "byte_count": len(payload),
+            "media_type": content_type,
+        }
+
+    def publish_workspace_bytes(
+        self,
+        *,
+        workspace_id: str,
+        payload: bytes,
+        kind: ArtifactKind,
+        media_type: str,
+    ) -> ArtifactRef:
+        """Publish an immutable derived artifact inside one workspace namespace."""
+        digest = hashlib.sha256(payload).hexdigest()
+        checksum = _checksum_b64(digest)
+        key = (
+            f"workspaces/{workspace_id}/derived/sha256/"
+            f"{kind.value.lower()}/{digest[:2]}/{digest}"
+        )
+        self._put_immutable(
+            key=key,
+            payload=payload,
+            content_type=media_type,
+            checksum=checksum,
+            digest=digest,
+            kind=kind,
+        )
+        head = self._head_object(self._artifact_bucket, key)
+        self._verify_published_head(
+            head,
+            expected_sha256=digest,
+            expected_checksum=checksum,
+            expected_size=len(payload),
+            expected_kind=kind,
+            expected_kms_key=self._kms_key_id,
+        )
+        return ArtifactRef(
+            id=deterministic_id(
+                "art",
+                {"workspace_id": workspace_id, "kind": kind.value, "sha256": digest},
+            ),
+            kind=kind,
+            content_sha256=digest,
+            byte_count=len(payload),
+            media_type=media_type,
+            storage_bucket=self._artifact_bucket,
+            storage_key=key,
+            kms_key_id=str(head["SSEKMSKeyId"]),
+            checksum_sha256_b64=checksum,
+        )
+
+    def _put_immutable(
+        self,
+        *,
+        key: str,
+        payload: bytes,
+        content_type: str,
+        checksum: str,
+        digest: str,
+        kind: ArtifactKind,
+    ) -> None:
+        try:
+            self._client.put_object(
+                Bucket=self._artifact_bucket,
+                Key=key,
+                Body=payload,
+                ContentLength=len(payload),
+                ContentType=content_type,
+                ChecksumSHA256=checksum,
+                ServerSideEncryption="aws:kms",
+                SSEKMSKeyId=self._kms_key_id,
+                Metadata={"sha256": digest, "artifact-kind": kind.value},
+                IfNoneMatch="*",
+            )
+        except ClientError as error:
+            code = str(error.response.get("Error", {}).get("Code", ""))
+            status = error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if code not in {"PreconditionFailed", "412"} and status != 412:
+                raise
+
     def open_verified(self, ref: ArtifactRef) -> BinaryIO:
         self._verify_published_head(
             self._head_object(ref.storage_bucket, ref.storage_key),

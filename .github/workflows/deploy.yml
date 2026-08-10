@@ -29,6 +29,8 @@ jobs:
       ECR_APP_REPOSITORY: ${{ vars.ECR_APP_REPOSITORY }}
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -47,6 +49,8 @@ jobs:
           [[ "$ECR_APP_REPOSITORY" =~ ^[a-z0-9._/-]+$ ]]
           [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
           [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "$NEXT_PUBLIC_SUPABASE_URL" =~ ^https:// ]]
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
           test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
           git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
 
@@ -78,6 +82,8 @@ jobs:
           docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
             --file triana-backend/Dockerfile --tag "$backend_tag" --push .
           docker buildx build --platform linux/arm64 --provenance=true --sbom=true \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
+            --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
             --file triana-app/Dockerfile --tag "$app_tag" --push triana-app
           backend_digest=$(aws ecr describe-images \
             --repository-name "$ECR_BACKEND_REPOSITORY" \

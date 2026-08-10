@@ -464,3 +464,33 @@ completed 12/12 valid and distinct.
 Rename the current surface to evidence custody or implement an explicit,
 hash-verified replay command with distinct accounting for logical replay versus
 provider HTTP exchange. Do not silently infer replay from file presence.
+
+## DF-2026-08-07-006 — Self-serve workspace persistence refused by runtime IAM
+
+Status: `OPEN; EXACT POLICY PENDING`
+
+### Observed failure and smallest reproduction
+
+The private self-serve smoke on the existing `triana-demo` host created a
+synthetic owner/workspace/agent and reached the production upload service, then
+failed at its first SSE-KMS S3 publication under
+`workspaces/<workspace-id>/objects/sha256/...`. AWS returned `AccessDenied` for
+`s3:PutObject` to `triana-demo-ec2-role`. No source, import, run, report, or
+review artifact was persisted.
+
+### Proven and not proven
+
+This proves the runtime role's legacy-prefix policy does not cover the new
+workspace-isolated prefix and that the service did not silently fall back to an
+unscoped key. It does not prove real S3/RDS end-to-end persistence, restart
+reload, idempotent remote replay, or authenticated magic-link behavior.
+
+### Bounded hypothesis and next check
+
+Add only bucket-list permission constrained to `workspaces/*` plus
+`PutObject`, `GetObject`, and `GetObjectAttributes` on the workspace object
+ARN. Re-run the same synthetic smoke with a fresh suffix and require exact
+physical/accepted/rejected counts, stable replay IDs, RDS row reconciliation,
+S3 hashes, and typed empty semantic/review lanes. Do not add delete, general
+bucket access, alternate prefixes, ingress, provider egress, or new
+infrastructure. Supabase remains an independent external configuration gate.

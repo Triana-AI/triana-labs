@@ -37,6 +37,94 @@ trace IDs. Personas, intents, turn policies, language, and distress remain
 typed `NOT_DERIVED`/`NOT_EVALUATED` states. No provider, LLM, real-data path,
 redaction/egress path, Case Generator, or UI exists in this checkpoint.
 
+The later Trace-to-Eval Review V0 and authenticated self-serve bridge add a
+separate active Labs path without changing the suspended Release Review V1
+contracts:
+
+```text
+magic-link owner -> workspace -> agent -> authorized PreviewTrace upload
+  -> deterministic import/rejection accounting
+  -> ANALYSIS entitlement gate
+  -> canonical Trace-to-Eval engine (semantic provider absent by default)
+  -> immutable report/review/conversation artifacts in workspace S3
+  -> run/report/artifact indexes in RDS
+  -> owner-scoped UI + backend CLI
+  -> append-only human rulings
+```
+
+Authentication establishes subject identity; workspace ownership scopes every
+agent, import, run, report, conversation, and ruling lookup; entitlements own
+feature rollout. These authorities are not interchangeable. Upload is bound to
+the exact owner, agent version, import, source hash, and engine version, so an
+identical request is idempotent while another agent receives a distinct run.
+The report is the common backend/UI/CLI evidence object. TypeScript projects
+it but does not recalculate evidence.
+
+Deterministic code owns identity, accepted/rejected accounting, split/group
+integrity, report lineage, idempotency, owner scope, and ruling custody. An LLM
+may propose populations and evals only after separately authorized provider
+egress; the default self-serve bridge uses `semantic_model=None`. A human owns
+reward mapping when no authoritative outcome exists, proposal acceptance or
+editing, and review rulings. Absence of any lane is a typed gap, never a pass.
+
+Behavior Map recovery has two distinct execution forms. A fresh semantic run
+may propose demand episodes, population membership, behavior occurrences, and
+patterns under explicit provider authority. A provider-disabled historical
+projection may instead repair deterministic grounding and conservation defects
+using a completed private predecessor, but it may retain authority only for
+byte-identical semantic subjects and their exact audits. Changed episode
+grounding creates explicit predecessor lineage; changed population or pattern
+membership is a new unaudited candidate, remains unpublished, and cannot
+contribute active assignment or support. The projection binds the failed
+semantic predecessor and accepted baseline separately, preserves rejected
+evidence as excluded history, reports zero projection calls, and carries any
+historical lane-budget violation without converting it into an overall-budget
+pass.
+
+Fresh Behavior Map pattern consolidation has a deterministic conservation
+projection around the semantic proposer. Every eligible occurrence receives
+one terminal disposition, and each model response is restricted to the exact
+members supplied to that first-level or hierarchy batch. Supported patterns
+are the only active-support subjects; missing-audit and non-supported patterns
+remain stable unpublished candidates/disputes. Report accounting separates
+candidate, audited, supported, disputed, and missing states plus active and
+unpublished membership. Before artifact identity is finalized, a deterministic
+gate refuses duplicate occurrence membership, duplicate population membership
+or dispositions, support mismatch, population-edge mismatch, and any mismatch
+between active population members and `ASSIGNED` dispositions.
+
+Historical projection treats a predecessor `AUDIT_DISPUTED` disposition as
+persistent authority. It removes that episode before recomputing population
+identity/support, records the excluded predecessor edge, and cannot restore
+assignment without a current explicit supported ruling. Any co-member whose
+population identity changes becomes re-audit-required rather than inheriting
+the predecessor audit.
+
+### Triana Preview local distribution boundary
+
+`triana-preview/` is a packaging and custody facade over the single active
+engine in `triana-labs/`; it is not a second product implementation:
+
+```text
+authorized PreviewTrace JSONL (read-only)
+  -> triana-preview authorization/path/provider custody checks
+  -> existing triana_labs Behavior Map redaction
+  -> private redacted source + audit + evidence manifest
+  -> existing installed `triana behavior-map run`
+  -> canonical JSON/Markdown/HTML/checkpoints + local run manifest
+```
+
+The facade may validate the operator acknowledgement, agent-description bound,
+regular-file identity, empty destination, complete provider binding, and
+private filesystem modes. Deterministic redaction, manifest interpretation,
+semantic schemas, analysis, identity, support, typed gaps, and report rendering
+remain owned by `triana-labs`. The package uses the repository-local Labs
+dependency at the same commit, so there is no copied taxonomy or behavior-map
+logic to synchronize. Its container has a non-root runtime, explicit production
+copies only, a read-only input mount contract, and no hosted telemetry or
+upload boundary. Image-registry publication and external deployment are not
+part of this architecture checkpoint.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text
