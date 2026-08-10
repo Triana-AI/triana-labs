@@ -1,3 +1,278 @@
+# Active implementation slice
+
+## Triana Preview local distribution entry gate — 2026-08-10
+
+Status: **INDEPENDENTLY VERIFIED; COMMIT PENDING**
+
+Slice ID: `TRIANA-PREVIEW-LOCAL-ALPHA-1`
+
+Canonical base: `92609bb0db4f747501e36cf03f397cc8072e699f`
+
+Active authority: `triana-labs/CHARTER.md`, specifically the accepted local-
+first Phase 1 Behavior Map value claim. This slice packages that already
+implemented engine for an invite-only on-device preview; it does not create a
+second analysis implementation or broaden the semantic claim.
+
+### Product outcome and public behavior
+
+One private local command accepts a prescribed PreviewTrace JSONL path, a
+short agent description, an empty destination, and an explicit
+customer authorization acknowledgement. It deterministically redacts the
+source into private run custody, constructs the existing evidence-manifest
+boundary, invokes the installed `triana-labs` Behavior Map command unchanged,
+and leaves the canonical JSON, Markdown, HTML, checkpoints, redaction audit,
+and run manifest on the customer's device. Provider configuration remains the
+existing explicit environment contract. With no provider configured, the
+existing engine emits deterministic accounting and typed semantic gaps.
+
+The package and container are named **Triana Preview**. `triana-preview/` is a
+distribution facade that depends on `triana-labs`; it MUST NOT contain copied
+episode extraction, taxonomy, grouping, audit, support, identity, or rendering
+logic. Future engine changes flow into the Preview only by updating the single
+`triana-labs` dependency at the same repository commit and passing the Preview
+smoke gate.
+
+Input contract:
+
+- one regular, non-symlink PreviewTrace JSONL file under the existing parser
+  and resource limits;
+- one non-empty agent description of at most 2,000 UTF-8 bytes;
+- one new or empty local-private output directory;
+- explicit `--confirm-authorized-traces` acknowledgement;
+- optional existing `TRIANA_BEHAVIOR_MAP_*` provider environment. A partially
+  configured provider is an integrity refusal before model construction.
+
+Output contract:
+
+- private `0700` output custody and `0600` intermediate artifacts;
+- `input.redacted.jsonl`, `redaction-audit.json`, and `manifest.json`;
+- unchanged Behavior Map `behavior-map.json`, `behavior-map.md`,
+  `behavior-map.html`, and checkpoints;
+- the underlying Behavior Map exit semantics, including exit `10` for a
+  truthful completed-with-gaps report;
+- no raw source copy, credential value, provider response, network telemetry,
+  or Triana-hosted upload.
+
+### Authority, privacy, gaps, and refusal
+
+- Deterministic `triana-labs` code owns validation, redaction, manifest facts,
+  evidence identity, support, accounting, report identity, and typed gaps.
+- The existing primary and audit models may propose semantic meaning only when
+  the operator separately configures and authorizes their exact provider
+  boundary. Verification uses no models and traps provider execution.
+- A human owns trace authorization and all semantic acceptance. The package
+  creates no accepted taxonomy or ruling.
+- Raw traces remain on the customer's device. The container receives the
+  trace mount read-only and writes only to the declared output mount. Redacted
+  semantic evidence may leave the device only to the exact configured model
+  endpoints.
+- Invalid JSONL, missing authorization, unsafe path/symlink, non-empty output,
+  incomplete provider configuration, redaction refusal, or engine integrity
+  failure aborts visibly. Provider absence is not an abort; it remains the
+  existing typed semantic gap.
+
+### Provenance and dependencies
+
+No external source code or prose is reused. No Agentagon, Kairos-AI, HRAI, or
+private Blitz artifact enters the package. The facade imports only current
+repository-owned `triana-labs` public seams. No new runtime dependency is
+allowed. Python, `uv`, and the container base follow already pinned repository
+versions.
+
+### Frozen change budget and role ownership
+
+Independent test author only:
+
+- `triana-preview/tests/**`;
+- `triana-preview/tests/fixtures/**`.
+
+Independent implementation author only:
+
+- `triana-preview/src/**`;
+- `triana-preview/pyproject.toml`;
+- `triana-preview/uv.lock`;
+- `triana-preview/Dockerfile`;
+- `triana-preview/.dockerignore`;
+- `triana-preview/.env.example`;
+- `triana-preview/README.md`;
+- `triana-preview/scripts/**`.
+
+Orchestrator only:
+
+- this packet;
+- the smallest architecture/charter update;
+- append-only `internal/DECISION_LOG.md` entry;
+- ignored local decision memory;
+- optional content-free verification output under `/private/tmp`.
+
+Explicitly untouched:
+
+- all `triana-labs/src/**` production behavior and prompts;
+- all existing tests and fixtures outside `triana-preview/`;
+- `triana-core/`, `triana-backend/`, `triana-app/`, deployment and cloud
+  configuration;
+- accepted Blitz reports, projections, tags, raw traces, and private evidence;
+- provider retry/fallback, budgets, grouping thresholds, audit authority, and
+  semantic schemas;
+- the pre-existing user modification to `internal/WORKING_MEMORY.md`.
+
+No dependency is added. Maximum scope expansion is one root-level
+`.dockerignore` only if the test author proves the repository build context can
+include a secret or local artifact despite explicit Docker `COPY` boundaries;
+otherwise workers stop before editing outside the budget.
+
+### Independent acceptance contract
+
+The independent test author freezes black-box RED proving:
+
+1. missing trace authorization refuses before redaction or engine execution;
+2. a valid prescribed PreviewTrace file plus agent description reaches the
+   real installed Labs engine and produces JSON/Markdown/HTML locally;
+3. invalid, symlinked, or mutated input refuses without becoming an empty
+   successful report;
+4. the source file is byte-unchanged and never copied into the image/output;
+5. redacted source, audit, and manifest are private and credential-free;
+6. no-provider execution remains a completed-with-typed-gaps report and makes
+   zero provider calls;
+7. partial provider configuration refuses before child engine execution;
+8. non-empty output refuses rather than overwriting prior evidence;
+9. report and manifest facts bind the exact redacted source hash/counts and
+   one unique grouping disposition per trace;
+10. the Preview package imports the one Labs engine and contains no copied
+    Behavior Map implementation;
+11. source and clean-installed command behavior match;
+12. the local container build has a non-root runtime, no embedded credential,
+    no customer data, and a read-only documented input mount.
+
+Required RED:
+
+```text
+cd triana-preview
+uv run --locked pytest -q
+```
+
+Independent test freeze (2026-08-10):
+
+- `tests/conftest.py` —
+  `74dec24111cef6d34f260ff29284f4d67030d7b7d1ddc6e38fe5fb7d62ffe451`;
+- `tests/test_preview_cli.py` —
+  `7a58219238c40db9bc9a3730fe05dfbfd0347bdba7c3e3917c931e2a623fdfef`;
+- `tests/fixtures/synthetic_preview_trace.jsonl` —
+  `5fbae0884520cfc21b8115a045863fb64d9c71ac54ade6abeb971c51d7e85b73`.
+
+The frozen command collected thirteen tests and all thirteen failed because
+the Preview module, installed command, source facade, and Docker surface did
+not yet exist. The failures were missing product behavior rather than test
+collection or fixture errors. The sandbox required an explicit private uv
+cache; that environment-only substitution does not change the command's
+product contract.
+
+Debugging iteration 1 (2026-08-10):
+
+- Observed failure: after the initial thirteen tests turned GREEN, independent
+  verification changed a regular source in place, restored its original bytes
+  during the custody interval, and `_source_unchanged` accepted it even though
+  the file `mtime_ns` and `ctime_ns` changed.
+- Smallest reproduction: hold the initial descriptor/hash, write same-length
+  alternate bytes, restore the original bytes, then run the post-redaction
+  custody check; it returned true.
+- Falsifiable hypothesis: the post-check binds only inode, final digest, and
+  size, so a transient mutation can influence the separately reopened redaction
+  input and disappear before validation.
+- Falsifier: a frozen black-box test must show any transient in-place mutation
+  receives `INPUT_CHANGED_DURING_RUN` and publishes no report while unchanged
+  inputs still pass.
+- Scope: independent test author may add only the adversarial case under the
+  existing test budget; implementation author may change only the Preview
+  custody facade after RED is frozen.
+
+Debugging iteration 2 (2026-08-10):
+
+- Observed failure: Preview's documented Docker command uses the repository
+  root as build context, but only `triana-preview/.dockerignore` existed; Docker
+  therefore does not consult it and may send unrelated repository files or
+  local trace data into BuildKit custody even though explicit `COPY` commands
+  keep those files out of the final image.
+- Smallest reproduction: resolve the documented context and show that the root
+  has no `.dockerignore`, while the nested ignore file cannot govern it.
+- Falsifiable hypothesis: a root-context allowlist containing only the exact
+  Labs/Preview packaging and source inputs required by the Dockerfile prevents
+  unrelated code, `.git`, environment files, tests, documents, and JSONL trace
+  data from entering the build context.
+- Falsifier: a frozen static black-box test must reject any root ignore policy
+  that is absent, denylist-only, or admits unrelated/customer-shaped files.
+- Scope expansion: activate the already budgeted single root `.dockerignore`;
+  no Dockerfile, image behavior, product code, or cloud action changes.
+
+Adversarial freeze transitions (append-only):
+
+- Custody-mutation test freeze changed
+  `tests/test_preview_cli.py` from
+  `7a58219238c40db9bc9a3730fe05dfbfd0347bdba7c3e3917c931e2a623fdfef`
+  to
+  `d84031d008bb0bdcab320abcd39f685c3e3d2de288f0c57bd9cb53497cafbbfb`;
+  the suite contained fourteen tests and the new case was valid RED at exit 10
+  instead of the required integrity refusal.
+- Root-context allowlist test freeze changed that file from
+  `d84031d008bb0bdcab320abcd39f685c3e3d2de288f0c57bd9cb53497cafbbfb`
+  to
+  `af87aa3191425b07b1b2a3069f7c8887fe641b74b498d6760ad5afde6f25cafd`;
+  the suite contained fifteen tests and the new case was valid RED because the
+  repository-root `.dockerignore` was absent.
+
+Final independent result (2026-08-10):
+
+- all fifteen Preview black-box tests pass;
+- Ruff format/check and strict mypy pass for Preview;
+- the Preview lock checks offline and wheel/sdist build succeeds;
+- source and installed commands have matching refusal behavior, while two real
+  provider-disabled runs emit the same report identity and byte-identical
+  artifacts with `provider_calls=0`;
+- private output modes are `0700`/`0600` and the accepted source is unchanged;
+- the custody adversary now refuses transient mutate-and-restore writes;
+- the root Docker build context is default-deny and admits only exact
+  Labs/Preview package metadata, locks, and source required by the Dockerfile;
+- governance and diff checks pass; the complete Labs suite passes 891 tests and
+  builds both distributions. Its final clean-venv dependency installation was
+  not credited as passing because the local uv cache contained a missing
+  `pydantic-core` RECORD; no product test or build failed.
+- a local Docker build was attempted twice but the installed Docker daemon did
+  not answer its socket ping; the image/runtime smoke remains explicitly
+  unverified, and no registry login, image push, provider call, or deployment
+  occurred.
+
+Final verification:
+
+```text
+cd triana-preview
+uv lock --check
+uv run --locked ruff format --check src tests
+uv run --locked ruff check src tests
+uv run --locked mypy src
+uv run --locked pytest -q
+uv build
+./scripts/verify.sh
+
+cd ../triana-labs
+UV_OFFLINE=1 PIP_NO_INDEX=1 ./scripts/verify.sh
+
+cd ..
+./scripts/verify-governance.sh --working-tree
+git diff --check
+```
+
+When Docker is locally available, the orchestrator also builds
+`triana-preview:0.1.0-alpha.1`, runs the packaged no-provider smoke twice on a
+synthetic fixture, and compares the report artifacts. No registry login, image
+push, Docker Cloud configuration, provider call, or external deployment is
+authorized.
+
+Acceptance is a locally installable and locally container-buildable private
+Preview whose command genuinely reaches the one current Labs Behavior Map
+engine. It is not an SDK stability promise, public/open-source release,
+arbitrary trace-format adapter, semantic taxonomy-quality passage, cloud
+service, or Docker registry publication.
+
 # Behavior Map V0 vertical slice
 
 Date frozen: 2026-08-07

@@ -95,6 +95,27 @@ membership, support equal to unique members, one disposition per episode, and
 exact equality between active episode-to-population edges and `ASSIGNED`
 disposition edges.
 
+### Invite-only local Preview distribution (owner-frozen, 2026-08-10)
+
+The first distributable Behavior Map surface is an invite-only local package
+and container named **Triana Preview**. Its single command accepts one
+authorized PreviewTrace JSONL source, a short agent description, an empty
+private output directory, and an explicit trace-authorization acknowledgement.
+It redacts and binds the evidence locally, then invokes the same installed
+`triana-labs` Behavior Map engine that repository development uses. The facade
+owns custody and invocation only: it contains no episode, taxonomy, grouping,
+audit, support, identity, or report implementation. Engine improvements reach
+Preview by updating that one same-commit dependency and passing the Preview
+verification gate, rather than by copying code.
+
+Raw traces remain on the operator's device, the input mount is read-only, and
+the output remains private. Provider absence produces the engine's existing
+typed semantic gaps; partial provider configuration refuses before execution.
+This distribution is not public or open source, does not add hosted upload,
+telemetry, arbitrary adapters, a UI, or a stable SDK promise, and authorizes no
+registry publication or deployment. Those actions require a later owner
+decision after the local pilot.
+
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
 primary author and Terra as independent auditor, with no retry or fallback and

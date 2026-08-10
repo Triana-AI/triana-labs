@@ -100,6 +100,31 @@ assignment without a current explicit supported ruling. Any co-member whose
 population identity changes becomes re-audit-required rather than inheriting
 the predecessor audit.
 
+### Triana Preview local distribution boundary
+
+`triana-preview/` is a packaging and custody facade over the single active
+engine in `triana-labs/`; it is not a second product implementation:
+
+```text
+authorized PreviewTrace JSONL (read-only)
+  -> triana-preview authorization/path/provider custody checks
+  -> existing triana_labs Behavior Map redaction
+  -> private redacted source + audit + evidence manifest
+  -> existing installed `triana behavior-map run`
+  -> canonical JSON/Markdown/HTML/checkpoints + local run manifest
+```
+
+The facade may validate the operator acknowledgement, agent-description bound,
+regular-file identity, empty destination, complete provider binding, and
+private filesystem modes. Deterministic redaction, manifest interpretation,
+semantic schemas, analysis, identity, support, typed gaps, and report rendering
+remain owned by `triana-labs`. The package uses the repository-local Labs
+dependency at the same commit, so there is no copied taxonomy or behavior-map
+logic to synchronize. Its container has a non-root runtime, explicit production
+copies only, a read-only input mount contract, and no hosted telemetry or
+upload boundary. Image-registry publication and external deployment are not
+part of this architecture checkpoint.
+
 LABS-04 is the implemented and owner-passed case-generation boundary:
 
 ```text
