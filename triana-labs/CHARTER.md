@@ -127,6 +127,40 @@ privacy, contract-parity, and metadata gates pass. Image publication, registry
 access, provider execution, hosted upload, telemetry, UI, deployment, and the
 Behavior Map implementation remain private and separately authorized.
 
+On 2026-08-11 Akarsh superseded the onboarding package's default customer
+inputs. The customer supplies an authorized trace path, short agent
+description, explicit trace/provider authorization, and a private
+OpenAI-compatible base URL/API key with optional model. The installed skill,
+not the customer, owns the bundled immutable release profile and derives all
+internal provider/auditor/deployment/capacity/pacing/budget fields. Container
+digests remain internally verified and must not appear as required customer
+work. Behavior taxonomy is derived from trace evidence by the private engine;
+it is never an environment or onboarding input. No new live run is authorized
+until this packaging closure passes offline and the plugin is refreshed.
+
+Later on 2026-08-11 Akarsh superseded the private-container distribution as the
+public launch direction. The first release uses two clean-history public
+repositories: `triana-preview` contains the complete source-available local
+Behavior Map runtime under PolyForm Free Trial 1.0.0 and publishes the
+`triana-preview` Python distribution, while `triana-skills` contains a thin
+Apache-2.0 shared Codex/Claude onboarding skill pinned to an exact Preview
+release. Preview is not represented as OSI open source; use beyond the bounded
+evaluation grant requires separate permission. Docker is not required or
+publicly released for this checkpoint. Raw
+traces stay local, Triana operates no backend or telemetry, provider egress is
+explicit and direct under user credentials, and semantic output remains
+proposed evidence rather than correctness, accepted taxonomy, evaluation, or a
+release verdict. The exact repository, source, interface, privacy, provenance,
+and release boundary is frozen in
+`internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md`.
+
+After public release, `Triana-AI/triana-preview` is the sole code owner for the
+shipped Preview runtime and `Triana-AI/triana-skills` is the sole code owner
+for public Codex/Claude onboarding. The private monorepo no longer carries
+either staging tree or a second Behavior Map package. Its earlier private
+container and bundled release-profile journey remains historical pilot
+evidence only; it is not a live Labs command or public product dependency.
+
 The TAU² proof used Terra as author and Luna as auditor. For subsequent Blitz
 and HRAI generalization runs, Akarsh selected the cheaper Luna deployment as
 primary author and Terra as independent auditor, with no retry or fallback and
@@ -457,6 +491,13 @@ The external usability gate is M3.5: a developer who did not build Triana must
 install the public repository, adapt their traces within the stated line
 budget, and produce an honest report within 90 minutes before persistent label
 storage or promotion work proceeds.
+
+For the public alpha, that gate is a Python-package journey: an exact `uvx`
+runtime, a zero-egress doctor, a declarative adapter executor, content-free
+phase progress, immediate safe typed failures, and one canonical Codex/Claude
+skill. Exact path, egress, and call-ceiling authority remains human-owned;
+semantic interpretation remains proposal-only and report verification remains
+deterministic.
 
 ## Relationship to suspended V1
 

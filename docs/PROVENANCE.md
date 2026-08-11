@@ -91,6 +91,43 @@ cross into this repository on 2026-07-30:
 These files are preserved as historical research and rationale. They are not
 implementation sources and cannot supersede `docs/PRODUCT.md`.
 
+## Public Preview publication clearance — 2026-08-11
+
+The public extraction is limited to the exact source allowlist in
+`internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md`. The Behavior Map and
+redaction source surfaces already have exact Agentagon paths, commits, method,
+authorship, and data restrictions recorded above. The generic provider seam has
+exact HRAI and Kairos-AI provenance recorded above. Preview facade and
+PreviewTrace contract code are repository-owned Triana work.
+
+No source repository used by the allowlist contains a root license that by
+itself grants public relicensing of every adapted surface. The release therefore
+relies on Akarsh's recorded ownership and reuse authorization. PolyForm Free
+Trial 1.0.0 is the selected `triana-preview` destination license and Apache-2.0
+is selected only for the engine-free `triana-skills` repository. Publication
+remains blocked if Akarsh cannot stand behind that ownership/licensing
+assertion for every allowlisted file.
+Unclear source must be cleanly reimplemented or excluded. Customer traces,
+Blitz values or quotes, generated provider output, reports, checkpoints, private
+host/model defaults, credentials, and the private monorepo Git history are not
+eligible for either public repository.
+
+The extraction must add a destination `PROVENANCE.md` mapping each public file
+back to the exact source file and current extraction commit. Artifact inventory
+and secret/privacy scans are release blockers, not post-release cleanup.
+
+After release and file-level deduplication, `Triana-AI/triana-preview` at
+`a738e3fdf4364f2d46913b40ed59297b290cb96f` is the sole code owner for the
+shipped runtime and `Triana-AI/triana-skills` at
+`0ce39bcdbcb90ff964cfc180eda34adc56b0362c` is the sole code owner for public
+onboarding. The disposition ledger is
+`internal/PUBLIC_PRODUCT_DEDUP_MANIFEST_2026-08-12.json`. Historical monorepo
+destination rows above remain provenance history; they do not authorize a
+second live implementation. The four unmapped private utilities are retained
+only byte-for-byte in monorepo Git commit
+`ab5079548a42ed2ca1f37dded5deeaa77e32d251`, never falsely attributed to a
+public target.
+
 ## Historical Agentagon exclusions at bootstrap — superseded 2026-08-07
 
 The following list records the repository's original 2026-07-30 clean-room

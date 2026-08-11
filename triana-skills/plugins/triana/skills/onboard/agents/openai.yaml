@@ -1,4 +1,0 @@
-interface:
-  display_name: "Triana Onboard"
-  short_description: "Prepare local traces for Triana Preview"
-  default_prompt: "Use $onboard to inspect and prepare my authorized local traces for Triana Preview."

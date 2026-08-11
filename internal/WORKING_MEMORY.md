@@ -1309,3 +1309,166 @@ are `9821a041d391843bae8885010c6180a58a38646f3bd33d56382e5f18a3a8f0f1`,
 and `5e83984622aae54c49c53b6355b3865816f4fac021ccf8a7ff2b694897a26377`.
 Independent verdict PASS; full verifier 757 passed at
 `/private/tmp/triana-labs-verify.sQKjH2`.
+
+Proposed cross-dataset Behavior Map experiment (2026-08-08; suggestion, not an
+accepted decision or execution authorization): defer implementation of a
+product-level taxonomy-reduction layer until the existing Phase 1 machinery is
+tested against additional labeled conversational corpora. First run the full
+available TAU² corpus because its task definitions, domain policies, tool and
+database state, and outcome labels provide the strongest existing controlled
+reference for checking whether proposed demand episodes, populations, and
+agent-behavior patterns recover known structure without being given the labels.
+Preserve label blindness during semantic authoring, sealed splits, exact
+deterministic accounting, no dataset-name branches, and proposal-only authority;
+compare outputs to labels only in a post-run evaluation. Pre-register recovery,
+cluster homogeneity/completeness, multi-goal separation, outcome association,
+typed-gap rate, repeatability, cost, and runtime rather than treating a label
+match as accepted taxonomy or correctness.
+
+The strongest complementary public labeled-chat candidate is ABCD
+(Action-Based Conversations Dataset): more than 10,000 human-to-human customer-
+service dialogues with 55 intent labels, policy-constrained action sequences,
+and turn/action targets. It is closer than TAU² to historical support-chat
+discovery, while TAU² is stronger for tool/state/outcome-grounded evaluation.
+If adopted, freeze an exact version, license/provenance entry, adapter contract,
+and stratified DEVELOPMENT/calibration/holdout manifest before any provider
+run; start with a bounded stratified slice before authorizing full-corpus cost.
+Schema-Guided Dialogue is a secondary multi-domain alternative; MultiWOZ is a
+weaker first choice because its historical annotation noise complicates use as
+the reference. HRAI remains useful as an owner-controlled domain-generalization
+test but is weaker than TAU² or ABCD for label-grounded validation. No download,
+provider call, spend, implementation, or taxonomy-roll-up work is authorized by
+this note.
+
+Self-serve skill handoff (2026-08-11): Akarsh rejected the requirement that a
+customer separately provide a published image manifest and exactly sixteen
+internal `TRIANA_BEHAVIOR_MAP_*` variables. The accepted customer contract is
+an authorized trace path, short agent description, explicit trace/provider
+authorization, and a private OpenAI-compatible file containing
+`OPENAI_BASE_URL`, `OPENAI_API_KEY`, and optional `OPENAI_MODEL`. The plugin
+must bundle and internally verify its immutable release profile, derive all
+non-secret provider/auditor/deployment/pacing/budget metadata, privately
+normalize the engine environment, and never ask for a digest, manifest,
+taxonomy, labels, SKU, capacity, deployment version, or credential boundary.
+Behavior taxonomy remains engine output, not configuration. The current skill
+still requires the manifest and sixteen-field environment and is not upstream;
+no live run should begin until
+`internal/TRIANA_PREVIEW_SELF_SERVE_SKILL_HANDOFF_2026-08-11.md` is completed.
+
+Public repository follow-on (2026-08-11): the private Docker/profile journey is
+now historical pilot evidence rather than the launch architecture. Gate 0 is
+frozen in `internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md`. The next
+work is an independent public-artifact test contract followed by two isolated
+implementation sessions, one per new repository. `select` remains the proposed
+future deterministic/reproducible large-corpus reduction surface and
+`simulate` the proposed future deployment-simulation surface; neither command,
+module, claim, nor timeline is accepted until a later slice freezes its artifact
+and authority boundary. Open questions for later evidence are whether either
+capability creates a materially different dependency/security boundary that
+justifies another distribution, and which managed multi-run/team workflows
+show willingness to pay.
+
+Self-serve Python closure (2026-08-11): the bounded ABCD-50 trial mechanically
+accepted all traces and reached semantic preflight, proving the public package
+and secure custody flow. It also exposed the remaining onboarding gaps: manual
+Python mapping, no zero-egress end-to-end readiness check, generic projection
+of a retained HTTP 404, and duplicated role presentation around one shared
+failed call. The active slice publishes Preview `0.1.0a2` plus plugin `0.1.2`
+with doctor, declarative adapter execution, phase receipts, immediate safe
+failure details, exact shared-ledger accounting, and canonical Codex/Claude
+cache parity. The observed Azure endpoint/deployment mismatch is customer
+configuration evidence, not an adapter, trace-count, SDK, or runtime failure;
+no further customer/provider run is part of this implementation slice.
+
+Public-product ownership reconciliation (2026-08-12): the released public
+repositories are now the only editable owners of Preview and onboarding. The
+private monorepo staging trees, duplicate `triana_labs.behavior_map` package,
+its direct tests, and dead CLI command have been removed under the closed
+machine-readable disposition ledger
+`internal/PUBLIC_PRODUCT_DEDUP_MANIFEST_2026-08-12.json`. The previous private
+Docker/image/release-profile path remains historical pilot evidence, not live
+plumbing. Distinct simulation, case-factory, trace-to-eval, backend, research,
+and suspended V1 surfaces remain private and unchanged. The four unique retired
+Behavior Map utilities resolve only from monorepo commit
+`ab5079548a42ed2ca1f37dded5deeaa77e32d251`; no public equivalence is claimed.
+
+## Parallel GTM / YC handoff — 2026-08-11
+
+Use this section as evidence for a separate messaging session; it does not
+authorize changes to product code, websites, social accounts, or the YC
+application.
+
+What is already true and publishable with careful wording:
+
+- Public source-available runtime: `Triana-AI/triana-preview`, published on
+  PyPI as `triana-preview==0.1.0a2` under PolyForm Free Trial 1.0.0.
+- Public Apache-2.0 onboarding plugin: `Triana-AI/triana-skills`, one canonical
+  skill for Codex and Claude Code, currently plugin `0.1.2`.
+- The workflow runs on the user's machine. Raw traces are not uploaded to
+  Triana and Triana has no hosted backend or telemetry in this alpha.
+- Semantic analysis is optional and, when explicitly authorized, redacted
+  excerpts go directly from the user's machine to the model endpoint they
+  choose under their credentials. Provider retention rules still apply and
+  redaction is not anonymity.
+- The package turns conversational-agent traces into proposed, evidence-linked
+  user-demand populations and repeated agent-behavior patterns. It does not
+  claim correctness, accepted taxonomy, ground truth, regression, pass/fail,
+  or a release verdict.
+- A fresh public PyPI-only synthetic journey completed locally with zero
+  provider calls. A separate 50-conversation ABCD trial adapted and validated
+  all 50 conversations and reached semantic preflight; it then stopped safely
+  on an Azure HTTP 404 caused by an endpoint/deployment mismatch. No fake empty
+  Behavior Map was produced.
+- That trial proved the main machinery and exposed concrete self-serve gaps:
+  manual adapter execution, opaque top-level failure reporting, readiness
+  checks, and long-run visibility.
+
+What is now released and verified:
+
+- `triana-preview==0.1.0a2` and plugin `0.1.2` are public;
+- a zero-egress `doctor` command for package/plugin parity, provider-field
+  mapping, private output permissions, and trace structure;
+- deterministic declarative adapter execution;
+- content-free phase progress receipts and immediate safe typed failures;
+- exact installed-marketplace/cache parity for Codex and Claude Code.
+
+Release evidence: clean-checkout GitHub run `31491134611` passed 44 tests,
+build, OIDC, and PyPI upload; published wheel/sdist hashes match the accepted
+offline build; both agent hosts report plugin `0.1.2` and byte-matching cached
+canonical files; a fresh exact PyPI-only `uvx` doctor run returned `READY` with
+provider disabled and no provider call. The successful release does not change
+the separate fact that ABCD-50 semantic analysis stopped on the Azure 404.
+
+Core positioning candidate:
+
+> Triana turns the conversations your agent already had into an
+> evidence-grounded map of what users ask for and how the agent repeatedly
+> behaves. It runs locally, sends nothing to Triana, and keeps semantic model
+> use explicit and under your credentials.
+
+Strong demo narrative: install the skill, point it at an exact local trace
+path, describe the agent in one sentence, approve local access and a bounded
+model request ceiling, watch readiness/progress receipts, and open a private
+HTML Behavior Map. Show typed refusal honestly if provider configuration is
+wrong. Do not demo provider secrets, raw customer text, internal manifests, or
+claim a successful ABCD semantic map before one exists.
+
+Suggested GTM work products for the separate session:
+
+1. Homepage hero, trust strip, three-step workflow, sample-report CTA, and
+   precise privacy/limitations copy.
+2. YC application updates: product, demo, progress, insight, differentiation,
+   open/source-available strategy, and current traction/evidence answers.
+3. Engineering article: why agent traces are behavioral evidence, the
+   deterministic/LLM/human authority split, local custody, the failed 404 as a
+   self-serve design lesson, and the doctor/adapter/progress response.
+4. X/Twitter launch thread and concise founder post, with a screen-recording
+   storyboard and direct install command only after the new release is live.
+5. Claims ledger classifying every sentence as `PROVEN`, `UPCOMING`, or
+   `EXCLUDED`, with links to repository evidence and a final anti-overclaim
+   review.
+
+GTM session must first inspect the current website repository and current YC
+application source before proposing edits. It should plan and draft, not publish
+or mutate external systems unless Akarsh explicitly authorizes those actions in
+that session.

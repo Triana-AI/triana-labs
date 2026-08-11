@@ -60,14 +60,28 @@ identifier category MUST continue to refuse. Preview MUST translate that
 remaining refusal to the content-free public reason
 `PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER`.
 
-Provider-enabled Preview MUST require every named
-`TRIANA_BEHAVIOR_MAP_*` provider field. Its `endpoint_origin` and
-`audit_endpoint_origin` compatibility fields MUST contain the exact configured
-base URLs after trimming only trailing `/`; the OpenAI-v1 path is authorization
-evidence and MUST NOT be reduced to scheme and authority. Missing, partial, or
-application-specific Azure/OpenAI variables do not authorize egress. Provider
-absence remains the typed deterministic mode, and neither mode permits retry or
-fallback.
+Default provider-enabled onboarding MUST accept one private regular file with
+nonempty `OPENAI_BASE_URL`, `OPENAI_API_KEY`, and optional `OPENAI_MODEL`. The
+bundled release profile MUST derive the complete internal
+`TRIANA_BEHAVIOR_MAP_*` binding once per run; those internal fields are not
+customer inputs. The same endpoint/key applies to both semantic roles unless an
+explicit advanced override is supplied. A missing model is valid only when the
+release profile declares one. The exact OpenAI-v1 path remains authorization
+evidence. Normalization MUST never print, commit, or place the API key in argv
+or report artifacts. Provider absence remains the explicitly selected
+deterministic mode, and neither mode permits retry or fallback.
+
+Provider-enabled Preview MUST bind one finite positive
+`TRIANA_BEHAVIOR_MAP_MAX_TOTAL_RESERVED_USD` value into the evidence manifest.
+Primary and auditor calls, including semantic preflights, MUST reserve against
+one shared run-wide ledger. Role and stage call counts MAY remain advisory for
+lineage and planning, but MUST NOT refuse a call while the next conservative
+reservation remains within the shared ceiling. Only the next call that would
+cross the ceiling may emit `SEMANTIC_BUDGET_EXCEEDED`. Request-size validation
+is not a budget failure. The pinned Luna capacity-10 and Terra capacity-100
+customer bindings use 20-second and 2-second pre-attempt spacing respectively;
+other bindings MUST NOT infer pacing from capacity alone. Pacing MUST NOT add a
+retry or fallback.
 
 A fresh provider-enabled Behavior Map run MUST complete bounded synthetic
 model-contract preflights for extraction, population consolidation, and pattern
@@ -96,13 +110,52 @@ count.
 valid only after eligible pattern analysis completed without a blocking
 semantic-stage failure.
 
-`docker-command` accepts only a separately published release manifest whose
-image is pinned as `<registry>/<image>@sha256:<64 lowercase hex>`. It returns an
-argv array and MUST NOT execute Docker. The trace file mount is read-only, the
-output is a local directory, credentials never enter argv or artifacts, and an
-unpublished or mutable image reference is a refusal. The public onboarding
-package contains no Behavior Map engine, provider adapter, image credential,
-retry, fallback, upload, telemetry, or deployment authority.
+The following `docker-command` contract is retained only as historical private
+pilot evidence; no live monorepo command or installed public skill implements
+it. Historically, `docker-command` consumed the versioned release profile
+bundled with the installed skill. Its image was digest-pinned and internally
+verified; the customer did not supply a manifest or digest. After explicit
+trace and provider-egress approval, the skill could execute that exact argv
+and then verified the report. The trace mount was read-only, output was a fresh
+private local directory, and credentials did not enter argv or artifacts. An
+unpublished, mutable, absent, or mismatched bundled release produced a typed
+refusal. The package contained no Behavior Map engine, credential, customer
+taxonomy, retry, fallback, upload, telemetry, or deployment authority.
+
+The public Python release supersedes `docker-command` and the bundled release
+profile as the ordinary journey. The public `triana-preview` distribution MUST
+own `inspect`, `validate`, `scaffold`, `preview`, `analyze`, and
+`verify-report`; `analyze` MUST execute its packaged engine in process and MUST
+NOT require `triana-labs`, Docker, a release manifest, or an image digest.
+Public provider-enabled analysis requires an explicit private regular file with
+nonempty `OPENAI_BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL`, plus an
+explicit positive call ceiling and egress authorization. There is no private
+model default, automatic retry, fallback, ambient credential discovery,
+telemetry, or Triana upload. The skills repository MUST pin an exact Preview
+version and MUST contain no duplicate runtime implementation or Docker release
+profile. Exact alpha structure and acceptance are frozen in
+`internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md`.
+
+`Triana-AI/triana-preview` is the sole code owner for this public runtime and
+`Triana-AI/triana-skills` is the sole code owner for its onboarding. The
+private monorepo MUST NOT expose a duplicate `triana_labs.behavior_map`
+package, `triana behavior-map` command, public-product staging tree, Docker
+release profile, or release manifest as a live product surface.
+
+Preview `0.1.0a2` additionally MUST expose `doctor` and `adapter-execute`.
+`doctor` MUST perform zero provider calls while checking exact package and
+canonical Codex/Claude plugin parity, the authorized three-field provider
+mapping when present, private output permissions, and content-free trace
+structure. `scaffold` MUST produce a declarative mapping seam;
+`adapter-execute` MUST execute only that closed mapping contract and MUST NOT
+load or execute customer Python. Analysis MUST emit content-free phase receipts
+without changing the one-final-stdout-receipt contract and MUST project a safe
+retained semantic failure code, stage, closed class, and optional HTTP status.
+One shared provider attempt MUST be counted once when the same configured model
+fills both semantic roles. Plugin `0.1.2` MUST keep Codex and Claude on one
+canonical skill whose every command uses exact `triana-preview==0.1.0a2` via
+`uvx`. The complete acceptance boundary is
+`internal/TRIANA_SELF_SERVE_PYTHON_ONBOARDING_2026-08-11.md`.
 
 ### Behavior Map historical projection
 
@@ -131,6 +184,17 @@ or receive multiple terminal rows. Semantic membership IDs absent from the
 exact first-level or hierarchy input MUST be rejected, typed, counted, and
 contribute zero support. Ordinary unassigned behavior is reported independently
 of vague or generic-label rejection.
+
+If an eligible occurrence is claimed by more than one pattern, deterministic
+projection MUST detach it from every claimant rather than choose a semantic
+winner by ordering. The occurrence MUST contribute zero support and receive
+exactly one typed `INTENTIONALLY_UNASSIGNED` disposition with reason
+`PATTERN_OCCURRENCE_MEMBERSHIP_DUPLICATE`. The report MUST retain all rejected
+claimant IDs and before/after membership custody. Only affected claimant
+patterns are reidentified and have support/visibility recomputed under existing
+thresholds; unrelated pattern rows and audit lineage MUST remain exactly
+unchanged. Any duplicate surviving this projection remains a publication
+refusal.
 
 `behavior_patterns` is a custody collection, not an active-only list. A
 `SUPPORTED` pattern may contribute active membership/support. A pattern with
