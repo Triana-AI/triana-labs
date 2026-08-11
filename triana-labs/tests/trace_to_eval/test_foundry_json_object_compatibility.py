@@ -11,7 +11,10 @@ from typing import Any, ClassVar
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel
+from triana_labs.trace_to_eval.semantic import (
+    FoundryStructuredSemanticModel,
+    SemanticRunReservationLedger,
+)
 
 
 class _RequestedResult(BaseModel):
@@ -234,6 +237,49 @@ def test_configured_minimum_call_interval_paces_without_changing_attempt_account
     assert lineage["min_call_interval_seconds"] == 5
 
 
+def test_paced_provider_failure_has_no_internal_sleep_retry_or_fallback(
+    fake_chat_openai: type[_FakeChatOpenAI],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_chat_openai.next_result = RuntimeError("synthetic throttling detail")
+    model = FoundryStructuredSemanticModel(
+        model_id="synthetic-luna",
+        endpoint="https://primary.example.invalid/openai/v1",
+        api_key="synthetic-test-key",
+        min_call_interval_seconds=20.0,
+    )
+    events: list[tuple[str, float]] = []
+    original_invoke = fake_chat_openai.invoke
+
+    def fake_monotonic() -> float:
+        return 100.0
+
+    def forbidden_sleep(seconds: float) -> None:
+        events.append(("sleep", seconds))
+
+    def observing_invoke(
+        self: _FakeChatOpenAI, messages: list[_Message]
+    ) -> _RawResponse:
+        events.append(("invoke", 100.0))
+        return original_invoke(self, messages)
+
+    monkeypatch.setattr(time, "monotonic", fake_monotonic)
+    monkeypatch.setattr(time, "sleep", forbidden_sleep)
+    monkeypatch.setattr(fake_chat_openai, "invoke", observing_invoke)
+
+    with pytest.raises(ValueError, match="^SEMANTIC_PROVIDER_CALL_FAILED$"):
+        _complete(model, stage="semantic-run-0/user-populations-0000")
+
+    assert events == [("invoke", 100.0)]
+    assert len(fake_chat_openai.instances) == 1
+    assert len(fake_chat_openai.instances[0].invoke_calls) == 1
+    lineage = model.lineage()
+    assert lineage["attempted_call_count"] == 1
+    assert lineage["successful_call_count"] == 0
+    assert lineage["retry_policy"] == "NONE"
+    assert lineage["fallback_policy"] == "NONE"
+
+
 def test_openai_v1_json_object_wire_includes_requested_schema_and_accounts_usage(
     fake_chat_openai: type[_FakeChatOpenAI],
 ) -> None:
@@ -355,6 +401,119 @@ def test_local_budget_refusal_is_not_recorded_as_a_provider_attempt() -> None:
     assert lineage["budget"]["reserved_usd"] == 0.0
     assert lineage["budget"]["reserved_usd"] <= lineage["budget"]["max_reserved_usd"]
     assert model.failure_diagnostic() == {
+        "code": "SEMANTIC_BUDGET_EXCEEDED",
+        "phase": "LOCAL_BUDGET_PREFLIGHT",
+        "http_category": None,
+        "http_status": None,
+        "finish_reason": None,
+        "schema_path": None,
+        "truncation_state": "NOT_APPLICABLE",
+        "response_sha256": None,
+        "retryable": False,
+        "provider_attempted": False,
+    }
+
+
+def test_run_wide_oversized_request_is_not_misreported_or_reserved_as_budget(
+    fake_chat_openai: type[_FakeChatOpenAI],
+) -> None:
+    ledger = SemanticRunReservationLedger(max_total_reserved_usd=200.0)
+    model = FoundryStructuredSemanticModel(
+        model_id="synthetic-primary",
+        endpoint="https://primary.example.invalid/openai/v1",
+        api_key="synthetic-primary-key",
+        max_request_bytes=1,
+        reservation_usd_per_call=60.0,
+        reservation_ledger=ledger,
+    )
+
+    with pytest.raises(ValueError, match="^SEMANTIC_REQUEST_TOO_LARGE$"):
+        _complete(model, stage="semantic-run-0/preflight-schema")
+
+    assert fake_chat_openai.instances == []
+    assert ledger.total_attempted_call_count == 0
+    assert ledger.total_reserved_usd == 0.0
+    lineage = model.lineage()
+    assert lineage["attempted_call_count"] == 0
+    assert lineage["successful_call_count"] == 0
+    assert lineage["budget"]["total_attempted_call_count"] == 0
+    assert lineage["budget"]["total_reserved_usd"] == 0.0
+    assert lineage["retry_policy"] == "NONE"
+    assert lineage["fallback_policy"] == "NONE"
+    assert model.failure_diagnostic() == {
+        "code": "SEMANTIC_REQUEST_TOO_LARGE",
+        "phase": "LOCAL_REQUEST_PREFLIGHT",
+        "http_category": None,
+        "http_status": None,
+        "finish_reason": None,
+        "schema_path": None,
+        "truncation_state": "NOT_APPLICABLE",
+        "response_sha256": None,
+        "retryable": False,
+        "provider_attempted": False,
+    }
+
+
+def test_run_wide_ledger_accounts_both_roles_and_refuses_only_crossing_call(
+    fake_chat_openai: type[_FakeChatOpenAI],
+) -> None:
+    """A single deterministic ledger owns all preflight and role reservations."""
+
+    from triana_labs.trace_to_eval import semantic as semantic_module
+
+    fake_chat_openai.next_result = _RawResponse('{"label":"observed","count":2}')
+    ledger_type = semantic_module.SemanticRunReservationLedger
+    ledger = ledger_type(max_total_reserved_usd=200.0)
+    primary = FoundryStructuredSemanticModel(
+        model_id="synthetic-primary",
+        endpoint="https://primary.example.invalid/openai/v1",
+        api_key="synthetic-primary-key",
+        max_calls=1,
+        max_reserved_usd=1.0,
+        reservation_usd_per_call=60.0,
+        reservation_ledger=ledger,
+    )
+    auditor = FoundryStructuredSemanticModel(
+        model_id="synthetic-auditor",
+        endpoint="https://audit.example.invalid/openai/v1",
+        api_key="synthetic-audit-key",
+        max_calls=1,
+        max_reserved_usd=1.0,
+        reservation_usd_per_call=19.0,
+        reservation_ledger=ledger,
+    )
+
+    for stage in (
+        "semantic-run-0/preflight-contract",
+        "semantic-run-0/preflight-privacy",
+        "semantic-run-0/preflight-schema",
+    ):
+        assert _complete(primary, stage=stage) == {"label": "observed", "count": 2}
+    assert _complete(auditor, stage="semantic-run-0/semantic-audit-population-0") == {
+        "label": "observed",
+        "count": 2,
+    }
+
+    assert len(fake_chat_openai.instances) == 4
+    primary_lineage = primary.lineage()
+    audit_lineage = auditor.lineage()
+    for lineage in (primary_lineage, audit_lineage):
+        assert lineage["budget"]["scope"] == "RUN_WIDE"
+        assert lineage["budget"]["max_total_reserved_usd"] == 200.0
+        assert lineage["budget"]["total_reserved_usd"] == 199.0
+        assert lineage["budget"]["total_attempted_call_count"] == 4
+        assert lineage["retry_policy"] == "NONE"
+        assert lineage["fallback_policy"] == "NONE"
+    assert primary_lineage["attempted_call_count"] == 3
+    assert audit_lineage["attempted_call_count"] == 1
+
+    with pytest.raises(ValueError, match="^SEMANTIC_BUDGET_EXCEEDED$"):
+        _complete(auditor, stage="semantic-run-0/semantic-audit-pattern-1")
+
+    assert len(fake_chat_openai.instances) == 4
+    assert auditor.lineage()["attempted_call_count"] == 1
+    assert auditor.lineage()["budget"]["total_reserved_usd"] == 199.0
+    assert auditor.failure_diagnostic() == {
         "code": "SEMANTIC_BUDGET_EXCEEDED",
         "phase": "LOCAL_BUDGET_PREFLIGHT",
         "http_category": None,

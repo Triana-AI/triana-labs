@@ -70,6 +70,25 @@ class StagedSemanticModel(Protocol):
 
 
 @dataclass(slots=True)
+class SemanticRunReservationLedger:
+    """Own one conservative emergency reservation ceiling for a semantic run."""
+
+    max_total_reserved_usd: float
+    total_attempted_call_count: int = 0
+    total_reserved_usd: float = 0.0
+
+    def reserve(self, reservation_usd: float) -> bool:
+        """Reserve one provider attempt unless it would cross the run ceiling."""
+
+        next_total = round(self.total_reserved_usd + reservation_usd, 10)
+        if next_total > self.max_total_reserved_usd:
+            return False
+        self.total_attempted_call_count += 1
+        self.total_reserved_usd = next_total
+        return True
+
+
+@dataclass(slots=True)
 class ValidatedCheckpointSemanticModel:
     """Persist and reuse only exact-identity, strict-schema-valid stage results."""
 
@@ -256,6 +275,7 @@ class FoundryStructuredSemanticModel:
     min_call_interval_seconds: float = 0
     max_reserved_usd: float = 25.0
     reservation_usd_per_call: float = 0.15
+    reservation_ledger: SemanticRunReservationLedger | None = None
     last_failure_code: str | None = None
     deployment_version: str | None = None
     sku: str | None = None
@@ -351,11 +371,30 @@ class FoundryStructuredSemanticModel:
             separators=(",", ":"),
             sort_keys=True,
         )
-        if (
+        request_too_large = (
+            len(request_content.encode("utf-8")) > self.max_request_bytes
+        )
+        lane_budget_exceeded = self.reservation_ledger is None and (
             self.attempted_call_count >= self.max_calls
-            or len(request_content.encode("utf-8")) > self.max_request_bytes
             or (self.attempted_call_count + 1) * self.reservation_usd_per_call
             > self.max_reserved_usd
+        )
+        if request_too_large:
+            self._record_failure_diagnostic(
+                "SEMANTIC_REQUEST_TOO_LARGE",
+                phase="LOCAL_REQUEST_PREFLIGHT",
+                provider_attempted=False,
+            )
+            raise ValueError("SEMANTIC_REQUEST_TOO_LARGE")
+        if lane_budget_exceeded:
+            self._record_failure_diagnostic(
+                "SEMANTIC_BUDGET_EXCEEDED",
+                phase="LOCAL_BUDGET_PREFLIGHT",
+                provider_attempted=False,
+            )
+            raise ValueError("SEMANTIC_BUDGET_EXCEEDED")
+        if self.reservation_ledger is not None and not self.reservation_ledger.reserve(
+            self.reservation_usd_per_call
         ):
             self._record_failure_diagnostic(
                 "SEMANTIC_BUDGET_EXCEEDED",
@@ -503,6 +542,49 @@ class FoundryStructuredSemanticModel:
 
     def lineage(self) -> JsonObject:
         endpoint = urlsplit(self.endpoint)
+        if self.reservation_ledger is None:
+            budget: JsonObject = {
+                "max_calls": self.max_calls,
+                "max_request_bytes_per_call": self.max_request_bytes,
+                "max_output_tokens_per_call": self.max_output_tokens_per_call,
+                "extraction_max_output_tokens_per_call": (
+                    self.extraction_max_output_tokens_per_call
+                ),
+                "consolidation_max_output_tokens_per_call": (
+                    self.consolidation_max_output_tokens_per_call
+                ),
+                "max_reserved_usd": self.max_reserved_usd,
+                "reservation_usd_per_call": self.reservation_usd_per_call,
+                "reserved_usd": round(
+                    self.attempted_call_count * self.reservation_usd_per_call, 2
+                ),
+                "reservation_method": "FIXED_PER_CALL_CONSERVATIVE_UPPER_BOUND",
+            }
+        else:
+            budget = {
+                "scope": "RUN_WIDE",
+                "max_total_reserved_usd": self.reservation_ledger.max_total_reserved_usd,
+                "total_reserved_usd": round(
+                    self.reservation_ledger.total_reserved_usd, 2
+                ),
+                "total_attempted_call_count": (
+                    self.reservation_ledger.total_attempted_call_count
+                ),
+                "max_calls": self.max_calls,
+                "max_request_bytes_per_call": self.max_request_bytes,
+                "max_output_tokens_per_call": self.max_output_tokens_per_call,
+                "extraction_max_output_tokens_per_call": (
+                    self.extraction_max_output_tokens_per_call
+                ),
+                "consolidation_max_output_tokens_per_call": (
+                    self.consolidation_max_output_tokens_per_call
+                ),
+                "reservation_usd_per_call": self.reservation_usd_per_call,
+                "reserved_usd": round(
+                    self.attempted_call_count * self.reservation_usd_per_call, 2
+                ),
+                "reservation_method": "RUN_WIDE_CONSERVATIVE_UPPER_BOUND",
+            }
         return {
             "provider": self.provider,
             "model_id": self.model_id,
@@ -519,23 +601,7 @@ class FoundryStructuredSemanticModel:
             "min_call_interval_seconds": self.min_call_interval_seconds,
             "cost_usd": None,
             "actual_cost_state": "UNKNOWN_PROVIDER_PRICING",
-            "budget": {
-                "max_calls": self.max_calls,
-                "max_request_bytes_per_call": self.max_request_bytes,
-                "max_output_tokens_per_call": self.max_output_tokens_per_call,
-                "extraction_max_output_tokens_per_call": (
-                    self.extraction_max_output_tokens_per_call
-                ),
-                "consolidation_max_output_tokens_per_call": (
-                    self.consolidation_max_output_tokens_per_call
-                ),
-                "max_reserved_usd": self.max_reserved_usd,
-                "reservation_usd_per_call": self.reservation_usd_per_call,
-                "reserved_usd": round(
-                    self.attempted_call_count * self.reservation_usd_per_call, 2
-                ),
-                "reservation_method": "FIXED_PER_CALL_CONSERVATIVE_UPPER_BOUND",
-            },
+            "budget": budget,
             "last_failure_code": self.last_failure_code,
             "retry_policy": "NONE",
             "fallback_policy": "NONE",
@@ -990,6 +1056,7 @@ def run_staged_analysis(
 
 __all__ = [
     "FoundryStructuredSemanticModel",
+    "SemanticRunReservationLedger",
     "StagedSemanticModel",
     "run_staged_analysis",
 ]
