@@ -27,7 +27,7 @@ triana_frozen_hash="$(
     | shasum -a 256 \
     | awk '{print $1}'
 )"
-triana_expected_hash="59ab9cddbbb298e166576b80eb4db90522426a659d32a285549a58cdbb1c3362"
+triana_expected_hash="7192bdf57e2f27ec0be889823bd2995ee7c2a00ef8309f6288ff26f57eb5a51c"
 if [[ "${triana_frozen_hash}" != "${triana_expected_hash}" ]]; then
   echo "frozen acceptance hash mismatch" >&2
   exit 1

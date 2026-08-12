@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Literal, Protocol, cast
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
 JsonObject = dict[str, Any]
 
@@ -67,6 +67,25 @@ class StagedSemanticModel(Protocol):
     ) -> JsonObject: ...
 
     def lineage(self) -> JsonObject: ...
+
+
+@dataclass(slots=True)
+class SemanticRunReservationLedger:
+    """Own one conservative emergency reservation ceiling for a semantic run."""
+
+    max_total_reserved_usd: float
+    total_attempted_call_count: int = 0
+    total_reserved_usd: float = 0.0
+
+    def reserve(self, reservation_usd: float) -> bool:
+        """Reserve one provider attempt unless it would cross the run ceiling."""
+
+        next_total = round(self.total_reserved_usd + reservation_usd, 10)
+        if next_total > self.max_total_reserved_usd:
+            return False
+        self.total_attempted_call_count += 1
+        self.total_reserved_usd = next_total
+        return True
 
 
 @dataclass(slots=True)
@@ -256,12 +275,49 @@ class FoundryStructuredSemanticModel:
     min_call_interval_seconds: float = 0
     max_reserved_usd: float = 25.0
     reservation_usd_per_call: float = 0.15
+    reservation_ledger: SemanticRunReservationLedger | None = None
     last_failure_code: str | None = None
     deployment_version: str | None = None
     sku: str | None = None
     capacity: int | None = None
     credential_boundary_id: str | None = None
     _last_attempt_started_at: float | None = field(default=None, init=False, repr=False)
+    _failure: JsonObject | None = field(default=None, init=False, repr=False)
+
+    def _record_failure_diagnostic(
+        self,
+        code: str,
+        *,
+        phase: str,
+        provider_attempted: bool,
+        http_category: str | None = None,
+        http_status: int | None = None,
+        finish_reason: str | None = None,
+        schema_path: str | None = None,
+        truncation_state: str = "NOT_APPLICABLE",
+        response_sha256: str | None = None,
+        retryable: bool = False,
+    ) -> None:
+        """Retain only a fixed, content-free description of the latest failure."""
+
+        self.last_failure_code = code
+        self._failure = {
+            "code": code,
+            "phase": phase,
+            "http_category": http_category,
+            "http_status": http_status,
+            "finish_reason": finish_reason,
+            "schema_path": schema_path,
+            "truncation_state": truncation_state,
+            "response_sha256": response_sha256,
+            "retryable": retryable,
+            "provider_attempted": provider_attempted,
+        }
+
+    def failure_diagnostic(self) -> JsonObject | None:
+        """Return a copy of the safe diagnostic envelope, never provider content."""
+
+        return dict(self._failure) if self._failure is not None else None
 
     @classmethod
     def from_environment(
@@ -315,14 +371,39 @@ class FoundryStructuredSemanticModel:
             separators=(",", ":"),
             sort_keys=True,
         )
-        if (
+        request_too_large = (
+            len(request_content.encode("utf-8")) > self.max_request_bytes
+        )
+        lane_budget_exceeded = self.reservation_ledger is None and (
             self.attempted_call_count >= self.max_calls
-            or len(request_content.encode("utf-8")) > self.max_request_bytes
             or (self.attempted_call_count + 1) * self.reservation_usd_per_call
             > self.max_reserved_usd
+        )
+        if request_too_large:
+            self._record_failure_diagnostic(
+                "SEMANTIC_REQUEST_TOO_LARGE",
+                phase="LOCAL_REQUEST_PREFLIGHT",
+                provider_attempted=False,
+            )
+            raise ValueError("SEMANTIC_REQUEST_TOO_LARGE")
+        if lane_budget_exceeded:
+            self._record_failure_diagnostic(
+                "SEMANTIC_BUDGET_EXCEEDED",
+                phase="LOCAL_BUDGET_PREFLIGHT",
+                provider_attempted=False,
+            )
+            raise ValueError("SEMANTIC_BUDGET_EXCEEDED")
+        if self.reservation_ledger is not None and not self.reservation_ledger.reserve(
+            self.reservation_usd_per_call
         ):
+            self._record_failure_diagnostic(
+                "SEMANTIC_BUDGET_EXCEEDED",
+                phase="LOCAL_BUDGET_PREFLIGHT",
+                provider_attempted=False,
+            )
             raise ValueError("SEMANTIC_BUDGET_EXCEEDED")
         self.attempted_call_count += 1
+        self._failure = None
         stage_name = stage.rsplit("/", maxsplit=1)[-1]
         if stage_name.startswith("demand-episodes-and-agent-behaviors-"):
             max_completion_tokens = self.extraction_max_output_tokens_per_call
@@ -361,8 +442,26 @@ class FoundryStructuredSemanticModel:
                     HumanMessage(content=request_content),
                 ]
             )
-        except Exception:  # noqa: BLE001 - redact the provider boundary.
-            self.last_failure_code = "SEMANTIC_PROVIDER_CALL_FAILED"
+        except Exception as error:  # noqa: BLE001 - redact the provider boundary.
+            status = getattr(error, "status_code", None)
+            response = getattr(error, "response", None)
+            if status is None:
+                status = getattr(response, "status_code", None)
+            status = (
+                status
+                if isinstance(status, int) and not isinstance(status, bool)
+                else None
+            )
+            self._record_failure_diagnostic(
+                "SEMANTIC_PROVIDER_CALL_FAILED",
+                phase="PROVIDER_CALL",
+                provider_attempted=True,
+                http_category=(
+                    "HTTP_ERROR_RESPONSE" if status is not None else "TRANSPORT_ERROR"
+                ),
+                http_status=status,
+                retryable=bool(status == 429 or (status is not None and status >= 500)),
+            )
             raise ValueError("SEMANTIC_PROVIDER_CALL_FAILED") from None
 
         usage = getattr(raw, "usage_metadata", None)
@@ -370,24 +469,122 @@ class FoundryStructuredSemanticModel:
             self.input_tokens += int(usage.get("input_tokens", 0) or 0)
             self.output_tokens += int(usage.get("output_tokens", 0) or 0)
         content = getattr(raw, "content", None)
+        response_metadata = getattr(raw, "response_metadata", None)
+        finish_reason = (
+            response_metadata.get("finish_reason")
+            if isinstance(response_metadata, dict)
+            and isinstance(response_metadata.get("finish_reason"), str)
+            else None
+        )
         if not isinstance(content, str) or not content.strip():
-            self.last_failure_code = "SEMANTIC_RESPONSE_CONTENT_MISSING"
+            self._record_failure_diagnostic(
+                "SEMANTIC_RESPONSE_CONTENT_MISSING",
+                phase="RESPONSE_CONTENT_VALIDATION",
+                provider_attempted=True,
+                http_category="SUCCESS_RESPONSE",
+                http_status=200,
+                finish_reason=finish_reason,
+                truncation_state=(
+                    "OUTPUT_TRUNCATED" if finish_reason == "length" else "NOT_OBSERVED"
+                ),
+            )
             raise ValueError("SEMANTIC_RESPONSE_CONTENT_MISSING")
+        response_sha256 = (
+            "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+        )
+        truncation_state = (
+            "OUTPUT_TRUNCATED" if finish_reason == "length" else "NOT_OBSERVED"
+        )
         try:
             decoded = json.loads(content)
         except json.JSONDecodeError:
-            self.last_failure_code = "SEMANTIC_RESPONSE_JSON_INVALID"
+            self._record_failure_diagnostic(
+                "SEMANTIC_RESPONSE_JSON_INVALID",
+                phase="RESPONSE_JSON_DECODING",
+                provider_attempted=True,
+                http_category="SUCCESS_RESPONSE",
+                http_status=200,
+                finish_reason=finish_reason,
+                truncation_state=truncation_state,
+                response_sha256=response_sha256,
+            )
             raise ValueError("SEMANTIC_RESPONSE_JSON_INVALID") from None
         try:
             parsed = schema.model_validate(decoded, strict=True)
-        except (TypeError, ValueError):
-            self.last_failure_code = "SEMANTIC_SCHEMA_INVALID"
+        except (TypeError, ValueError) as error:
+            schema_path = None
+            if isinstance(error, ValidationError):
+                errors = error.errors(include_url=False, include_context=False)
+                if errors:
+                    first_error = errors[0]
+                    if first_error.get("type") == "extra_forbidden":
+                        # An extra key is provider-controlled content. Preserve the
+                        # validation class without persisting that key's name.
+                        schema_path = "SCHEMA_ROOT/EXTRA_FIELD"
+                    else:
+                        location = first_error.get("loc", ())
+                        schema_path = "/" + "/".join(str(part) for part in location)
+            self._record_failure_diagnostic(
+                "SEMANTIC_SCHEMA_INVALID",
+                phase="RESPONSE_SCHEMA_VALIDATION",
+                provider_attempted=True,
+                http_category="SUCCESS_RESPONSE",
+                http_status=200,
+                finish_reason=finish_reason,
+                schema_path=schema_path,
+                truncation_state=truncation_state,
+                response_sha256=response_sha256,
+            )
             raise ValueError("SEMANTIC_SCHEMA_INVALID") from None
         self.call_count += 1
+        self._failure = None
         return parsed.model_dump(mode="json")
 
     def lineage(self) -> JsonObject:
         endpoint = urlsplit(self.endpoint)
+        if self.reservation_ledger is None:
+            budget: JsonObject = {
+                "max_calls": self.max_calls,
+                "max_request_bytes_per_call": self.max_request_bytes,
+                "max_output_tokens_per_call": self.max_output_tokens_per_call,
+                "extraction_max_output_tokens_per_call": (
+                    self.extraction_max_output_tokens_per_call
+                ),
+                "consolidation_max_output_tokens_per_call": (
+                    self.consolidation_max_output_tokens_per_call
+                ),
+                "max_reserved_usd": self.max_reserved_usd,
+                "reservation_usd_per_call": self.reservation_usd_per_call,
+                "reserved_usd": round(
+                    self.attempted_call_count * self.reservation_usd_per_call, 2
+                ),
+                "reservation_method": "FIXED_PER_CALL_CONSERVATIVE_UPPER_BOUND",
+            }
+        else:
+            budget = {
+                "scope": "RUN_WIDE",
+                "max_total_reserved_usd": self.reservation_ledger.max_total_reserved_usd,
+                "total_reserved_usd": round(
+                    self.reservation_ledger.total_reserved_usd, 2
+                ),
+                "total_attempted_call_count": (
+                    self.reservation_ledger.total_attempted_call_count
+                ),
+                "max_calls": self.max_calls,
+                "max_request_bytes_per_call": self.max_request_bytes,
+                "max_output_tokens_per_call": self.max_output_tokens_per_call,
+                "extraction_max_output_tokens_per_call": (
+                    self.extraction_max_output_tokens_per_call
+                ),
+                "consolidation_max_output_tokens_per_call": (
+                    self.consolidation_max_output_tokens_per_call
+                ),
+                "reservation_usd_per_call": self.reservation_usd_per_call,
+                "reserved_usd": round(
+                    self.attempted_call_count * self.reservation_usd_per_call, 2
+                ),
+                "reservation_method": "RUN_WIDE_CONSERVATIVE_UPPER_BOUND",
+            }
         return {
             "provider": self.provider,
             "model_id": self.model_id,
@@ -404,23 +601,7 @@ class FoundryStructuredSemanticModel:
             "min_call_interval_seconds": self.min_call_interval_seconds,
             "cost_usd": None,
             "actual_cost_state": "UNKNOWN_PROVIDER_PRICING",
-            "budget": {
-                "max_calls": self.max_calls,
-                "max_request_bytes_per_call": self.max_request_bytes,
-                "max_output_tokens_per_call": self.max_output_tokens_per_call,
-                "extraction_max_output_tokens_per_call": (
-                    self.extraction_max_output_tokens_per_call
-                ),
-                "consolidation_max_output_tokens_per_call": (
-                    self.consolidation_max_output_tokens_per_call
-                ),
-                "max_reserved_usd": self.max_reserved_usd,
-                "reservation_usd_per_call": self.reservation_usd_per_call,
-                "reserved_usd": round(
-                    self.attempted_call_count * self.reservation_usd_per_call, 2
-                ),
-                "reservation_method": "FIXED_PER_CALL_CONSERVATIVE_UPPER_BOUND",
-            },
+            "budget": budget,
             "last_failure_code": self.last_failure_code,
             "retry_policy": "NONE",
             "fallback_policy": "NONE",
@@ -875,6 +1056,7 @@ def run_staged_analysis(
 
 __all__ = [
     "FoundryStructuredSemanticModel",
+    "SemanticRunReservationLedger",
     "StagedSemanticModel",
     "run_staged_analysis",
 ]

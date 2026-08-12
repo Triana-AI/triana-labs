@@ -2606,3 +2606,1381 @@ orchestrator budget. No dependency, prompt, provider adapter, retry/fallback,
 threshold, UI, deployment, provenance, accepted baseline, or accepted private
 artifact changed. The existing `internal/WORKING_MEMORY.md` modification is a
 preserved pre-slice user change and is excluded from this slice.
+
+## TRIANA-ONBOARD-AGENT-SKILL-V0 — 2026-08-10
+
+### Entry gate and active outcome
+
+This slice advances the invite-only Triana Preview distribution by making its
+existing PreviewTrace boundary self-serve from both Codex and Claude Code. The
+canonical base is `8ee68fb02b37c638f86b4f4cb84667295a6e1bf8` on
+`codex/triana-preview-local`. The pre-existing user modification to
+`internal/WORKING_MEMORY.md` remains outside the slice and must not be edited,
+staged, or committed.
+
+Input is an operator-authorized local trace path plus a one-to-three-line agent
+description. Output is either a validated PreviewTrace JSONL file and a
+digest-pinned local Triana Preview invocation, or a precise typed refusal. One
+canonical Agent Skills-compatible `SKILL.md` owns the workflow. Codex consumes
+that skill directly; a thin Claude Code plugin and marketplace manifest expose
+the same skill without duplicating instructions or adapter logic.
+
+Deterministic scripts own structural inspection, scaffold identity, exact
+PreviewTrace validation, line accounting, role/event validation, source/output
+custody checks, release-manifest validation, and Docker command construction.
+The coding agent may inspect the customer's local schema and fill the bounded
+adapter seam. It may not invent missing roles, message text, tool linkage,
+timestamps, or authorization. The human owns trace authorization, agent
+description, provider credentials, private-image access, and the decision to
+run. The private `triana-preview` image remains the sole Behavior Map engine.
+
+Privacy is local-only. Inspection emits structural field/type summaries and
+counts, never raw message values. Adapter output remains local. No provider
+call, registry publication, image push, hosted upload, telemetry, deployment,
+or customer-data egress is authorized. The public package may contain only
+clean-room instructions, deterministic standard-library scripts, synthetic
+fixtures, and metadata; it contains no Behavior Map semantics or private image
+credentials.
+
+### Public behavior and refusal contract
+
+The package root is `triana-skills/`, ready for later extraction into a public
+repository. It contains a Claude marketplace at
+`.claude-plugin/marketplace.json` and one plugin at `plugins/triana/`. The
+plugin's single canonical skill lives at `skills/onboard/SKILL.md`; its
+`agents/openai.yaml` is Codex UI metadata and its `.claude-plugin/plugin.json`
+is Claude Code metadata. Claude installs it as `triana@triana-skills` and
+invokes `/triana:onboard`; Codex installs or reads the exact same skill folder.
+
+The onboarding workflow must:
+
+1. require explicit customer authorization before reading a trace source;
+2. inspect only local regular files and emit a value-free structural summary;
+3. accept already-valid PreviewTrace JSONL unchanged;
+4. otherwise copy a bounded adapter template for the coding agent to complete;
+5. validate the resulting JSONL line-by-line against the published PreviewTrace
+   v1 envelope and refuse invented, invalid, or empty output;
+6. render at most three locally redacted, readable validation previews;
+7. validate a release manifest containing an immutable image digest and refuse
+   unpublished or mutable image references;
+8. construct the local read-only-input/private-output Docker invocation without
+   logging credentials or executing it unless the operator explicitly does so.
+
+Typed refusal codes include at minimum `TRACE_AUTHORIZATION_REQUIRED`,
+`TRACE_SOURCE_UNSAFE`, `TRACE_SOURCE_INVALID`, `ADAPTER_OUTPUT_INVALID`,
+`PREVIEWTRACE_INVALID`, `RELEASE_UNPUBLISHED`, and
+`RELEASE_IMAGE_NOT_DIGEST_PINNED`. Unknown schemas remain a scaffolded local
+task, not a pass. No fallback adapter, provider retry, upload, or public-image
+substitution exists.
+
+### Frozen change budget and role ownership
+
+- Independent test author only: `triana-skills/tests/**` and synthetic fixtures
+  under that path. It may not edit production, skill instructions, manifests,
+  docs, or existing Preview/Labs code.
+- Independent implementation author only: `triana-skills/**` excluding
+  `triana-skills/tests/**`. It may add only Python standard-library scripts and
+  static metadata/assets; no dependency or lockfile is permitted.
+- Orchestrator only: this slice entry; the smallest accepted amendments to
+  `triana-labs/CHARTER.md`, `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`, and the
+  append-only `internal/DECISION_LOG.md`; ignored decision memory.
+- Final verifier is read-only.
+
+Explicitly untouched: `triana-labs/src/**`, `triana-labs/tests/**`,
+`triana-preview/src/**`, `triana-preview/tests/**`, provider adapters, prompts,
+thresholds, Docker images, registry/cloud state, website/UI, accepted Blitz
+artifacts, provenance allowlists, and `internal/WORKING_MEMORY.md`. Maximum
+scope expansion is zero without orchestrator reconciliation and any material
+privacy/repository expansion returns to the owner.
+
+### Independent acceptance contract
+
+Black-box tests must prove: one canonical skill body serves both agent
+surfaces; Claude plugin/marketplace metadata validates and resolves the skill;
+Codex metadata exists beside the same skill; authorization refusal precedes
+trace access; structural inspection leaks no source values; valid
+PreviewTrace passes byte-stably; invalid roles, duplicate IDs, malformed JSON,
+empty sources, symlinks, and unsafe output paths refuse; scaffolding never
+overwrites; preview output is bounded and redacted; unpublished or unpinned
+release metadata refuses; a pinned release produces a Docker command with
+read-only input, private output, no embedded token, and the exact image digest;
+Codex and Claude workflows produce the same validator result and adapter
+contract. Tests use only synthetic fixtures and make zero provider, network,
+Docker, or registry calls.
+
+The exact RED command is `python -m unittest discover -s
+triana-skills/tests -p 'test_*.py' -v`. Final verification repeats that command,
+runs every bundled script's help/validation path, validates JSON and YAML-like
+metadata without network, checks `git diff --check`, reconciles the change
+budget, and confirms the existing Preview suite remains GREEN. A later image
+publication and website release require separate owner authorization.
+
+### Independent RED freeze
+
+The independent test author froze `triana-skills/tests/test_onboard_skill.py`
+at SHA-256
+`06071529585390dc5184f1c7d1e4cf828adaa7656253abe69e1becaed68185e0`
+plus ten synthetic fixture hashes recorded in the test-author handoff. The
+orchestrator reproduced 13 collected failures with valid test collection and
+syntax. All failures are caused by the missing canonical skill, Claude
+marketplace/plugin metadata, Codex metadata, and deterministic onboarding
+script; no production implementation exists on the canonical base. Ruff and
+diff checks are GREEN. These test-owned bytes are frozen for the implementation
+author.
+
+Independent read-only verification blocked the preliminary GREEN because the
+standalone validator was fixture-compatible but not equivalent to the
+canonical Labs PreviewTrace v1 contract, and structural inspection exposed
+arbitrary dynamic object keys verbatim. The original 13-test freeze remains as
+controls. The superseding conformance test
+`triana-skills/tests/test_previewtrace_conformance.py` is frozen at SHA-256
+`aac58aade3798d2df038d37f4521f2a377133703d2791efacd52d1828a6453a8`
+with dynamic-key fixture SHA-256
+`fc9306b92b55b2745947aa134667bc854d7c630c954810aec253954c8927c271`.
+The orchestrator reproduces 13 controls GREEN and 23 focused RED covering
+closed schemas, exact ID/text/JSON/event/relationship domains, valid optional
+user/terminal shapes, and dynamic-key privacy. Implementation may change only
+the existing `triana-skills` production paths and must not weaken the canonical
+contract or expose dynamic keys.
+
+The first conformance freeze contained one no-op duplicate-key mutation because
+sorted canonical JSON placed `trace_id` last without the searched trailing
+comma. The independent test author confirmed the contradiction, changed only
+that construction to duplicate the present `source_trace_id` key, and added an
+explicit non-equality assertion. Test SHA-256
+`f074771ab04144ba776613f7bf612fcd053a877d4912d4b238dbaa91b2ea025e`
+supersedes `aac58aade3798d2df038d37f4521f2a377133703d2791efacd52d1828a6453a8`;
+the dynamic-key fixture hash is unchanged. Semantic strength remains strict
+duplicate-key refusal.
+
+Second read-only adversarial verification found four remaining canonical drift
+cases outside the first panel: CR-only separators, mixed corpus privacy
+classes, and unhashable `privacy_class`/`event_kind` discriminators. It also
+proved the public adapter reference omitted necessary closed-contract facts.
+The independent test author reproduced all four and froze the superseding
+`test_previewtrace_conformance.py` SHA-256
+`d1e62d5ee11a46023d8e45843e910086c9d257cfe6a02b945deba88ade81b347`.
+The exact suite has 20 methods: all prior 18 controls GREEN and 13 focused
+failures covering the four runtime boundaries plus public-reference
+completeness. Implementation remains limited to existing `triana-skills`
+production paths.
+
+The test author then removed wording-only coupling from the static reference
+assertions while preserving the same semantic requirements. SHA-256
+`a0e484dbcaf986304beb8918ed222e9d8194b00f0f5874f1e753bbff6513e931`
+supersedes `d1e62d5ee11a46023d8e45843e910086c9d257cfe6a02b945deba88ade81b347`;
+the four runtime RED are unchanged.
+
+Final read-only verification found one shared totality defect: a valid JSON
+array/object in `terminal_state` reaches set membership and raises uncaught
+`TypeError` in both the public validator and canonical Labs contract instead of
+a typed schema refusal. This is a necessary mechanical contract repair, not a
+semantic or product expansion. The change budget expands narrowly:
+
+- independent test author may add the smallest regression to
+  `triana-skills/tests/test_previewtrace_conformance.py` and
+  `triana-labs/tests/acceptance/test_observe_rejections.py`, plus a four-line
+  agent-description refusal in `triana-skills/tests/test_onboard_skill.py`;
+- implementation author may type-guard terminal state in only
+  `triana-skills/plugins/triana/skills/onboard/scripts/onboard.py` and
+  `triana-labs/src/triana_labs/contracts/traces.py`.
+
+The public agent-description contract is also clarified as one to three
+non-empty lines and at most 2,000 UTF-8 bytes, with typed
+`AGENT_DESCRIPTION_INVALID` refusal. No other Labs or onboarding surface may
+change.
+
+The final narrow test freeze is:
+
+- public conformance: `76a79725fb4fce53aa742d7e3dd4e6d7cddb5b0641471688cac16f24cdf39d24`;
+- onboarding controls: `bd9fc63b388f05ec5bab5ee492beb704455ce8bb8c7d5564a4c39a64290b6ca6`;
+- canonical Labs rejection: `cf56a38661c4db849bfd531a7a2003924149f561614615344de405570f4e817f`.
+
+The test author reproduced two public uncaught terminal-state failures, two
+canonical `INTERNAL_INVARIANT_FAILED` outcomes, and one four-line agent
+description false acceptance. One-to-three-line controls remain GREEN.
+
+### Closure verification and budget reconciliation
+
+The final independent verifier returned PASS against the three final frozen
+test hashes. The orchestrator reproduced 22/22 onboarding tests, 69/69
+canonical trace-rejection tests, and 15/15 existing Preview tests. The complete
+Labs gate then passed all 893 tests when its localhost-only fake servers were
+allowed to bind; the initial restricted-sandbox run failed only those 30 bind
+attempts with `PermissionError` and passed the other 863 tests.
+
+The authorized two-case addition to
+`triana-labs/tests/acceptance/test_observe_rejections.py` mechanically changed
+the aggregate acceptance hash enforced by `triana-labs/scripts/verify.sh`.
+The independent test author proved that substituting only the HEAD bytes of
+that one test restores the old aggregate exactly. The closure change budget
+therefore expands by exactly `triana-labs/scripts/verify.sh`, solely to replace
+the expected aggregate `59ab9cdd...c3362` with
+`7192bdf5...a51c`. No gate, test selection, or assertion is weakened.
+
+Final scope contains the new `triana-skills/**` package, its independent tests,
+the two-file terminal-state totality repair, this aggregate custody update, and
+the already authorized charter/architecture/contracts/decision documentation.
+`internal/WORKING_MEMORY.md` remains a pre-existing user modification and is
+explicitly excluded. Provider, network, Docker, registry, upload, deployment,
+and customer-data calls were intended to remain zero. The final escalated Labs
+build gate made no provider or customer-data call, but its clean-install step
+downloaded ordinary pinned Python wheels (`openai` and `pydantic-core`) into an
+ephemeral verification environment. This dependency-only network access is an
+unexpected verification side effect and is recorded here rather than being
+misreported as zero egress. Docker, registry, upload, and deployment calls
+remain zero.
+
+### Customer Docker runtime closure — 2026-08-10
+
+Owner authorization to build and exercise the local customer image exposed a
+new falsifiable defect after the prior source/package gates were complete. The
+image `triana-preview:customer-e2e` built successfully as
+`sha256:25b5b33444c6f1a0fd7b909f441e2104bdfd3e79814e8342383eaa0459eebf25`,
+but its first provider-disabled synthetic run failed before product execution:
+the console script raised `ModuleNotFoundError: triana_preview`. Inspection
+showed an editable `triana_preview.pth` pointing at the build-stage source path,
+which is not copied into the final image.
+
+Falsifiable hypothesis: installing the paired packages non-editably into the
+copied runtime environment removes the build-path dependency and makes the
+final non-root image importable without changing product behavior. The narrow
+change budget adds only `triana-preview/Dockerfile` for implementation and
+`triana-preview/tests/test_docker_runtime.py` for the independent acceptance
+contract; this slice record remains orchestrator-owned. No provider, registry,
+deployment, semantic, adapter, prompt, or threshold change is allowed.
+
+The independent test author froze the new test at SHA-256
+`5722ac6219b2a71fc9a756e85e52a962d314c365a1bb41f7253ec4d02cf7dd93`.
+Its static guard requires `uv sync --locked --no-dev --no-editable`; its opt-in
+black-box lane runs the freshly built image with `--network none`, proves the
+package import and help path, then requires the synthetic provider-disabled run
+to exit with the existing typed-gap status, zero provider calls, and a real
+report artifact. Both assertions are RED on the initial image for the exact
+packaging failure above.
+
+The implementation author changed only the frozen Dockerfile sync command to
+add `--no-editable`. The freshly rebuilt local image is
+`triana-preview:customer-e2e` with image ID
+`sha256:848b3d845c391deea54fe6907278c9e7a490d903d01676183b088e42a8d242eb`.
+The orchestrator reproduced the exact opt-in Docker test: 2/2 PASS. The final
+image runs as user `preview`, imports its installed package, exposes the CLI,
+and completes a synthetic run under `--network none` with the expected exit 10
+typed-gap outcome, `provider_calls: 0`, and JSON/Markdown/HTML plus custody
+manifests in a private temporary output. The report ID is
+`sha256:68f3d61a1db3a4561d58a9e22ddaaf1f623dfdbfbc876ebef8b044d1a5dc8d69`.
+
+The owner-authorized image build read pinned base-image metadata from Docker
+Hub/GHCR and downloaded missing pinned Python wheels. Runtime analysis had
+network disabled. No image push, registry mutation, deployment, provider call,
+or customer data was involved. Remote and multi-platform customer execution
+remain unverified until a separately authorized image release.
+
+### P0 customer identity redaction closure — 2026-08-10
+
+The first independent Agentagon customer journey selected 200 authorized ABCD
+conversations, converted and validated all 200 deterministically, reconciled
+4,377 source events into 3,659 message events plus 718 explicitly omitted
+unlinked action events, and matched the local image identity. Docker then
+refused before report publication with `PREVIEW_TRACE_REDACTION_REFUSED`.
+Content-free local diagnosis reproduced the canonical underlying reason as
+`REDACTION_RESIDUAL_IDENTIFIER`: 30 `LONG_NUMBER` residuals, exclusively 15
+`trace_id` plus the corresponding 15 `source_trace_id` occurrences; projected
+message/event residuals were zero.
+
+Falsifiable hypothesis: the redactor currently preserves every top-level
+identity and scans unfamiliar numeric identities as free text. Deterministically
+pseudonymizing only identity values that would otherwise trigger the existing
+identity residual policy will preserve same/distinct relationships, ordinary
+safe and explicitly structured identity behavior, schema validity, and repeated
+output while removing raw customer IDs from published custody. A remaining
+residual refusal can safely expose a specific content-free public code instead
+of the generic redaction refusal.
+
+The independent test author owns only
+`triana-labs/tests/behavior_map/test_redacted_projection_v0.py` and
+`triana-preview/tests/test_preview_cli.py`; final hashes are respectively
+`ce6753371bdc851303a6e0b472ee86dace6bab3e74de1571a0a6225651ff886a` and
+`313dac12a5a51aed0b9cc0d4d40f656def1b300ac8ed8fcf1a91ad90cfade36d`.
+The implementation budget adds only
+`triana-labs/src/triana_labs/behavior_map/redaction.py` and
+`triana-preview/src/triana_preview/cli.py`. The orchestrator may update this
+packet, the minimal canonical contract/architecture description, and append one
+accepted decision. Adapter behavior, event omission policy, semantic prompts,
+providers, thresholds, private Agentagon files, and `internal/WORKING_MEMORY.md`
+remain untouched.
+
+Focused RED proves the numeric/phone-like identity corpus is currently refused
+and the Preview facade collapses a known content-free residual reason. The
+acceptance contract requires deterministic same-to-same/distinct-to-distinct
+pseudonyms, byte-identical replay, valid projected traces, residual category
+counts without a raw mapping, zero raw-ID publication, zero provider calls, and
+`PREVIEW_TRACE_REDACTION_RESIDUAL_IDENTIFIER` only when a residual genuinely
+remains.
+
+The hypothesis was confirmed. The implementation author changed only the two
+frozen production files. Labs now projects only unfamiliar external identities
+whose positive detections are a subset of `PHONE`, `POSTAL_CODE`, and
+`LONG_NUMBER` through the existing stable redactor registry before the
+unchanged residual scan. The Preview facade preserves generic handling for all
+other redaction failures and exposes the exact remaining residual reason.
+During the first implementation attempt, zero-valued `Counter` entries made
+the category predicate falsely fail; the author removed that falsified
+condition and retained only positive detections.
+
+Focused and adjacent verification is GREEN: all 20 Labs redaction tests and all
+17 Preview CLI tests pass; Ruff, formatting, strict mypy, frozen test hashes,
+and diff checks pass. The rebuilt local image
+`triana-preview:customer-e2e` is
+`sha256:0c6995f351f9e5665bc3302325b8c6263970a3913f8784c5279f40cf173b1a95`.
+The exact independent Agentagon corpus then completed under `--network none`:
+200 conversations were accepted, none rejected, provider calls remained zero,
+and report
+`sha256:3f7aa39b436c41c8a07b26d8606c23dfa3a821a928dc92f166b171d373396b8b`
+published seven private local artifacts. Its only analysis gap is the expected
+`SEMANTIC_ANALYSIS_UNAVAILABLE` because this proof intentionally supplied no
+provider. The image build read registry metadata and downloaded missing pinned
+wheels; it did not push, deploy, mutate a registry, or call a model provider.
+The 718 source action events that the customer adapter intentionally omitted
+remain a separate adapter-richness question and were not altered by this P0.
+
+### P0 Preview semantic-egress binding closure — 2026-08-10
+
+The first owner-requested network-enabled customer execution supplied the
+complete published Preview provider environment for Luna primary and Terra
+auditor. Preview wrote `privacy.provider_egress.authorized: true` and both
+model identities, but the engine made zero calls and emitted
+`SEMANTIC_PROVIDER_BINDING_UNAUTHORIZED` for `PRIMARY`. The evidence manifest
+recorded `https://kairos-memory.openai.azure.com` while the model lineage
+recorded `https://kairos-memory.openai.azure.com/openai/v1`; Preview had
+discarded the required OpenAI-v1 base path when deriving the authorization
+binding. Report
+`sha256:415665fece297c02547729bf2a90d155d7ddf16f664a6c1a6c35ebeebc9eb3a1`
+preserves that zero-call refusal at
+`/Users/akarshgajbhiye/agentagon/.triana-onboard/private-output-semantic-20260810/report`.
+
+Falsifiable hypothesis: binding the exact normalized configured base URL,
+including its path, into `provider_egress` will make Preview authorization and
+the semantic client's lineage identical and permit a provider attempt, while
+continuing to reject a changed host, path, model, deployment, SKU, capacity, or
+credential boundary. The repair MUST NOT add a semantic flag, fallback, retry,
+credential inference, or authorization default.
+
+The independent test author may edit only
+`triana-preview/tests/test_preview_cli.py` and, if needed, one bounded fixture
+under `triana-preview/tests/`. The implementation author may edit only
+`triana-preview/src/triana_preview/cli.py`, `triana-preview/README.md`,
+`triana-preview/.env.example`, and the provider-enabled guidance in
+`triana-skills/plugins/triana/skills/onboard/SKILL.md`. The orchestrator owns
+this packet, minimal canonical contract/architecture updates, and one durable
+decision entry. Labs semantics, prompts, thresholds, adapters, raw Agentagon
+files, provider code, dependencies, lockfiles, deployment, public registry,
+and `internal/WORKING_MEMORY.md` remain untouched. Acceptance requires a
+focused deterministic binding regression, the existing Preview suite, a
+rebuilt local image, one bounded real Luna-primary/Terra-auditor execution with
+nonzero attempted primary calls, no fallback/retry, private artifacts, and an
+honest typed outcome. The live execution retains the engine's current maximum
+USD 22.968 conservative reservation ceiling.
+
+The independent test author froze the exact endpoint-path regression at
+SHA-256
+`9677223d700d29d6c0ee344d3d6f5e8e863b440e6d8536737bffd9447abbeb71`.
+It proved RED without providers: `/openai/v1` was absent from the manifest while
+present in synthetic model lineage. The implementation author changed the four
+authorized Preview/guidance files. Preview now trims only trailing `/` and
+binds the complete configured base URL for both roles. The focused regression
+passes, the complete Preview suite passes 19 with one opt-in Docker skip, Ruff
+and strict mypy pass, and the shared onboarding skill validates. No provider
+call, retry, fallback, flag, dependency, or Labs semantic change occurred in
+the implementation-author turn.
+
+The orchestrator rebuilt `triana-preview:customer-e2e` as non-root image
+`sha256:102337e9ea012c6b6720793e8445b17dafcf5cf1e6df36a0b4ce838fa8a2f76e`
+and ran one provider-enabled synthetic smoke at
+`/private/tmp/triana-semantic-egress-smoke-20260810-v1/report`. Report
+`sha256:55e40bccd1d4c4aa6dc298b8d7e955381945c7123cf85a3e73271fc5c063d39d`
+completed with zero gaps: Luna primary attempted and completed 8 calls; Terra
+auditor attempted and completed 7; retry and fallback remained `NONE`; four
+conversations yielded four surviving episodes, three supported populations,
+four behavior occurrences, one supported pattern, and eight evidence records.
+The conservative reservations were USD 1.44 primary and USD 0.504 auditor;
+actual provider cost remains unknown. All seven root report artifacts are mode
+`0600`. The build downloaded missing pinned wheels and read base-image metadata;
+the runtime used provider network egress only. No image push, deployment,
+customer corpus rerun, registry mutation, or customer-data egress occurred.
+
+### Semantic failure transparency and attempt custody — 2026-08-10
+
+The fresh independent ABCD customer run proved transport and model access but
+not usable full-corpus analysis. Its private report
+`sha256:89adbb88e762cde0b3510b8f11ce354cc3fea7be7c0532acc142a3a15ed9bd1b`
+accepted 200 conversations, retained 113 episodes and 209 pattern-eligible
+occurrences, but published zero populations and zero patterns. Luna completed
+80 calls and had 20 visible extraction schema failures; all 10 population and
+18 pattern batches were represented only as generic failed attempts. The
+report exposed 129 primary `attempted_call_count` and USD 23.22 reserved against
+a declared 100-call/USD 18 lane, even though the model object stops before a
+provider call when its lane limit is reached. Failed-attempt artifacts currently
+conflate pre-provider local refusal with actual provider attempts, and later
+checkpoint replay collapses the original safe failure cause into
+`SEMANTIC_ATTEMPT_FAILED`.
+
+Debugging iteration A hypothesis: attempt checkpoints do not retain a safe,
+typed failure envelope or whether provider egress began; historical accounting
+therefore counts local budget refusals as provider attempts and cannot explain
+aggregation failures. Preserve only content-free diagnostic fields: failure
+code and phase, HTTP status/category when present, finish reason, schema path,
+truncation state, response SHA-256, provider-attempted state, and retriability.
+Never persist exception messages, response bodies, prompts, credentials, or
+provider headers. Replayed failures MUST retain the same safe cause and
+provider-attempt accounting MUST not exceed the declared lane.
+
+Debugging iteration B hypothesis: the first full-corpus request is currently
+the first contract check for each semantic stage. Add bounded synthetic
+model-contract preflights for primary extraction, population consolidation, and
+pattern consolidation before customer batches. A failed stage preflight MUST
+stop semantic corpus work with a typed stage-specific gap; a successful
+preflight consumes and records a normal provider attempt and does not contribute
+semantic evidence. No retry or fallback is authorized.
+
+Debugging iteration C hypothesis: rendering derives empty recurring behavior
+from an empty supported-pattern list without considering failed or unexecuted
+pattern stages. Reports MUST distinguish `NO_RECURRING_PATTERN_OBSERVED` only
+after completed eligible analysis from `PATTERN_ANALYSIS_FAILED` or
+`PATTERN_ANALYSIS_UNAVAILABLE`; failed analysis cannot receive a substantive
+zero finding or quality rating.
+
+Frozen change budget: the independent test author may edit only bounded files
+under `triana-labs/tests/behavior_map/` and
+`triana-labs/tests/trace_to_eval/`; the implementation author may edit only
+`triana-labs/src/triana_labs/trace_to_eval/semantic.py`,
+`triana-labs/src/triana_labs/behavior_map/__init__.py`, and
+`triana-labs/src/triana_labs/behavior_map/render.py`, plus one small contract
+module under those existing packages only if required for a typed failure
+object. The orchestrator owns this packet, minimal canonical docs, and an
+append-only durable decision. No prompt wording, schema/grouping threshold,
+adapter, PreviewTrace envelope, provider choice, default budget increase,
+retry/fallback, raw ABCD data, deployment, dependency, lockfile,
+`internal/WORKING_MEMORY.md`, or accepted baseline may change. Acceptance uses
+fake models and synthetic fixtures, then one small non-ABCD live smoke only;
+the full ABCD corpus MUST NOT rerun.
+
+The onboarding unknown-key visibility tradeoff, missing finalized adapter
+validation manifest, and inability to represent 718 unlinked ABCD action
+observations are real follow-on product questions, but they do not explain the
+semantic aggregation failure. They remain explicitly excluded from this repair
+because changing local inspection privacy or the PreviewTrace envelope requires
+separate contracts and evidence.
+
+#### Exit reconciliation
+
+The independent RED contract ultimately covered safe failure persistence and
+replay, local budget refusal accounting, all three preflights, preflight output
+exclusion, stage-aware pattern reporting, upstream failure propagation,
+provider-chosen schema-field privacy, schema-valid empty pattern preflight,
+legacy accounting uncertainty, and exact safe-sentinel checkpoint custody.
+Test-only compatibility changes teach existing fake semantic models to answer
+the new synthetic preflight stages; they do not change corpus expectations.
+
+Implementation changed only the three frozen production files. The structured
+Foundry boundary now records the fixed content-free failure envelope and never
+stores exception text or provider content. Behavior Map checkpoints retain and
+replay that envelope, count only known or conservatively possible provider
+attempts, exclude proved local refusals, and label legacy unknown failure
+history `LOWER_BOUND` with `SEMANTIC_ATTEMPT_ACCOUNTING_UNKNOWN`. Fresh semantic
+work executes extraction, population, and pattern preflights before corpus
+calls; fully satisfied offline replays remain zero-call. Reports distinguish
+`PATTERNS_OBSERVED`, completed `NO_RECURRING_PATTERN_OBSERVED`,
+`PATTERN_ANALYSIS_FAILED`, and `PATTERN_ANALYSIS_UNAVAILABLE`.
+
+Final source SHA-256 values are:
+
+- `behavior_map/__init__.py`:
+  `8c4edc93685223dcbdae3e4f260e155403a23e4dcdb27166480dbcaf7afc88c1`;
+- `behavior_map/render.py`:
+  `4ae7193f1824d9a31fc92448f9e21dcdbde3adb4eeaeefe77ccf624a286b6fa4`;
+- `trace_to_eval/semantic.py`:
+  `15f227bc3081fb7dd803a0f03df3d38abc4609d1174e23795293c98ffd19ca5f`.
+
+The final independently owned Behavior Map/Foundry regression hashes are
+recorded in the orchestrator handoff; full Behavior Map verification passes
+235 tests, the combined independent adjacent verification passes 247 tests,
+and the complete Labs repository gate passes 905 tests including build and
+clean-wheel verification. Preview verification passes 19 tests with its one
+opt-in Docker test skipped.
+
+One four-conversation synthetic, non-ABCD source-package smoke produced report
+`sha256:4036b297658189090bb1fcabf15a38e93d5cd9c55d3dea4aac95e9862dc8f932`
+with 16 successful provider calls, all three preflights, four episodes, three
+populations, one supported pattern, no gaps, exact attempt state, no retry, and
+no fallback. The initial source attempt is retained separately but is not
+accepted as repair evidence because Preview's environment still contained the
+prior non-editable Labs installation; the orchestrator detected that mismatch,
+reinstalled the exact source hash, and reran to the accepted artifact above.
+
+Docker's GHCR helper stalled while resolving the pinned `uv` build stage even
+though public registry HTTP was reachable. Without changing the repository
+Dockerfile, the orchestrator preserved the prior local image, built the exact
+verified Labs wheel, and created a no-network local overlay image
+`triana-preview:customer-e2e` at
+`sha256:ada1b52ece533d5ecfb80f3c4d863736549936a747c6ea6a5000e0906f9e9b04`.
+The installed Behavior Map source hash exactly matches the repository source.
+That image completed a second four-conversation Luna-primary/Terra-auditor
+smoke as report
+`sha256:d8e85fe74829b90e811d666a593b8fe86866ac4ac82288269ed3b4e7857883bc`:
+9/9 primary attempts, 7/7 audit attempts, four episodes, three populations, one
+supported pattern, zero gaps, exact accounting, no retry, and no fallback. All
+seven published artifacts are mode `0600`.
+
+Across the three bounded synthetic live executions, 45 provider calls were
+made and conservative reservation totaled USD 5.82; actual provider cost is
+unknown. No ABCD conversation was rerun, no customer corpus entered these
+smokes, and no prompt, threshold, provider role, adapter, PreviewTrace envelope,
+retry, fallback, dependency, lockfile, deployment, or accepted baseline changed.
+The standard clean Dockerfile rebuild remains unverified only because its
+pinned GHCR metadata helper stalled; the current local customer image itself is
+verified and ready for retest.
+
+### Preview run-wide semantic emergency budget — 2026-08-10
+
+The fresh 200-conversation ABCD customer execution on local image
+`sha256:ada1b52ece533d5ecfb80f3c4d863736549936a747c6ea6a5000e0906f9e9b04`
+proved the preceding failure-custody repair and all three semantic preflights,
+but exposed the obsolete Preview budget abstraction. The primary lane still
+declared 100 calls/USD 18. Three preflights plus 97 extraction attempts consumed
+that lane; the next 103 extraction units and every one of 10 population and 18
+pattern batches were locally refused before provider egress. The resulting 120
+episodes and 217 eligible occurrences therefore produced zero populations and
+zero supported patterns. Auditor 3/3 succeeded. This is a deterministic
+customer-runtime defect, not an adapter, provider-access, redaction, or model
+contract failure.
+
+Falsifiable hypothesis: replacing Preview's independent primary/auditor call
+and reservation gates with one shared run reservation ledger will allow every
+call while combined conservative reservation remains below an explicit USD 200
+emergency ceiling. Preflight calls remain ordinary accounted attempts. The
+engine derives advisory call capacity from corpus and batch structure, reports
+per-model attempts/reservations, and refuses only the next run-wide call that
+would cross USD 200. No stage transition owns a second budget gate, and no
+`SEMANTIC_LANE_BUDGET_CONTRACT_EXCEEDED` gap is valid for this run-wide mode.
+
+Authority: the operator supplies one explicit
+`TRIANA_BEHAVIOR_MAP_MAX_TOTAL_RESERVED_USD=200` value through Preview's
+complete provider environment. Preview binds the same value into the local
+manifest; the Labs CLI constructs one shared deterministic ledger for Luna and
+Terra. The LLM owns only semantic proposals; deterministic code owns call-plan
+arithmetic, reservation, the emergency cutoff, lineage, and report accounting.
+The customer remains authority for trace/provider egress. Missing or malformed
+global budget configuration is a typed configuration refusal, never an inferred
+larger allowance.
+
+Frozen change budget: independent test authors may edit only bounded tests in
+`triana-preview/tests/`, `triana-labs/tests/behavior_map/`, and
+`triana-labs/tests/trace_to_eval/`. Implementation may edit only
+`triana-preview/src/triana_preview/cli.py`, `triana-preview/.env.example`,
+`triana-preview/README.md`, `triana-labs/src/triana_labs/cli.py`,
+`triana-labs/src/triana_labs/trace_to_eval/semantic.py`, and
+`triana-labs/src/triana_labs/behavior_map/__init__.py`; one small existing
+budget-contract module may be added only if shared-ledger ownership cannot stay
+readable in `semantic.py`. The orchestrator owns this packet, minimal canonical
+architecture/contracts, and one append-only decision. No prompt, semantic
+schema, grouping/support threshold, redaction, adapter, PreviewTrace envelope,
+provider role, retry, fallback, dependency, lockfile, deployment, accepted
+baseline, raw ABCD artifact, or `internal/WORKING_MEMORY.md` change is allowed.
+
+Acceptance is independently frozen RED/GREEN coverage for a 200-conversation
+call plan exceeding 100 primary attempts, exact shared reservation across both
+roles, no local refusal below USD 200, one exact emergency refusal above it,
+no lane-budget gap, preflight accounting, and Preview configuration/manifest
+binding. After focused and complete offline gates, the orchestrator MUST rebuild
+`triana-preview:customer-e2e` and run the same fresh private 200-conversation
+ABCD path with Luna primary and Terra auditor. Completion requires extraction
+disposition for all 200 eligible conversations, actual population and pattern
+provider attempts, at least one successful batch in each stage, nonzero
+populations and supported patterns, auditor attempts for auditable proposals,
+non-null lineage, authorized egress, safe detailed failure envelopes, valid
+private artifacts/accounting, no secret publication, no retry, and no fallback.
+No smoke-only or unit-test-only success declaration is permitted.
+
+#### Live acceptance follow-up: deterministic provider pacing
+
+The first rebuilt-image execution proved the run-wide budget hypothesis but did
+not satisfy the complete customer acceptance gate. All 200 conversations
+received extraction work, the primary reached 228 attempts, and the shared
+ledger reserved USD 41.04 of USD 200 with no budget or lane-contract gap. The
+run produced 224 grounded episodes from 166 conversations. Four early
+population batches completed, after which Luna returned HTTP 429 for fourteen
+population batches and the hierarchy call. With retry and fallback correctly
+disabled, no publishable population survived and pattern/audit execution had no
+eligible input. Report identity is
+`sha256:84fd8ad442957cc98b7bd7f2365c884e876bd6721e2ba2bc76caced4515e97fd`;
+the private evidence remains outside the repository.
+
+Separate falsifiable hypothesis: Preview starts provider attempts too quickly
+for the explicitly recorded deployment capacities because the Labs CLI leaves
+`min_call_interval_seconds` at zero. Applying deterministic pre-attempt pacing
+to each configured provider role will prevent a fresh run from exhausting the
+rolling provider quota before consolidation. Pacing is not retry: every stage
+still receives at most one provider attempt, HTTP failures remain typed, and
+fallback stays `NONE`. The hypothesis is falsified if a paced fresh run still
+receives sustained 429 responses before population and pattern completion.
+
+Frozen follow-up change budget: the independent test author may edit only
+`triana-labs/tests/behavior_map/test_behavior_map_run_wide_budget.py` or the
+existing Foundry compatibility test. The implementation author may edit only
+`triana-labs/src/triana_labs/cli.py`, plus Preview README/environment guidance
+only if an explicit customer setting is proven necessary. The orchestrator owns
+this packet and any accepted canonical contract/decision update. No semantic
+prompt/schema/threshold, provider retry/fallback, adapter, redaction,
+PreviewTrace envelope, dependency, lockfile, accepted baseline, or private
+artifact may change. Acceptance requires independent RED/GREEN proof that the
+customer CLI configures deterministic nonzero pacing while keeping retries and
+fallback disabled, followed by a new immutable image and fresh 200-conversation
+run that reaches successful population, pattern, and applicable audit calls.
+
+#### Live acceptance follow-up: duplicate pattern membership finalization
+
+The paced fresh execution reached all 200 extraction dispositions, successful
+population batching and hierarchy, successful leftover matching/regrouping,
+successful pattern batching/hierarchy, and independent Terra audits. Final
+artifact projection then refused with the deterministic integrity exception
+`PATTERN_OCCURRENCE_MEMBERSHIP_DUPLICATE`. The invariant is correct: one
+occurrence cannot contribute support to multiple active patterns. The customer
+behavior is defective because one duplicate semantic edge destroys the complete
+report after otherwise valid evidence has already completed.
+
+Falsifiable hypothesis: rejecting only the duplicate occurrence edge, retaining
+explicit typed custody for that rejected edge, and recomputing the affected
+pattern support/visibility will preserve all other valid unique memberships and
+allow deterministic report materialization without weakening unique-membership
+or support accounting. The hypothesis is falsified if any duplicate contributes
+support, any valid unrelated pattern disappears without lineage, or replay is
+not byte-stable.
+
+Frozen follow-up change budget: the independent test author may edit only an
+existing bounded test under `triana-labs/tests/behavior_map/`. The implementation
+author may edit only
+`triana-labs/src/triana_labs/behavior_map/__init__.py`; one existing Behavior Map
+contract module may change only if an already-defined typed disposition cannot
+represent rejected duplicate custody. The orchestrator owns this packet and any
+accepted minimal canonical contract/decision entry. No prompt, schema, semantic
+threshold, batching, provider configuration, pacing, budget, retry/fallback,
+redaction, adapter, PreviewTrace envelope, dependency, lockfile, baseline,
+private artifact, or `internal/WORKING_MEMORY.md` change is allowed. Acceptance
+requires frozen RED/GREEN coverage, the complete Behavior Map/Foundry suite,
+provider-disabled replay from the existing private checkpoints into a new
+artifact path, then exact customer-report verification. No new corpus provider
+run is authorized or required for this repair.
+
+#### Exit reconciliation and live acceptance
+
+The required fresh 200-conversation customer execution completed on immutable
+image `sha256:0950e1429139746c4682c6e78a7caa2c22f9a336e1653deb2de0e2134ad2cbc0`
+with Preview's intentional `COMPLETED_WITH_GAPS` exit status 10. Report
+`sha256:91723ef3e179a25a3596d679c3bacedb4cd905b0a17e252e0e89b4311d708105`
+conserves 200/200 conversations and 3,659/3,659 events, contains 211 grounded
+episodes, 49 population objects, 38 supported patterns, 306 primary attempts,
+107 successful Terra audits, and USD 62.78 conservative reservation of USD 200.
+No `SEMANTIC_BUDGET_EXCEEDED` or
+`SEMANTIC_LANE_BUDGET_CONTRACT_EXCEEDED` gap exists. JSON, Markdown, HTML,
+manifest, run manifest, and redaction audit are local-private mode 0600; exact
+credential and credential-pattern scans pass.
+
+A background Docker build moved the mutable `customer-e2e` tag during that long
+run. The tested container and current tag have identical Preview CLI, Labs CLI,
+and semantic-provider bytes; the current immutable image
+`sha256:a496a32a3cbf63c01ac010cf7dbf5759d4deb3bfced96bd5478642427ed291f5`
+also contains the later deterministic duplicate-pattern projection. Two
+network-disabled full-corpus checkpoint replays through the current image are
+byte-identical at JSON SHA-256
+`74b694d6a3268eafe5ce7addf7fc56232cb8e2b1bfc9b4bd1d3a0d8675871fc7`,
+report ID
+`sha256:35d84b12b821efb0b271caded5ddc6e852bc699065a25ced2825c149b78f67f3`,
+with 49 populations, 38 supported patterns, and exact 306/107 historical
+attempt custody. This is full provider-path evidence plus exact-current-image
+deterministic replay, not a second paid provider execution.
+
+Actual changes reconcile to the frozen production, bounded test, Preview
+configuration/guidance, architecture/contracts, decision, and slice-packet
+paths. No prompt, schema, grouping/support threshold, redaction policy,
+adapter, dependency, lockfile, deployment, accepted baseline, private evidence,
+or retry/fallback changed. `internal/WORKING_MEMORY.md` remains an unrelated
+pre-existing owner modification and is explicitly excluded from this slice.
+
+### 2026-08-10 customer-agent onboarding closure
+
+Outcome: make the already-authorized public-sourceable `onboard` skill drive
+the complete private local Preview journey when the operator supplies an
+authorized trace path, a short agent description, a private complete provider
+environment, and an immutable release manifest. The skill must validate or
+finish a bounded local adapter, construct and (when explicitly requested)
+execute the immutable Docker run, and verify the resulting report. A single
+prompt must be sufficient for Codex or Claude Code; no Triana repository
+knowledge may be assumed.
+
+Observed failure: the current skill truthfully stops after scaffolding, prints
+but never executes Docker, defaults to a provider-disabled preview, provides no
+provider-environment argument in its command constructor, and performs no final
+report verification. A coding agent following it exactly therefore cannot
+produce the semantic end-to-end result the customer believes `onboard` means.
+
+Falsifiable hypothesis: adding explicit full-run instructions plus deterministic
+provider-environment custody, immutable image construction, local execution,
+adapter completion validation, and report acceptance checks will let a fresh
+coding-agent session complete the same journey from the four operator inputs
+without weakening authorization, privacy, digest pinning, typed failures, or
+the no-retry/no-fallback contract. The hypothesis is falsified if the skill can
+still report success with zero provider calls for a semantic run, an unfinished
+adapter, a mutable image, a reused/non-private output, absent model lineage, or
+zero population/pattern execution.
+
+Frozen change budget: the independent test author may edit only
+`triana-skills/tests/` fixtures and tests. The implementation author may edit
+only `triana-skills/plugins/triana/skills/onboard/`, `triana-skills/README.md`,
+and one versioned local-pilot release-manifest example. The orchestrator owns
+this packet, minimal canonical architecture/contracts text, and one append-only
+decision entry if the behavior is accepted. No Behavior Map engine, Preview
+facade, prompt/schema/threshold, provider model role, pacing, budget, retry,
+fallback, adapter for a named customer, dependency, lockfile, deployment,
+accepted baseline, private trace, credential, or `internal/WORKING_MEMORY.md`
+change is allowed.
+
+Acceptance: independently frozen tests must prove Codex/Claude parity, complete
+adapter output validation, private provider-env inclusion without value
+disclosure, immutable image refusal, fresh private output, opt-in Docker
+execution, zero-provider semantic false-success refusal, non-null primary and
+auditor lineage, actual population and pattern attempts, nonzero populations
+and supported patterns, typed partial-gap preservation, and content-free final
+summary. Tests use fakes only; this slice makes no provider call. A separate
+fresh customer-agent run is the final external falsifier.
+
+#### 2026-08-11 superseding self-serve input contract
+
+Akarsh rejected the internal-plumbing customer contract above. The default
+journey is now: authorized trace path, short agent description, explicit
+trace/provider authorization, and one private OpenAI-compatible provider file
+containing base URL, API key, and optional model. The plugin owns a bundled
+immutable release profile and normalization into internal provider fields.
+Neither the image manifest/digest nor the sixteen
+`TRIANA_BEHAVIOR_MAP_*` fields may be required from the customer. Taxonomy is
+Behavior Map output and must never become environment input.
+
+The next-slice budget is limited to `triana-skills/` skill, standard-library
+onboarding script, bundled non-secret release-profile asset, metadata, README,
+and independently owned tests; plus minimal Preview normalization only if the
+existing facade cannot consume the derived private binding. Canonical docs and
+append-only decision are orchestrator-owned. No Behavior Map
+prompt/schema/threshold/audit change, named customer adapter, credential, raw
+trace, dependency, lockfile, retry/fallback, deployment, baseline, or live
+provider run is authorized before offline closure. See
+`internal/TRIANA_PREVIEW_SELF_SERVE_SKILL_HANDOFF_2026-08-11.md`.
+
+#### 2026-08-11 offline closure entry gate
+
+Status: **FROZEN FOR INDEPENDENT TEST AUTHOR**
+
+Slice ID: `TRIANA-ONBOARD-SELF-SERVE-PROFILE-V1`
+
+Canonical committed base: `ab5079548a42ed2ca1f37dded5deeaa77e32d251`.
+The complete dirty worktree at entry is intentional and must be preserved.
+
+Product outcome: a fresh Codex or Claude Code session can receive only an
+authorized local trace path, a one-to-three-line agent description, explicit
+trace/provider-egress authorization, and one private provider file containing
+`OPENAI_BASE_URL`, `OPENAI_API_KEY`, and optional `OPENAI_MODEL`; it then runs
+`inspect -> adapt if required -> validate -> run -> verify -> return report`
+without asking the customer for a release manifest, image digest, internal
+provider variables, taxonomy, deployment metadata, capacity, pacing,
+credential-boundary identity, or budget lanes.
+
+Input/output contract:
+
+- input is the four accepted customer inputs above; the provider file is a
+  private regular `0600` file and values are never emitted;
+- one bundled versioned release profile owns the already-loaded immutable
+  local-pilot image identity, provider adapter, Luna default model, role
+  expansion, deployment/SKU/capacity/pacing metadata, credential-boundary
+  labels, and the shared USD 200 emergency ceiling;
+- the ordinary journey privately derives the complete internal engine
+  environment, verifies the local image against the profile, executes with a
+  read-only trace mount and fresh private output, removes temporary credential
+  plumbing, and verifies canonical JSON/Markdown/HTML;
+- the advanced/debug command may expose content-free release verification and
+  argv structure separately, but never a secret, digest requirement, or
+  internal variable requirement in the customer prompt;
+- a genuine completed-with-typed-gaps semantic report is accepted when
+  primary and auditor lineage each record positive attempted and successful
+  call counts and the canonical report shows completed semantic stages with
+  typed gaps; zero population or zero supported-pattern output after attempted
+  aggregation is never successful onboarding.
+
+Authority and privacy: deterministic skill code owns profile validation,
+minimal-provider parsing, derived configuration, local-image verification,
+Docker argv, subprocess/result handling, report lineage/accounting checks, and
+content-free refusal. The private engine owns taxonomy and semantic artifacts.
+The model proposes meaning only through the authorized provider boundary; the
+human owns trace/provider authorization and all semantic acceptance. Raw traces,
+credentials, temporary engine configuration, and reports stay local. No live
+provider call, full customer corpus, registry publication, image push,
+deployment, hosted upload, telemetry, retry, or fallback is authorized in this
+slice.
+
+Refusals: missing/partial/duplicate provider fields, insecure files, missing
+profile default when `OPENAI_MODEL` is absent, absent/mutable/mismatched local
+release, stale/non-private output, adapter incompleteness, Docker failure,
+missing canonical artifacts, invalid lineage/accounting, zero successful
+semantic calls, zero populations, zero supported patterns, and upstream
+aggregation failure remain typed stops. Provider-disabled behavior is available
+only through the separate explicit debug path.
+
+Provenance and dependencies: repository-owned clean-room skill code and the
+already recorded private local image only. No external implementation, customer
+data, credential, or new dependency is allowed. Standard-library Python only.
+
+Frozen change budget and role ownership:
+
+- independent test author only:
+  `triana-skills/tests/test_onboard_skill.py` and purpose-built synthetic
+  fixtures under `triana-skills/tests/fixtures/`, plus the smallest equal-
+  endpoint/key/model binding regressions in
+  `triana-preview/tests/test_preview_cli.py` and
+  `triana-labs/tests/behavior_map/test_behavior_map_run_wide_budget.py`;
+- independent implementation author only:
+  `triana-skills/plugins/triana/skills/onboard/SKILL.md`,
+  `triana-skills/plugins/triana/skills/onboard/agents/openai.yaml`,
+  `triana-skills/plugins/triana/skills/onboard/scripts/onboard.py`, one bundled
+  release-profile JSON under the existing skill `assets/` directory, and
+  `triana-skills/README.md`; the proven one-endpoint compatibility correction
+  may edit only `triana-preview/src/triana_preview/cli.py` and
+  `triana-labs/src/triana_labs/cli.py`;
+- orchestrator only: this packet, minimal already-authorized canonical
+  documentation reconciliation, append-only decision record, ignored decision
+  memory, local Codex/Claude cache refresh, and clean temporary customer test;
+- final verifier: read-only.
+
+Explicitly untouched: all other `triana-labs/src/**` and
+`triana-preview/src/**`, all
+semantic prompts/schemas/grouping/support thresholds, taxonomy behavior,
+customer adapters, dependencies/locks, raw/private traces, accepted reports,
+cloud/deployment/registry state, and unrelated dirty worktree changes. Maximum
+scope expansion beyond the two exact provider-binding validators is zero.
+
+Entry inspection proved that both validators currently reject equal primary
+and auditor endpoints and model IDs. This contradicts the accepted default in
+which one endpoint/key/model, Luna when `OPENAI_MODEL` is omitted, configures
+both semantic roles. The narrow correction permits the same exact normalized
+OpenAI-v1 endpoint, key, and model for both roles while recording that the
+auditor is not model-independent. A profile-owned distinct auditor remains an
+advanced release option. Every existing URL, authorization, lineage,
+no-retry, and no-fallback check remains.
+
+Independent acceptance must prove valid RED against the current dirty
+implementation for: bundled-profile default use with no manifest argument;
+minimal three-field provider parsing and optional Luna default; same endpoint
+and key for both roles; complete internal derivation without customer-visible
+field names or values; immutable local-image match/missing/mismatch refusal;
+private temporary environment cleanup; inspect/adapt/validate/run/verify prompt
+parity for Codex and Claude; separate advanced/debug discoverability; canonical
+lineage using both `attempted_call_count` and `successful_call_count`; truthful
+completed-with-typed-gaps acceptance; and refusal for zero populations, zero
+supported patterns, attempted-but-unsuccessful aggregation, Docker failure, or
+secret/digest/internal-name disclosure. Docker and provider behavior use fakes;
+no network, registry, provider, or customer data is touched.
+
+Exact RED and focused final command:
+
+```text
+python -m unittest discover -s triana-skills/tests -p 'test_*.py' -v
+```
+
+Offline customer-directory acceptance additionally copies only the installed
+skill into a fresh temporary directory, uses synthetic/provider-disabled or
+fully faked provider inputs, and proves the ordinary prompt requires none of
+the hidden release or engine plumbing. Final cache refresh occurs only after
+source GREEN. The live customer/provider run remains a separate owner gate.
+
+Independent RED freeze (2026-08-11):
+
+- `triana-skills/tests/test_onboard_skill.py` SHA-256
+  `415f1b33ed5b491d57a5d7413e1e49ac6b3fcb36e813ceecd7a61e9f54fd79d7`;
+- `triana-preview/tests/test_preview_cli.py` SHA-256
+  `799b881575bc3a614b49cf291c219784e37c4a0d539bc57889cbb6e9280b303a`;
+- `triana-labs/tests/behavior_map/test_behavior_map_run_wide_budget.py`
+  SHA-256
+  `bb68f87afc74caa70ecdf51a1da5c0eb6ccbd922bb60ca543bc294bcbf271b5a`.
+
+The orchestrator reproduced the exact onboarding command at 32 collected:
+24 controls pass and eight valid RED failures cover the absent bundled
+profile, absent ordinary `run` command/typed minimal-provider path, stale agent
+prompts, and missing `successful_call_count` enforcement. Focused Preview and
+Labs regressions separately fail because equal endpoint/model bindings are
+currently rejected. Collection, syntax, and existing controls are valid;
+`git diff --check` passes. These test-owned bytes are frozen for the
+implementation author.
+
+Orchestrator-reserved adversarial checks: malformed or unsafe provider URL and
+unknown provider key refuse without values; malformed Docker inspect output is
+a release refusal; private derived environment is removed after Docker
+success, typed exit 10, ordinary failure, and interruption; a Docker exit 10
+is successful only when report verification passes; customer output and the
+ordinary prompt contain no secret, digest, internal environment name, or
+release-plumbing requirement; repeated profile/image inspection is stable.
+
+Frozen-test defect correction: the Labs equal-binding test initially inspected
+the nonexistent constructor keyword `base_url`; the existing public model
+constructor and production CLI use `endpoint`. The independent test author
+changed only that lookup. SHA-256
+`fc5399994bda237da4eb1c2945ec1899606aa1366c5360718e604db5a846ac88`
+supersedes the earlier run-wide-budget test hash. The behavior remains the same:
+pre-correction production RED at the equal-binding validator, corrected
+production reaches two separately constructed role objects over the same
+endpoint/key/model.
+
+Reserved pacing adversary and final freeze (2026-08-11): the shared-role
+default initially assigned Luna's 20-second pacing only to the primary role;
+the same Luna model in the auditor role received zero pacing. The independent
+test author changed only the equal-binding regression to use the exact Luna
+model and capacity 10 for both separately constructed roles and require
+`20.0` seconds for each. SHA-256
+`be62e843aa61579522b342b990b0d9ad90c2461107e61a02ba691ba8a7c0158c`
+supersedes `fc5399994bda237da4eb1c2945ec1899606aa1366c5360718e604db5a846ac88`.
+The test was valid RED at auditor pacing `0.0`; the narrow correction now maps
+Luna/capacity 10 to `20.0` and Terra/capacity 100 to `2.0` independently for
+either role. Retry and fallback remain absent.
+
+Offline closure evidence (2026-08-11):
+
+- the independent onboarding suite passes 32 tests; Preview passes 27 with
+  one explicit skip; Labs passes all 914 tests when the fake HTTP tests are
+  allowed to bind loopback (the sandbox-only run passed 884 and rejected the
+  remaining 30 solely at `127.0.0.1` socket bind);
+- the final frozen test hashes are onboarding
+  `415f1b33ed5b491d57a5d7413e1e49ac6b3fcb36e813ceecd7a61e9f54fd79d7`,
+  Preview
+  `799b881575bc3a614b49cf291c219784e37c4a0d539bc57889cbb6e9280b303a`,
+  and Labs
+  `be62e843aa61579522b342b990b0d9ad90c2461107e61a02ba691ba8a7c0158c`;
+- the private local image was rebuilt without network from the previously
+  verified local image plus the exact current `triana-preview/src` and
+  `triana-labs/src` trees after the canonical build stalled in Docker's public
+  build-stage credential helper. Its final local ID is
+  `sha256:3f63bd76aa1016baa933cc6c36d4a40f2400ea7f70d912e14302216b2d3cfeb6`,
+  and the bundled profile is bound to that exact ID;
+- a fresh private temporary customer directory and synthetic PreviewTrace ran
+  the image with `--network none` and no provider configuration. It returned
+  typed exit 10, `COMPLETED_WITH_GAPS`, `provider_calls=0`, preserved the input
+  bytes, and wrote private JSON/Markdown/HTML plus custody artifacts. The
+  installed Codex skill copy independently inspected and byte-stably validated
+  the trace and verified the provider-disabled report as non-semantic;
+- Codex and Claude Code were refreshed from the same local marketplace. Their
+  installed `SKILL.md`, onboarding script, and release-profile hashes match
+  source exactly; both report `triana@triana-skills` version `0.1.0` enabled;
+- Ruff format/check, strict mypy on the changed Python surfaces, focused
+  same-binding/pacing tests, `git diff --check`, local image/profile parity,
+  and independent final-verifier review pass.
+
+Status: **READY FOR THE PRIVATE LIVE OWNER GATE**. No provider call, live
+customer corpus, registry publication, push, deployment, hosted upload,
+telemetry, retry, or fallback was performed. The first real provider-backed
+journey and report-usefulness judgment remain explicitly unverified and require
+the owner's private provider file and authorization.
+
+### Public Preview repository extraction — Gate 0 (2026-08-11)
+
+Status: **FROZEN FOR INDEPENDENT TEST AUTHOR**
+
+Slice ID: `TRIANA-PUBLIC-PREVIEW-ALPHA-V1`
+
+The private live owner gate above is superseded as the default launch path; it
+remains valid historical pilot evidence and is not deleted. Akarsh authorized
+planning and implementation toward two clean-history public repositories and a
+direct Python installation. The complete product, repository, source allowlist,
+CLI, provider, privacy, provenance, license, quality, and session contract is
+`internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md` and is incorporated
+here by reference.
+
+Product outcome: an external developer can install exact
+`triana-preview==0.1.0a1`, validate authorized PreviewTrace JSONL, run the
+evidence-grounded Behavior Map locally with either explicitly disabled or
+explicitly authorized user-configured semantic egress, and inspect verified
+local JSON/Markdown/HTML without installing `triana-labs`, Docker, a release
+manifest, a private image, or a second runtime from the skill.
+
+Input/output contract: local authorized traces, short agent description, fresh
+private output, explicit trace authorization, and—only for semantic work—a
+private regular file containing exact base URL, API key, model, explicit egress
+authorization, and a positive call ceiling. Outputs are local canonical
+artifacts, typed gaps/refusals, and a content-free run receipt. Secrets, raw
+trace values, private endpoint/model defaults, and local absolute paths do not
+enter portable artifacts.
+
+Authority: deterministic code owns validation, redaction order, identities,
+membership/support conservation, call caps, checkpoint/report integrity, and
+typed gaps. The configured model proposes semantic labels and explanations. A
+human owns authorization and any acceptance ruling. Triana operates no backend
+or telemetry for this release.
+
+Provenance: extraction is limited to the Gate 0 source allowlist and current
+dirty worktree bytes. Agentagon/HRAI/Kairos-AI ancestry remains governed by
+`docs/PROVENANCE.md`; any uncleared item is reimplemented or excluded. No
+customer corpus, provider output, report, checkpoint, credential, deployment,
+or monorepo history crosses.
+
+Role and change budget:
+
+- orchestrator Gate 0 only: the exact documentation paths listed in the Gate 0
+  contract; no production or test edit;
+- independent test author next: tests and synthetic fixtures in isolated
+  destination repositories only; hashes freeze before implementation;
+- Preview implementation author after RED: only the new `triana-preview`
+  destination repository and exact allowlisted sources;
+- Skills implementation author after RED: only the new `triana-skills`
+  destination repository, using the frozen Preview CLI contract;
+- final verifier: read-only.
+
+No implementation worker may modify this private monorepo's existing product
+files during extraction. New dependencies require orchestrator review against
+the Gate 0 dependency and license boundary. No GitHub repository creation,
+TestPyPI/PyPI publication, push, Docker publication, provider call, customer
+data, or deployment is authorized by this slice.
+
+Independent acceptance is the bounded artifact gate in the Gate 0 contract.
+The test author must first prove RED for private-package dependency removal,
+distribution inventory, generic provider configuration, no retry/fallback,
+privacy/custody, clean installation, and the thin-skill exact-version contract.
+The private monorepo's complete historical suite is not part of this alpha
+gate unless a focused failure provides evidence that an adjacent invariant was
+changed.
+
+#### Gate 1 two-session test freeze
+
+Status: **FROZEN FOR TWO INDEPENDENT TEST AUTHORS**
+
+The exact CLI flags, provider/call-cap boundary, exit codes, dependency
+allowlist, license metadata, staging roots, test ownership, and cross-assigned
+implementation order are frozen in
+`internal/TRIANA_PUBLIC_GATE_1_SESSION_PACKET_2026-08-11.md`. Preview and Skills
+test authors may now run concurrently because they write disjoint `/private/tmp`
+staging roots. No production extraction begins until both suites collect and
+produce valid RED and the orchestrator records their hashes.
+
+Both independent suites now collect and produce valid RED. Preview freezes 27
+black-box cases across six hashed files; Skills freezes seven cases across two
+hashed files. Exact hashes and reproduction commands are in the Gate 1 packet.
+Status is **RED FROZEN; TWO CROSS-ASSIGNED IMPLEMENTATION AUTHORS AUTHORIZED**.
+
+Final verification subsequently froze four additional Preview privacy/custody
+regressions for trace replacement, provider-file replacement, a 16 KiB provider
+file bound, and ambient LangSmith/LangChain tracing suppression. Exact
+superseding hashes and 27-pass/4-RED evidence are recorded in the Gate 1 packet.
+
+Final verification rejected the first two replacement tests because their
+`Path.read_bytes` interposition rewarded an unsafe unbounded reopen. The
+original test author replaced only those two cases with no-reopen plus ordinary
+regular-file replacement contracts. They collect 31 with 29 pass and two valid
+RED failures; final superseding hashes are recorded in the Gate 1 packet.
+
+The cross-assigned Preview implementation removed both unsafe path reopens and
+consumes only bounded, stable descriptor/source bytes. Independent final
+verification passed 31/31 Preview cases, 7/7 Skills cases, source formatting,
+lint, strict typing, both Claude plugin validators, Gitleaks, and exact offline
+artifact inventory/metadata. Gate 1 is locally GREEN. Canonical snapshots were
+copied to `/Users/akarshgajbhiye/triana-preview` and
+`/Users/akarshgajbhiye/triana-skills` with all virtualenv, cache, bytecode, and
+build directories excluded. Publication remains a separate held slice; clean
+install/`uvx`, TestPyPI, remote CI, Semgrep, OSV, and legal-owner review are
+explicitly unverified.
+
+### Public repository and install release slice — 2026-08-11
+
+Status: **AUTHORIZED; ENTRY GATE FROZEN**
+
+The live contract is
+`internal/TRIANA_PUBLIC_RELEASE_SLICE_2026-08-11.md`. Akarsh authorized public
+GitHub setup, clean install/`uvx`, package publication, and final skill
+installation verification so a later fresh session can run an explicitly
+selected 50-conversation ABCD subset. CI test matrices and the ABCD/provider run
+itself are excluded. The permanent Preview and Skills repositories are disjoint
+worker surfaces; external publication remains orchestrator-owned.
+
+Local release readiness is GREEN: exact candidate hashes match Gate 1, fresh
+Python 3.13 install and exact-wheel `uvx` passed a synthetic no-provider run,
+the forward-tested skill and all validators pass, and clean initial commits
+exist on non-main `release/0.1.0a1` branches. External creation/push is paused at
+the required manual `gh auth login -h github.com` step because both stored CLI
+tokens are invalid. No PyPI credential is configured; no remote, upload, ABCD
+read, or provider call has occurred.
+
+The apparent GitHub authentication block was sandbox keyring isolation.
+Keyring-visible verification confirmed `akar5h` is a `Triana-AI` administrator;
+both repositories are now public on their exact non-main release commits. A
+clean public-GitHub `uvx` install passed, and the public Skills marketplace plus
+plugin are installed/enabled in Codex. No configured CI matrix ran. A
+secret-free `pypi` GitHub environment exists; the only remaining publication
+gate is the manual PyPI pending Trusted Publisher registration followed by the
+manual release workflow.
+
+The release slice is GREEN. A GitHub checkout exposed only the test-harness
+omission of `.git` from transient metadata; the original test author corrected
+that one contract byte, all 31 cases passed, and artifact hashes stayed exact.
+After the visibly correct pending publisher was recreated, release run
+`31468675330` passed OIDC publication. PyPI serves
+`triana-preview==0.1.0a1`, and a fresh PyPI-only uvx environment passed the
+complete synthetic no-provider skill path with zero provider calls. The later
+50-conversation ABCD selection and provider authorization remain a separate
+operator-owned execution.
+
+### Public skill first-run language slice — 2026-08-11
+
+Status: **AUTHORIZED; ENTRY GATE FROZEN**
+
+The live contract is `internal/TRIANA_SKILL_FIRST_RUN_SLICE_2026-08-11.md`.
+Akarsh rejected the provider-file/mode vocabulary as first-use product UX. The
+skill will begin from only a trace path and short agent description, explain the
+model boundary in plain language, reuse only an explicitly identified existing
+project model setup, request trace/egress/request-ceiling authority, and keep
+the runtime's private provider file as hidden local plumbing. Preview/PyPI,
+workflows, dependencies, data, and provider calls are excluded.
+
+The independent test author froze nine cases at
+`tests/test_plugin_contract.py` SHA-256
+`072a7767c3d04c917c122eb683285d8aa82ea8a1a2e5f9b68367ffb85090c93c`.
+Six prior controls pass and exactly three valid RED failures cover manifest
+version, first-run language, and secure model-setup lifecycle. An independent
+implementation author is authorized within the packet budget.
+
+The test author subsequently consolidated the two new assertions into one
+regression. The canonical eight-case suite has six passing controls and exactly
+two valid RED failures. Its SHA-256 is
+`7d8f424b894bcd4c190f10c93424cd003388e91563cf4bc312df23499d88550e`,
+which supersedes only the preliminary test hash above. Independent
+implementation remains authorized within the unchanged budget.
+
+The independent implementation is GREEN. Only the five authorized production
+paths changed, the frozen test hash stayed exact, and the canonical suite is
+eight of eight passing. Skill Creator validation, both official Claude plugin
+validations, and diff checking pass. A read-only fresh-session review confirmed
+the initial interaction accepts only a trace path and agent description, asks
+permission before any read or model egress, and keeps the derived provider file
+out of first-run dialogue; its one “model setup” ambiguity was corrected in
+plain language. Plugin `0.1.1` is ready for the already-authorized public
+commit/push and local marketplace refresh. Preview `0.1.0a1`, workflows,
+dependencies, customer data, provider calls, and ABCD execution remain
+unchanged and excluded.
+
+Public release is complete at `Triana-AI/triana-skills` commit
+`25520de34e9b47d4c0640d790429c18cf7daa5dc` on `release/0.1.0a1`. The local
+Codex marketplace now points to the public GitHub source, and
+`triana@triana-skills` `0.1.1` is installed and enabled. No Preview/PyPI
+publication occurred for this copy-only skill update.
+
+### Self-serve Python onboarding slice — 2026-08-11
+
+Status: **FROZEN FOR INDEPENDENT TEST AUTHOR**.
+
+The live contract is
+`internal/TRIANA_SELF_SERVE_PYTHON_ONBOARDING_2026-08-11.md`. It supersedes the
+public skill's manual Python-adapter gap and generic failure projection with a
+no-egress doctor, deterministic declarative adapter execution, phase receipts,
+and immediate safe typed failures. The immutable public targets are Preview
+`0.1.0a2` and plugin `0.1.2`; all commands remain exact-version `uvx` calls.
+
+The independent test contract is frozen. Preview collects 44 cases; its bounded
+three-case RED is exactly missing doctor, declarative adapter execution, and
+phase/failure projection. Skills collects nine cases with five controls passing
+and four valid RED failures for version/pin/command/vocabulary parity. Frozen
+hashes are Preview `test_cli.py`
+`0dbece9ddfaac4edeb5699ee9e61f9bafb63a531f2ebb3184688effd0d16907a`,
+`test_distribution_inventory.py`
+`8530ba69924cd98f7a036a24e413f8a21debc81ac243bc06fe66644764d79587`,
+`test_self_serve_onboarding.py`
+`0c8907e45b4606ad8a9828d071ec8f275e07797185a9f69eb1994f0ab43ab2bb`,
+and Skills `test_plugin_contract.py`
+`072a60ff0ad580f1c3b52cf2f82af58dd943abe34e7645d5b5d38e8a9d399d0d`.
+Production implementation is now authorized within the frozen budget.
+
+The slice is RELEASE GREEN. The implementation passed Preview 44/44, Skills
+9/9, source Ruff/format/strict-mypy, offline build, Skill Creator validation,
+Claude plugin validation, Gitleaks, and independent read-only final review.
+Orchestrator review rejected bulk pre-run progress; the corrected engine emits
+live phase transitions and safely classifies 401/403, 404, 429, other HTTP,
+transport, JSON, and schema failures without retaining provider prose. One
+shared ledger owns the public attempt total.
+
+The first release workflow exposed a test-only absolute staging path. The test
+author replaced it with checkout-local synthetic plugin fixtures without
+changing production or assertions; final Preview hashes are `test_cli.py`
+`8fbb0147fa42d3490ec4551a493d478249655efa878c44ed40d620ba94a85600`
+and `test_self_serve_onboarding.py`
+`2947e2382d0a9e1c85e54a1d4b3021534b580f7152984266e0b3dd6c3c1aef64`.
+GitHub release run `31491134611` then passed all 44 clean-checkout cases,
+build, OIDC, and PyPI publication from Preview commit
+`a738e3f`. PyPI serves exact `triana-preview==0.1.0a2`; wheel SHA-256 is
+`a58d8de3551d7aaf98680cc7d4158dc2049c222b59556dde135a482e504642f1`
+and sdist SHA-256 is
+`97ca1f60a13d4d4df2817a5c44d57f910ea00fc37c8b8711e7b799ecb05279af`.
+Skills commit `0ce39bc` is public; Codex and Claude Code both report installed,
+enabled plugin `0.1.2`, and their cached `SKILL.md`/`openai.yaml` hashes match
+the canonical repository bytes. A fresh PyPI-only exact `uvx` doctor run over
+one synthetic trace returned `READY`, seven passed checks, Preview `0.1.0a2`,
+plugin `0.1.2`, provider disabled, and zero provider egress.
+
+### Public-product monorepo deduplication — 2026-08-12
+
+Status: **ENTRY GATE FROZEN FOR INDEPENDENT TEST AUTHOR**.
+
+#### Outcome
+
+Eliminate maintained duplicate copies of the shipped Preview runtime and
+Codex/Claude onboarding from the private monorepo without losing any valid
+implementation. `/Users/akarshgajbhiye/triana-preview` at `a738e3f` is the
+canonical Preview baseline and `/Users/akarshgajbhiye/triana-skills` at
+`0ce39bc` is the canonical Skills baseline. The dirty monorepo is evidence to
+reconcile, not a second canonical source.
+
+#### Preservation and authority
+
+- Deterministic code owns file inventory, hashes, import/dependency evidence,
+  and test outcomes. It does not infer semantic equivalence from filenames.
+- A human owns the repository boundary and has selected one canonical public
+  copy of each shipped product.
+- No LLM-generated similarity judgment can authorize deletion. A duplicate is
+  removable only when exact content, an allowlisted extraction mapping, or a
+  behaviorally frozen canonical test proves preservation.
+- A clean, already-committed private utility with no production consumer may be
+  retired from the active tree under `RETIRED_GIT_HISTORY` only when the
+  disposition records the exact monorepo commit, path, and source hash and an
+  acceptance test proves that Git object remains recoverable. It must not be
+  falsely mapped to an unrelated public file.
+- Distinct private simulation, case-factory, trace-to-eval, backend, research,
+  and suspended V1 code remains unless exact dependency evidence proves it is
+  only a duplicate of the public product.
+
+#### Ordered workflow
+
+1. Freeze canonical public repository commits, inventories, and hashes.
+2. Classify every one of the current 22 modified and eight untracked monorepo
+   paths as canonical governance, unique private implementation, extracted
+   duplicate, superseded staging, or unresolved.
+3. Map `triana-preview/**`, `triana-skills/**`, and
+   `triana-labs/src/triana_labs/behavior_map/**` file by file to the canonical
+   public repositories. Inspect all non-test importers before deletion.
+4. If a valid monorepo behavior or regression is missing publicly, port it to
+   the canonical public repository first under its own tests and verification;
+   this is the only permitted public-repository mutation.
+5. Delete only paths proven redundant, remove dead CLI/import/package wiring,
+   and update canonical documentation to name the public repositories as the
+   sole source of truth. Historical decision/provenance documents remain as
+   history and are not rewritten.
+6. Verify public repositories remain clean or contain only separately tested
+   preservation ports; verify the monorepo has no live duplicate product or
+   skill implementation and no importer of a removed package.
+
+#### Change budget
+
+Test-author ownership before implementation:
+
+- one new bounded repository-boundary test module under
+  `tests/repository_boundaries/**` or, if the root test layout cannot collect
+  it, one equivalent script/test under `scripts/tests/**`;
+- synthetic inventories or hash fixtures only under that same test directory.
+
+Implementation-author ownership after frozen RED:
+
+- removal of the monorepo staging trees `triana-preview/**` and
+  `triana-skills/**`;
+- removal of `triana-labs/src/triana_labs/behavior_map/**` and
+  `triana-labs/tests/behavior_map/**` only after importer and preservation
+  tests prove the public Preview owns the behavior;
+- minimal dead-command/import cleanup in
+  `triana-labs/src/triana_labs/cli.py` and directly affected existing CLI
+  tests;
+- minimal package metadata cleanup only if a removed package is explicitly
+  listed;
+- one machine-readable preservation/disposition manifest at
+  `internal/PUBLIC_PRODUCT_DEDUP_MANIFEST_2026-08-12.json` containing only
+  repository-relative paths, canonical commit identities, hashes, closed
+  disposition codes, and preservation targets;
+- canonical boundary updates limited to `README.md`, `triana-labs/CHARTER.md`,
+  `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`, `docs/PROVENANCE.md`,
+  `internal/WORKING_MEMORY.md`, append-only `internal/DECISION_LOG.md`, this
+  packet, and the ignored current-branch decision journal;
+- public Preview preservation ports, only if proven necessary, limited to
+  `src/triana_preview/behavior_map/**`, `src/triana_preview/providers/**`, and
+  directly corresponding tests in `/Users/akarshgajbhiye/triana-preview`;
+- public Skills production changes are forbidden because its final canonical
+  inventory intentionally contains no runtime code.
+
+Explicitly untouched: `adaptive_runner/**`, `case_factory/**`, `intelligence/**`,
+`observer/**`, non-duplicate `trace_to_eval/**`, `triana-backend/**`,
+`triana-app/**`, customer/private artifacts, provider configuration, installed
+plugin caches, PyPI, GitHub remotes, releases, and `main`.
+
+Dependencies added: none. Provider/customer execution: none. Maximum scope
+expansion: five directly affected importer or packaging paths; stop and return
+to the owner if the dependency audit exceeds that bound or requires deleting a
+distinct private product.
+
+#### Acceptance
+
+- Frozen tests fail before implementation only for live duplicate ownership,
+  stale monorepo skill/runtime paths, or dead importers.
+- Canonical public Preview 44-case and Skills nine-case suites remain green.
+- Monorepo targeted import/CLI tests and the repository's canonical verifier
+  remain green after deletions.
+- `rg` and an AST/import inventory find no production import of a removed
+  module and no live canonical document that presents the monorepo as an
+  editable source of public Preview or Skills.
+- Every deleted production file has a recorded disposition and preservation
+  target/hash; unresolved files are retained rather than guessed away.
+- A `RETIRED_GIT_HISTORY` target must resolve byte-for-byte from its recorded
+  monorepo commit; it cannot point at a public file or an uncommitted worktree
+  byte.
+- No public push, package publication, provider call, customer trace read,
+  cache refresh, or `main` mutation occurs in this slice.
+
+#### Independent test freeze
+
+The independent test author froze six repository-boundary cases under
+`tests/repository_boundaries/**`. Three controls pass for the exact public
+commits/inventories, unchanged distinct private consumers, and byte-for-byte
+recoverability of the four retired utilities from monorepo commit
+`ab5079548a42ed2ca1f37dded5deeaa77e32d251`. Three valid RED failures cover the
+missing disposition manifest, the three remaining duplicate trees, and the
+three remaining production import sites. The corrected frozen hashes are:
+
+- `canonical_public_products.json`:
+  `1b5aec75c2f51ce88b78154fd9d26eae2287224c4ab88408007e921b5682ec1`
+- `test_public_product_dedup.py`:
+  `7094bac0a6b172fd411329adcd4c184297d9de8e5a9f08dfd98ea0cd5d13a87b`
+
+The closed `RETIRED_GIT_HISTORY` disposition is permitted only for
+`benchmark.py`, `checkpoint_migration.py`, `comparison.py`, and
+`historical_projection.py`; all other deleted candidates must resolve to a
+frozen public canonical target. Production implementation is now authorized
+within the unchanged budget.
+
+#### Implementation and final verification closure
+
+Implementation removed the superseded `triana-preview/**` and
+`triana-skills/**` staging trees, the duplicate Labs Behavior Map package and
+tests, and the dead `behavior-map` Labs CLI wiring. The 27 deleted production
+candidates are closed in
+`internal/PUBLIC_PRODUCT_DEDUP_MANIFEST_2026-08-12.json`. Exactly four unique,
+unconsumed utilities are retained byte-for-byte through the authorized
+`RETIRED_GIT_HISTORY` disposition at commit
+`ab5079548a42ed2ca1f37dded5deeaa77e32d251`; the public Preview and Skills
+repositories remain untouched and clean at their frozen commits. No
+dependency, provider call, customer-data access, publication, push, or `main`
+mutation occurred.
+
+The independent final verifier returned **PASS**. Independently rerun gates
+were: repository-boundary tests 6/6, public Preview 44/44, public Skills 9/9,
+focused Labs CLI parity 4/4, Labs CLI help, Ruff, strict mypy, governance, and
+`git diff --check`. The implementation-author's additional bounded evidence
+was 10 packaging/Observer tests, 33 restricted-CLI tests, and 51
+adaptive-runner tests. The pre-existing `trace_to_eval/semantic.py` and its
+corresponding test changes were excluded from this slice and remained at the
+frozen private-sentinel hashes. Full unrelated Labs testing and all external
+release operations were deliberately unrun because they were outside the
+slice.

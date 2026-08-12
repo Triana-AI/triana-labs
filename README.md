@@ -17,6 +17,14 @@ the user-facing command is `triana`. Triana Release Review is the suspended
 proprietary product line, while `triana-core` remains its frozen shared
 integrity kernel pending an explicit public-distribution boundary decision.
 
+The shipped public products have separate sole code owners. The public
+`Triana-AI/triana-preview` repository owns the `triana-preview` runtime, and
+the public `Triana-AI/triana-skills` repository owns Codex/Claude onboarding.
+This private monorepo retains distinct Labs simulation, research, backend, and
+governance surfaces; it does not contain editable copies of either public
+product. Earlier container, image, release-profile, and manifest material is
+historical pilot evidence, not a live installation or maintenance path.
+
 The prior Release Review V1 is suspended, not deleted. Its implemented
 deterministic contract kernel remains shared infrastructure in `triana-core/`.
 

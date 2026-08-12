@@ -100,10 +100,19 @@ assignment without a current explicit supported ruling. Any co-member whose
 population identity changes becomes re-audit-required rather than inheriting
 the predecessor audit.
 
-### Triana Preview local distribution boundary
+### Historical Triana Preview container boundary
 
-`triana-preview/` is a packaging and custody facade over the single active
-engine in `triana-labs/`; it is not a second product implementation:
+This section records the superseded private pilot architecture. It is not a
+live command, package boundary, or maintenance surface. The monorepo staging
+facade, its private Behavior Map package, and the onboarding staging tree have
+been removed after file-level preservation reconciliation. The public
+`Triana-AI/triana-preview` and `Triana-AI/triana-skills` repositories are the
+sole code owners described in “Source-available Python repository
+supersession” below.
+
+The historical `triana-preview/` staging tree was a packaging and custody
+facade over the then-active engine in `triana-labs/`; it was not a second
+product implementation:
 
 ```text
 authorized PreviewTrace JSONL (read-only)
@@ -114,16 +123,134 @@ authorized PreviewTrace JSONL (read-only)
   -> canonical JSON/Markdown/HTML/checkpoints + local run manifest
 ```
 
-The facade may validate the operator acknowledgement, agent-description bound,
+The facade could validate the operator acknowledgement, agent-description bound,
 regular-file identity, empty destination, complete provider binding, and
 private filesystem modes. Deterministic redaction, manifest interpretation,
 semantic schemas, analysis, identity, support, typed gaps, and report rendering
-remain owned by `triana-labs`. The package uses the repository-local Labs
-dependency at the same commit, so there is no copied taxonomy or behavior-map
-logic to synchronize. Its container has a non-root runtime, explicit production
+were owned by `triana-labs`. The package used the repository-local Labs
+dependency at the same commit, so there was no copied taxonomy or behavior-map
+logic to synchronize. Its container had a non-root runtime, explicit production
 copies only, a read-only input mount contract, and no hosted telemetry or
 upload boundary. Image-registry publication and external deployment are not
 part of this architecture checkpoint.
+
+PreviewTrace structural validity does not by itself authorize a customer
+identity for publication. The Labs redaction boundary preserves ordinary safe
+identities and explicitly recognized structured identities, but projects an
+unfamiliar `trace_id` or `source_trace_id` through the existing stable redactor
+token registry when its residual detections are exclusively numeric identity
+categories. Equal source identities remain equal within the projection,
+distinct identities remain distinct, and the audit exposes category totals
+without raw values or a reversible mapping. A remaining identifier residual
+still refuses before analysis and is exposed by Preview as a content-free typed
+reason.
+
+The historical provider-enabled Preview command had one additional customer
+custody input: a private OpenAI-compatible provider file containing base URL,
+API key, and optional model. A release profile bundled with the skill owned the
+immutable image and non-secret defaults. The skill privately normalized those
+inputs once into Preview's complete internal binding; the customer did not
+provide deployment, SKU, capacity, pacing, budget, credential-boundary,
+auditor, manifest, or digest fields. Preview bound the exact normalized
+OpenAI-v1 base URL, model authority, and derived release metadata into the
+evidence manifest, and Labs compared it to live lineage before the first call.
+Omitting the provider file selected no-egress mode; partial secrets or a
+mismatched release/live binding could not authorize semantic work.
+
+Before fresh corpus work, the semantic engine performs one bounded synthetic
+contract preflight for extraction, population consolidation, and pattern
+consolidation. Preflight results never become customer evidence. Any failed
+preflight stops fresh semantic corpus work and becomes a stage-specific typed
+gap; a fully satisfied checkpoint replay remains provider-disabled and does not
+manufacture live preflights. Provider failures persist only a fixed,
+content-free diagnostic envelope, and provider-attempt accounting excludes
+local budget refusals. Legacy failed checkpoints whose egress state cannot be
+proven expose a lower-bound count plus typed accounting uncertainty rather than
+an exact count.
+
+Provider-enabled Preview uses one shared run reservation ledger for both model
+roles. The explicit `TRIANA_BEHAVIOR_MAP_MAX_TOTAL_RESERVED_USD` value is the
+only enforcing semantic budget below the emergency ceiling; per-role and
+per-stage call plans are advisory and cannot stop extraction before later
+consolidation. Preflights reserve against the same ledger. The currently pinned
+customer release spaces Luna capacity-10 attempt starts by 20 seconds and Terra
+capacity-100 attempt starts by 2 seconds. This is exact deployment evidence,
+not a general capacity formula, retry, or fallback.
+
+Independent semantic units fail locally. A failed leftover population regroup
+retains its exact episode custody as typed emerging evidence and cannot abort
+later population, pattern, or audit work. If multiple pattern candidates claim
+the same occurrence, deterministic projection assigns no semantic winner: it
+detaches the occurrence from every claimant, preserves one typed duplicate
+disposition and predecessor edges, and reprojects only the affected patterns
+under existing support and audit rules. Unrelated pattern objects and their
+audit lineage remain unchanged.
+
+Report interpretation is stage-aware. `NO_RECURRING_PATTERN_OBSERVED` is
+available only after eligible pattern analysis completed successfully. A
+failed or unavailable upstream semantic stage yields
+`PATTERN_ANALYSIS_FAILED` or `PATTERN_ANALYSIS_UNAVAILABLE`; an empty or failed
+analysis cannot be rendered as a substantive finding.
+
+The removed `triana-skills/` staging tree was the public-sourceable onboarding
+layer above that private facade, not another engine. One canonical Agent Skills-compatible
+`plugins/triana/skills/onboard/SKILL.md` is consumed directly by Codex and is
+also exposed by a thin Claude Code plugin/marketplace manifest. Its
+standard-library tooling may inspect authorized local JSONL structurally,
+scaffold a bounded customer adapter, validate the exact PreviewTrace v1
+mechanical contract, show redacted previews, privately normalize the minimal
+provider input, execute the bundled immutable private release after explicit
+approval, and verify the report. Digests remain internal release evidence, not
+customer input. The skill never contains credentials, publishes an image,
+uploads traces, or owns Behavior Map semantics. Demand families, requested
+actions, modifiers, populations, and agent patterns are derived from authorized
+evidence by the engine and never come from an environment taxonomy.
+
+Unknown or dynamic source keys are not emitted verbatim by structural
+inspection; only a closed set of known schema names is visible and other keys
+collapse to a non-reversible redacted token with a count. An unfamiliar schema
+therefore becomes an explicit local adapter task reviewed by the operator and
+coding agent. It cannot silently become valid PreviewTrace. Codex and Claude
+Code share the same script, adapter template, reference, and conformance tests
+so agent packaging cannot change deterministic meaning.
+
+#### Source-available Python repository supersession
+
+The source-available release no longer places a private Behavior Map engine
+behind the skill or Docker. `triana-preview` becomes the one local Python
+runtime and owns
+trace onboarding, redaction, the Behavior Map engine, provider boundary,
+checkpoint integrity evidence, report rendering, and verification in the `triana_preview`
+namespace under PolyForm Free Trial 1.0.0. `triana-skills` remains Apache-2.0,
+contains instructions and metadata only, and invokes an exact immutable PyPI
+version. The Preview runtime has no dependency on
+`triana_labs`, no subprocess dispatch into a private package, and no Docker
+requirement. New repositories receive clean histories from explicit source and
+artifact allowlists; the monorepo history and all unrelated private surfaces
+remain private. Public checkpoint resume is deferred in `0.1.0a1`; an
+interrupted output remains inspectable partial evidence but cannot be passed
+back to `analyze`, which requires a fresh empty destination. `select` and
+`simulate` are future sibling commands exchanging
+versioned artifacts, not current scaffolds. The complete boundary is
+`internal/TRIANA_PUBLIC_REPOSITORY_GATE_0_2026-08-11.md`.
+
+The released public repositories are now the sole editable owners of those
+surfaces. The private monorepo contains neither a `triana-preview` nor a
+`triana-skills` staging package, and `triana_labs` no longer exposes a
+`behavior-map` command or duplicate `behavior_map` package. Historical Docker,
+image, release-profile, and release-manifest records remain evidence only.
+
+The `0.1.0a2` self-serve follow-on keeps that repository split and replaces the
+manual adapter seam with a bounded declarative mapping executed by Preview.
+Before semantic egress, `doctor` verifies the exact Python/package and
+canonical Codex/Claude skill versions, authorized provider-field shape,
+private output custody, and content-free trace structure without constructing
+a provider client. Long runs expose content-free phase receipts on stderr and
+one final stdout receipt; safe retained semantic diagnostics are projected at
+the public boundary immediately. The shared call ledger is counted once even
+when one configured model fills both proposal roles. The skills repository
+still contains no runtime code and every command invokes the exact published
+Preview version through `uvx`.
 
 LABS-04 is the implemented and owner-passed case-generation boundary:
 

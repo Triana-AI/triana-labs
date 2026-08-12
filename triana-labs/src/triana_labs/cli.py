@@ -68,13 +68,6 @@ class _SafeArgumentParser(argparse.ArgumentParser):
                 reason_code="CLI_USAGE_ERROR",
                 duration_ms=0,
             )
-        elif _usage_command == "behavior-map.redact":
-            event = {
-                "command": "behavior-map.redact",
-                "outcome": "REJECTED",
-                "reason_code": "CLI_USAGE_ERROR",
-                "service": _SERVICE,
-            }
         else:
             event = _terminal_log(
                 event_name="triana.traces.observe.rejected",
@@ -186,22 +179,6 @@ def _build_parser() -> _SafeArgumentParser:
     )
     analysis_review.add_argument("output")
     analysis_review.add_argument("--ruling", required=True)
-    behavior_map = commands.add_parser(
-        "behavior-map", help="Build a single-corpus Behavior Map."
-    )
-    behavior_map_commands = behavior_map.add_subparsers(dest="behavior_map_command")
-    behavior_map_run = behavior_map_commands.add_parser(
-        "run", help="Build JSON, Markdown, and HTML behavior-map artifacts."
-    )
-    behavior_map_run.add_argument("--manifest", required=True)
-    behavior_map_run.add_argument("--output-dir", required=True)
-    behavior_map_run.add_argument("--agent-context")
-    behavior_map_redact = behavior_map_commands.add_parser(
-        "redact", help="Create a deterministic redacted PreviewTrace projection."
-    )
-    behavior_map_redact.add_argument("--input", required=True)
-    behavior_map_redact.add_argument("--output", required=True)
-    behavior_map_redact.add_argument("--audit", required=True)
     return parser
 
 
@@ -289,8 +266,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         _usage_command = "episodes.run"
     elif raw_arguments[:2] == ["corpus", "derive"]:
         _usage_command = "corpus.derive"
-    elif raw_arguments[:2] == ["behavior-map", "redact"]:
-        _usage_command = "behavior-map.redact"
     else:
         _usage_command = "traces.observe"
     parser = _build_parser()
@@ -298,9 +273,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "analysis":
         return _run_trace_to_eval_command(arguments)
-
-    if arguments.command == "behavior-map":
-        return _run_behavior_map_command(arguments)
 
     if arguments.command == "episodes" and arguments.episode_command == "run":
         return _run_episodes(arguments)
@@ -641,179 +613,6 @@ def _run_trace_to_eval_command(arguments: argparse.Namespace) -> int:
         },
     )
     return 2
-
-
-def _run_behavior_map_command(arguments: argparse.Namespace) -> int:
-    """Run the Behavior Map through explicit, role-bound local configuration."""
-
-    if arguments.behavior_map_command == "redact":
-        from triana_labs.behavior_map import RedactionFailure, redact_preview_traces
-
-        try:
-            audit = redact_preview_traces(
-                Path(arguments.input), Path(arguments.output), Path(arguments.audit)
-            )
-        except RedactionFailure as failure:
-            _write_json(
-                sys.stderr,
-                {
-                    "command": "behavior-map.redact",
-                    "outcome": "REJECTED",
-                    "reason_code": failure.reason_code,
-                    "service": _SERVICE,
-                },
-            )
-            return 2
-        except Exception:  # noqa: BLE001 - never expose redaction input or exceptions.
-            _write_json(
-                sys.stderr,
-                {
-                    "command": "behavior-map.redact",
-                    "outcome": "REJECTED",
-                    "reason_code": "REDACTION_OPERATION_REJECTED",
-                    "service": _SERVICE,
-                },
-            )
-            return 2
-        _write_json(
-            sys.stdout,
-            {
-                "command": "behavior-map.redact",
-                "outcome": "COMPLETED",
-                "input_trace_count": audit["input_trace_count"],
-                "output_trace_count": audit["output_trace_count"],
-            },
-        )
-        return 0
-
-    from triana_labs.behavior_map import run_behavior_map
-    from triana_labs.trace_to_eval.semantic import FoundryStructuredSemanticModel
-
-    try:
-        provider = os.environ.get("TRIANA_BEHAVIOR_MAP_PROVIDER")
-        primary_model = None
-        audit_model = None
-        if provider is not None:
-            if provider != "MICROSOFT_FOUNDRY_OPENAI_V1":
-                raise ValueError("BEHAVIOR_MAP_PROVIDER_CONFIG_INVALID")
-            primary_endpoint = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_PRIMARY_ENDPOINT", ""
-            ).rstrip("/")
-            audit_endpoint = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_AUDIT_ENDPOINT", ""
-            ).rstrip("/")
-            primary_id = os.environ.get("TRIANA_BEHAVIOR_MAP_PRIMARY_MODEL_ID", "")
-            audit_id = os.environ.get("TRIANA_BEHAVIOR_MAP_AUDIT_MODEL_ID", "")
-            primary_key = os.environ.get("TRIANA_BEHAVIOR_MAP_PRIMARY_API_KEY", "")
-            audit_key = os.environ.get("TRIANA_BEHAVIOR_MAP_AUDIT_API_KEY", "")
-            primary_version = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_PRIMARY_DEPLOYMENT_VERSION", ""
-            )
-            audit_version = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_AUDIT_DEPLOYMENT_VERSION", ""
-            )
-            primary_sku = os.environ.get("TRIANA_BEHAVIOR_MAP_PRIMARY_SKU", "")
-            audit_sku = os.environ.get("TRIANA_BEHAVIOR_MAP_AUDIT_SKU", "")
-            primary_capacity = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_PRIMARY_CAPACITY", ""
-            )
-            audit_capacity = os.environ.get("TRIANA_BEHAVIOR_MAP_AUDIT_CAPACITY", "")
-            primary_boundary = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_PRIMARY_CREDENTIAL_BOUNDARY_ID", ""
-            )
-            audit_boundary = os.environ.get(
-                "TRIANA_BEHAVIOR_MAP_AUDIT_CREDENTIAL_BOUNDARY_ID", ""
-            )
-            primary_url = urlsplit(primary_endpoint)
-            audit_url = urlsplit(audit_endpoint)
-            if (
-                primary_url.scheme != "https"
-                or not primary_url.hostname
-                or primary_url.username is not None
-                or primary_url.password is not None
-                or primary_url.query
-                or primary_url.fragment
-                or audit_url.scheme != "https"
-                or not audit_url.hostname
-                or audit_url.username is not None
-                or audit_url.password is not None
-                or audit_url.query
-                or audit_url.fragment
-                or not primary_id
-                or not audit_id
-                or not primary_key
-                or not audit_key
-                or primary_id == audit_id
-                or primary_endpoint == audit_endpoint
-                or not primary_version
-                or not audit_version
-                or not primary_sku
-                or not audit_sku
-                or not primary_capacity.isdigit()
-                or not audit_capacity.isdigit()
-                or not primary_boundary
-                or not audit_boundary
-            ):
-                raise ValueError("BEHAVIOR_MAP_PROVIDER_CONFIG_INVALID")
-            primary_model = FoundryStructuredSemanticModel(
-                model_id=primary_id,
-                endpoint=primary_endpoint,
-                api_key=primary_key,
-                provider=provider,
-                max_calls=100,
-                max_request_bytes=60_000,
-                max_output_tokens_per_call=2_000,
-                max_reserved_usd=18.0,
-                reservation_usd_per_call=0.18,
-                deployment_version=primary_version,
-                sku=primary_sku,
-                capacity=int(primary_capacity),
-                credential_boundary_id=primary_boundary,
-            )
-            audit_model = FoundryStructuredSemanticModel(
-                model_id=audit_id,
-                endpoint=audit_endpoint,
-                api_key=audit_key,
-                provider=provider,
-                max_calls=69,
-                max_request_bytes=60_000,
-                max_output_tokens_per_call=2_000,
-                max_reserved_usd=4.968,
-                reservation_usd_per_call=0.072,
-                deployment_version=audit_version,
-                sku=audit_sku,
-                capacity=int(audit_capacity),
-                credential_boundary_id=audit_boundary,
-            )
-        report = run_behavior_map(
-            Path(arguments.manifest),
-            Path(arguments.output_dir),
-            primary_model=primary_model,
-            audit_model=audit_model,
-            agent_context=arguments.agent_context,
-        )
-        _write_json(
-            sys.stdout,
-            {
-                "outcome": "COMPLETED_WITH_GAPS" if report["gaps"] else "COMPLETED",
-                "report_id": report["report_id"],
-                "report_path": f"{arguments.output_dir}/behavior-map.json",
-                "markdown_path": f"{arguments.output_dir}/behavior-map.md",
-                "html_path": f"{arguments.output_dir}/behavior-map.html",
-            },
-        )
-        return 10 if report["gaps"] else 0
-    except (OSError, TypeError, ValueError):
-        _write_json(
-            sys.stderr,
-            {
-                "command": "behavior-map.run",
-                "outcome": "REJECTED",
-                "reason_code": "BEHAVIOR_MAP_OPERATION_REJECTED",
-                "service": _SERVICE,
-            },
-        )
-        return 2
 
 
 def _episode_terminal_log(

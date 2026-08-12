@@ -429,6 +429,20 @@ SCHEMA_CASES: list[tuple[str, Mutator, str]] = [
         ),
         "SCHEMA_VALIDATION_FAILED",
     ),
+    (
+        "terminal-state-list",
+        _event_mutator(
+            [{"sequence": 0, "event_kind": "TERMINAL", "terminal_state": []}]
+        ),
+        "SCHEMA_VALIDATION_FAILED",
+    ),
+    (
+        "terminal-state-object",
+        _event_mutator(
+            [{"sequence": 0, "event_kind": "TERMINAL", "terminal_state": {}}]
+        ),
+        "SCHEMA_VALIDATION_FAILED",
+    ),
 ]
 
 

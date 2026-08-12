@@ -1,0 +1,178 @@
+{
+  "artifact_kind": "public_product_dedup_manifest_v1",
+  "schema_version": 1,
+  "canonical_repositories": {
+    "triana-preview": {
+      "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f",
+      "inventory_sha256": "sha256:d143e31bb898d681d999aecadaa337146e191ff66ebde2b5a0299872f0728aab"
+    },
+    "triana-skills": {
+      "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c",
+      "inventory_sha256": "sha256:02fb9b8c5e7efb7243d38e5d3dc12244ecc11b4dbe5224d195d3da97031d6212"
+    }
+  },
+  "dispositions": [
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/__init__.py",
+      "source_sha256": "sha256:34cd87d7a23aeb8879c4e29908bfd5c3628acf326b448c5ed492c99183172a14",
+      "disposition": "ALLOWLISTED_EXTRACTION",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/behavior_map/engine.py", "sha256": "sha256:301b6ad23dc2e120e6ef58b046ee90da3b64af35f21e729c570ac4ac8e8eee4b"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/benchmark.py",
+      "source_sha256": "sha256:55bfdea93c06b00fac4fc1774925a824cb3eba25f36f40f75305c42754faa8ab",
+      "disposition": "RETIRED_GIT_HISTORY",
+      "preservation_target": {"repository": "triana-monorepo", "commit": "ab5079548a42ed2ca1f37dded5deeaa77e32d251", "path": "triana-labs/src/triana_labs/behavior_map/benchmark.py", "sha256": "sha256:55bfdea93c06b00fac4fc1774925a824cb3eba25f36f40f75305c42754faa8ab"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/checkpoint_migration.py",
+      "source_sha256": "sha256:18c874ea645b3cd08df8f8ad89ed54e355e7cce4bae4bcbe4c74531bc35faeff",
+      "disposition": "RETIRED_GIT_HISTORY",
+      "preservation_target": {"repository": "triana-monorepo", "commit": "ab5079548a42ed2ca1f37dded5deeaa77e32d251", "path": "triana-labs/src/triana_labs/behavior_map/checkpoint_migration.py", "sha256": "sha256:18c874ea645b3cd08df8f8ad89ed54e355e7cce4bae4bcbe4c74531bc35faeff"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/comparison.py",
+      "source_sha256": "sha256:4109e4f960417e29bb78b56a4c6a8ea356d607c8182d85b46fca12acdeaa96db",
+      "disposition": "RETIRED_GIT_HISTORY",
+      "preservation_target": {"repository": "triana-monorepo", "commit": "ab5079548a42ed2ca1f37dded5deeaa77e32d251", "path": "triana-labs/src/triana_labs/behavior_map/comparison.py", "sha256": "sha256:4109e4f960417e29bb78b56a4c6a8ea356d607c8182d85b46fca12acdeaa96db"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/contracts.py",
+      "source_sha256": "sha256:54ba3aa8229abe86d5186cc12633be06b160d3ca462d8efafad3ec2f64d12a7f",
+      "disposition": "EXACT_PUBLIC_COPY",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/behavior_map/contracts.py", "sha256": "sha256:54ba3aa8229abe86d5186cc12633be06b160d3ca462d8efafad3ec2f64d12a7f"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/historical_projection.py",
+      "source_sha256": "sha256:e5934d4190128c8f06f7017bb04f7b643d6e2992072090797dce59e08cd21a01",
+      "disposition": "RETIRED_GIT_HISTORY",
+      "preservation_target": {"repository": "triana-monorepo", "commit": "ab5079548a42ed2ca1f37dded5deeaa77e32d251", "path": "triana-labs/src/triana_labs/behavior_map/historical_projection.py", "sha256": "sha256:e5934d4190128c8f06f7017bb04f7b643d6e2992072090797dce59e08cd21a01"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/redaction.py",
+      "source_sha256": "sha256:ad099d3710b83660ca3248078bda2619359e60374d54bb5ddcd889033f3d75b6",
+      "disposition": "ALLOWLISTED_EXTRACTION",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/privacy/redaction.py", "sha256": "sha256:eab6897ceb7495dc5cf8d82ca2710c10fdf2548d756fd8a9407411d2534a2c09"}
+    },
+    {
+      "path": "triana-labs/src/triana_labs/behavior_map/render.py",
+      "source_sha256": "sha256:4ae7193f1824d9a31fc92448f9e21dcdbde3adb4eeaeefe77ccf624a286b6fa4",
+      "disposition": "EXACT_PUBLIC_COPY",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/behavior_map/render.py", "sha256": "sha256:4ae7193f1824d9a31fc92448f9e21dcdbde3adb4eeaeefe77ccf624a286b6fa4"}
+    },
+    {
+      "path": "triana-preview/.dockerignore",
+      "source_sha256": "sha256:b659756f6d7f0e0137d289630322210fdd8dbadadb9ca16347b37d390f27da75",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "README.md", "sha256": "sha256:0e880e99087f634b5126d77b6021b8b33729bfaa18e827e1bf34630038ac8eaa"}
+    },
+    {
+      "path": "triana-preview/.env.example",
+      "source_sha256": "sha256:5052cc51eff6e4b663693f5786695cbf9e14efc33abeabf90c377588678ed067",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "PRIVACY.md", "sha256": "sha256:a1659c4527d44b205753585c7037acdbd839da89817d74ddf659ad8106a39c50"}
+    },
+    {
+      "path": "triana-preview/Dockerfile",
+      "source_sha256": "sha256:007bcc6d8352180819f12a728b387f363d185635a98266b2a27b763752aae253",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "README.md", "sha256": "sha256:0e880e99087f634b5126d77b6021b8b33729bfaa18e827e1bf34630038ac8eaa"}
+    },
+    {
+      "path": "triana-preview/Dockerfile.dockerignore",
+      "source_sha256": "sha256:dfd3fc396c896de62e5d153e22861a318f455f1df7ee077389243ac69eb03c84",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "README.md", "sha256": "sha256:0e880e99087f634b5126d77b6021b8b33729bfaa18e827e1bf34630038ac8eaa"}
+    },
+    {
+      "path": "triana-preview/pyproject.toml",
+      "source_sha256": "sha256:dcc780a4df87ac2aa6e2ee31f55d9ea91886f70ace14c7343bd6941c3c36beb3",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "pyproject.toml", "sha256": "sha256:a21db25b4a91db79cd507160b5cbe7d8c81c83892c472e07e540cf293b040cf5"}
+    },
+    {
+      "path": "triana-preview/scripts/verify.sh",
+      "source_sha256": "sha256:ca2ecff178f80540a476cf659a83afb2e4cf38c438b72d9be6944afe69ba7666",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": ".github/workflows/ci.yml", "sha256": "sha256:bf8f151129754288a04b38dac979bacb2eae2d216a0706a2c80e255b52a07a20"}
+    },
+    {
+      "path": "triana-preview/src/triana_preview/__init__.py",
+      "source_sha256": "sha256:96360bb0d4fc0df981d3b1c0efeb6a55cba342f6cc47b05fb846088123dcddf1",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/__init__.py", "sha256": "sha256:918110b75de358371c97d7190a9eafe98e1bd2e64be309c6029ae55b5f89f39d"}
+    },
+    {
+      "path": "triana-preview/src/triana_preview/__main__.py",
+      "source_sha256": "sha256:cf1ec2177a3ed803b0f042a4dc980a055f2c60238fdbde5d53abfe0b6629cd06",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/__main__.py", "sha256": "sha256:37ccfd52ee52b3f6dfb8cafcbb9874f1dbe65fe2f8de4dbbc270bdc2fceedaae"}
+    },
+    {
+      "path": "triana-preview/src/triana_preview/cli.py",
+      "source_sha256": "sha256:f81d366cc942b24215d9aff5fa3c7fa1d17f349f9042b97e538355946ffa4766",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/cli.py", "sha256": "sha256:dcbb2236f6f9e26a6343552382032ee1fb6d34f2876531e6ffa5247d1883f768"}
+    },
+    {
+      "path": "triana-preview/uv.lock",
+      "source_sha256": "sha256:494c6f4dd9f76d893043a67dd41286c29ea15ccfdfd5f44e2e9a4e21a2679b14",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "uv.lock", "sha256": "sha256:a0add26d815d0d3a1478e3af036ace762c276a72ec44f95733e8579d28529287"}
+    },
+    {
+      "path": "triana-skills/.claude-plugin/marketplace.json",
+      "source_sha256": "sha256:25f8dcac4ab86f7503ac9499e9b7777c964f850d38fe8e97f227c9a7e4e45900",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": ".claude-plugin/marketplace.json", "sha256": "sha256:846be80e76bf9ce25385c69aad996f5649d22d91430f79d8037bcb5ac9efbf73"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/.claude-plugin/plugin.json",
+      "source_sha256": "sha256:5fbe36964dd48357d277c22e190f66e4efea88093baadb4169f059606f65c5f5",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/.claude-plugin/plugin.json", "sha256": "sha256:3a8b45ed7608f8ff563a0d26f66f56150fa78b7dd88f0a5360cc36a7745aee08"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/SKILL.md",
+      "source_sha256": "sha256:e3b2f95f432b57e2cc3af2239a48cbd86c851327855f6fc9230176bafac616c9",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/skills/onboard/SKILL.md", "sha256": "sha256:010e8286a5cf3c65762cade476aa6fa8d7c8632d1e02e9101c614bb3af8c22cc"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/agents/openai.yaml",
+      "source_sha256": "sha256:3389496c9be61f2a06245162386f3f1870509c17f188578cf346076ba43381b4",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/skills/onboard/agents/openai.yaml", "sha256": "sha256:85275049693f092c5090f224f35dec421ef452e42f9bdf2d51a7b762efbb75c6"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/assets/adapter.py.template",
+      "source_sha256": "sha256:c47fac0e5d051da0b8036bcd8c021bb085680e86b29cb7f633ea36ae0c74b991",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/skills/onboard/SKILL.md", "sha256": "sha256:010e8286a5cf3c65762cade476aa6fa8d7c8632d1e02e9101c614bb3af8c22cc"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/assets/release-profile.json",
+      "source_sha256": "sha256:be161284a24fb8ebb69bcba3581159d477973dd7467ffe877ffb701d8876e64e",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/skills/onboard/SKILL.md", "sha256": "sha256:010e8286a5cf3c65762cade476aa6fa8d7c8632d1e02e9101c614bb3af8c22cc"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/references/previewtrace-v1.md",
+      "source_sha256": "sha256:0048a1a09837a549569642109ecef914eeb19c745797419faa8fa5e3ba2f8c23",
+      "disposition": "BEHAVIORALLY_PRESERVED",
+      "preservation_target": {"repository": "triana-preview", "commit": "a738e3fdf4364f2d46913b40ed59297b290cb96f", "path": "src/triana_preview/contracts/preview_trace.py", "sha256": "sha256:030fd66a173938deaa99d3ab4064ea21d4b0d813fe9854ef265262eabfdedcb8"}
+    },
+    {
+      "path": "triana-skills/plugins/triana/skills/onboard/scripts/onboard.py",
+      "source_sha256": "sha256:28f9f25491550e6046b300c3df8591bd87975eea5ac7e1e5114db0ef6d5096b2",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "plugins/triana/skills/onboard/SKILL.md", "sha256": "sha256:010e8286a5cf3c65762cade476aa6fa8d7c8632d1e02e9101c614bb3af8c22cc"}
+    },
+    {
+      "path": "triana-skills/release-manifest.example.json",
+      "source_sha256": "sha256:fc6d9519708e7a774d23cd3b226c69b696146b15be655b06c8eebae28d36ef67",
+      "disposition": "SUPERSEDED_STAGING",
+      "preservation_target": {"repository": "triana-skills", "commit": "0ce39bcdbcb90ff964cfc180eda34adc56b0362c", "path": "README.md", "sha256": "sha256:710d50f0f49de7758f56106a1598b53a5bcc69d9d6d88fe178b0a82e9696f533"}
+    }
+  ]
+}
